@@ -1,0 +1,125 @@
+import { useEffect } from 'react';
+import { MapContainer as LeafletMap, TileLayer, Marker, Popup, Circle, useMap, useMapEvents } from 'react-leaflet';
+import L from 'leaflet';
+import type { Cafe } from '../../types';
+import { formatDistance } from '../../utils/haversine';
+import 'leaflet/dist/leaflet.css';
+
+// User location marker — blue pulsing dot
+const userIcon = L.divIcon({
+  className: '',
+  html: `
+    <div style="position:relative;width:24px;height:24px;">
+      <div style="position:absolute;inset:0;border-radius:50%;background:rgba(59,130,246,0.25);animation:pulse 2s ease-out infinite;"></div>
+      <div style="position:absolute;top:4px;left:4px;width:16px;height:16px;border-radius:50%;background:#3b82f6;border:3px solid #fff;box-shadow:0 0 6px rgba(0,0,0,0.3);"></div>
+    </div>
+    <style>@keyframes pulse{0%{transform:scale(1);opacity:1}100%{transform:scale(2.5);opacity:0}}</style>
+  `,
+  iconSize: [24, 24],
+  iconAnchor: [12, 12],
+  popupAnchor: [0, -12],
+});
+
+// Cafe marker — amber/brown coffee pin
+const cafeIcon = L.divIcon({
+  className: '',
+  html: `
+    <svg width="28" height="38" viewBox="0 0 28 38" xmlns="http://www.w3.org/2000/svg">
+      <path d="M14 0C6.27 0 0 6.27 0 14c0 10.5 14 24 14 24s14-13.5 14-24C28 6.27 21.73 0 14 0z" fill="#d97706"/>
+      <circle cx="14" cy="13" r="7" fill="#fff"/>
+      <text x="14" y="17" text-anchor="middle" font-size="13" fill="#d97706">&#9749;</text>
+    </svg>
+  `,
+  iconSize: [28, 38],
+  iconAnchor: [14, 38],
+  popupAnchor: [0, -34],
+});
+
+interface Props {
+  center: [number, number];
+  cafes: Cafe[];
+  radius: number;
+  onMapClick?: (lat: number, lng: number) => void;
+}
+
+function MapClickHandler({ onClick }: { onClick?: (lat: number, lng: number) => void }) {
+  useMapEvents({
+    click(e) {
+      onClick?.(e.latlng.lat, e.latlng.lng);
+    },
+  });
+  return null;
+}
+
+function RecenterMap({ center }: { center: [number, number] }) {
+  const map = useMap();
+  useEffect(() => {
+    map.setView(center, map.getZoom());
+  }, [center, map]);
+  return null;
+}
+
+export default function MapView({ center, cafes, radius, onMapClick }: Props) {
+  return (
+    <LeafletMap
+      center={center}
+      zoom={15}
+      className="h-full w-full rounded-xl"
+      style={{ minHeight: '400px' }}
+    >
+      <TileLayer
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      />
+      <RecenterMap center={center} />
+      <MapClickHandler onClick={onMapClick} />
+
+      {/* User location / search center */}
+      <Circle
+        center={center}
+        radius={radius}
+        pathOptions={{
+          color: '#d97706',
+          fillColor: '#fbbf24',
+          fillOpacity: 0.1,
+          weight: 2,
+        }}
+      />
+      <Marker position={center} icon={userIcon}>
+        <Popup>Your location</Popup>
+      </Marker>
+
+      {/* Cafe markers */}
+      {cafes.map((cafe) => (
+        <Marker
+          key={cafe.id}
+          position={[cafe.latitude, cafe.longitude]}
+          icon={cafeIcon}
+        >
+          <Popup>
+            <div className="text-sm">
+              <strong>{cafe.name}</strong>
+              <br />
+              {cafe.address}
+              {cafe.distanceMeters != null && (
+                <>
+                  <br />
+                  <span className="text-amber-600">
+                    {formatDistance(cafe.distanceMeters)}
+                  </span>
+                </>
+              )}
+              <br />
+              <a
+                href={`/cafe/${cafe.id}`}
+                className="text-blue-500 underline"
+              >
+                View details
+              </a>
+            </div>
+          </Popup>
+        </Marker>
+      ))}
+    </LeafletMap>
+  );
+}

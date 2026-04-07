@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(npx tsc:*)",
+      "Bash(rm -rf client)",
+      "Bash(npm create:*)",
+      "Bash(npx vite:*)"
+    ]
+  }
+}

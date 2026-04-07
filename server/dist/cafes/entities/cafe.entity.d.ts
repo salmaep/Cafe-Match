@@ -1,0 +1,34 @@
+import { CafeFacility } from './cafe-facility.entity';
+import { CafeMenu } from '../../menus/entities/cafe-menu.entity';
+import { CafePhoto } from '../../photos/entities/cafe-photo.entity';
+import { Bookmark } from '../../bookmarks/entities/bookmark.entity';
+import { Favorite } from '../../favorites/entities/favorite.entity';
+export declare class Cafe {
+    id: number;
+    name: string;
+    slug: string;
+    description: string;
+    address: string;
+    latitude: number;
+    longitude: number;
+    phone: string;
+    googlePlaceId: string;
+    googleMapsUrl: string;
+    wifiAvailable: boolean;
+    wifiSpeedMbps: number;
+    hasMushola: boolean;
+    openingHours: Record<string, string>;
+    priceRange: string;
+    bookmarksCount: number;
+    favoritesCount: number;
+    isActive: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+    facilities: CafeFacility[];
+    menus: CafeMenu[];
+    photos: CafePhoto[];
+    bookmarks: Bookmark[];
+    favorites: Favorite[];
+    distanceMeters?: number;
+    matchScore?: number;
+}

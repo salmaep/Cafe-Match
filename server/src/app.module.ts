@@ -11,7 +11,13 @@ import { FavoritesModule } from './favorites/favorites.module';
 import { MenusModule } from './menus/menus.module';
 import { PhotosModule } from './photos/photos.module';
 import { VotesModule } from './votes/votes.module';
+import { OwnerModule } from './owner/owner.module';
+import { PromotionsModule } from './promotions/promotions.module';
+import { PaymentsModule } from './payments/payments.module';
+import { AnalyticsModule } from './analytics/analytics.module';
+import { AdminModule } from './admin/admin.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
+import { RolesGuard } from './common/guards/roles.guard';
 
 @Module({
   imports: [
@@ -27,7 +33,8 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
         password: configService.get('DB_PASSWORD'),
         database: configService.get('DB_DATABASE'),
         autoLoadEntities: true,
-        synchronize: true, // TODO: disable in production, use migrations instead
+        synchronize: false,
+        migrations: [__dirname + '/database/migrations/*{.ts,.js}'],
       }),
     }),
     AuthModule,
@@ -39,11 +46,20 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
     MenusModule,
     PhotosModule,
     VotesModule,
+    OwnerModule,
+    PromotionsModule,
+    PaymentsModule,
+    AnalyticsModule,
+    AdminModule,
   ],
   providers: [
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
     },
   ],
 })

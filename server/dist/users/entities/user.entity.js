@@ -42,7 +42,7 @@ __decorate([
     __metadata("design:type", String)
 ], User.prototype, "name", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'enum', enum: ['user', 'admin'], default: 'user' }),
+    (0, typeorm_1.Column)({ type: 'enum', enum: ['user', 'admin', 'owner'], default: 'user' }),
     __metadata("design:type", String)
 ], User.prototype, "role", void 0);
 __decorate([

@@ -29,6 +29,9 @@ let CafesController = class CafesController {
     search(dto) {
         return this.cafesService.search(dto);
     }
+    getPromoted(type) {
+        return this.cafesService.findPromotedCafes(type);
+    }
     findOne(id) {
         return this.cafesService.findOne(id);
     }
@@ -45,6 +48,14 @@ __decorate([
     __metadata("design:paramtypes", [search_cafes_dto_1.SearchCafesDto]),
     __metadata("design:returntype", void 0)
 ], CafesController.prototype, "search", null);
+__decorate([
+    (0, public_decorator_1.Public)(),
+    (0, common_1.Get)('promoted'),
+    __param(0, (0, common_1.Query)('type')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], CafesController.prototype, "getPromoted", null);
 __decorate([
     (0, public_decorator_1.Public)(),
     (0, common_1.Get)(':id'),

@@ -15,6 +15,7 @@ export declare class CafesController {
             total: number;
         };
     }>;
+    getPromoted(type?: string): Promise<import("./entities/cafe.entity").Cafe[]>;
     findOne(id: number): Promise<import("./entities/cafe.entity").Cafe>;
     create(dto: CreateCafeDto): Promise<import("./entities/cafe.entity").Cafe>;
 }

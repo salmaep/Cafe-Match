@@ -7,6 +7,7 @@ import type { Cafe } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { useGeolocation } from '../hooks/useGeolocation';
 import { haversineDistance, formatDistance } from '../utils/haversine';
+import { analyticsApi } from '../api/analytics.api';
 import VoteSection from '../components/cafe/VoteSection';
 
 const FACILITY_LABELS: Record<string, string> = {
@@ -40,7 +41,11 @@ export default function CafeDetailPage() {
     if (!id) return;
     cafesApi
       .getById(Number(id))
-      .then((res) => setCafe(res.data))
+      .then((res) => {
+        setCafe(res.data);
+        // Track view
+        analyticsApi.track(Number(id), 'view').catch(() => {});
+      })
       .finally(() => setLoading(false));
   }, [id]);
 

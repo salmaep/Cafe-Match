@@ -20,7 +20,13 @@ const favorites_module_1 = require("./favorites/favorites.module");
 const menus_module_1 = require("./menus/menus.module");
 const photos_module_1 = require("./photos/photos.module");
 const votes_module_1 = require("./votes/votes.module");
+const owner_module_1 = require("./owner/owner.module");
+const promotions_module_1 = require("./promotions/promotions.module");
+const payments_module_1 = require("./payments/payments.module");
+const analytics_module_1 = require("./analytics/analytics.module");
+const admin_module_1 = require("./admin/admin.module");
 const jwt_auth_guard_1 = require("./common/guards/jwt-auth.guard");
+const roles_guard_1 = require("./common/guards/roles.guard");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -39,7 +45,8 @@ exports.AppModule = AppModule = __decorate([
                     password: configService.get('DB_PASSWORD'),
                     database: configService.get('DB_DATABASE'),
                     autoLoadEntities: true,
-                    synchronize: true,
+                    synchronize: false,
+                    migrations: [__dirname + '/database/migrations/*{.ts,.js}'],
                 }),
             }),
             auth_module_1.AuthModule,
@@ -51,11 +58,20 @@ exports.AppModule = AppModule = __decorate([
             menus_module_1.MenusModule,
             photos_module_1.PhotosModule,
             votes_module_1.VotesModule,
+            owner_module_1.OwnerModule,
+            promotions_module_1.PromotionsModule,
+            payments_module_1.PaymentsModule,
+            analytics_module_1.AnalyticsModule,
+            admin_module_1.AdminModule,
         ],
         providers: [
             {
                 provide: core_1.APP_GUARD,
                 useClass: jwt_auth_guard_1.JwtAuthGuard,
+            },
+            {
+                provide: core_1.APP_GUARD,
+                useClass: roles_guard_1.RolesGuard,
             },
         ],
     })

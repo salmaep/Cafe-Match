@@ -22,6 +22,7 @@ export class UsersService {
     email: string;
     passwordHash: string;
     name: string;
+    role?: string;
   }): Promise<User> {
     const user = this.usersRepository.create(data);
     return this.usersRepository.save(user);

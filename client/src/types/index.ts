@@ -23,6 +23,9 @@ export interface Cafe {
   priceRange: string;
   bookmarksCount: number;
   favoritesCount: number;
+  ownerId?: number;
+  hasActivePromotion?: boolean;
+  activePromotionType?: 'new_cafe' | 'featured_promo' | null;
   distanceMeters?: number;
   matchScore?: number;
   facilities?: CafeFacility[];

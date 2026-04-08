@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
 import { useGeolocation } from "../hooks/useGeolocation";
 import { cafesApi, type SearchParams } from "../api/cafes.api";
+import { promotionsApi } from "../api/promotions.api";
 import type { Cafe } from "../types";
 import MapView from "../components/map/MapContainer";
 import CafeCard from "../components/cafe/CafeCard";
+import FeaturedCafeCard from "../components/cafe/FeaturedCafeCard";
 import PurposeFilter from "../components/search/PurposeFilter";
 import SearchBar from "../components/search/SearchBar";
 import RadiusSlider from "../components/search/RadiusSlider";
@@ -28,6 +30,7 @@ export default function HomePage() {
     hasMushola: false,
     priceRange: "",
   });
+  const [featuredCafes, setFeaturedCafes] = useState<any[]>([]);
 
   // Set center from geolocation
   useEffect(() => {
@@ -35,6 +38,14 @@ export default function HomePage() {
       setCenter([geo.latitude, geo.longitude]);
     }
   }, [geo.latitude, geo.longitude, center]);
+
+  // Fetch featured cafes (Type B promotions)
+  useEffect(() => {
+    promotionsApi
+      .getActive('featured_promo')
+      .then((res) => setFeaturedCafes(res.data))
+      .catch(() => {});
+  }, []);
 
   const fetchCafes = useCallback(async () => {
     if (!center) return;
@@ -123,6 +134,26 @@ export default function HomePage() {
         <SearchBar onSearch={handleSearch} />
         <RadiusSlider radius={radius} onChange={setRadius} />
         <PurposeFilter selectedPurposeId={purposeId} onSelect={setPurposeId} />
+
+        {/* Featured Cafes (Type B promotions) */}
+        {featuredCafes.length > 0 && (
+          <div className="mb-2">
+            <h3 className="text-sm font-semibold text-gray-700 mb-2">Featured Cafes</h3>
+            <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1">
+              {featuredCafes.map((promo: any) => (
+                <FeaturedCafeCard
+                  key={promo.id}
+                  cafe={promo.cafe}
+                  promotion={{
+                    content_title: promo.contentTitle,
+                    content_description: promo.contentDescription,
+                    content_photo_url: promo.contentPhotoUrl,
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="text-sm text-gray-500">
           {loading ? "Searching..." : `${cafes.length} cafes found`}

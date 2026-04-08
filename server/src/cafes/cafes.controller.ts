@@ -27,6 +27,12 @@ export class CafesController {
   }
 
   @Public()
+  @Get('promoted')
+  getPromoted(@Query('type') type?: string) {
+    return this.cafesService.findPromotedCafes(type);
+  }
+
+  @Public()
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.cafesService.findOne(id);

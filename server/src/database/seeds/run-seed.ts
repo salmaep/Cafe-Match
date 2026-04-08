@@ -12,6 +12,11 @@ import { CafePhoto } from '../../photos/entities/cafe-photo.entity';
 import { Bookmark } from '../../bookmarks/entities/bookmark.entity';
 import { Favorite } from '../../favorites/entities/favorite.entity';
 import { CafeVote } from '../../votes/entities/cafe-vote.entity';
+import { AdvertisementPackage } from '../../promotions/entities/advertisement-package.entity';
+import { Promotion } from '../../promotions/entities/promotion.entity';
+import { PromotionSlot } from '../../promotions/entities/promotion-slot.entity';
+import { Transaction } from '../../payments/entities/transaction.entity';
+import { CafeAnalytics } from '../../analytics/entities/cafe-analytics.entity';
 
 dotenv.config();
 
@@ -34,6 +39,11 @@ async function run() {
       Bookmark,
       Favorite,
       CafeVote,
+      AdvertisementPackage,
+      Promotion,
+      PromotionSlot,
+      Transaction,
+      CafeAnalytics,
     ],
   });
 

@@ -68,6 +68,21 @@ let AuthService = class AuthService {
         const { passwordHash: _, ...result } = user;
         return result;
     }
+    async registerOwner(dto) {
+        const existing = await this.usersService.findByEmail(dto.email);
+        if (existing) {
+            throw new common_1.ConflictException('Email already registered');
+        }
+        const passwordHash = await bcrypt.hash(dto.password, 10);
+        const user = await this.usersService.create({
+            email: dto.email,
+            passwordHash,
+            name: dto.name,
+            role: 'owner',
+        });
+        const { passwordHash: _, ...result } = user;
+        return { ...result, cafeName: dto.cafeName, cafeAddress: dto.cafeAddress, phone: dto.phone };
+    }
     async login(dto) {
         const user = await this.usersService.findByEmail(dto.email);
         if (!user) {

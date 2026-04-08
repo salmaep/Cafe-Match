@@ -9,5 +9,6 @@ export declare class UsersService {
         email: string;
         passwordHash: string;
         name: string;
+        role?: string;
     }): Promise<User>;
 }

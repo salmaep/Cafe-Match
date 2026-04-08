@@ -5,6 +5,8 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
+  ManyToOne,
+  JoinColumn,
   Index,
 } from 'typeorm';
 import { CafeFacility } from './cafe-facility.entity';
@@ -12,6 +14,7 @@ import { CafeMenu } from '../../menus/entities/cafe-menu.entity';
 import { CafePhoto } from '../../photos/entities/cafe-photo.entity';
 import { Bookmark } from '../../bookmarks/entities/bookmark.entity';
 import { Favorite } from '../../favorites/entities/favorite.entity';
+import { User } from '../../users/entities/user.entity';
 
 @Entity('cafes')
 export class Cafe {
@@ -79,6 +82,20 @@ export class Cafe {
   @Column({ name: 'favorites_count', unsigned: true, default: 0 })
   favoritesCount: number;
 
+  @Column({ name: 'owner_id', type: 'int', unsigned: true, nullable: true })
+  ownerId: number;
+
+  @Column({ name: 'has_active_promotion', default: false })
+  hasActivePromotion: boolean;
+
+  @Column({
+    name: 'active_promotion_type',
+    type: 'enum',
+    enum: ['new_cafe', 'featured_promo'],
+    nullable: true,
+  })
+  activePromotionType: string;
+
   @Index()
   @Column({ name: 'is_active', default: true })
   isActive: boolean;
@@ -88,6 +105,10 @@ export class Cafe {
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
+
+  @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'owner_id' })
+  owner: User;
 
   @OneToMany(() => CafeFacility, (facility) => facility.cafe, { cascade: true })
   facilities: CafeFacility[];

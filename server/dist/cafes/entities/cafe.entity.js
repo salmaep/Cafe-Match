@@ -16,6 +16,7 @@ const cafe_menu_entity_1 = require("../../menus/entities/cafe-menu.entity");
 const cafe_photo_entity_1 = require("../../photos/entities/cafe-photo.entity");
 const bookmark_entity_1 = require("../../bookmarks/entities/bookmark.entity");
 const favorite_entity_1 = require("../../favorites/entities/favorite.entity");
+const user_entity_1 = require("../../users/entities/user.entity");
 let Cafe = class Cafe {
     id;
     name;
@@ -34,9 +35,13 @@ let Cafe = class Cafe {
     priceRange;
     bookmarksCount;
     favoritesCount;
+    ownerId;
+    hasActivePromotion;
+    activePromotionType;
     isActive;
     createdAt;
     updatedAt;
+    owner;
     facilities;
     menus;
     photos;
@@ -125,6 +130,23 @@ __decorate([
     __metadata("design:type", Number)
 ], Cafe.prototype, "favoritesCount", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ name: 'owner_id', type: 'int', unsigned: true, nullable: true }),
+    __metadata("design:type", Number)
+], Cafe.prototype, "ownerId", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'has_active_promotion', default: false }),
+    __metadata("design:type", Boolean)
+], Cafe.prototype, "hasActivePromotion", void 0);
+__decorate([
+    (0, typeorm_1.Column)({
+        name: 'active_promotion_type',
+        type: 'enum',
+        enum: ['new_cafe', 'featured_promo'],
+        nullable: true,
+    }),
+    __metadata("design:type", String)
+], Cafe.prototype, "activePromotionType", void 0);
+__decorate([
     (0, typeorm_1.Index)(),
     (0, typeorm_1.Column)({ name: 'is_active', default: true }),
     __metadata("design:type", Boolean)
@@ -137,6 +159,11 @@ __decorate([
     (0, typeorm_1.UpdateDateColumn)({ name: 'updated_at' }),
     __metadata("design:type", Date)
 ], Cafe.prototype, "updatedAt", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => user_entity_1.User, { nullable: true, onDelete: 'SET NULL' }),
+    (0, typeorm_1.JoinColumn)({ name: 'owner_id' }),
+    __metadata("design:type", user_entity_1.User)
+], Cafe.prototype, "owner", void 0);
 __decorate([
     (0, typeorm_1.OneToMany)(() => cafe_facility_entity_1.CafeFacility, (facility) => facility.cafe, { cascade: true }),
     __metadata("design:type", Array)

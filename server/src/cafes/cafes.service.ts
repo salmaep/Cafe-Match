@@ -148,6 +148,8 @@ export class CafesService {
         c.price_range AS priceRange,
         c.bookmarks_count AS bookmarksCount,
         c.favorites_count AS favoritesCount,
+        c.has_active_promotion AS hasActivePromotion,
+        c.active_promotion_type AS activePromotionType,
         ${HAVERSINE_SQL} AS distanceMeters
       FROM cafes c
       WHERE ${whereClause}
@@ -272,6 +274,48 @@ export class CafesService {
     }
 
     return this.findOne(saved.id);
+  }
+
+  async findPromotedCafes(type?: string) {
+    const qb = this.cafesRepository
+      .createQueryBuilder('c')
+      .where('c.isActive = :active', { active: true })
+      .andWhere('c.hasActivePromotion = :promoted', { promoted: true });
+
+    if (type) {
+      qb.andWhere('c.activePromotionType = :type', { type });
+    }
+
+    const cafes = await qb.getMany();
+
+    // For featured_promo type, also load the promotion content
+    if (!type || type === 'featured_promo') {
+      const cafeIds = cafes.filter(c => c.activePromotionType === 'featured_promo').map(c => c.id);
+      if (cafeIds.length > 0) {
+        const promotions = await this.dataSource.query(
+          `SELECT p.cafe_id, p.content_title, p.content_description, p.content_photo_url,
+                  p.highlighted_facilities, pkg.name AS package_name, pkg.display_order
+           FROM promotions p
+           JOIN advertisement_packages pkg ON p.package_id = pkg.id
+           WHERE p.cafe_id IN (${cafeIds.map(() => '?').join(',')})
+             AND p.status = 'active' AND p.expires_at > NOW()
+           ORDER BY pkg.display_order DESC`,
+          cafeIds,
+        );
+
+        const promoMap = new Map<number, any>();
+        for (const p of promotions) {
+          if (!promoMap.has(p.cafe_id)) promoMap.set(p.cafe_id, p);
+        }
+
+        return cafes.map((cafe) => ({
+          ...cafe,
+          promotion: promoMap.get(cafe.id) || null,
+        }));
+      }
+    }
+
+    return cafes;
   }
 
   private generateSlug(name: string): string {

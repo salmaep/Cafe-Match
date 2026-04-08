@@ -47,6 +47,11 @@ const cafe_photo_entity_1 = require("../../photos/entities/cafe-photo.entity");
 const bookmark_entity_1 = require("../../bookmarks/entities/bookmark.entity");
 const favorite_entity_1 = require("../../favorites/entities/favorite.entity");
 const cafe_vote_entity_1 = require("../../votes/entities/cafe-vote.entity");
+const advertisement_package_entity_1 = require("../../promotions/entities/advertisement-package.entity");
+const promotion_entity_1 = require("../../promotions/entities/promotion.entity");
+const promotion_slot_entity_1 = require("../../promotions/entities/promotion-slot.entity");
+const transaction_entity_1 = require("../../payments/entities/transaction.entity");
+const cafe_analytics_entity_1 = require("../../analytics/entities/cafe-analytics.entity");
 dotenv.config();
 async function run() {
     const dataSource = new typeorm_1.DataSource({
@@ -67,6 +72,11 @@ async function run() {
             bookmark_entity_1.Bookmark,
             favorite_entity_1.Favorite,
             cafe_vote_entity_1.CafeVote,
+            advertisement_package_entity_1.AdvertisementPackage,
+            promotion_entity_1.Promotion,
+            promotion_slot_entity_1.PromotionSlot,
+            transaction_entity_1.Transaction,
+            cafe_analytics_entity_1.CafeAnalytics,
         ],
     });
     await dataSource.initialize();

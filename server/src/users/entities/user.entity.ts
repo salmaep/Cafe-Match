@@ -23,7 +23,7 @@ export class User {
   @Column({ length: 100 })
   name: string;
 
-  @Column({ type: 'enum', enum: ['user', 'admin'], default: 'user' })
+  @Column({ type: 'enum', enum: ['user', 'admin', 'owner'], default: 'user' })
   role: string;
 
   @CreateDateColumn({ name: 'created_at' })

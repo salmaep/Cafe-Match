@@ -35,6 +35,40 @@ const cafeIcon = L.divIcon({
   popupAnchor: [0, -34],
 });
 
+// Promoted cafe marker (Type A: New Cafe Highlight) — "NEW!" badge pin, same size as regular
+const promotedCafeIcon = L.divIcon({
+  className: '',
+  html: `
+    <div style="position:relative;">
+      <div style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);z-index:10;
+        background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;font-size:8px;font-weight:800;
+        padding:1px 5px;border-radius:6px;letter-spacing:0.5px;white-space:nowrap;
+        box-shadow:0 2px 4px rgba(239,68,68,0.5);border:1.5px solid #fff;
+        animation:newBounce 2s ease-in-out infinite;">
+        NEW!
+      </div>
+      <svg width="28" height="38" viewBox="0 0 28 38" xmlns="http://www.w3.org/2000/svg"
+        style="filter:drop-shadow(0 2px 4px rgba(239,68,68,0.4));">
+        <defs>
+          <linearGradient id="newGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#f87171"/>
+            <stop offset="100%" stop-color="#dc2626"/>
+          </linearGradient>
+        </defs>
+        <path d="M14 0C6.27 0 0 6.27 0 14c0 10.5 14 24 14 24s14-13.5 14-24C28 6.27 21.73 0 14 0z" fill="url(#newGrad)"/>
+        <circle cx="14" cy="13" r="7" fill="#fff"/>
+        <text x="14" y="17" text-anchor="middle" font-size="13" font-weight="bold" fill="#dc2626">&#9749;</text>
+      </svg>
+      <style>
+        @keyframes newBounce{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-3px)}}
+      </style>
+    </div>
+  `,
+  iconSize: [28, 38],
+  iconAnchor: [14, 38],
+  popupAnchor: [0, -34],
+});
+
 interface Props {
   center: [number, number];
   cafes: Cafe[];
@@ -94,7 +128,8 @@ export default function MapView({ center, cafes, radius, onMapClick }: Props) {
         <Marker
           key={cafe.id}
           position={[cafe.latitude, cafe.longitude]}
-          icon={cafeIcon}
+          icon={cafe.hasActivePromotion && cafe.activePromotionType === 'new_cafe' ? promotedCafeIcon : cafeIcon}
+          zIndexOffset={cafe.hasActivePromotion ? 1000 : 0}
         >
           <Popup>
             <div className="text-sm">

@@ -3,6 +3,7 @@ import { CafeMenu } from '../../menus/entities/cafe-menu.entity';
 import { CafePhoto } from '../../photos/entities/cafe-photo.entity';
 import { Bookmark } from '../../bookmarks/entities/bookmark.entity';
 import { Favorite } from '../../favorites/entities/favorite.entity';
+import { User } from '../../users/entities/user.entity';
 export declare class Cafe {
     id: number;
     name: string;
@@ -21,9 +22,13 @@ export declare class Cafe {
     priceRange: string;
     bookmarksCount: number;
     favoritesCount: number;
+    ownerId: number;
+    hasActivePromotion: boolean;
+    activePromotionType: string;
     isActive: boolean;
     createdAt: Date;
     updatedAt: Date;
+    owner: User;
     facilities: CafeFacility[];
     menus: CafeMenu[];
     photos: CafePhoto[];

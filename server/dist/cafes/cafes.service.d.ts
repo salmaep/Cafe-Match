@@ -26,5 +26,6 @@ export declare class CafesService {
     private filterByPurpose;
     findOne(id: number): Promise<Cafe>;
     create(dto: CreateCafeDto): Promise<Cafe>;
+    findPromotedCafes(type?: string): Promise<Cafe[]>;
     private generateSlug;
 }

@@ -19,6 +19,7 @@ import TrendingScreen from '../screens/TrendingScreen';
 import OwnerDashboardScreen from '../screens/owner/OwnerDashboardScreen';
 import OwnerLoginScreen from '../screens/owner/OwnerLoginScreen';
 import OwnerRegisterScreen from '../screens/owner/OwnerRegisterScreen';
+import PromotionDetailScreen from '../screens/owner/PromotionDetailScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -118,6 +119,11 @@ export default function AppNavigator() {
       <Stack.Screen
         name="OwnerDashboard"
         component={OwnerNavigator}
+        options={{ ...TransitionPresets.SlideFromRightIOS }}
+      />
+      <Stack.Screen
+        name="PromotionDetail"
+        component={PromotionDetailScreen}
         options={{ ...TransitionPresets.SlideFromRightIOS }}
       />
     </Stack.Navigator>

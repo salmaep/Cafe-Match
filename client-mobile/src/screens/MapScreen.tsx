@@ -1,4 +1,10 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  useMemo,
+} from "react";
 import {
   View,
   Text,
@@ -6,26 +12,28 @@ import {
   TouchableOpacity,
   Image,
   ScrollView,
-  FlatList,
   Dimensions,
   TextInput,
   Keyboard,
   ActivityIndicator,
-} from 'react-native';
-import MapView, { Marker, Circle } from 'react-native-maps';
-import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { usePreferences } from '../context/PreferencesContext';
-import { useLocation } from '../context/LocationContext';
-import { fetchCafes, fetchPromotedCafes } from '../services/api';
-import { MOCK_CAFES } from '../data/mockCafes';
-import { Cafe } from '../types';
-import { parseSearchQuery, ParsedSearch } from '../utils/searchParser';
-import { colors, spacing, radius } from '../theme';
+  Animated,
+} from "react-native";
+import Swiper from "react-native-deck-swiper";
+import MapView, { Marker, Circle } from "react-native-maps";
+import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useNavigation } from "@react-navigation/native";
+import { StackNavigationProp } from "@react-navigation/stack";
+import { usePreferences } from "../context/PreferencesContext";
+import { useLocation } from "../context/LocationContext";
+import { useShortlist } from "../context/ShortlistContext";
+import { fetchCafes, fetchPromotedCafes } from "../services/api";
+import { MOCK_CAFES } from "../data/mockCafes";
+import { Cafe } from "../types";
+import { parseSearchQuery, ParsedSearch } from "../utils/searchParser";
+import { colors, spacing, radius } from "../theme";
 
-const { width, height } = Dimensions.get('window');
+const { width, height } = Dimensions.get("window");
 const RADIUS_OPTIONS = [0.5, 1, 2];
 
 export default function MapScreen() {
@@ -33,6 +41,7 @@ export default function MapScreen() {
   const insets = useSafeAreaInsets();
   const { preferences, setPreferences } = usePreferences();
   const { latitude: userLat, longitude: userLng } = useLocation();
+  const { addToShortlist, isInShortlist } = useShortlist();
   const mapRef = useRef<MapView>(null);
   const sheetRef = useRef<BottomSheet>(null);
 
@@ -42,9 +51,68 @@ export default function MapScreen() {
   const [selectedCafe, setSelectedCafe] = useState<Cafe | null>(null);
   const [loading, setLoading] = useState(true);
   const [radiusKm, setRadiusKm] = useState(preferences?.radius || 2);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [searchActive, setSearchActive] = useState(false);
   const [parsedSearch, setParsedSearch] = useState<ParsedSearch | null>(null);
+
+  // AI search popup state
+  const [searchPopupVisible, setSearchPopupVisible] = useState(false);
+  const [searchResults, setSearchResults] = useState<Cafe[]>([]);
+  const [popupCardIndex, setPopupCardIndex] = useState(0);
+  const [toastMsg, setToastMsg] = useState("");
+  const [showToast, setShowToast] = useState(false);
+  const popupSlide = useRef(new Animated.Value(height)).current;
+  const popupSwiperRef = useRef<any>(null);
+
+  const showSearchPopup = (results: Cafe[]) => {
+    setSearchResults(results);
+    setPopupCardIndex(0);
+    setSearchPopupVisible(true);
+    Animated.spring(popupSlide, {
+      toValue: 0,
+      useNativeDriver: true,
+      tension: 65,
+      friction: 12,
+    }).start();
+  };
+
+  const dismissSearchPopup = (applyToMap: boolean) => {
+    Animated.timing(popupSlide, {
+      toValue: height,
+      duration: 280,
+      useNativeDriver: true,
+    }).start(() => setSearchPopupVisible(false));
+    if (!applyToMap) {
+      clearSearch();
+    }
+  };
+
+  const triggerToast = (msg: string) => {
+    setToastMsg(msg);
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 2000);
+  };
+
+  // Bouncing animation for NEW! pin labels
+  const bounceAnim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(bounceAnim, {
+          toValue: -7,
+          duration: 420,
+          useNativeDriver: true,
+        }),
+        Animated.timing(bounceAnim, {
+          toValue: 0,
+          duration: 420,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, []);
 
   const center = {
     latitude: preferences?.location?.latitude ?? userLat,
@@ -52,24 +120,37 @@ export default function MapScreen() {
   };
 
   // Bottom sheet snap points: peek (~12%), mid (50%), full (92%)
-  const snapPoints = useMemo(() => ['12%', '50%', '92%'], []);
+  const snapPoints = useMemo(() => ["12%", "50%", "92%"], []);
 
-  const loadCafes = useCallback(async (rad: number) => {
-    setLoading(true);
-    try {
-      const cafes = await fetchCafes(center.latitude, center.longitude, rad);
-      setAllCafes(cafes.length > 0 ? cafes : MOCK_CAFES);
-    } catch {
-      setAllCafes(MOCK_CAFES);
-    }
-    try {
-      const featured = await fetchPromotedCafes('featured_promo');
-      setFeaturedCafes(featured.length > 0 ? featured : MOCK_CAFES.filter((c) => c.promotionType === 'B'));
-    } catch {
-      setFeaturedCafes(MOCK_CAFES.filter((c) => c.promotionType === 'B'));
-    }
-    setLoading(false);
-  }, [center.latitude, center.longitude]);
+  const loadCafes = useCallback(
+    async (rad: number) => {
+      setLoading(true);
+      try {
+        const cafes = await fetchCafes(center.latitude, center.longitude, rad);
+        setAllCafes(cafes.length > 0 ? cafes : MOCK_CAFES);
+      } catch {
+        setAllCafes(MOCK_CAFES);
+      }
+      try {
+        const featured = await fetchPromotedCafes("featured_promo");
+        setFeaturedCafes(
+          featured.length > 0
+            ? featured
+            : MOCK_CAFES.filter(
+                (c) => c.promotionType === "A" || c.promotionType === "B",
+              ),
+        );
+      } catch {
+        setFeaturedCafes(
+          MOCK_CAFES.filter(
+            (c) => c.promotionType === "A" || c.promotionType === "B",
+          ),
+        );
+      }
+      setLoading(false);
+    },
+    [center.latitude, center.longitude],
+  );
 
   useEffect(() => {
     loadCafes(radiusKm);
@@ -104,20 +185,40 @@ export default function MapScreen() {
 
   const handleSearch = () => {
     Keyboard.dismiss();
-    if (!searchQuery.trim()) { clearSearch(); return; }
-    setParsedSearch(parseSearchQuery(searchQuery));
+    if (!searchQuery.trim()) {
+      clearSearch();
+      return;
+    }
+    const parsed = parseSearchQuery(searchQuery);
+    setParsedSearch(parsed);
     setSearchActive(true);
+
+    // Build search result cafes from allCafes
+    let results = [...allCafes];
+    if (parsed.purposes.length > 0) {
+      results = results.filter((c) =>
+        parsed.purposes.some((p) => c.purposes.includes(p)),
+      );
+    }
+    if (parsed.facilities.length > 0) {
+      results = results.filter((c) =>
+        parsed.facilities.some((f) => c.facilities.includes(f)),
+      );
+    }
+    if (results.length === 0) results = allCafes.slice(0, 5);
+    showSearchPopup(results.slice(0, 8));
   };
 
   const clearSearch = () => {
-    setSearchQuery('');
+    setSearchQuery("");
     setParsedSearch(null);
     setSearchActive(false);
   };
 
   const activeFilters: string[] = [];
   if (preferences?.purpose) activeFilters.push(preferences.purpose);
-  if (preferences?.amenities) preferences.amenities.forEach((a) => activeFilters.push(a));
+  if (preferences?.amenities)
+    preferences.amenities.forEach((a) => activeFilters.push(a));
 
   const removeFilter = (filter: string) => {
     if (!preferences) return;
@@ -138,7 +239,8 @@ export default function MapScreen() {
     loadCafes(2);
   };
 
-  const hasAnyFilter = activeFilters.length > 0 || searchActive || radiusKm !== 2;
+  const hasAnyFilter =
+    activeFilters.length > 0 || searchActive || radiusKm !== 2;
 
   const onMarkerPress = (cafe: Cafe) => {
     setSelectedCafe(cafe);
@@ -152,20 +254,26 @@ export default function MapScreen() {
       <TouchableOpacity
         style={[styles.cafeCard, isSelected && styles.cafeCardSelected]}
         activeOpacity={0.85}
-        onPress={() => navigation.navigate('CafeDetail', { cafe: item })}
+        onPress={() => navigation.navigate("CafeDetail", { cafe: item })}
       >
         <Image
-          source={{ uri: item.photos?.[0] || '' }}
+          source={{ uri: item.photos?.[0] || "" }}
           style={styles.cafeCardPhoto}
         />
         <View style={styles.cafeCardInfo}>
           <View style={styles.cafeCardTopRow}>
-            <Text style={styles.cafeCardName} numberOfLines={1}>{item.name}</Text>
-            {item.promotionType === 'A' && (
-              <View style={styles.newBadge}><Text style={styles.newBadgeText}>New</Text></View>
+            <Text style={styles.cafeCardName} numberOfLines={1}>
+              {item.name}
+            </Text>
+            {item.promotionType === "A" && (
+              <View style={styles.newBadge}>
+                <Text style={styles.newBadgeText}>New</Text>
+              </View>
             )}
-            {item.promotionType === 'B' && (
-              <View style={styles.featuredBadge}><Text style={styles.featuredBadgeText}>Featured</Text></View>
+            {item.promotionType === "B" && (
+              <View style={styles.featuredBadge}>
+                <Text style={styles.featuredBadgeText}>Featured</Text>
+              </View>
             )}
           </View>
           <Text style={styles.cafeCardDist}>{item.distance} km away</Text>
@@ -221,7 +329,9 @@ export default function MapScreen() {
         )}
         {searchActive && displayCafes.length === 0 && !loading && (
           <View style={styles.noResultsBanner}>
-            <Text style={styles.noResultsText}>No cafes found for your search</Text>
+            <Text style={styles.noResultsText}>
+              No cafes found for your search
+            </Text>
           </View>
         )}
       </View>
@@ -249,15 +359,209 @@ export default function MapScreen() {
           fillColor="rgba(212, 139, 58, 0.08)"
           strokeWidth={1.5}
         />
-        {displayCafes.map((cafe) => (
-          <Marker
-            key={cafe.id}
-            coordinate={{ latitude: cafe.latitude, longitude: cafe.longitude }}
-            onPress={() => onMarkerPress(cafe)}
-            pinColor={cafe.promotionType === 'A' ? colors.promoPin : colors.primary}
-          />
-        ))}
+        {displayCafes.map((cafe) =>
+          cafe.promotionType === "A" ? (
+            <Marker
+              key={cafe.id}
+              coordinate={{
+                latitude: cafe.latitude,
+                longitude: cafe.longitude,
+              }}
+              onPress={() => onMarkerPress(cafe)}
+              anchor={{ x: 0.5, y: 1 }}
+            >
+              <View style={styles.newPinContainer}>
+                <Animated.View
+                  style={[
+                    styles.newPinLabel,
+                    { transform: [{ translateY: bounceAnim }] },
+                  ]}
+                >
+                  <Text style={styles.newPinLabelText}>NEW!</Text>
+                </Animated.View>
+                <View style={styles.newPinDot} />
+              </View>
+            </Marker>
+          ) : (
+            <Marker
+              key={cafe.id}
+              coordinate={{
+                latitude: cafe.latitude,
+                longitude: cafe.longitude,
+              }}
+              onPress={() => onMarkerPress(cafe)}
+              pinColor={colors.primary}
+            />
+          ),
+        )}
       </MapView>
+
+      {/* Toast */}
+      {showToast && (
+        <View style={styles.toast}>
+          <Text style={styles.toastText}>{toastMsg}</Text>
+        </View>
+      )}
+
+      {/* AI Search Popup */}
+      {searchPopupVisible && (
+        <Animated.View
+          style={[
+            styles.searchPopup,
+            { transform: [{ translateY: popupSlide }] },
+          ]}
+        >
+          <View style={styles.searchPopupHeader}>
+            <View>
+              <Text style={styles.searchPopupTitle}>AI Search Results</Text>
+              <Text style={styles.searchPopupSub}>
+                {searchResults.length} cafes match
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={styles.searchPopupMapBtn}
+              onPress={() => dismissSearchPopup(true)}
+            >
+              <Text style={styles.searchPopupMapBtnText}>Show on Map</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Parsed tags */}
+          {parsedSearch && parsedSearch.labels.length > 0 && (
+            <View style={styles.popupTagRow}>
+              {parsedSearch.labels.map((l) => (
+                <View key={l} style={styles.popupTag}>
+                  <Text style={styles.popupTagText}>{l} ✓</Text>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {/* Swipeable cards */}
+          <View style={styles.searchSwiperContainer}>
+            {searchResults.length > 0 ? (
+              <Swiper
+                ref={popupSwiperRef}
+                cards={searchResults}
+                cardIndex={popupCardIndex}
+                onSwipedRight={(i) => {
+                  const cafe = searchResults[i];
+                  if (!isInShortlist(cafe.id)) {
+                    addToShortlist(cafe);
+                    triggerToast(`${cafe.name} added to shortlist ✓`);
+                  }
+                }}
+                onSwipedLeft={() => {}}
+                onSwipedAll={() => dismissSearchPopup(true)}
+                containerStyle={styles.swiperContainer}
+                cardStyle={styles.swiperCard}
+                backgroundColor="transparent"
+                stackSize={3}
+                stackSeparation={8}
+                overlayLabels={{
+                  left: {
+                    title: "SKIP",
+                    style: {
+                      label: {
+                        backgroundColor: colors.textSecondary,
+                        color: colors.white,
+                        fontSize: 20,
+                        borderRadius: 8,
+                      },
+                      wrapper: {
+                        flexDirection: "column",
+                        alignItems: "flex-end",
+                        justifyContent: "flex-start",
+                        marginTop: 20,
+                        marginLeft: -20,
+                      },
+                    },
+                  },
+                  right: {
+                    title: "SHORTLIST",
+                    style: {
+                      label: {
+                        backgroundColor: colors.success,
+                        color: colors.white,
+                        fontSize: 18,
+                        borderRadius: 8,
+                      },
+                      wrapper: {
+                        flexDirection: "column",
+                        alignItems: "flex-start",
+                        justifyContent: "flex-start",
+                        marginTop: 20,
+                        marginLeft: 20,
+                      },
+                    },
+                  },
+                }}
+                renderCard={(cafe: Cafe) => (
+                  <TouchableOpacity
+                    activeOpacity={0.92}
+                    style={styles.searchSwipeCard}
+                    onPress={() => navigation.navigate("CafeDetail", { cafe })}
+                  >
+                    <Image
+                      source={{ uri: cafe.photos?.[0] || "" }}
+                      style={styles.searchSwipeImage}
+                    />
+                    <View style={styles.searchSwipeInfo}>
+                      <View style={styles.searchSwipeTopRow}>
+                        <Text style={styles.searchSwipeName} numberOfLines={1}>
+                          {cafe.name}
+                        </Text>
+                        {cafe.promotionType === "A" && (
+                          <View style={styles.searchSwipeNewBadge}>
+                            <Text style={styles.searchSwipeNewBadgeText}>
+                              NEW
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+                      <Text style={styles.searchSwipeDist}>
+                        {cafe.distance} km · {cafe.address}
+                      </Text>
+                      <View style={styles.searchSwipeTags}>
+                        {cafe.purposes.slice(0, 3).map((p) => (
+                          <View key={p} style={styles.searchSwipeTag}>
+                            <Text style={styles.searchSwipeTagText}>{p}</Text>
+                          </View>
+                        ))}
+                      </View>
+                      <View style={styles.searchSwipeFacilities}>
+                        {cafe.facilities.slice(0, 4).map((f) => (
+                          <Text key={f} style={styles.searchSwipeFacility}>
+                            • {f}
+                          </Text>
+                        ))}
+                      </View>
+                      <View style={styles.searchSwipeHint}>
+                        <Text style={styles.searchSwipeHintText}>
+                          ← Skip | Shortlist →
+                        </Text>
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                )}
+              />
+            ) : (
+              <View style={styles.searchPopupEmpty}>
+                <Text style={styles.searchPopupEmptyText}>
+                  No cafes match your search
+                </Text>
+              </View>
+            )}
+          </View>
+
+          <TouchableOpacity
+            style={styles.searchPopupClose}
+            onPress={() => dismissSearchPopup(false)}
+          >
+            <Text style={styles.searchPopupCloseText}>✕ Close</Text>
+          </TouchableOpacity>
+        </Animated.View>
+      )}
 
       {/* Bottom Sheet Drawer */}
       <BottomSheet
@@ -282,15 +586,21 @@ export default function MapScreen() {
               <TouchableOpacity
                 style={styles.selectedCard}
                 activeOpacity={0.85}
-                onPress={() => navigation.navigate('CafeDetail', { cafe: selectedCafe })}
+                onPress={() =>
+                  navigation.navigate("CafeDetail", { cafe: selectedCafe })
+                }
               >
                 <Image
-                  source={{ uri: selectedCafe.photos?.[0] || '' }}
+                  source={{ uri: selectedCafe.photos?.[0] || "" }}
                   style={styles.selectedPhoto}
                 />
                 <View style={styles.selectedInfo}>
-                  <Text style={styles.selectedName} numberOfLines={1}>{selectedCafe.name}</Text>
-                  <Text style={styles.selectedDist}>{selectedCafe.distance} km away</Text>
+                  <Text style={styles.selectedName} numberOfLines={1}>
+                    {selectedCafe.name}
+                  </Text>
+                  <Text style={styles.selectedDist}>
+                    {selectedCafe.distance} km away
+                  </Text>
                   <View style={styles.selectedTags}>
                     {(selectedCafe.purposes ?? []).slice(0, 2).map((p) => (
                       <View key={p} style={styles.tagAccent}>
@@ -301,7 +611,10 @@ export default function MapScreen() {
                 </View>
                 <Text style={styles.selectedArrow}>›</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => setSelectedCafe(null)} style={styles.dismissPin}>
+              <TouchableOpacity
+                onPress={() => setSelectedCafe(null)}
+                style={styles.dismissPin}
+              >
                 <Text style={styles.dismissPinText}>Clear ×</Text>
               </TouchableOpacity>
             </View>
@@ -321,23 +634,34 @@ export default function MapScreen() {
                     key={cafe.id}
                     activeOpacity={0.85}
                     style={styles.featuredCard}
-                    onPress={() => navigation.navigate('CafeDetail', { cafe })}
+                    onPress={() => navigation.navigate("CafeDetail", { cafe })}
                   >
                     <Image
-                      source={{ uri: cafe.promoPhoto || cafe.photos?.[0] || '' }}
+                      source={{
+                        uri: cafe.promoPhoto || cafe.photos?.[0] || "",
+                      }}
                       style={styles.featuredImage}
                     />
                     <View style={styles.featuredInfo}>
-                      {cafe.promoTitle ? (
-                        <Text style={styles.featuredPromoTitle} numberOfLines={1}>
-                          {cafe.promoTitle}
-                        </Text>
-                      ) : null}
-                      {cafe.promoDescription ? (
-                        <Text style={styles.featuredPromoDesc} numberOfLines={2}>
-                          {cafe.promoDescription}
-                        </Text>
-                      ) : null}
+                      {cafe.promotionType === "A" && (
+                        <View style={styles.featuredNewBadge}>
+                          <Text style={styles.featuredNewBadgeText}>
+                            NEW CAFE
+                          </Text>
+                        </View>
+                      )}
+                      <Text style={styles.featuredPromoTitle} numberOfLines={1}>
+                        {cafe.promotionContent?.title ||
+                          cafe.newCafeContent?.promoOffer ||
+                          cafe.promoTitle ||
+                          cafe.name}
+                      </Text>
+                      <Text style={styles.featuredPromoDesc} numberOfLines={2}>
+                        {cafe.promotionContent?.description ||
+                          cafe.newCafeContent?.highlightText ||
+                          cafe.promoDescription ||
+                          ""}
+                      </Text>
                       <Text style={styles.featuredCafeName} numberOfLines={1}>
                         {cafe.name}
                       </Text>
@@ -357,10 +681,18 @@ export default function MapScreen() {
                 {RADIUS_OPTIONS.map((r) => (
                   <TouchableOpacity
                     key={r}
-                    style={[styles.radiusSeg, radiusKm === r && styles.radiusSegActive]}
+                    style={[
+                      styles.radiusSeg,
+                      radiusKm === r && styles.radiusSegActive,
+                    ]}
                     onPress={() => setRadiusKm(r)}
                   >
-                    <Text style={[styles.radiusSegText, radiusKm === r && styles.radiusSegTextActive]}>
+                    <Text
+                      style={[
+                        styles.radiusSegText,
+                        radiusKm === r && styles.radiusSegTextActive,
+                      ]}
+                    >
                       {r} km
                     </Text>
                   </TouchableOpacity>
@@ -385,7 +717,10 @@ export default function MapScreen() {
                     <Text style={styles.filterPillX}> ×</Text>
                   </TouchableOpacity>
                 ))}
-                <TouchableOpacity style={styles.resetBtn} onPress={resetFilters}>
+                <TouchableOpacity
+                  style={styles.resetBtn}
+                  onPress={resetFilters}
+                >
                   <Text style={styles.resetText}>Reset All</Text>
                 </TouchableOpacity>
               </ScrollView>
@@ -396,7 +731,9 @@ export default function MapScreen() {
           <View style={styles.listSection}>
             <View style={styles.listHeader}>
               <Text style={styles.listTitle}>
-                {loading ? 'Loading cafes...' : `${displayCafes.length} cafes nearby`}
+                {loading
+                  ? "Loading cafes..."
+                  : `${displayCafes.length} cafes nearby`}
               </Text>
               {searchActive && (
                 <Text style={styles.listSubtitle}>Filtered by search</Text>
@@ -409,8 +746,13 @@ export default function MapScreen() {
               </View>
             ) : displayCafes.length === 0 ? (
               <View style={styles.emptyBox}>
-                <Text style={styles.emptyText}>No cafes found in this area</Text>
-                <TouchableOpacity onPress={resetFilters} style={styles.emptyReset}>
+                <Text style={styles.emptyText}>
+                  No cafes found in this area
+                </Text>
+                <TouchableOpacity
+                  onPress={resetFilters}
+                  style={styles.emptyReset}
+                >
                   <Text style={styles.emptyResetText}>Reset filters</Text>
                 </TouchableOpacity>
               </View>
@@ -434,19 +776,19 @@ const styles = StyleSheet.create({
 
   // Search bar
   searchContainer: {
-    position: 'absolute',
+    position: "absolute",
     left: spacing.md,
     right: spacing.md,
     zIndex: 20,
   },
   searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: colors.white,
     borderRadius: radius.md,
     paddingHorizontal: spacing.md,
     elevation: 6,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.12,
     shadowRadius: 8,
@@ -461,8 +803,8 @@ const styles = StyleSheet.create({
   clearBtn: { padding: spacing.xs },
   clearIcon: { fontSize: 22, color: colors.textSecondary },
   parsedRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 4,
     marginTop: spacing.xs,
   },
@@ -472,30 +814,34 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: 3,
   },
-  parsedChipText: { color: colors.white, fontSize: 12, fontWeight: '600' },
+  parsedChipText: { color: colors.white, fontSize: 12, fontWeight: "600" },
   noResultsBanner: {
     backgroundColor: colors.surface,
     borderRadius: radius.md,
     padding: spacing.sm,
     marginTop: spacing.xs,
-    alignItems: 'center',
+    alignItems: "center",
     elevation: 2,
   },
-  noResultsText: { fontSize: 14, color: colors.textSecondary, fontWeight: '500' },
+  noResultsText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    fontWeight: "500",
+  },
 
   // Bottom sheet
   sheetBg: {
     backgroundColor: colors.background,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: -3 },
     shadowOpacity: 0.12,
     shadowRadius: 8,
     elevation: 16,
   },
   sheetHandle: {
-    backgroundColor: colors.textSecondary + '40',
+    backgroundColor: colors.textSecondary + "40",
     width: 40,
   },
   sheetContent: {
@@ -508,8 +854,8 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   selectedCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: colors.white,
     borderRadius: radius.md,
     padding: spacing.sm,
@@ -521,59 +867,93 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 6,
   },
-  selectedPhoto: { width: 72, height: 72, borderRadius: radius.sm, resizeMode: 'cover' },
+  selectedPhoto: {
+    width: 72,
+    height: 72,
+    borderRadius: radius.sm,
+    resizeMode: "cover",
+  },
   selectedInfo: { flex: 1, marginLeft: spacing.sm },
-  selectedName: { fontSize: 15, fontWeight: '700', color: colors.primary },
+  selectedName: { fontSize: 15, fontWeight: "700", color: colors.primary },
   selectedDist: { fontSize: 12, color: colors.textSecondary, marginTop: 2 },
-  selectedTags: { flexDirection: 'row', gap: 4, marginTop: 4 },
+  selectedTags: { flexDirection: "row", gap: 4, marginTop: 4 },
   tagAccent: {
-    backgroundColor: colors.accent + '20',
+    backgroundColor: colors.accent + "20",
     borderRadius: radius.full,
     paddingHorizontal: 8,
     paddingVertical: 2,
   },
-  tagAccentText: { fontSize: 11, fontWeight: '600', color: colors.accent },
+  tagAccentText: { fontSize: 11, fontWeight: "600", color: colors.accent },
   selectedArrow: { fontSize: 22, color: colors.accent, marginLeft: spacing.sm },
-  dismissPin: { alignSelf: 'flex-end', marginTop: 6 },
+  dismissPin: { alignSelf: "flex-end", marginTop: 6 },
   dismissPinText: { fontSize: 12, color: colors.textSecondary },
 
   // Featured
   featuredSection: { marginBottom: spacing.md },
   featuredTitle: {
     fontSize: 15,
-    fontWeight: '700',
+    fontWeight: "700",
     color: colors.primary,
     marginBottom: spacing.sm,
   },
   featuredScroll: { gap: spacing.sm },
   featuredCard: {
-    width: 200,
+    width: 280,
     backgroundColor: colors.white,
     borderRadius: radius.md,
-    overflow: 'hidden',
+    overflow: "hidden",
     elevation: 3,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
-  featuredImage: { width: '100%', height: 90, resizeMode: 'cover' },
+  featuredImage: { width: "100%", height: 110, resizeMode: "cover" },
   featuredInfo: { padding: spacing.sm },
-  featuredPromoTitle: { fontSize: 13, fontWeight: '700', color: colors.accent },
-  featuredPromoDesc: { fontSize: 12, color: colors.textSecondary, marginTop: 2, lineHeight: 16 },
-  featuredCafeName: { fontSize: 12, color: colors.primary, fontWeight: '600', marginTop: 4 },
+  featuredNewBadge: {
+    backgroundColor: colors.newCafePin,
+    borderRadius: radius.sm,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    alignSelf: "flex-start",
+    marginBottom: 4,
+  },
+  featuredNewBadgeText: {
+    fontSize: 9,
+    fontWeight: "800",
+    color: colors.white,
+    letterSpacing: 0.5,
+  },
+  featuredPromoTitle: { fontSize: 13, fontWeight: "700", color: colors.accent },
+  featuredPromoDesc: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginTop: 2,
+    lineHeight: 16,
+  },
+  featuredCafeName: {
+    fontSize: 12,
+    color: colors.primary,
+    fontWeight: "600",
+    marginTop: 4,
+  },
 
   // Controls
   controlsSection: { marginBottom: spacing.sm },
   radiusRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: spacing.sm,
     gap: spacing.sm,
   },
-  controlLabel: { fontSize: 13, fontWeight: '600', color: colors.textSecondary, width: 44 },
+  controlLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: colors.textSecondary,
+    width: 44,
+  },
   radiusControl: {
-    flexDirection: 'row',
+    flexDirection: "row",
     backgroundColor: colors.surface,
     borderRadius: radius.full,
     padding: 3,
@@ -583,31 +963,35 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs + 2,
     borderRadius: radius.full,
     minWidth: 60,
-    alignItems: 'center',
+    alignItems: "center",
   },
   radiusSegActive: { backgroundColor: colors.primary },
-  radiusSegText: { fontSize: 13, fontWeight: '600', color: colors.textSecondary },
+  radiusSegText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: colors.textSecondary,
+  },
   radiusSegTextActive: { color: colors.white },
   filterScroll: {
     gap: spacing.xs,
-    alignItems: 'center',
+    alignItems: "center",
     paddingVertical: 2,
     paddingBottom: spacing.xs,
   },
   filterPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: colors.white,
     borderRadius: radius.full,
     paddingHorizontal: spacing.sm + 4,
     paddingVertical: spacing.xs + 2,
     elevation: 2,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
     shadowRadius: 2,
   },
-  filterPillText: { fontSize: 13, fontWeight: '600', color: colors.primary },
+  filterPillText: { fontSize: 13, fontWeight: "600", color: colors.primary },
   filterPillX: { fontSize: 13, color: colors.textSecondary },
   resetBtn: {
     backgroundColor: colors.primary,
@@ -615,34 +999,34 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm + 4,
     paddingVertical: spacing.xs + 2,
   },
-  resetText: { fontSize: 13, fontWeight: '600', color: colors.white },
+  resetText: { fontSize: 13, fontWeight: "600", color: colors.white },
 
   // Cafe list
   listSection: { flex: 1 },
   listHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: spacing.sm,
   },
-  listTitle: { fontSize: 14, fontWeight: '700', color: colors.primary },
+  listTitle: { fontSize: 14, fontWeight: "700", color: colors.primary },
   listSubtitle: { fontSize: 12, color: colors.accent },
-  loadingBox: { paddingVertical: spacing.xl, alignItems: 'center' },
-  emptyBox: { paddingVertical: spacing.xl, alignItems: 'center' },
+  loadingBox: { paddingVertical: spacing.xl, alignItems: "center" },
+  emptyBox: { paddingVertical: spacing.xl, alignItems: "center" },
   emptyText: { fontSize: 15, color: colors.textSecondary },
   emptyReset: { marginTop: spacing.md },
-  emptyResetText: { fontSize: 14, color: colors.accent, fontWeight: '600' },
+  emptyResetText: { fontSize: 14, color: colors.accent, fontWeight: "600" },
   cardSep: { height: spacing.sm },
 
   // Cafe list cards
   cafeCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: colors.white,
     borderRadius: radius.md,
     padding: spacing.sm,
     elevation: 2,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
     shadowRadius: 4,
@@ -655,36 +1039,245 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: radius.sm,
-    resizeMode: 'cover',
+    resizeMode: "cover",
     backgroundColor: colors.surface,
   },
   cafeCardInfo: { flex: 1, marginLeft: spacing.sm },
-  cafeCardTopRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  cafeCardName: { fontSize: 14, fontWeight: '700', color: colors.primary, flex: 1 },
+  cafeCardTopRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  cafeCardName: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: colors.primary,
+    flex: 1,
+  },
   newBadge: {
     backgroundColor: colors.promoPin,
     borderRadius: radius.sm,
     paddingHorizontal: 5,
     paddingVertical: 1,
   },
-  newBadgeText: { fontSize: 10, fontWeight: '700', color: colors.white },
+  newBadgeText: { fontSize: 10, fontWeight: "700", color: colors.white },
   featuredBadge: {
     backgroundColor: colors.accent,
     borderRadius: radius.sm,
     paddingHorizontal: 5,
     paddingVertical: 1,
   },
-  featuredBadgeText: { fontSize: 10, fontWeight: '700', color: colors.white },
+  featuredBadgeText: { fontSize: 10, fontWeight: "700", color: colors.white },
   cafeCardDist: { fontSize: 12, color: colors.textSecondary, marginTop: 2 },
-  cafeCardTags: { flexDirection: 'row', gap: 4, marginTop: 4 },
+  cafeCardTags: { flexDirection: "row", gap: 4, marginTop: 4 },
   tag: {
     backgroundColor: colors.surface,
     borderRadius: radius.full,
     paddingHorizontal: 7,
     paddingVertical: 2,
   },
-  tagText: { fontSize: 11, color: colors.textSecondary, fontWeight: '500' },
-  cafeCardRight: { alignItems: 'flex-end', marginLeft: spacing.sm, gap: 4 },
-  cafeCardFavCount: { fontSize: 12, color: colors.accent, fontWeight: '700' },
+  tagText: { fontSize: 11, color: colors.textSecondary, fontWeight: "500" },
+  cafeCardRight: { alignItems: "flex-end", marginLeft: spacing.sm, gap: 4 },
+  cafeCardFavCount: { fontSize: 12, color: colors.accent, fontWeight: "700" },
   cafeCardArrow: { fontSize: 20, color: colors.textSecondary },
+
+  // Toast
+  toast: {
+    position: "absolute",
+    bottom: 100,
+    alignSelf: "center",
+    backgroundColor: colors.primary,
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    zIndex: 100,
+    elevation: 20,
+  },
+  toastText: { color: colors.white, fontSize: 13, fontWeight: "600" },
+
+  // AI Search Popup
+  searchPopup: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: height * 0.85,
+    backgroundColor: colors.background,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    elevation: 30,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    zIndex: 50,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.md,
+  },
+  searchPopupHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: spacing.sm,
+  },
+  searchPopupTitle: { fontSize: 18, fontWeight: "800", color: colors.primary },
+  searchPopupSub: { fontSize: 13, color: colors.textSecondary, marginTop: 2 },
+  searchPopupMapBtn: {
+    backgroundColor: colors.accent,
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 2,
+  },
+  searchPopupMapBtnText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: colors.white,
+  },
+  popupTagRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    marginBottom: spacing.sm,
+  },
+  popupTag: {
+    backgroundColor: colors.accent + "20",
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
+  },
+  popupTagText: { fontSize: 12, fontWeight: "600", color: colors.accent },
+  searchSwiperContainer: {
+    flex: 1,
+    marginBottom: spacing.sm,
+  },
+  swiperContainer: {
+    flex: 1,
+    left: -17,
+    backgroundColor: "transparent",
+  },
+  swiperCard: {},
+  searchSwipeCard: {
+    backgroundColor: colors.white,
+    borderRadius: radius.lg,
+    overflow: "hidden",
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    height: height * 0.54,
+  },
+  searchSwipeImage: {
+    width: "100%",
+    height: "42%",
+    resizeMode: "cover",
+  },
+  searchSwipeInfo: {
+    flex: 1,
+    padding: spacing.md,
+  },
+  searchSwipeTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 4,
+  },
+  searchSwipeName: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: colors.primary,
+    flex: 1,
+  },
+  searchSwipeNewBadge: {
+    backgroundColor: colors.newCafePin,
+    borderRadius: radius.sm,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  searchSwipeNewBadgeText: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: colors.white,
+  },
+  searchSwipeDist: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
+  },
+  searchSwipeTags: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    marginBottom: spacing.sm,
+  },
+  searchSwipeTag: {
+    backgroundColor: colors.accent + "18",
+    borderRadius: radius.full,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+  },
+  searchSwipeTagText: { fontSize: 12, fontWeight: "600", color: colors.accent },
+  searchSwipeFacilities: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: spacing.sm,
+  },
+  searchSwipeFacility: { fontSize: 12, color: colors.textSecondary },
+  searchSwipeHint: {
+    position: "absolute",
+    bottom: spacing.md,
+    left: 0,
+    right: 0,
+    alignItems: "center",
+  },
+  searchSwipeHintText: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    fontWeight: "500",
+  },
+  searchPopupEmpty: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  searchPopupEmptyText: { fontSize: 16, color: colors.textSecondary },
+  searchPopupClose: {
+    alignSelf: "center",
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.xl,
+    marginBottom: spacing.md,
+  },
+  searchPopupCloseText: {
+    fontSize: 15,
+    color: colors.textSecondary,
+    fontWeight: "600",
+  },
+
+  // Animated NEW! map pin
+  newPinContainer: {
+    alignItems: "center",
+  },
+  newPinLabel: {
+    backgroundColor: colors.newCafePin,
+    borderRadius: radius.sm,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    marginBottom: 3,
+    elevation: 4,
+    shadowColor: colors.newCafePin,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.5,
+    shadowRadius: 3,
+  },
+  newPinLabelText: {
+    color: colors.white,
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 0.5,
+  },
+  newPinDot: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: colors.newCafePin,
+    borderWidth: 2,
+    borderColor: colors.white,
+  },
 });

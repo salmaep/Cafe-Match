@@ -25,6 +25,22 @@ export interface Cafe {
   promoPhoto?: string;
   hasActivePromotion?: boolean;
   activePromotionType?: string;
+  // Type B: Featured promo rich content
+  promotionContent?: {
+    title: string;
+    description: string;
+    validHours?: string;
+    validDays?: string;
+    promoPhoto?: string;
+  };
+  // Type A: New cafe rich content
+  newCafeContent?: {
+    openingSince: string;
+    highlightText: string;
+    keunggulan: string[];
+    promoOffer?: string;
+    promoPhoto?: string;
+  };
 }
 
 export type Purpose = 'Me Time' | 'Date' | 'Family Time' | 'Group Study' | 'WFC';

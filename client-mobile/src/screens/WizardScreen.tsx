@@ -27,6 +27,13 @@ const PURPOSES: { label: Purpose; emoji: string }[] = [
   { label: 'WFC', emoji: '💻' },
 ];
 
+const DESTINATION_SUGGESTIONS: { label: string; sublabel: string; latitude: number; longitude: number }[] = [
+  { label: 'Dago', sublabel: 'Bandung', latitude: -6.8800, longitude: 107.6100 },
+  { label: 'Tebet', sublabel: 'Jakarta Selatan', latitude: -6.2241, longitude: 106.8446 },
+  { label: 'Bandung', sublabel: 'Kota Bandung', latitude: -6.9175, longitude: 107.6191 },
+  { label: 'Jakarta Selatan', sublabel: 'DKI Jakarta', latitude: -6.2615, longitude: 106.8106 },
+];
+
 const AMENITIES: { label: Facility; icon: string }[] = [
   { label: 'WiFi', icon: '📶' },
   { label: 'Power Outlet', icon: '🔌' },
@@ -48,6 +55,8 @@ export default function WizardScreen() {
   const [purpose, setPurpose] = useState<Purpose | undefined>();
   const [locationType, setLocationType] = useState<'current' | 'custom'>('current');
   const [customAddress, setCustomAddress] = useState('');
+  const [customLat, setCustomLat] = useState<number | null>(null);
+  const [customLng, setCustomLng] = useState<number | null>(null);
   const [radiusVal, setRadiusVal] = useState(1);
   const [amenities, setAmenities] = useState<Facility[]>([]);
 
@@ -81,13 +90,14 @@ export default function WizardScreen() {
   };
 
   const handleFinish = () => {
+    const useCustomCoords = locationType === 'custom' && customLat !== null && customLng !== null;
     const prefs: WizardPreferences = {
       purpose,
       location: {
         type: locationType,
-        latitude: userLat,
-        longitude: userLng,
-        label: locationType === 'custom' ? customAddress : 'Current Location',
+        latitude: useCustomCoords ? customLat! : userLat,
+        longitude: useCustomCoords ? customLng! : userLng,
+        label: locationType === 'custom' ? customAddress || 'Custom Destination' : 'Current Location',
       },
       radius: radiusVal,
       amenities: amenities.length > 0 ? amenities : undefined,
@@ -182,13 +192,40 @@ export default function WizardScreen() {
             </TouchableOpacity>
           </View>
           {locationType === 'custom' && (
-            <TextInput
-              style={styles.textInput}
-              placeholder="e.g. Senopati, Jakarta"
-              placeholderTextColor={colors.textSecondary}
-              value={customAddress}
-              onChangeText={setCustomAddress}
-            />
+            <>
+              <TextInput
+                style={styles.textInput}
+                placeholder="e.g. Senopati, Jakarta"
+                placeholderTextColor={colors.textSecondary}
+                value={customAddress}
+                onChangeText={(text) => {
+                  setCustomAddress(text);
+                  // Clear pinned coords when user types manually
+                  setCustomLat(null);
+                  setCustomLng(null);
+                }}
+              />
+              <Text style={styles.suggestLabel}>Suggested Destinations</Text>
+              <View style={styles.suggestRow}>
+                {DESTINATION_SUGGESTIONS.map((s) => (
+                  <TouchableOpacity
+                    key={s.label}
+                    style={[
+                      styles.suggestChip,
+                      customAddress === s.label && styles.suggestChipActive,
+                    ]}
+                    onPress={() => {
+                      setCustomAddress(s.label);
+                      setCustomLat(s.latitude);
+                      setCustomLng(s.longitude);
+                    }}
+                  >
+                    <Text style={styles.suggestChipMain}>{s.label}</Text>
+                    <Text style={styles.suggestChipSub}>{s.sublabel}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </>
           )}
         </View>
 
@@ -337,6 +374,43 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     fontSize: 15,
     color: colors.primary,
+  },
+  suggestLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    marginTop: spacing.md,
+    marginBottom: spacing.sm,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
+  suggestRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  suggestChip: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderWidth: 2,
+    borderColor: 'transparent',
+    alignItems: 'center',
+  },
+  suggestChipActive: {
+    borderColor: colors.accent,
+    backgroundColor: '#FDF6EC',
+  },
+  suggestChipMain: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.primary,
+  },
+  suggestChipSub: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    marginTop: 1,
   },
   radiusRow: {
     flexDirection: 'row',

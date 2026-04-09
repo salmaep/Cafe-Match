@@ -7,7 +7,8 @@ export const colors = {
   white: '#FFFFFF',
   error: '#E05252',
   success: '#4CAF50',
-  promoPin: '#E07850',
+  promoPin: '#E8593C',
+  newCafePin: '#E8593C',
   overlay: 'rgba(28, 28, 26, 0.6)',
 };
 

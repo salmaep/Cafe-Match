@@ -8,6 +8,8 @@ import {
   TouchableOpacity,
   Alert,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 import { fetchOwnerPromotions, fetchOwnerCafe } from '../../services/api';
 import api from '../../services/api';
 import { colors, spacing, radius } from '../../theme';
@@ -52,6 +54,7 @@ const PROMO_TYPE_CONFIG: Record<string, { icon: string; label: string; color: st
 };
 
 export default function PromotionScreen() {
+  const navigation = useNavigation<StackNavigationProp<any>>();
   const [promotions, setPromotions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -293,23 +296,29 @@ export default function PromotionScreen() {
 
                   {/* Actions */}
                   {isActive && (
-                    <TouchableOpacity
-                      style={[styles.actionBtn, styles.actionBtnActive]}
-                      onPress={() => handleStopSubscription(promo)}
-                    >
-                      <Text style={[styles.actionBtnText, styles.actionBtnTextDanger]}>
-                        Stop Subscription
-                      </Text>
-                    </TouchableOpacity>
+                    <View style={styles.actionGroup}>
+                      <TouchableOpacity
+                        style={[styles.actionBtn, styles.actionBtnOutline]}
+                        onPress={() => navigation.navigate('PromotionDetail', { promo })}
+                      >
+                        <Text style={[styles.actionBtnText, styles.actionBtnTextActive]}>View Details</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.actionBtn, styles.actionBtnActive]}
+                        onPress={() => handleStopSubscription(promo)}
+                      >
+                        <Text style={[styles.actionBtnText, styles.actionBtnTextDanger]}>
+                          Stop Subscription
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
                   )}
 
                   {isPendingReview && (
                     <View style={styles.actionGroup}>
                       <TouchableOpacity
                         style={[styles.actionBtn, styles.actionBtnOutline]}
-                        onPress={() =>
-                          Alert.alert('Pending Review', 'This promotion is currently under admin review.')
-                        }
+                        onPress={() => navigation.navigate('PromotionDetail', { promo })}
                       >
                         <Text style={styles.actionBtnText}>Manage Promotion</Text>
                       </TouchableOpacity>
@@ -336,9 +345,7 @@ export default function PromotionScreen() {
                   {!isActive && !isPendingReview && !isRejected && (
                     <TouchableOpacity
                       style={styles.actionBtn}
-                      onPress={() =>
-                        Alert.alert('View Details', 'Promotion details view coming soon.')
-                      }
+                      onPress={() => navigation.navigate('PromotionDetail', { promo })}
                     >
                       <Text style={styles.actionBtnText}>View Details</Text>
                     </TouchableOpacity>

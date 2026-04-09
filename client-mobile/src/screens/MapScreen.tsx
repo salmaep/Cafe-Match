@@ -99,13 +99,13 @@ export default function MapScreen() {
     const loop = Animated.loop(
       Animated.sequence([
         Animated.timing(bounceAnim, {
-          toValue: -7,
-          duration: 420,
+          toValue: -8,
+          duration: 300,
           useNativeDriver: true,
         }),
         Animated.timing(bounceAnim, {
           toValue: 0,
-          duration: 420,
+          duration: 300,
           useNativeDriver: true,
         }),
       ]),
@@ -113,6 +113,10 @@ export default function MapScreen() {
     loop.start();
     return () => loop.stop();
   }, []);
+
+  // Helper: detect new cafe promo — checks activePromotionType OR legacy promotionType flag
+  const isNewCafePromo = (cafe: Cafe) =>
+    cafe.activePromotionType === "new_cafe" || cafe.promotionType === "A";
 
   const center = {
     latitude: preferences?.location?.latitude ?? userLat,
@@ -360,7 +364,7 @@ export default function MapScreen() {
           strokeWidth={1.5}
         />
         {displayCafes.map((cafe) =>
-          cafe.promotionType === "A" ? (
+          isNewCafePromo(cafe) ? (
             <Marker
               key={cafe.id}
               coordinate={{
@@ -411,19 +415,23 @@ export default function MapScreen() {
             { transform: [{ translateY: popupSlide }] },
           ]}
         >
+          {/* Absolute-positioned close X — always on top, never blocked by swiper */}
+          <TouchableOpacity
+            style={styles.searchPopupCloseX}
+            onPress={() => dismissSearchPopup(false)}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.searchPopupCloseXText}>✕</Text>
+          </TouchableOpacity>
+
           <View style={styles.searchPopupHeader}>
-            <View>
+            <View style={{ flex: 1, paddingRight: 44 }}>
               <Text style={styles.searchPopupTitle}>AI Search Results</Text>
               <Text style={styles.searchPopupSub}>
                 {searchResults.length} cafes match
               </Text>
             </View>
-            <TouchableOpacity
-              style={styles.searchPopupMapBtn}
-              onPress={() => dismissSearchPopup(true)}
-            >
-              <Text style={styles.searchPopupMapBtnText}>Show on Map</Text>
-            </TouchableOpacity>
           </View>
 
           {/* Parsed tags */}
@@ -553,13 +561,6 @@ export default function MapScreen() {
               </View>
             )}
           </View>
-
-          <TouchableOpacity
-            style={styles.searchPopupClose}
-            onPress={() => dismissSearchPopup(false)}
-          >
-            <Text style={styles.searchPopupCloseText}>✕ Close</Text>
-          </TouchableOpacity>
         </Animated.View>
       )}
 
@@ -624,51 +625,94 @@ export default function MapScreen() {
           {featuredCafes.length > 0 && !searchActive && (
             <View style={styles.featuredSection}>
               <Text style={styles.featuredTitle}>Featured Today ✨</Text>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.featuredScroll}
-              >
-                {featuredCafes.map((cafe) => (
-                  <TouchableOpacity
-                    key={cafe.id}
-                    activeOpacity={0.85}
-                    style={styles.featuredCard}
-                    onPress={() => navigation.navigate("CafeDetail", { cafe })}
-                  >
-                    <Image
-                      source={{
-                        uri: cafe.promoPhoto || cafe.photos?.[0] || "",
-                      }}
-                      style={styles.featuredImage}
-                    />
-                    <View style={styles.featuredInfo}>
-                      {cafe.promotionType === "A" && (
-                        <View style={styles.featuredNewBadge}>
-                          <Text style={styles.featuredNewBadgeText}>
-                            NEW CAFE
+              <View style={styles.featuredListWrap}>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  nestedScrollEnabled
+                  directionalLockEnabled
+                  decelerationRate="fast"
+                  contentContainerStyle={styles.featuredScroll}
+                  style={styles.featuredScrollInner}
+                >
+                  {featuredCafes.map((cafe) => {
+                    const isNewCafe = isNewCafePromo(cafe);
+                    const promoImage =
+                      cafe.promotionContent?.promoPhoto ||
+                      cafe.newCafeContent?.promoPhoto ||
+                      cafe.promoPhoto ||
+                      cafe.photos?.[0] ||
+                      "";
+                    const title =
+                      cafe.promotionContent?.title ||
+                      (isNewCafe
+                        ? cafe.newCafeContent?.promoOffer ||
+                          `${cafe.name} is now open!`
+                        : cafe.promoTitle || cafe.name);
+                    const description =
+                      cafe.promotionContent?.description ||
+                      cafe.newCafeContent?.highlightText ||
+                      cafe.promoDescription ||
+                      "";
+                    const validHours = cafe.promotionContent?.validHours;
+                    const validDays = cafe.promotionContent?.validDays;
+
+                    return (
+                      <TouchableOpacity
+                        key={cafe.id}
+                        activeOpacity={0.85}
+                        style={styles.featuredCard}
+                        onPress={() =>
+                          navigation.navigate("CafeDetail", { cafe })
+                        }
+                      >
+                        <Image
+                          source={{ uri: promoImage }}
+                          style={styles.featuredImage}
+                        />
+                        {isNewCafe && (
+                          <View style={styles.featuredNewBadgeAbs}>
+                            <Text style={styles.featuredNewBadgeText}>
+                              NEW CAFE
+                            </Text>
+                          </View>
+                        )}
+                        <View style={styles.featuredInfo}>
+                          <Text
+                            style={styles.featuredPromoTitle}
+                            numberOfLines={1}
+                          >
+                            {title}
+                          </Text>
+                          {description ? (
+                            <Text
+                              style={styles.featuredPromoDesc}
+                              numberOfLines={2}
+                            >
+                              {description}
+                            </Text>
+                          ) : null}
+                          {validHours ? (
+                            <View style={styles.validHoursChip}>
+                              <Text style={styles.validHoursIcon}>🕗</Text>
+                              <Text style={styles.validHoursText}>
+                                {validHours}
+                                {validDays ? ` · ${validDays}` : ""}
+                              </Text>
+                            </View>
+                          ) : null}
+                          <Text
+                            style={styles.featuredCafeName}
+                            numberOfLines={1}
+                          >
+                            📍 {cafe.name}
                           </Text>
                         </View>
-                      )}
-                      <Text style={styles.featuredPromoTitle} numberOfLines={1}>
-                        {cafe.promotionContent?.title ||
-                          cafe.newCafeContent?.promoOffer ||
-                          cafe.promoTitle ||
-                          cafe.name}
-                      </Text>
-                      <Text style={styles.featuredPromoDesc} numberOfLines={2}>
-                        {cafe.promotionContent?.description ||
-                          cafe.newCafeContent?.highlightText ||
-                          cafe.promoDescription ||
-                          ""}
-                      </Text>
-                      <Text style={styles.featuredCafeName} numberOfLines={1}>
-                        {cafe.name}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              </View>
             </View>
           )}
 
@@ -896,9 +940,19 @@ const styles = StyleSheet.create({
     color: colors.primary,
     marginBottom: spacing.sm,
   },
-  featuredScroll: { gap: spacing.sm },
+  featuredListWrap: {
+    // Explicit height so nested ScrollView knows its bounds inside BottomSheetScrollView
+    height: 290,
+  },
+  featuredScrollInner: {
+    flexGrow: 0,
+  },
+  featuredScroll: {
+    paddingRight: spacing.md,
+  },
   featuredCard: {
-    width: 280,
+    width: 260,
+    marginRight: 12,
     backgroundColor: colors.white,
     borderRadius: radius.md,
     overflow: "hidden",
@@ -908,34 +962,48 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
-  featuredImage: { width: "100%", height: 110, resizeMode: "cover" },
-  featuredInfo: { padding: spacing.sm },
-  featuredNewBadge: {
+  featuredImage: { width: "100%", height: 140, resizeMode: "cover" },
+  featuredNewBadgeAbs: {
+    position: "absolute",
+    top: spacing.sm,
+    left: spacing.sm,
     backgroundColor: colors.newCafePin,
     borderRadius: radius.sm,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    alignSelf: "flex-start",
-    marginBottom: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
   },
   featuredNewBadgeText: {
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: "800",
     color: colors.white,
     letterSpacing: 0.5,
   },
-  featuredPromoTitle: { fontSize: 13, fontWeight: "700", color: colors.accent },
+  featuredInfo: { padding: spacing.sm + 2 },
+  featuredPromoTitle: { fontSize: 14, fontWeight: "800", color: colors.accent },
   featuredPromoDesc: {
     fontSize: 12,
     color: colors.textSecondary,
-    marginTop: 2,
+    marginTop: 3,
     lineHeight: 16,
   },
+  validHoursChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.surface,
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
+    alignSelf: "flex-start",
+    marginTop: spacing.xs + 2,
+    gap: 4,
+  },
+  validHoursIcon: { fontSize: 11 },
+  validHoursText: { fontSize: 11, fontWeight: "600", color: colors.primary },
   featuredCafeName: {
     fontSize: 12,
-    color: colors.primary,
+    color: colors.textSecondary,
     fontWeight: "600",
-    marginTop: 4,
+    marginTop: spacing.xs + 2,
   },
 
   // Controls
@@ -1118,17 +1186,6 @@ const styles = StyleSheet.create({
   },
   searchPopupTitle: { fontSize: 18, fontWeight: "800", color: colors.primary },
   searchPopupSub: { fontSize: 13, color: colors.textSecondary, marginTop: 2 },
-  searchPopupMapBtn: {
-    backgroundColor: colors.accent,
-    borderRadius: radius.full,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs + 2,
-  },
-  searchPopupMapBtnText: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: colors.white,
-  },
   popupTagRow: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -1238,16 +1295,41 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   searchPopupEmptyText: { fontSize: 16, color: colors.textSecondary },
-  searchPopupClose: {
-    alignSelf: "center",
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.xl,
-    marginBottom: spacing.md,
+  searchPopupCloseX: {
+    position: "absolute",
+    top: spacing.md,
+    right: spacing.md,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.surface,
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 999,
+    elevation: 10,
   },
-  searchPopupCloseText: {
-    fontSize: 15,
-    color: colors.textSecondary,
-    fontWeight: "600",
+  searchPopupCloseXText: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: colors.primary,
+  },
+  searchPopupMapBtnLarge: {
+    backgroundColor: colors.accent,
+    borderRadius: radius.md,
+    paddingVertical: spacing.md,
+    alignItems: "center",
+    marginBottom: spacing.md,
+    elevation: 3,
+    shadowColor: colors.accent,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+  },
+  searchPopupMapBtnLargeText: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: colors.white,
+    letterSpacing: 0.3,
   },
 
   // Animated NEW! map pin

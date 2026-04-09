@@ -15,9 +15,11 @@ import {
   Modal,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fetchOwnerCafe } from '../../services/api';
 import api from '../../services/api';
 import { colors, spacing, radius } from '../../theme';
+import Toast from '../../components/Toast';
 
 const { width } = Dimensions.get('window');
 
@@ -104,21 +106,38 @@ export default function MyCafeScreen() {
   });
   const [editingMenuId, setEditingMenuId] = useState<number | null>(null);
 
+  // Toast
+  const [toastMsg, setToastMsg] = useState('');
+  const [toastVisible, setToastVisible] = useState(false);
+  const showToast = (msg: string) => {
+    setToastMsg(msg);
+    setToastVisible(true);
+  };
+
   useEffect(() => {
     loadCafe();
   }, []);
 
   const loadCafe = async () => {
+    let base: any = null;
     try {
-      const data = await fetchOwnerCafe();
-      setCafe(data);
-      populateFields(data);
+      base = await fetchOwnerCafe();
     } catch {
-      setCafe(MOCK_OWNER_CAFE);
-      populateFields(MOCK_OWNER_CAFE);
-    } finally {
-      setLoading(false);
+      base = MOCK_OWNER_CAFE;
     }
+    // Merge with any local AsyncStorage override
+    try {
+      const overrideRaw = await AsyncStorage.getItem(`owner_cafe_override_${base?.id ?? 'default'}`);
+      if (overrideRaw) {
+        const override = JSON.parse(overrideRaw);
+        base = { ...base, ...override };
+      }
+    } catch {
+      // ignore
+    }
+    setCafe(base);
+    populateFields(base);
+    setLoading(false);
   };
 
   const populateFields = (data: any) => {
@@ -147,29 +166,67 @@ export default function MyCafeScreen() {
       return;
     }
     setSaving(true);
-    try {
-      const facilitiesPayload = Array.from(activeFacilities).map((key) => ({
-        facilityKey: key,
-        facilityValue: key === 'wifi' && wifiSpeed ? wifiSpeed + ' Mbps' : null,
-      }));
-      await api.patch(`/owner/cafe`, {
-        name: name.trim(),
-        address: address.trim(),
-        phone: phone.trim() || undefined,
-        description: description.trim() || undefined,
-        wifiAvailable,
-        wifiSpeedMbps: wifiAvailable && wifiSpeed ? Number(wifiSpeed) : undefined,
-        hasMushola,
-        priceRange,
-        facilities: facilitiesPayload,
-      });
-      Alert.alert('Saved!', 'Your cafe details have been updated.');
+
+    const facilitiesPayload = Array.from(activeFacilities).map((key) => ({
+      facilityKey: key,
+      facilityValue: key === 'wifi' && wifiSpeed ? wifiSpeed + ' Mbps' : null,
+    }));
+
+    const payload = {
+      name: name.trim(),
+      address: address.trim(),
+      phone: phone.trim() || undefined,
+      description: description.trim() || undefined,
+      wifiAvailable,
+      wifiSpeedMbps: wifiAvailable && wifiSpeed ? Number(wifiSpeed) : undefined,
+      hasMushola,
+      priceRange,
+      facilities: facilitiesPayload,
+    };
+
+    const applyLocalUpdate = () => {
+      // Merge payload into local cafe state so the read-only view re-renders
+      const updated = { ...cafe, ...payload, facilities: facilitiesPayload };
+      setCafe(updated);
       setEditMode(false);
+    };
+
+    // Try PATCH /cafes/:id first (preferred), fall back to /owner/cafe
+    let saved = false;
+    try {
+      if (cafe?.id) {
+        await api.patch(`/cafes/${cafe.id}`, payload);
+      } else {
+        await api.patch(`/owner/cafe`, payload);
+      }
+      saved = true;
     } catch {
-      Alert.alert('Error', 'Failed to save changes. Please try again.');
-    } finally {
-      setSaving(false);
+      try {
+        await api.patch(`/owner/cafe`, payload);
+        saved = true;
+      } catch {
+        // Fall through to local save
+      }
     }
+
+    if (saved) {
+      applyLocalUpdate();
+      showToast('Cafe updated successfully');
+    } else {
+      // Save locally as override
+      try {
+        await AsyncStorage.setItem(
+          `owner_cafe_override_${cafe?.id ?? 'default'}`,
+          JSON.stringify(payload),
+        );
+      } catch {
+        // ignore
+      }
+      applyLocalUpdate();
+      showToast('Changes saved locally');
+    }
+
+    setSaving(false);
   };
 
   const toggleFacility = (key: string) => {
@@ -266,6 +323,7 @@ export default function MyCafeScreen() {
       isAvailable: editingMenu.isAvailable,
       cafeId: cafe?.id,
     };
+    let saved = false;
     try {
       if (editingMenuId) {
         await api.patch(`/menus/${editingMenuId}`, payload);
@@ -276,6 +334,7 @@ export default function MyCafeScreen() {
         const { data } = await api.post('/menus', payload);
         setMenus((prev) => [...prev, data]);
       }
+      saved = true;
     } catch {
       const tempId = Date.now();
       if (editingMenuId) {
@@ -287,6 +346,11 @@ export default function MyCafeScreen() {
       }
     }
     setMenuModalVisible(false);
+    showToast(
+      saved
+        ? (editingMenuId ? 'Menu item updated' : 'Menu item added')
+        : 'Menu saved locally',
+    );
   };
 
   const handleDeleteMenu = (itemId: number) => {
@@ -296,10 +360,13 @@ export default function MyCafeScreen() {
         text: 'Delete',
         style: 'destructive',
         onPress: async () => {
+          let ok = false;
           try {
             await api.delete(`/menus/${itemId}`);
+            ok = true;
           } catch {}
           setMenus((prev) => prev.filter((m) => m.id !== itemId));
+          showToast(ok ? 'Menu item removed' : 'Removed locally');
         },
       },
     ]);
@@ -681,6 +748,12 @@ export default function MyCafeScreen() {
           </ScrollView>
         </View>
       </Modal>
+
+      <Toast
+        message={toastMsg}
+        visible={toastVisible}
+        onHide={() => setToastVisible(false)}
+      />
     </View>
   );
 }

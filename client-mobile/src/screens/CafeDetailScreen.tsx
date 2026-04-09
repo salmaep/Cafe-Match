@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,8 @@ import {
   FlatList,
   Linking,
   ActivityIndicator,
+  Modal,
+  StatusBar,
 } from 'react-native';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -21,7 +23,7 @@ import { haversineKm } from '../services/api';
 import { Cafe } from '../types';
 import { colors, spacing, radius } from '../theme';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 const FACILITY_ICONS: Record<string, string> = {
   WiFi: '📶',
@@ -53,6 +55,18 @@ export default function CafeDetailScreen() {
   const [isFavorited, setIsFavorited] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const inShortlist = isInShortlist(cafe.id);
+
+  // Fullscreen photo zoom modal
+  const [zoomVisible, setZoomVisible] = useState(false);
+  const [zoomIndex, setZoomIndex] = useState(0);
+  const zoomListRef = useRef<FlatList<string>>(null);
+
+  const openZoom = (index: number) => {
+    setZoomIndex(index);
+    setZoomVisible(true);
+  };
+
+  const closeZoom = () => setZoomVisible(false);
 
   useEffect(() => {
     // Always fetch full detail to get complete menu, facilities, photos
@@ -126,8 +140,13 @@ export default function CafeDetailScreen() {
               const idx = Math.round(e.nativeEvent.contentOffset.x / width);
               setCurrentPhoto(idx);
             }}
-            renderItem={({ item }) => (
-              <Image source={{ uri: item }} style={styles.photo} />
+            renderItem={({ item, index }) => (
+              <TouchableOpacity
+                activeOpacity={0.95}
+                onPress={() => openZoom(index)}
+              >
+                <Image source={{ uri: item }} style={styles.photo} />
+              </TouchableOpacity>
             )}
           />
           <View style={styles.photoDots}>
@@ -138,6 +157,11 @@ export default function CafeDetailScreen() {
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
             <Text style={styles.backIcon}>←</Text>
           </TouchableOpacity>
+          <View style={styles.photoCounter}>
+            <Text style={styles.photoCounterText}>
+              {currentPhoto + 1} / {cafe.photos.length}
+            </Text>
+          </View>
         </View>
 
         <View style={styles.content}>
@@ -220,6 +244,55 @@ export default function CafeDetailScreen() {
         </View>
       </ScrollView>
 
+      {/* Fullscreen photo zoom modal */}
+      <Modal
+        visible={zoomVisible}
+        transparent={false}
+        animationType="fade"
+        onRequestClose={closeZoom}
+        statusBarTranslucent
+      >
+        <StatusBar hidden />
+        <View style={styles.zoomContainer}>
+          <FlatList
+            ref={zoomListRef}
+            data={cafe.photos}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            keyExtractor={(_, i) => 'zoom-' + i}
+            initialScrollIndex={zoomIndex}
+            getItemLayout={(_, index) => ({ length: width, offset: width * index, index })}
+            onMomentumScrollEnd={(e) => {
+              const idx = Math.round(e.nativeEvent.contentOffset.x / width);
+              setZoomIndex(idx);
+            }}
+            renderItem={({ item }) => (
+              <ScrollView
+                style={{ width, height }}
+                contentContainerStyle={styles.zoomScrollContent}
+                maximumZoomScale={3}
+                minimumZoomScale={1}
+                showsVerticalScrollIndicator={false}
+                showsHorizontalScrollIndicator={false}
+                pinchGestureEnabled
+                centerContent
+              >
+                <Image source={{ uri: item }} style={styles.zoomImage} resizeMode="contain" />
+              </ScrollView>
+            )}
+          />
+          <TouchableOpacity style={styles.zoomCloseBtn} onPress={closeZoom} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+            <Text style={styles.zoomCloseText}>✕</Text>
+          </TouchableOpacity>
+          <View style={styles.zoomCounter}>
+            <Text style={styles.zoomCounterText}>
+              {zoomIndex + 1} / {cafe.photos.length}
+            </Text>
+          </View>
+        </View>
+      </Modal>
+
       <View style={styles.bottomBar}>
         <TouchableOpacity style={styles.actionBtn} onPress={handleFavorite}>
           <Text style={styles.actionIcon}>{isFavorited ? '❤️' : '🤍'}</Text>
@@ -282,6 +355,60 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   backIcon: { fontSize: 20, color: colors.white },
+  photoCounter: {
+    position: 'absolute',
+    top: 48,
+    right: spacing.md,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.sm + 4,
+    paddingVertical: 4,
+  },
+  photoCounterText: {
+    color: colors.white,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+
+  // Zoom modal
+  zoomContainer: {
+    flex: 1,
+    backgroundColor: '#000',
+    justifyContent: 'center',
+  },
+  zoomScrollContent: {
+    width,
+    height,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  zoomImage: {
+    width,
+    height: height * 0.85,
+  },
+  zoomCloseBtn: {
+    position: 'absolute',
+    top: 48,
+    right: spacing.md,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  zoomCloseText: { color: colors.white, fontSize: 22, fontWeight: '700' },
+  zoomCounter: {
+    position: 'absolute',
+    top: 52,
+    alignSelf: 'center',
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 6,
+  },
+  zoomCounterText: { color: colors.white, fontSize: 14, fontWeight: '700' },
   content: { padding: spacing.lg },
   cafeName: { fontSize: 24, fontWeight: '700', color: colors.primary },
   distance: { fontSize: 14, color: colors.textSecondary, marginTop: 2 },

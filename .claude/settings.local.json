@@ -5,7 +5,10 @@
       "Bash(npx tsc:*)",
       "Bash(rm -rf client)",
       "Bash(npm create:*)",
-      "Bash(npx vite:*)"
+      "Bash(npx vite:*)",
+      "Bash(npm -v)",
+      "Bash(npx --version)",
+      "Bash(npx create-expo-app@latest client-mobile --template blank-typescript -- --no-install)"
     ]
   }
 }

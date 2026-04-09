@@ -126,9 +126,19 @@ let CafesService = class CafesService {
         c.favorites_count AS favoritesCount,
         c.has_active_promotion AS hasActivePromotion,
         c.active_promotion_type AS activePromotionType,
+        ph.url AS primaryPhotoUrl,
+        promo.content_title AS promoTitle,
+        promo.content_description AS promoDescription,
+        promo.content_photo_url AS promoPhotoUrl,
         ${HAVERSINE_SQL} AS distanceMeters
       FROM cafes c
+      LEFT JOIN cafe_photos ph ON ph.cafe_id = c.id AND ph.is_primary = TRUE
+      LEFT JOIN promotions promo ON promo.cafe_id = c.id
+        AND promo.status = 'active'
+        AND promo.expires_at > NOW()
+        AND c.has_active_promotion = TRUE
       WHERE ${whereClause}
+      GROUP BY c.id, ph.url, promo.content_title, promo.content_description, promo.content_photo_url
       ORDER BY distanceMeters ASC
       LIMIT ? OFFSET ?
     `;
@@ -140,6 +150,26 @@ let CafesService = class CafesService {
         ]);
         const countQuery = `SELECT COUNT(*) AS total FROM cafes c WHERE ${whereClause}`;
         const [{ total }] = await this.dataSource.query(countQuery, params);
+        const cafeIds = results.map((r) => r.id);
+        let facilitiesMap = new Map();
+        let photosMap = new Map();
+        if (cafeIds.length > 0) {
+            const placeholders = cafeIds.map(() => '?').join(',');
+            const rawFacilities = await this.dataSource.query(`SELECT cafe_id AS cafeId, facility_key AS facilityKey, facility_value AS facilityValue
+         FROM cafe_facilities WHERE cafe_id IN (${placeholders})`, cafeIds);
+            for (const f of rawFacilities) {
+                if (!facilitiesMap.has(f.cafeId))
+                    facilitiesMap.set(f.cafeId, []);
+                facilitiesMap.get(f.cafeId).push({ facilityKey: f.facilityKey, facilityValue: f.facilityValue });
+            }
+            const rawPhotos = await this.dataSource.query(`SELECT cafe_id AS cafeId, url, display_order AS displayOrder, is_primary AS isPrimary
+         FROM cafe_photos WHERE cafe_id IN (${placeholders}) ORDER BY display_order ASC`, cafeIds);
+            for (const p of rawPhotos) {
+                if (!photosMap.has(p.cafeId))
+                    photosMap.set(p.cafeId, []);
+                photosMap.get(p.cafeId).push({ url: p.url, displayOrder: p.displayOrder, isPrimary: !!p.isPrimary });
+            }
+        }
         return {
             data: results.map((r) => ({
                 ...r,
@@ -148,9 +178,17 @@ let CafesService = class CafesService {
                 distanceMeters: Math.round(r.distanceMeters),
                 wifiAvailable: !!r.wifiAvailable,
                 hasMushola: !!r.hasMushola,
+                hasActivePromotion: !!r.hasActivePromotion,
                 openingHours: typeof r.openingHours === 'string'
                     ? JSON.parse(r.openingHours)
                     : r.openingHours,
+                facilities: facilitiesMap.get(r.id) || [],
+                photos: photosMap.get(r.id) || (r.primaryPhotoUrl ? [{ url: r.primaryPhotoUrl, displayOrder: 0, isPrimary: true }] : []),
+                promotionContent: r.promoTitle ? {
+                    title: r.promoTitle,
+                    description: r.promoDescription,
+                    photoUrl: r.promoPhotoUrl,
+                } : null,
             })),
             meta: { page, limit, total: parseInt(total, 10) },
         };

@@ -1,0 +1,19 @@
+{
+  "name": "cafematch-scraping",
+  "version": "1.0.0",
+  "description": "Google Places API scraper for CafeMatch — Bandung cafes",
+  "private": true,
+  "scripts": {
+    "scrape": "ts-node src/index.ts",
+    "scrape:area": "ts-node src/index.ts --area"
+  },
+  "dependencies": {
+    "axios": "^1.7.0",
+    "dotenv": "^16.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.0"
+  }
+}

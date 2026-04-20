@@ -1,0 +1,99 @@
+{
+  "cafeName": "Cafe Wanda Urban",
+  "placeId": "ChIJx8LdAH7naC4RB-xx8hllYjo",
+  "totalReviews": 7,
+  "reviewsScraped": 7,
+  "reviews": [
+    {
+      "author": "Ridzky Ahdhan",
+      "authorUrl": "https://www.google.com/maps/contrib/107140435736435191860?hl=id",
+      "rating": 5,
+      "text": "Bahaya jajan disini.. bikin nagih",
+      "textTranslated": null,
+      "date": "2024-05-08T11:11:16.900Z",
+      "relativeDate": "setahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSURqNTY3THdBRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSURqNTY3THdBRRAB!2m1!1s0x0:0x3a626519f271ec07!3m1!1s2@1:CIHM0ogKEICAgIDj567LwAE%7C%7C?hl=id"
+    },
+    {
+      "author": "Abdul Salam Sayed",
+      "authorUrl": "https://www.google.com/maps/contrib/104289139985120447383?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2019-07-27T18:41:47.638Z",
+      "relativeDate": "6 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSUNVaWRIOXdnRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSUNVaWRIOXdnRRAB!2m1!1s0x0:0x3a626519f271ec07!3m1!1s2@1:CIHM0ogKEICAgICUidH9wgE%7C%7C?hl=id"
+    },
+    {
+      "author": "Studio Teravasa",
+      "authorUrl": "https://www.google.com/maps/contrib/106097621831166060643?hl=id",
+      "rating": 5,
+      "text": "Wah mantap gini ada google mapsnya. Tuh si kakak Ampe bobo betah di warung sutra ini",
+      "textTranslated": null,
+      "date": "2019-04-21T08:08:11.841Z",
+      "relativeDate": "6 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSUNZMjhyNnl3RRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSUNZMjhyNnl3RRAB!2m1!1s0x0:0x3a626519f271ec07!3m1!1s2@1:CIHM0ogKEICAgICY28r6ywE%7C%7C?hl=id"
+    },
+    {
+      "author": "Wendi Cari istri bule pirang cantik",
+      "authorUrl": "https://www.google.com/maps/contrib/106922381423185606772?hl=id",
+      "rating": 3,
+      "text": "Nu lanceuk",
+      "textTranslated": "Kakak laki-laki",
+      "date": "2018-10-24T07:30:59.353Z",
+      "relativeDate": "Diedit 7 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSUN3LXE2RDJnRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSUN3LXE2RDJnRRAB!2m1!1s0x0:0x3a626519f271ec07!3m1!1s2@1:CIHM0ogKEICAgICw-q6D2gE%7C%7C?hl=id"
+    },
+    {
+      "author": "Alesha Adonia RR",
+      "authorUrl": "https://www.google.com/maps/contrib/115671752364436640056?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2018-09-11T17:32:17.707Z",
+      "relativeDate": "7 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSUNndTdIcWtnRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSUNndTdIcWtnRRAB!2m1!1s0x0:0x3a626519f271ec07!3m1!1s2@1:CIHM0ogKEICAgICgu7HqkgE%7C%7C?hl=id"
+    },
+    {
+      "author": "Taufik Hidayat Satriansa",
+      "authorUrl": "https://www.google.com/maps/contrib/108175832451085921166?hl=id",
+      "rating": 3,
+      "text": "",
+      "textTranslated": null,
+      "date": "2018-07-06T07:39:33.905Z",
+      "relativeDate": "7 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSUNBZ2RmVkhREAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSUNBZ2RmVkhREAE!2m1!1s0x0:0x3a626519f271ec07!3m1!1s2@1:CIHM0ogKEICAgICAgdfVHQ%7C%7C?hl=id"
+    },
+    {
+      "author": "babang smile",
+      "authorUrl": "https://www.google.com/maps/contrib/105325510941574573413?hl=id",
+      "rating": 5,
+      "text": "Good view",
+      "textTranslated": "Pemandangan yang bagus",
+      "date": "2017-09-08T10:31:02.049Z",
+      "relativeDate": "8 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSUNBbW9XWEdnEAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSUNBbW9XWEdnEAE!2m1!1s0x0:0x3a626519f271ec07!3m1!1s2@1:CIHM0ogKEICAgICAmoWXGg%7C%7C?hl=id"
+    }
+  ]
+}

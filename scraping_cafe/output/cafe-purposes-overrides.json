@@ -1,0 +1,4 @@
+{
+  "_comment": "Edit this file to manually override purpose/facility detection. Format: { \"placeId\": { \"topPurposes\": [\"wfc\",\"me_time\"], \"detectedFacilities\": [\"wifi\",\"parking\"] } }. Re-run `npm run seed` to apply changes. Entries here REPLACE the analyzer output for that cafe.",
+  "overrides": {}
+}

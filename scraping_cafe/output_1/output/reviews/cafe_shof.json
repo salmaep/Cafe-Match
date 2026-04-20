@@ -1,0 +1,21 @@
+{
+  "cafeName": "Cafe Shof",
+  "placeId": "ChIJnc21cAndaC4R7lHjiy1hWjs",
+  "totalReviews": 1,
+  "reviewsScraped": 1,
+  "reviews": [
+    {
+      "author": "Zero Konveksi",
+      "authorUrl": "https://www.google.com/maps/contrib/111876787572938136329?hl=id",
+      "rating": 3,
+      "text": "Mantap 👍",
+      "textTranslated": null,
+      "date": "2023-03-13T17:37:33.706Z",
+      "relativeDate": "3 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSURoNVpDRWhnRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSURoNVpDRWhnRRAB!2m1!1s0x0:0x3b5a612d8be351ee!3m1!1s2@1:CIHM0ogKEICAgIDh5ZCEhgE%7C%7C?hl=id"
+    }
+  ]
+}

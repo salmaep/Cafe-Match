@@ -1,0 +1,34 @@
+{
+  "cafeName": "Coffee Shop",
+  "placeId": "ChIJqU2t21nCaC4RAa3J18dQ8ag",
+  "totalReviews": 2,
+  "reviewsScraped": 2,
+  "reviews": [
+    {
+      "author": "rizkyabdielfaqih",
+      "authorUrl": "https://www.google.com/maps/contrib/109474368477548745809?hl=id",
+      "rating": 1,
+      "text": "ga logis makanannya sama harga nya👎🏻",
+      "textTranslated": null,
+      "date": "2026-03-25T06:07:34.065Z",
+      "relativeDate": "3 minggu lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "Ci9DQUlRQUNvZENodHljRjlvT2tWemVVRlRZMUJzUzFoVFIwMU1NMEZTTWxaR1puYxAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sCi9DQUlRQUNvZENodHljRjlvT2tWemVVRlRZMUJzUzFoVFIwMU1NMEZTTWxaR1puYxAB!2m1!1s0x0:0xa8f150c7d7c9ad01!3m1!1s2@1:CAIQACodChtycF9oOkVzeUFTY1BsS1hTR01MM0FSMlZGZnc%7C%7C?hl=id"
+    },
+    {
+      "author": "Syadrila Naufal",
+      "authorUrl": "https://www.google.com/maps/contrib/106692331045811836250?hl=id",
+      "rating": 1,
+      "text": "",
+      "textTranslated": null,
+      "date": "2026-03-24T12:07:54.633Z",
+      "relativeDate": "3 minggu lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "Ci9DQUlRQUNvZENodHljRjlvT2tKS2VqWndNRkJxVWpRd1gzazNhbVZtZHpaRFgxRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sCi9DQUlRQUNvZENodHljRjlvT2tKS2VqWndNRkJxVWpRd1gzazNhbVZtZHpaRFgxRRAB!2m1!1s0x0:0xa8f150c7d7c9ad01!3m1!1s2@1:CAIQACodChtycF9oOkJKejZwMFBqUjQwX3k3amVmdzZDX1E%7C%7C?hl=id"
+    }
+  ]
+}

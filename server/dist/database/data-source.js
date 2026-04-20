@@ -10,5 +10,9 @@ exports.default = new typeorm_1.DataSource({
     password: process.env.DB_PASSWORD || '',
     database: process.env.DB_DATABASE || 'cafematch',
     migrations: ['src/database/migrations/*.ts'],
+    connectTimeout: 5000,
+    extra: {
+        connectTimeout: 5000,
+    },
 });
 //# sourceMappingURL=data-source.js.map

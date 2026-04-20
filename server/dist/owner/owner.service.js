@@ -40,6 +40,27 @@ let OwnerService = class OwnerService {
         this.dataSource = dataSource;
     }
     async getOwnerCafe(userId) {
+        const cafesWithActive = await this.dataSource.query(`SELECT c.id FROM cafes c
+       JOIN promotions p ON p.cafe_id = c.id AND p.status = 'active'
+       WHERE c.owner_id = ?
+       LIMIT 1`, [userId]);
+        if (cafesWithActive.length > 0) {
+            return this.cafesRepo.findOne({
+                where: { id: cafesWithActive[0].id },
+                relations: ['facilities', 'menus', 'photos'],
+            });
+        }
+        const cafesWithAnyPromo = await this.dataSource.query(`SELECT c.id FROM cafes c
+       JOIN promotions p ON p.cafe_id = c.id
+       WHERE c.owner_id = ?
+       ORDER BY p.created_at DESC
+       LIMIT 1`, [userId]);
+        if (cafesWithAnyPromo.length > 0) {
+            return this.cafesRepo.findOne({
+                where: { id: cafesWithAnyPromo[0].id },
+                relations: ['facilities', 'menus', 'photos'],
+            });
+        }
         return this.cafesRepo.findOne({
             where: { ownerId: userId },
             relations: ['facilities', 'menus', 'photos'],
@@ -95,10 +116,32 @@ let OwnerService = class OwnerService {
         if (!cafe) {
             return { hasCafe: false };
         }
-        const activePromotion = await this.promotionsRepo.findOne({
+        let activePromotion = await this.promotionsRepo.findOne({
             where: { cafeId: cafe.id, status: 'active' },
             relations: ['package'],
+            order: { createdAt: 'DESC' },
         });
+        if (!activePromotion) {
+            activePromotion = await this.promotionsRepo.findOne({
+                where: { cafeId: cafe.id, status: 'pending_review' },
+                relations: ['package'],
+                order: { createdAt: 'DESC' },
+            });
+        }
+        if (!activePromotion) {
+            activePromotion = await this.promotionsRepo.findOne({
+                where: { cafeId: cafe.id, status: 'pending_payment' },
+                relations: ['package'],
+                order: { createdAt: 'DESC' },
+            });
+        }
+        if (!activePromotion) {
+            activePromotion = await this.promotionsRepo.findOne({
+                where: { cafeId: cafe.id },
+                relations: ['package'],
+                order: { createdAt: 'DESC' },
+            });
+        }
         const pendingPromotions = await this.promotionsRepo.find({
             where: { cafeId: cafe.id, status: 'pending_review' },
         });

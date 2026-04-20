@@ -10,6 +10,8 @@ export declare class AuthController {
         email: string;
         name: string;
         role: string;
+        friendCode: string;
+        avatarUrl: string;
         createdAt: Date;
         updatedAt: Date;
         bookmarks: import("../bookmarks/entities/bookmark.entity").Bookmark[];
@@ -23,6 +25,8 @@ export declare class AuthController {
         email: string;
         name: string;
         role: string;
+        friendCode: string;
+        avatarUrl: string;
         createdAt: Date;
         updatedAt: Date;
         bookmarks: import("../bookmarks/entities/bookmark.entity").Bookmark[];
@@ -35,6 +39,8 @@ export declare class AuthController {
             email: string;
             name: string;
             role: string;
+            friendCode: string;
+            avatarUrl: string;
         };
     }>;
     getProfile(req: any): any;

@@ -7,6 +7,7 @@ interface ShortlistContextType {
   addToShortlist: (cafe: Cafe) => void;
   removeFromShortlist: (cafeId: string) => void;
   isInShortlist: (cafeId: string) => boolean;
+  clearShortlist: () => Promise<void>;
 }
 
 const ShortlistContext = createContext<ShortlistContextType>({
@@ -14,6 +15,7 @@ const ShortlistContext = createContext<ShortlistContextType>({
   addToShortlist: () => {},
   removeFromShortlist: () => {},
   isInShortlist: () => false,
+  clearShortlist: async () => {},
 });
 
 export const useShortlist = () => useContext(ShortlistContext);
@@ -50,8 +52,13 @@ export function ShortlistProvider({ children }: { children: ReactNode }) {
 
   const isInShortlist = (cafeId: string) => shortlist.some((c) => c.id === cafeId);
 
+  const clearShortlist = async () => {
+    setShortlist([]);
+    await AsyncStorage.removeItem('shortlist');
+  };
+
   return (
-    <ShortlistContext.Provider value={{ shortlist, addToShortlist, removeFromShortlist, isInShortlist }}>
+    <ShortlistContext.Provider value={{ shortlist, addToShortlist, removeFromShortlist, isInShortlist, clearShortlist }}>
       {children}
     </ShortlistContext.Provider>
   );

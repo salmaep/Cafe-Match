@@ -1,0 +1,21 @@
+{
+  "cafeName": "Progresif Cafe",
+  "placeId": "ChIJmTucQO_maC4R_0ZYsopapGI",
+  "totalReviews": 1,
+  "reviewsScraped": 1,
+  "reviews": [
+    {
+      "author": "Ude daud Yusuf",
+      "authorUrl": "https://www.google.com/maps/contrib/115651724564781020121?hl=id",
+      "rating": 4,
+      "text": "",
+      "textTranslated": null,
+      "date": "2021-02-05T05:49:11.099Z",
+      "relativeDate": "5 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSUN5bVlyYS1RRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSUN5bVlyYS1RRRAB!2m1!1s0x0:0x62a45a8ab25846ff!3m1!1s2@1:CIHM0ogKEICAgICymYra-QE%7C%7C?hl=id"
+    }
+  ]
+}

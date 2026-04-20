@@ -15,6 +15,8 @@ export declare class JwtStrategy extends JwtStrategy_base {
         email: string;
         name: string;
         role: string;
+        friendCode: string;
+        avatarUrl: string;
         createdAt: Date;
         updatedAt: Date;
         bookmarks: import("../../bookmarks/entities/bookmark.entity").Bookmark[];

@@ -1,0 +1,34 @@
+{
+  "cafeName": "Coworking space",
+  "placeId": "ChIJK2yXt_vpaC4RWvSuFALNtI0",
+  "totalReviews": 2,
+  "reviewsScraped": 2,
+  "reviews": [
+    {
+      "author": "Muhammad Nur Prayogo",
+      "authorUrl": "https://www.google.com/maps/contrib/110121863708508004903?hl=id",
+      "rating": 3,
+      "text": "Musik toko di bawah terlalu kencang, mesti negur dulu baru dikecilin. Internetnya oke lah, ruangannya oke.",
+      "textTranslated": null,
+      "date": "2022-06-21T07:54:38.018Z",
+      "relativeDate": "3 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSUNPaC1iUGtBRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSUNPaC1iUGtBRRAB!2m1!1s0x0:0x8db4cd0214aef45a!3m1!1s2@1:CIHM0ogKEICAgICOh-bPkAE%7C%7C?hl=id"
+    },
+    {
+      "author": "Kayla Faisal (mkaypaijo)",
+      "authorUrl": "https://www.google.com/maps/contrib/109418002541873215616?hl=id",
+      "rating": 2,
+      "text": "Good : comfortable table and chairs, cold temperature (ada AC), cheap (25k per day)\n\nBad : very noisy (loud music from speakers downstairs, so much traffic noise, chatter) because its not a closed area. Cant concentrate. And also an unexpected group event taking place involving cheering and even more noises and chatter\n\nWould not go here again before the noise issue is resolved",
+      "textTranslated": "Baik: meja dan kursi nyaman, suhu dingin (ada AC), murah (25 ribu per hari)\n\nBuruk: sangat berisik (musik keras dari pengeras suara di lantai bawah, banyak suara lalu lintas, obrolan) karena bukan area tertutup. Tidak bisa berkonsentrasi. Dan juga ada acara kelompok tak terduga yang melibatkan sorak-sorai dan lebih banyak suara serta obrolan.\n\nTidak akan kembali ke sini lagi sebelum masalah kebisingan teratasi.",
+      "date": "2022-04-25T03:23:11.073Z",
+      "relativeDate": "3 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSUMybVk2eUVREAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSUMybVk2eUVREAE!2m1!1s0x0:0x8db4cd0214aef45a!3m1!1s2@1:CIHM0ogKEICAgIC2mY6yEQ%7C%7C?hl=id"
+    }
+  ]
+}

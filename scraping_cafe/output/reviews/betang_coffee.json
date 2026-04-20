@@ -1,0 +1,47 @@
+{
+  "cafeName": "Betang Coffee",
+  "placeId": "ChIJpUlup9rpaC4RsU6GxKSlzEI",
+  "totalReviews": 3,
+  "reviewsScraped": 3,
+  "reviews": [
+    {
+      "author": "Bernadetha Advenesia",
+      "authorUrl": "https://www.google.com/maps/contrib/116216243794641051258?hl=id",
+      "rating": 5,
+      "text": "Kopi banana milknya dong seger bgt.. rekom bgt dah yg mau coba minuman kopi dengan sensasi seger2 gmna gtu.. 😁👍",
+      "textTranslated": null,
+      "date": "2019-06-21T12:50:46.110Z",
+      "relativeDate": "6 tahun lalu",
+      "likesCount": 2,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSUNrMHYteXVnRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSUNrMHYteXVnRRAB!2m1!1s0x0:0x42cca5a4c4864eb1!3m1!1s2@1:CIHM0ogKEICAgICk0v-yugE%7C%7C?hl=id"
+    },
+    {
+      "author": "Serlinda Maharani",
+      "authorUrl": "https://www.google.com/maps/contrib/102401214976469022096?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2019-06-21T12:34:27.869Z",
+      "relativeDate": "6 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSUNrMG9fVC13RRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSUNrMG9fVC13RRAB!2m1!1s0x0:0x42cca5a4c4864eb1!3m1!1s2@1:CIHM0ogKEICAgICk0o_T-wE%7C%7C?hl=id"
+    },
+    {
+      "author": "R. Aditya Kristamtomo P",
+      "authorUrl": "https://www.google.com/maps/contrib/105369896788687868053?hl=id",
+      "rating": 5,
+      "text": "Kopi Kreasinya seger bgt.. Mantull..",
+      "textTranslated": null,
+      "date": "2019-06-20T17:22:38.649Z",
+      "relativeDate": "6 tahun lalu",
+      "likesCount": 2,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSURFMjVybkx3EAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSURFMjVybkx3EAE!2m1!1s0x0:0x42cca5a4c4864eb1!3m1!1s2@1:CIHM0ogKEICAgIDE25rnLw%7C%7C?hl=id"
+    }
+  ]
+}

@@ -29,7 +29,7 @@ export class SearchCafesDto {
   @Type(() => Number)
   @IsNumber()
   @IsPositive()
-  @Max(10000)
+  @Max(50000000) // DEV: allow large radius for testing (was 10000 = 10km)
   radius?: number = 2000;
 
   @IsOptional()
@@ -61,6 +61,6 @@ export class SearchCafesDto {
   @IsOptional()
   @Type(() => Number)
   @IsPositive()
-  @Max(100)
+  @Max(2000) // DEV: raised from 100 for testing — show all ~553 cafes on map
   limit?: number = 50;
 }

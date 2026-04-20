@@ -31,6 +31,10 @@ let Cafe = class Cafe {
     wifiAvailable;
     wifiSpeedMbps;
     hasMushola;
+    hasParking;
+    googleRating;
+    totalGoogleReviews;
+    website;
     openingHours;
     priceRange;
     bookmarksCount;
@@ -38,6 +42,8 @@ let Cafe = class Cafe {
     ownerId;
     hasActivePromotion;
     activePromotionType;
+    promotionContent;
+    newCafeContent;
     isActive;
     createdAt;
     updatedAt;
@@ -109,6 +115,22 @@ __decorate([
     __metadata("design:type", Boolean)
 ], Cafe.prototype, "hasMushola", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ name: 'has_parking', default: false }),
+    __metadata("design:type", Boolean)
+], Cafe.prototype, "hasParking", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'google_rating', type: 'decimal', precision: 2, scale: 1, nullable: true }),
+    __metadata("design:type", Number)
+], Cafe.prototype, "googleRating", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'total_google_reviews', type: 'int', unsigned: true, nullable: true }),
+    __metadata("design:type", Number)
+], Cafe.prototype, "totalGoogleReviews", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ length: 500, nullable: true }),
+    __metadata("design:type", String)
+], Cafe.prototype, "website", void 0);
+__decorate([
     (0, typeorm_1.Column)({ name: 'opening_hours', type: 'json', nullable: true }),
     __metadata("design:type", Object)
 ], Cafe.prototype, "openingHours", void 0);
@@ -146,6 +168,14 @@ __decorate([
     }),
     __metadata("design:type", String)
 ], Cafe.prototype, "activePromotionType", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'promotion_content', type: 'json', nullable: true }),
+    __metadata("design:type", Object)
+], Cafe.prototype, "promotionContent", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'new_cafe_content', type: 'json', nullable: true }),
+    __metadata("design:type", Object)
+], Cafe.prototype, "newCafeContent", void 0);
 __decorate([
     (0, typeorm_1.Index)(),
     (0, typeorm_1.Column)({ name: 'is_active', default: true }),

@@ -3,17 +3,27 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.SeedDummyPromotions1712600000000 = void 0;
 class SeedDummyPromotions1712600000000 {
     async up(queryRunner) {
+        const [cafesPresent] = await queryRunner.query(`SELECT COUNT(*) AS cnt FROM cafes WHERE id IN (1, 2, 3, 4, 5, 6)`);
+        if (parseInt(cafesPresent?.cnt ?? '0', 10) < 6) {
+            console.log('[SeedDummyPromotions] Skipped — cafes 1-6 not present. Promotions are now seeded by cafe-scraping.seed.ts');
+            return;
+        }
+        const [existingPromo] = await queryRunner.query(`SELECT COUNT(*) AS cnt FROM promotions WHERE cafe_id IN (1, 2, 3, 4, 5, 6)`);
+        if (parseInt(existingPromo?.cnt ?? '0', 10) > 0) {
+            console.log('[SeedDummyPromotions] Skipped — promotions already seeded for cafes 1-6');
+            return;
+        }
         const [owner] = await queryRunner.query(`SELECT id FROM users WHERE role = 'owner' LIMIT 1`);
-        const ownerId = owner?.id || null;
+        let ownerId = owner?.id || null;
         if (!ownerId) {
             await queryRunner.query(`
         INSERT INTO users (email, password_hash, name, role)
         VALUES ('owner@cafematch.id', '$2b$10$dummyhashnotreal000000000000000000000000000000', 'Demo Owner', 'owner')
       `);
+            const [ownerRow] = await queryRunner.query(`SELECT id FROM users WHERE role = 'owner' LIMIT 1`);
+            ownerId = ownerRow.id;
         }
-        const [ownerRow] = await queryRunner.query(`SELECT id FROM users WHERE role = 'owner' LIMIT 1`);
-        const finalOwnerId = ownerRow.id;
-        await queryRunner.query(`UPDATE cafes SET owner_id = ? WHERE id IN (1, 2, 3, 4, 5, 6)`, [finalOwnerId]);
+        await queryRunner.query(`UPDATE cafes SET owner_id = ? WHERE id IN (1, 2, 3, 4, 5, 6)`, [ownerId]);
         await queryRunner.query(`
       INSERT INTO promotions (cafe_id, package_id, type, billing_cycle, status, content_title, content_description, started_at, expires_at)
       VALUES (1, 3, 'new_cafe', 'monthly', 'active', NULL, NULL, NOW(), DATE_ADD(NOW(), INTERVAL 30 DAY))

@@ -25,6 +25,13 @@ const promotions_module_1 = require("./promotions/promotions.module");
 const payments_module_1 = require("./payments/payments.module");
 const analytics_module_1 = require("./analytics/analytics.module");
 const admin_module_1 = require("./admin/admin.module");
+const reviews_module_1 = require("./reviews/reviews.module");
+const checkins_module_1 = require("./checkins/checkins.module");
+const notifications_module_1 = require("./notifications/notifications.module");
+const achievements_module_1 = require("./achievements/achievements.module");
+const friends_module_1 = require("./friends/friends.module");
+const recaps_module_1 = require("./recaps/recaps.module");
+const events_module_1 = require("./gateway/events.module");
 const jwt_auth_guard_1 = require("./common/guards/jwt-auth.guard");
 const roles_guard_1 = require("./common/guards/roles.guard");
 let AppModule = class AppModule {
@@ -63,6 +70,13 @@ exports.AppModule = AppModule = __decorate([
             payments_module_1.PaymentsModule,
             analytics_module_1.AnalyticsModule,
             admin_module_1.AdminModule,
+            reviews_module_1.ReviewsModule,
+            checkins_module_1.CheckinsModule,
+            notifications_module_1.NotificationsModule,
+            achievements_module_1.AchievementsModule,
+            friends_module_1.FriendsModule,
+            recaps_module_1.RecapsModule,
+            events_module_1.EventsModule,
         ],
         providers: [
             {

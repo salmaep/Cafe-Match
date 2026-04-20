@@ -1,0 +1,47 @@
+{
+  "cafeName": "Ksatria Cafe",
+  "placeId": "ChIJWeH8f13naC4RuUpx9rYoVPI",
+  "totalReviews": 3,
+  "reviewsScraped": 3,
+  "reviews": [
+    {
+      "author": "Ridwan Muhammady",
+      "authorUrl": "https://www.google.com/maps/contrib/100066490761067325430?hl=id",
+      "rating": 5,
+      "text": "Tempat jajan kalau lagi lari / tenis di SECAPA TNI AD",
+      "textTranslated": null,
+      "date": "2025-10-17T05:41:50.803Z",
+      "relativeDate": "5 bulan lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "Ci9DQUlRQUNvZENodHljRjlvT2pkMFlWODVkVUZaWkcxdGJIaHBNa2wzWjNNeVZHYxAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sCi9DQUlRQUNvZENodHljRjlvT2pkMFlWODVkVUZaWkcxdGJIaHBNa2wzWjNNeVZHYxAB!2m1!1s0x0:0xf25428b6f6714ab9!3m1!1s2@1:CAIQACodChtycF9oOjd0YV85dUFZZG1tbHhpMkl3Z3MyVGc%7C%7C?hl=id"
+    },
+    {
+      "author": "Diki iswanto iswanto",
+      "authorUrl": "https://www.google.com/maps/contrib/105759914062143967767?hl=id",
+      "rating": 5,
+      "text": "Kopi nya muantap tempatnya muantap ada karoke pula pokoknya recommended buat ngopi sambil diskusi apalagi ada karoke dikit hiburan muantap banget......",
+      "textTranslated": null,
+      "date": "2022-07-05T09:09:15.816Z",
+      "relativeDate": "3 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSURPOXAyQXhnRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSURPOXAyQXhnRRAB!2m1!1s0x0:0xf25428b6f6714ab9!3m1!1s2@1:CIHM0ogKEICAgIDO9p2AxgE%7C%7C?hl=id"
+    },
+    {
+      "author": "Yusuf Suryana",
+      "authorUrl": "https://www.google.com/maps/contrib/107508941566295732848?hl=id",
+      "rating": 5,
+      "text": "Aman sudah pasti,\nParkir luas dan gratis,\nHarga kopi nya jauh lebih murah dari yg lain",
+      "textTranslated": null,
+      "date": "2022-07-05T08:41:46.108Z",
+      "relativeDate": "3 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSURPOXVueXN3RRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSURPOXVueXN3RRAB!2m1!1s0x0:0xf25428b6f6714ab9!3m1!1s2@1:CIHM0ogKEICAgIDO9unyswE%7C%7C?hl=id"
+    }
+  ]
+}

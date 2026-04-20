@@ -1,0 +1,34 @@
+{
+  "cafeName": "Spesies Coffee Manisi",
+  "placeId": "ChIJy8Iot5vDaC4Rb6RlhVUcfT0",
+  "totalReviews": 2,
+  "reviewsScraped": 2,
+  "reviews": [
+    {
+      "author": "A_014_Iva Ikhlashiah_34",
+      "authorUrl": "https://www.google.com/maps/contrib/109647675293098230280?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2023-03-22T14:44:20.956Z",
+      "relativeDate": "3 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSUNSb0wzc1RREAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSUNSb0wzc1RREAE!2m1!1s0x0:0x3d7d1c558565a46f!3m1!1s2@1:CIHM0ogKEICAgICRoL3sTQ%7C%7C?hl=id"
+    },
+    {
+      "author": "Ifan kudel",
+      "authorUrl": "https://www.google.com/maps/contrib/104272619660970089990?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2023-01-01T15:38:40.543Z",
+      "relativeDate": "3 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSUNCcmRybTVnRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSUNCcmRybTVnRRAB!2m1!1s0x0:0x3d7d1c558565a46f!3m1!1s2@1:CIHM0ogKEICAgICBrdrm5gE%7C%7C?hl=id"
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "cafeName": "Cafe 379",
+  "placeId": "ChIJWeEcMQDdaC4RBXuB-GAelDA",
+  "totalReviews": 4,
+  "reviewsScraped": 4,
+  "reviews": [
+    {
+      "author": "Billy Chandra",
+      "authorUrl": "https://www.google.com/maps/contrib/112575437869135315666?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2025-10-31T07:22:43.320Z",
+      "relativeDate": "5 bulan lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "Ci9DQUlRQUNvZENodHljRjlvT2tjNU9FUmlhV0ZSTjFwZldIRTNNekZLTUhwc1NHYxAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sCi9DQUlRQUNvZENodHljRjlvT2tjNU9FUmlhV0ZSTjFwZldIRTNNekZLTUhwc1NHYxAB!2m1!1s0x0:0x30941e60f8817b05!3m1!1s2@1:CAIQACodChtycF9oOkc5OERiaWFRN1pfWHE3MzFKMHpsSGc%7C%7C?hl=id"
+    },
+    {
+      "author": "faris ammar",
+      "authorUrl": "https://www.google.com/maps/contrib/112601404532252253712?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2025-02-19T04:25:30.459Z",
+      "relativeDate": "setahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnTUNnaGFyc1BBEAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnTUNnaGFyc1BBEAE!2m1!1s0x0:0x30941e60f8817b05!3m1!1s2@1:CIHM0ogKEICAgMCgharsPA%7C%7C?hl=id"
+    },
+    {
+      "author": "mitra link",
+      "authorUrl": "https://www.google.com/maps/contrib/106498595874100698493?hl=id",
+      "rating": 5,
+      "text": "\"Café 379 Bandung punya suasana cozy, kopi enak, dan pelayanan ramah. Tempat yang pas buat nongkrong atau kerja santai. Pasti balik lagi!\"",
+      "textTranslated": null,
+      "date": "2025-02-15T15:30:15.755Z",
+      "relativeDate": "setahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnTUNnMHZMWjJ3RRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnTUNnMHZMWjJ3RRAB!2m1!1s0x0:0x30941e60f8817b05!3m1!1s2@1:CIHM0ogKEICAgMCg0vLZ2wE%7C%7C?hl=id"
+    },
+    {
+      "author": "Herdiana Aardho",
+      "authorUrl": "https://www.google.com/maps/contrib/103210582163038594984?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2025-02-08T21:28:39.797Z",
+      "relativeDate": "setahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnTURBdHM3WlhREAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnTURBdHM3WlhREAE!2m1!1s0x0:0x30941e60f8817b05!3m1!1s2@1:CIHM0ogKEICAgMDAts7ZXQ%7C%7C?hl=id"
+    }
+  ]
+}

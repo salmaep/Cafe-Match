@@ -1,0 +1,21 @@
+{
+  "cafeName": "Twenty-One Coffe Shop",
+  "placeId": "ChIJKzCDzAfnaC4RhPmDN1OHwdc",
+  "totalReviews": 1,
+  "reviewsScraped": 1,
+  "reviews": [
+    {
+      "author": "Kristian Pratama",
+      "authorUrl": "https://www.google.com/maps/contrib/109103432194592059304?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2022-10-17T04:06:17.695Z",
+      "relativeDate": "3 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSURlN2IzNm9nRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSURlN2IzNm9nRRAB!2m1!1s0x0:0xd7c187533783f984!3m1!1s2@1:CIHM0ogKEICAgIDe7b36ogE%7C%7C?hl=id"
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "cafeName": "Arkan Cafe",
+  "placeId": "ChIJw395CDndaC4R0NsKNbxr2J0",
+  "totalReviews": 3,
+  "reviewsScraped": 3,
+  "reviews": [
+    {
+      "author": "Herry Nayugi",
+      "authorUrl": "https://www.google.com/maps/contrib/109895133361759349175?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2023-11-11T01:51:45.002Z",
+      "relativeDate": "2 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSURGNV9yVVpREAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSURGNV9yVVpREAE!2m1!1s0x0:0x9dd86bbc350adbd0!3m1!1s2@1:CIHM0ogKEICAgIDF5_rUZQ%7C%7C?hl=id"
+    },
+    {
+      "author": "Himmah Nabilah",
+      "authorUrl": "https://www.google.com/maps/contrib/101816340587073215351?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2022-10-13T10:58:19.116Z",
+      "relativeDate": "3 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSURlaWZmbVhREAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSURlaWZmbVhREAE!2m1!1s0x0:0x9dd86bbc350adbd0!3m1!1s2@1:CIHM0ogKEICAgIDeiffmXQ%7C%7C?hl=id"
+    },
+    {
+      "author": "Maman Suheri",
+      "authorUrl": "https://www.google.com/maps/contrib/101165714481308920376?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2021-09-21T10:56:49.764Z",
+      "relativeDate": "4 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSUQ2bEk2aFV3EAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSUQ2bEk2aFV3EAE!2m1!1s0x0:0x9dd86bbc350adbd0!3m1!1s2@1:CIHM0ogKEICAgID6lI6hUw%7C%7C?hl=id"
+    }
+  ]
+}

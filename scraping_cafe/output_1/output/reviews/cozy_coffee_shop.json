@@ -1,0 +1,99 @@
+{
+  "cafeName": "COZY COFFEE SHOP",
+  "placeId": "ChIJxbg2qEXDaC4R240CD9H6ZSo",
+  "totalReviews": 7,
+  "reviewsScraped": 7,
+  "reviews": [
+    {
+      "author": "SONNYARI FAMILY",
+      "authorUrl": "https://www.google.com/maps/contrib/102609670002331044398?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2022-05-18T04:21:39.529Z",
+      "relativeDate": "3 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSUQyaWRtSlh3EAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSUQyaWRtSlh3EAE!2m1!1s0x0:0x2a65fad10f028ddb!3m1!1s2@1:CIHM0ogKEICAgID2idmJXw%7C%7C?hl=id"
+    },
+    {
+      "author": "Wonny Widjawono",
+      "authorUrl": "https://www.google.com/maps/contrib/103059426717557690850?hl=id",
+      "rating": 5,
+      "text": "Copi nya okey ....",
+      "textTranslated": null,
+      "date": "2021-09-16T09:15:34.663Z",
+      "relativeDate": "4 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSUM2cjdIYUVnEAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSUM2cjdIYUVnEAE!2m1!1s0x0:0x2a65fad10f028ddb!3m1!1s2@1:CIHM0ogKEICAgIC6r7HaEg%7C%7C?hl=id"
+    },
+    {
+      "author": "Dian Dahtiar",
+      "authorUrl": "https://www.google.com/maps/contrib/104182290463543285641?hl=id",
+      "rating": 5,
+      "text": "mo kopi asli apa saja ada komplit, mo dibikin yg pahit atau medium tinggal pesan...pokoke recomended utk penggemar kopi dan makanan snack lainnya",
+      "textTranslated": null,
+      "date": "2021-09-12T07:21:30.577Z",
+      "relativeDate": "4 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSUM2MDlUT2ZnEAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSUM2MDlUT2ZnEAE!2m1!1s0x0:0x2a65fad10f028ddb!3m1!1s2@1:CIHM0ogKEICAgIC609TOfg%7C%7C?hl=id"
+    },
+    {
+      "author": "ADANG Jivana 77",
+      "authorUrl": "https://www.google.com/maps/contrib/114980457385041489658?hl=id",
+      "rating": 5,
+      "text": "Lama ngak ngopi",
+      "textTranslated": null,
+      "date": "2021-06-08T06:01:55.985Z",
+      "relativeDate": "4 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSUNxdnZUajJBRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSUNxdnZUajJBRRAB!2m1!1s0x0:0x2a65fad10f028ddb!3m1!1s2@1:CIHM0ogKEICAgICqvvTj2AE%7C%7C?hl=id"
+    },
+    {
+      "author": "Adi Adiana",
+      "authorUrl": "https://www.google.com/maps/contrib/111972621169115676313?hl=id",
+      "rating": 3,
+      "text": "",
+      "textTranslated": null,
+      "date": "2021-03-10T09:29:45.574Z",
+      "relativeDate": "5 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSUR5NGN5dDJRRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSUR5NGN5dDJRRRAB!2m1!1s0x0:0x2a65fad10f028ddb!3m1!1s2@1:CIHM0ogKEICAgIDy4cyt2QE%7C%7C?hl=id"
+    },
+    {
+      "author": "Dudi Junkies",
+      "authorUrl": "https://www.google.com/maps/contrib/102369989510780799667?hl=id",
+      "rating": 5,
+      "text": "enak buat nongkrong dan full discount",
+      "textTranslated": null,
+      "date": "2020-10-07T08:47:08.554Z",
+      "relativeDate": "5 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSURDN1lDZUJBEAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSURDN1lDZUJBEAE!2m1!1s0x0:0x2a65fad10f028ddb!3m1!1s2@1:CIHM0ogKEICAgIDC7YCeBA%7C%7C?hl=id"
+    },
+    {
+      "author": "jaja raharja",
+      "authorUrl": "https://www.google.com/maps/contrib/104033224975459582534?hl=id",
+      "rating": 5,
+      "text": "Bagus buat nongkrong...ngopi ngopi...",
+      "textTranslated": null,
+      "date": "2020-08-18T00:57:11.243Z",
+      "relativeDate": "Diedit 5 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSUNjaC1MVDFnRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSUNjaC1MVDFnRRAB!2m1!1s0x0:0x2a65fad10f028ddb!3m1!1s2@1:CIHM0ogKEICAgICch-LT1gE%7C%7C?hl=id"
+    }
+  ]
+}

@@ -29,8 +29,20 @@ let UsersService = class UsersService {
         return this.usersRepository.findOne({ where: { id } });
     }
     async create(data) {
-        const user = this.usersRepository.create(data);
+        const friendCode = await this.generateUniqueFriendCode();
+        const user = this.usersRepository.create({ ...data, friendCode });
         return this.usersRepository.save(user);
+    }
+    async generateUniqueFriendCode() {
+        for (let i = 0; i < 10; i++) {
+            const code = Math.random().toString(36).slice(2, 10).toUpperCase();
+            const exists = await this.usersRepository.findOne({
+                where: { friendCode: code },
+            });
+            if (!exists)
+                return code;
+        }
+        return Date.now().toString(36).toUpperCase().slice(0, 8);
     }
 };
 exports.UsersService = UsersService;

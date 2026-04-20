@@ -6,6 +6,8 @@ export declare class User {
     passwordHash: string;
     name: string;
     role: string;
+    friendCode: string;
+    avatarUrl: string;
     createdAt: Date;
     updatedAt: Date;
     bookmarks: Bookmark[];

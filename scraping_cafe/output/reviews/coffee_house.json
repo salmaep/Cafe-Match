@@ -1,0 +1,47 @@
+{
+  "cafeName": "COFFEE HOUSE",
+  "placeId": "ChIJ2eJLAgDDaC4R9EONRUkHS2U",
+  "totalReviews": 3,
+  "reviewsScraped": 3,
+  "reviews": [
+    {
+      "author": "Faizal Indra Wijaya",
+      "authorUrl": "https://www.google.com/maps/contrib/105743801580383867801?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2025-11-17T04:42:00.886Z",
+      "relativeDate": "4 bulan lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "Ci9DQUlRQUNvZENodHljRjlvT25kRWVFNXVjbFE1ZDFOaldUTTVkRXBoWms5RGFYYxAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sCi9DQUlRQUNvZENodHljRjlvT25kRWVFNXVjbFE1ZDFOaldUTTVkRXBoWms5RGFYYxAB!2m1!1s0x0:0x654b0749458d43f4!3m1!1s2@1:CAIQACodChtycF9oOndEeE5uclQ5d1NjWTM5dEphZk9DaXc%7C%7C?hl=id"
+    },
+    {
+      "author": "yanra",
+      "authorUrl": "https://www.google.com/maps/contrib/103104504574760372772?hl=id",
+      "rating": 5,
+      "text": "Jangan lupa di order kawan-kawan.",
+      "textTranslated": "Jangan lupa untuk memesan, teman-teman.",
+      "date": "2025-11-16T08:56:44.870Z",
+      "relativeDate": "4 bulan lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "Ci9DQUlRQUNvZENodHljRjlvT25WM1FUbHVWMUpqVDJsck9UQmFhMkZuYkdOclVrRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sCi9DQUlRQUNvZENodHljRjlvT25WM1FUbHVWMUpqVDJsck9UQmFhMkZuYkdOclVrRRAB!2m1!1s0x0:0x654b0749458d43f4!3m1!1s2@1:CAIQACodChtycF9oOnV3QTluV1JjT2lrOTBaa2FnbGNrUkE%7C%7C?hl=id"
+    },
+    {
+      "author": "Yayan Ramdhani",
+      "authorUrl": "https://www.google.com/maps/contrib/109012266499752067860?hl=id",
+      "rating": 5,
+      "text": "Tersedia Bottled Coffee 250ml & 1L. Cooffee Gula Aren, Latte & Americano.\nBottled Coffee Bisa Menemani Kamu Dimanapun Kamu Berada, Gasskeun Di Order.",
+      "textTranslated": null,
+      "date": "2025-11-16T08:36:14.828Z",
+      "relativeDate": "4 bulan lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "Ci9DQUlRQUNvZENodHljRjlvT2xwUGQzQkZSRlZpUlVSQ01ITjZVelowVVRCcU9YYxAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sCi9DQUlRQUNvZENodHljRjlvT2xwUGQzQkZSRlZpUlVSQ01ITjZVelowVVRCcU9YYxAB!2m1!1s0x0:0x654b0749458d43f4!3m1!1s2@1:CAIQACodChtycF9oOlpPd3BFRFViRURCMHN6UzZ0UTBqOXc%7C%7C?hl=id"
+    }
+  ]
+}

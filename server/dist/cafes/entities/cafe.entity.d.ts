@@ -18,6 +18,10 @@ export declare class Cafe {
     wifiAvailable: boolean;
     wifiSpeedMbps: number;
     hasMushola: boolean;
+    hasParking: boolean;
+    googleRating: number;
+    totalGoogleReviews: number;
+    website: string;
     openingHours: Record<string, string>;
     priceRange: string;
     bookmarksCount: number;
@@ -25,6 +29,20 @@ export declare class Cafe {
     ownerId: number;
     hasActivePromotion: boolean;
     activePromotionType: string;
+    promotionContent: {
+        title: string;
+        description: string;
+        validHours?: string;
+        validDays?: string;
+        promoPhoto?: string;
+    } | null;
+    newCafeContent: {
+        openingSince: string;
+        highlightText: string;
+        keunggulan: string[];
+        promoOffer?: string;
+        promoPhoto?: string;
+    } | null;
     isActive: boolean;
     createdAt: Date;
     updatedAt: Date;

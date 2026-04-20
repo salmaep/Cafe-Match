@@ -1,0 +1,112 @@
+{
+  "cafeName": "MukaBumi Coffee",
+  "placeId": "ChIJ-ZmpVADDaC4RrMaNhk1bbRc",
+  "totalReviews": 8,
+  "reviewsScraped": 8,
+  "reviews": [
+    {
+      "author": "Yohansli Noya",
+      "authorUrl": "https://www.google.com/maps/contrib/115604532909560890082?hl=id",
+      "rating": 5,
+      "text": "Cafe dengan suasana yang cukup tenang, kopinya enak, ada ruangan untuk diskusi dan seminar atau talkshow skala kecil, ada halaman juga dan banyak tempat parkir, suasananya cukup adem, sangat cocok untuk menikmati suasana tenang dan sejuk dipinggiran kota Bandung.",
+      "textTranslated": null,
+      "date": "2026-03-15T13:45:25.620Z",
+      "relativeDate": "4 minggu lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "Ci9DQUlRQUNvZENodHljRjlvT2xvd1drYzNNMHgxVmpsMVRsRjRNMGswWHkwd1NVRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sCi9DQUlRQUNvZENodHljRjlvT2xvd1drYzNNMHgxVmpsMVRsRjRNMGswWHkwd1NVRRAB!2m1!1s0x0:0x176d5b4d868dc6ac!3m1!1s2@1:CAIQACodChtycF9oOlowWkc3M0x1Vjl1TlF4M0k0Xy0wSUE%7C%7C?hl=id"
+    },
+    {
+      "author": "Muzarie Qolby",
+      "authorUrl": "https://www.google.com/maps/contrib/107079862917458811972?hl=id",
+      "rating": 4,
+      "text": "",
+      "textTranslated": null,
+      "date": "2026-02-13T10:01:23.387Z",
+      "relativeDate": "2 bulan lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "Ci9DQUlRQUNvZENodHljRjlvT25GcmREQkhaWEpFUzNRM1RFSkVjV2MyVkZwWGRsRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sCi9DQUlRQUNvZENodHljRjlvT25GcmREQkhaWEpFUzNRM1RFSkVjV2MyVkZwWGRsRRAB!2m1!1s0x0:0x176d5b4d868dc6ac!3m1!1s2@1:CAIQACodChtycF9oOnFrdDBHZXJES3Q3TEJEcWc2VFpXdlE%7C%7C?hl=id"
+    },
+    {
+      "author": "Fitri",
+      "authorUrl": "https://www.google.com/maps/contrib/116914788243952962410?hl=id",
+      "rating": 5,
+      "text": "Good ambiance, kamar mandi bersih, musholanya proper juga. Jangan lupakan alat tulis kantor yang tersedia di lantai dua (dari pensil sampai sticky notes ADA) dannn chocoberry nya best!!!!! Must try and visit!",
+      "textTranslated": null,
+      "date": "2026-02-07T09:07:30.431Z",
+      "relativeDate": "2 bulan lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "Ci9DQUlRQUNvZENodHljRjlvT2tkM1gxOXJUSGRqUkRrdGRqTlhTbk5IT1ZFeWJsRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sCi9DQUlRQUNvZENodHljRjlvT2tkM1gxOXJUSGRqUkRrdGRqTlhTbk5IT1ZFeWJsRRAB!2m1!1s0x0:0x176d5b4d868dc6ac!3m1!1s2@1:CAIQACodChtycF9oOkd3X19rTHdjRDktdjNXSnNHOVEyblE%7C%7C?hl=id"
+    },
+    {
+      "author": "r. hivan sutrisno",
+      "authorUrl": "https://www.google.com/maps/contrib/116782931951117844191?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2025-12-08T03:45:01.959Z",
+      "relativeDate": "4 bulan lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "Ci9DQUlRQUNvZENodHljRjlvT25OWVdVNXJlazVWWjBRek9VRnJNblEwVjJkckxXYxAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sCi9DQUlRQUNvZENodHljRjlvT25OWVdVNXJlazVWWjBRek9VRnJNblEwVjJkckxXYxAB!2m1!1s0x0:0x176d5b4d868dc6ac!3m1!1s2@1:CAIQACodChtycF9oOnNYWU5rek5VZ0QzOUFrMnQ0V2drLWc%7C%7C?hl=id"
+    },
+    {
+      "author": "darti 1901",
+      "authorUrl": "https://www.google.com/maps/contrib/104106333446104586646?hl=id",
+      "rating": 1,
+      "text": "cukup sekali saja",
+      "textTranslated": null,
+      "date": "2025-10-31T04:44:07.337Z",
+      "relativeDate": "5 bulan lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "Ci9DQUlRQUNvZENodHljRjlvT2xORlJUaFpNVkZ6TldKRVZVaFBTV3hsVG5OclRFRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sCi9DQUlRQUNvZENodHljRjlvT2xORlJUaFpNVkZ6TldKRVZVaFBTV3hsVG5OclRFRRAB!2m1!1s0x0:0x176d5b4d868dc6ac!3m1!1s2@1:CAIQACodChtycF9oOlNFRThZMVFzNWJEVUhPSWxlTnNrTEE%7C%7C?hl=id"
+    },
+    {
+      "author": "Feyla Agatha",
+      "authorUrl": "https://www.google.com/maps/contrib/116974578574212793131?hl=id",
+      "rating": 5,
+      "text": "cozy, adem, affordable price, cukup bersih, tempatnya walaupun dalem komplek tapi cukup strategis karna deket jalan utama. overall mantapp jiwa",
+      "textTranslated": null,
+      "date": "2025-09-23T06:27:04.519Z",
+      "relativeDate": "6 bulan lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "Ci9DQUlRQUNvZENodHljRjlvT25SQ1oybGtSbmxDVVRaQlluUXRZMk54Ym5jeWJXYxAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sCi9DQUlRQUNvZENodHljRjlvT25SQ1oybGtSbmxDVVRaQlluUXRZMk54Ym5jeWJXYxAB!2m1!1s0x0:0x176d5b4d868dc6ac!3m1!1s2@1:CAIQACodChtycF9oOnRCZ2lkRnlCUTZBYnQtY2NxbncybWc%7C%7C?hl=id"
+    },
+    {
+      "author": "Afifa Magfhira S",
+      "authorUrl": "https://www.google.com/maps/contrib/109002743284914810494?hl=id",
+      "rating": 5,
+      "text": "This coffee shop is my go-to spot for a morning pick-me-up. The coffee is always freshly brewed, and the pastries are delicious. The staff is friendly and welcoming, and the atmosphere is relaxed and comfortable. A perfect spot to catch up with friends or get some work done.",
+      "textTranslated": "Kedai kopi ini adalah tempat favorit saya untuk menyegarkan diri di pagi hari. Kopinya selalu diseduh segar, dan kue-kue keringnya lezat. Stafnya ramah dan menyambut, dan suasananya santai dan nyaman. Tempat yang sempurna untuk bertemu teman atau menyelesaikan pekerjaan.",
+      "date": "2025-06-18T04:42:25.374Z",
+      "relativeDate": "9 bulan lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "Ci9DQUlRQUNvZENodHljRjlvT2pnNVNUWldlbkpPTW5aeVlUQnNURnBKUjBoQlVuYxAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sCi9DQUlRQUNvZENodHljRjlvT2pnNVNUWldlbkpPTW5aeVlUQnNURnBKUjBoQlVuYxAB!2m1!1s0x0:0x176d5b4d868dc6ac!3m1!1s2@1:CAIQACodChtycF9oOjg5STZWenJOMnZyYTBsTFpJR0hBUnc%7C%7C?hl=id"
+    },
+    {
+      "author": "joy Philip Nehemia M",
+      "authorUrl": "https://www.google.com/maps/contrib/112078619948417368919?hl=id",
+      "rating": 5,
+      "text": "enak buat wfc,harga affordable, adem udh ada ac,wfc sambil liat pemandangan juga",
+      "textTranslated": null,
+      "date": "2025-04-04T06:48:46.044Z",
+      "relativeDate": "setahun lalu",
+      "likesCount": 1,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnTUNJX2M2VGFBEAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnTUNJX2M2VGFBEAE!2m1!1s0x0:0x176d5b4d868dc6ac!3m1!1s2@1:CIHM0ogKEICAgMCI_c6TaA%7C%7C?hl=id"
+    }
+  ]
+}

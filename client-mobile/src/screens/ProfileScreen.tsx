@@ -4,16 +4,52 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  Alert,
+  ScrollView,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { CommonActions, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
+import { useShortlist } from '../context/ShortlistContext';
+import { usePreferences } from '../context/PreferencesContext';
 import CafeMatchLogo from '../components/CafeMatchLogo';
 import { colors, spacing, radius } from '../theme';
 
 export default function ProfileScreen() {
   const navigation = useNavigation<StackNavigationProp<any>>();
+  const insets = useSafeAreaInsets();
   const { user, logout } = useAuth();
+  const { clearShortlist } = useShortlist();
+  const { setPreferences, setWizardCompleted } = usePreferences();
+
+  const handleLogout = () => {
+    Alert.alert(
+      'Logout',
+      'Kamu yakin mau logout? Semua data lokal (shortlist, preferensi) akan dihapus.',
+      [
+        { text: 'Batal', style: 'cancel' },
+        {
+          text: 'Logout',
+          style: 'destructive',
+          onPress: async () => {
+            await logout();
+            await clearShortlist();
+            // Reset in-memory wizard state so next login starts fresh
+            setPreferences(null);
+            setWizardCompleted(false);
+            // Reset the entire navigation stack to the Splash screen
+            navigation.dispatch(
+              CommonActions.reset({
+                index: 0,
+                routes: [{ name: 'Splash' }],
+              }),
+            );
+          },
+        },
+      ],
+    );
+  };
 
   if (!user) {
     return (
@@ -36,7 +72,11 @@ export default function ProfileScreen() {
   const isOwner = user.role === 'owner';
 
   return (
-    <View style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
+      showsVerticalScrollIndicator={false}
+    >
       <View style={styles.profileHeader}>
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>{user.name.charAt(0).toUpperCase()}</Text>
@@ -79,6 +119,38 @@ export default function ProfileScreen() {
           <Text style={styles.menuLabel}>My Bookmarks</Text>
           <Text style={styles.menuArrow}>→</Text>
         </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => navigation.navigate('Friends')}
+        >
+          <Text style={styles.menuIcon}>👥</Text>
+          <Text style={styles.menuLabel}>Teman</Text>
+          <Text style={styles.menuArrow}>→</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => navigation.navigate('Achievements')}
+        >
+          <Text style={styles.menuIcon}>🏆</Text>
+          <Text style={styles.menuLabel}>Achievements</Text>
+          <Text style={styles.menuArrow}>→</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => navigation.navigate('Notifications')}
+        >
+          <Text style={styles.menuIcon}>🔔</Text>
+          <Text style={styles.menuLabel}>Notifikasi</Text>
+          <Text style={styles.menuArrow}>→</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => navigation.navigate('Recap')}
+        >
+          <Text style={styles.menuIcon}>📊</Text>
+          <Text style={styles.menuLabel}>Recap {new Date().getFullYear()}</Text>
+          <Text style={styles.menuArrow}>→</Text>
+        </TouchableOpacity>
         <TouchableOpacity style={styles.menuItem}>
           <Text style={styles.menuIcon}>⚙️</Text>
           <Text style={styles.menuLabel}>Settings</Text>
@@ -86,10 +158,10 @@ export default function ProfileScreen() {
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity style={styles.logoutBtn} onPress={logout}>
+      <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
         <Text style={styles.logoutText}>Logout</Text>
       </TouchableOpacity>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -123,8 +195,8 @@ const styles = StyleSheet.create({
   loginBtnText: { color: colors.white, fontWeight: '700', fontSize: 16 },
   profileHeader: {
     alignItems: 'center',
-    paddingTop: 72,
-    paddingBottom: spacing.lg,
+    paddingTop: 56,
+    paddingBottom: spacing.md,
   },
   avatar: {
     width: 72,

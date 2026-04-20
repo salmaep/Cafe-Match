@@ -1,0 +1,60 @@
+{
+  "cafeName": "Holi.Coffee",
+  "placeId": "ChIJ8fpgKyjpaC4R1i76rgaGa7o",
+  "totalReviews": 4,
+  "reviewsScraped": 4,
+  "reviews": [
+    {
+      "author": "Audi A Alfiary",
+      "authorUrl": "https://www.google.com/maps/contrib/116722808843390772748?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2021-06-19T12:03:33.464Z",
+      "relativeDate": "4 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSUNxNjUzZWVnEAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSUNxNjUzZWVnEAE!2m1!1s0x0:0xba6b8606aefa2ed6!3m1!1s2@1:CIHM0ogKEICAgICq653eeg%7C%7C?hl=id"
+    },
+    {
+      "author": "abrori abdul rozaq",
+      "authorUrl": "https://www.google.com/maps/contrib/112154635558313740168?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2021-05-14T16:52:15.249Z",
+      "relativeDate": "4 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSURLNWJEUXlBRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSURLNWJEUXlBRRAB!2m1!1s0x0:0xba6b8606aefa2ed6!3m1!1s2@1:CIHM0ogKEICAgIDK5bDQyAE%7C%7C?hl=id"
+    },
+    {
+      "author": "Intan Awalya Ramadhan",
+      "authorUrl": "https://www.google.com/maps/contrib/102688672851206852224?hl=id",
+      "rating": 5,
+      "text": "pelayanan nya baik,kopi nya enak",
+      "textTranslated": null,
+      "date": "2021-04-26T13:49:53.432Z",
+      "relativeDate": "4 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSURLNE96UjBnRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSURLNE96UjBnRRAB!2m1!1s0x0:0xba6b8606aefa2ed6!3m1!1s2@1:CIHM0ogKEICAgIDK4OzR0gE%7C%7C?hl=id"
+    },
+    {
+      "author": "Christoni Sitorus",
+      "authorUrl": "https://www.google.com/maps/contrib/105829345223056006395?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2021-02-24T07:23:54.305Z",
+      "relativeDate": "5 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSUR5aE95OFdnEAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSUR5aE95OFdnEAE!2m1!1s0x0:0xba6b8606aefa2ed6!3m1!1s2@1:CIHM0ogKEICAgIDyhOy8Wg%7C%7C?hl=id"
+    }
+  ]
+}

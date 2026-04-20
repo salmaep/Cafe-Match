@@ -1,0 +1,47 @@
+{
+  "cafeName": "Citarum Coffee Shop",
+  "placeId": "ChIJd8dS4LTnaC4RstEfVvm3iZI",
+  "totalReviews": 3,
+  "reviewsScraped": 3,
+  "reviews": [
+    {
+      "author": "Kawi Boedisetio",
+      "authorUrl": "https://www.google.com/maps/contrib/108099435792571586612?hl=id",
+      "rating": 4,
+      "text": "Sipping coffee while waiting for a friend..., Bandung by night",
+      "textTranslated": "Menikmati kopi sambil menunggu teman..., Bandung di malam hari",
+      "date": "2019-10-12T11:54:15.394Z",
+      "relativeDate": "6 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSUMwLTUtSmlRRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSUMwLTUtSmlRRRAB!2m1!1s0x0:0x9289b7f9561fd1b2!3m1!1s2@1:CIHM0ogKEICAgIC0-5-JiQE%7C%7C?hl=id"
+    },
+    {
+      "author": "Beben Dian sutisna",
+      "authorUrl": "https://www.google.com/maps/contrib/101428572999088234830?hl=id",
+      "rating": 5,
+      "text": "menu lengkap...enak buat nongkrong",
+      "textTranslated": null,
+      "date": "2018-01-20T06:18:13.473Z",
+      "relativeDate": "8 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSURndk16MHV3RRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSURndk16MHV3RRAB!2m1!1s0x0:0x9289b7f9561fd1b2!3m1!1s2@1:CIHM0ogKEICAgIDgvMz0uwE%7C%7C?hl=id"
+    },
+    {
+      "author": "Guna Adiluhur",
+      "authorUrl": "https://www.google.com/maps/contrib/114164545251151687269?hl=id",
+      "rating": 5,
+      "text": "Pelayanan cepat, tempat nya OK, minuman nya ok, sayang tidak sempat pesan makanan, namun dari suasana, tata letak dan desain dan konsep, mereka cukup mumpuni untuk menjadi Coffee Shop yang berdiri sendiri bukan karena bagian dari hotel.",
+      "textTranslated": null,
+      "date": "2017-08-19T08:04:07.740Z",
+      "relativeDate": "8 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSUN3MkxEclp3EAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSUN3MkxEclp3EAE!2m1!1s0x0:0x9289b7f9561fd1b2!3m1!1s2@1:CIHM0ogKEICAgICw2LDrZw%7C%7C?hl=id"
+    }
+  ]
+}

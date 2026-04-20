@@ -16,7 +16,7 @@ async function bootstrap() {
   );
 
   app.enableCors({
-    origin: ['http://localhost:5173'],
+    origin: ['http://localhost:5173', /.*\.expo\.dev$/, /^http:\/\/192\.168\./],
     credentials: true,
   });
 

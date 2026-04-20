@@ -1,0 +1,21 @@
+{
+  "cafeName": "MANIK CAFE - BANDUNG UTARA",
+  "placeId": "ChIJmy9CHgDdaC4RbYqMMWAYj4c",
+  "totalReviews": 1,
+  "reviewsScraped": 1,
+  "reviews": [
+    {
+      "author": "Eeng Kartini",
+      "authorUrl": "https://www.google.com/maps/contrib/103336718916199351414?hl=id",
+      "rating": 5,
+      "text": "wei mantap suasana dapet,, makanannya enak enak",
+      "textTranslated": null,
+      "date": "2024-07-30T05:41:13.305Z",
+      "relativeDate": "setahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSUNibTQ3bXBBRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSUNibTQ3bXBBRRAB!2m1!1s0x0:0x878f1860318c8a6d!3m1!1s2@1:CIHM0ogKEICAgICbm47mpAE%7C%7C?hl=id"
+    }
+  ]
+}

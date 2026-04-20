@@ -1,0 +1,60 @@
+{
+  "cafeName": "CALIXTO COFFEE",
+  "placeId": "ChIJJV_nrxbdaC4RKgOFq2LRPgw",
+  "totalReviews": 4,
+  "reviewsScraped": 4,
+  "reviews": [
+    {
+      "author": "Rizky Akbar",
+      "authorUrl": "https://www.google.com/maps/contrib/104017771514796992632?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2022-01-28T11:31:18.022Z",
+      "relativeDate": "4 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSURtanM2bFFBEAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSURtanM2bFFBEAE!2m1!1s0x0:0xc3ed162ab85032a!3m1!1s2@1:CIHM0ogKEICAgIDmjs6lQA%7C%7C?hl=id"
+    },
+    {
+      "author": "Aisyah Nurul",
+      "authorUrl": "https://www.google.com/maps/contrib/115266179205512296077?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2022-01-27T13:16:07.575Z",
+      "relativeDate": "4 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSURtbHNQbHR3RRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSURtbHNQbHR3RRAB!2m1!1s0x0:0xc3ed162ab85032a!3m1!1s2@1:CIHM0ogKEICAgIDmlsPltwE%7C%7C?hl=id"
+    },
+    {
+      "author": "Muhammad Gemilang S",
+      "authorUrl": "https://www.google.com/maps/contrib/116566264999427162797?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2022-01-27T13:14:48.279Z",
+      "relativeDate": "4 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSURtbHNQZ2N3EAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSURtbHNQZ2N3EAE!2m1!1s0x0:0xc3ed162ab85032a!3m1!1s2@1:CIHM0ogKEICAgIDmlsPgcw%7C%7C?hl=id"
+    },
+    {
+      "author": "Imam Febry",
+      "authorUrl": "https://www.google.com/maps/contrib/108512109302199963248?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2022-01-27T10:34:24.976Z",
+      "relativeDate": "4 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSURtbHZ5SzZRRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSURtbHZ5SzZRRRAB!2m1!1s0x0:0xc3ed162ab85032a!3m1!1s2@1:CIHM0ogKEICAgIDmlvyK6QE%7C%7C?hl=id"
+    }
+  ]
+}

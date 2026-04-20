@@ -1,0 +1,34 @@
+{
+  "cafeName": "C&T coffe shop",
+  "placeId": "ChIJl1qeiTPdaC4R9gKXTItLZPk",
+  "totalReviews": 2,
+  "reviewsScraped": 2,
+  "reviews": [
+    {
+      "author": "Andri Maulandari",
+      "authorUrl": "https://www.google.com/maps/contrib/108084384300909883949?hl=id",
+      "rating": 5,
+      "text": "Penyajian cepat",
+      "textTranslated": null,
+      "date": "2024-05-12T01:22:55.153Z",
+      "relativeDate": "setahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSUNUN1BHYW53RRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSUNUN1BHYW53RRAB!2m1!1s0x0:0xf9644b8b4c9702f6!3m1!1s2@1:CIHM0ogKEICAgICT7PGanwE%7C%7C?hl=id"
+    },
+    {
+      "author": "Nadila Nur",
+      "authorUrl": "https://www.google.com/maps/contrib/110720109527677432100?hl=id",
+      "rating": 5,
+      "text": "abis dari atas lewat pasir kunci nemu coffee shop mini ini kebetulan lg pgn es kopi susu jadi mampir. kami pesen eskopi susu gula aren, V60, mendoan & cireng ayam semuanya enak. Aa baristanya ngejelasin pake bahasa sunda yg halus~ harga affordable & view gunung manglayang worth to try!!",
+      "textTranslated": null,
+      "date": "2024-04-27T09:41:21.314Z",
+      "relativeDate": "setahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSUNqci1YSnN3RRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSUNqci1YSnN3RRAB!2m1!1s0x0:0xf9644b8b4c9702f6!3m1!1s2@1:CIHM0ogKEICAgICjr-XJswE%7C%7C?hl=id"
+    }
+  ]
+}

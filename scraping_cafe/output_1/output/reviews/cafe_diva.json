@@ -1,0 +1,86 @@
+{
+  "cafeName": "Cafe Diva",
+  "placeId": "ChIJCyCg-x7daC4RGEDyQ1isJzY",
+  "totalReviews": 6,
+  "reviewsScraped": 6,
+  "reviews": [
+    {
+      "author": "Yan Jerri",
+      "authorUrl": "https://www.google.com/maps/contrib/116469754414963627693?hl=id",
+      "rating": 5,
+      "text": "Mantap",
+      "textTranslated": null,
+      "date": "2024-06-16T14:17:37.301Z",
+      "relativeDate": "setahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSUNMM015NldnEAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSUNMM015NldnEAE!2m1!1s0x0:0x3627ac5843f24018!3m1!1s2@1:CIHM0ogKEICAgICL3My6Wg%7C%7C?hl=id"
+    },
+    {
+      "author": "Keyzia Ravita",
+      "authorUrl": "https://www.google.com/maps/contrib/116960820595701041899?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2023-08-11T17:03:38.656Z",
+      "relativeDate": "2 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSUNweC1QU2NnEAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSUNweC1QU2NnEAE!2m1!1s0x0:0x3627ac5843f24018!3m1!1s2@1:CIHM0ogKEICAgICpx-PScg%7C%7C?hl=id"
+    },
+    {
+      "author": "Ryanda Rizky",
+      "authorUrl": "https://www.google.com/maps/contrib/103911226155815582482?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2022-06-26T08:13:36.348Z",
+      "relativeDate": "3 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSURPeUttSzBBRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSURPeUttSzBBRRAB!2m1!1s0x0:0x3627ac5843f24018!3m1!1s2@1:CIHM0ogKEICAgIDOyKmK0AE%7C%7C?hl=id"
+    },
+    {
+      "author": "Nanx Syahroni",
+      "authorUrl": "https://www.google.com/maps/contrib/117075651471919986254?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2022-06-19T07:16:27.042Z",
+      "relativeDate": "3 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSUNPczZTdjdnRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSUNPczZTdjdnRRAB!2m1!1s0x0:0x3627ac5843f24018!3m1!1s2@1:CIHM0ogKEICAgICOs6Sv7gE%7C%7C?hl=id"
+    },
+    {
+      "author": "Erni Fitriani",
+      "authorUrl": "https://www.google.com/maps/contrib/117025786888219126941?hl=id",
+      "rating": 5,
+      "text": "Cocok nih buat yg suka kopdar n nongki nongki.",
+      "textTranslated": null,
+      "date": "2022-05-22T03:53:05.870Z",
+      "relativeDate": "3 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSUQycllmYWVBEAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSUQycllmYWVBEAE!2m1!1s0x0:0x3627ac5843f24018!3m1!1s2@1:CIHM0ogKEICAgID2rYfaeA%7C%7C?hl=id"
+    },
+    {
+      "author": "Diva Puspita",
+      "authorUrl": "https://www.google.com/maps/contrib/114334401603692414602?hl=id",
+      "rating": 5,
+      "text": "Good",
+      "textTranslated": "Bagus",
+      "date": "2020-12-05T08:03:18.966Z",
+      "relativeDate": "5 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSURpb1lYeVhREAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSURpb1lYeVhREAE!2m1!1s0x0:0x3627ac5843f24018!3m1!1s2@1:CIHM0ogKEICAgIDioYXyXQ%7C%7C?hl=id"
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "cafeName": "Co-Working Space - Kecamatan Rancasari",
+  "placeId": "ChIJi06esFHDaC4RV3-6RFb4z-Y",
+  "totalReviews": 1,
+  "reviewsScraped": 1,
+  "reviews": [
+    {
+      "author": "Nurwanto Ambari",
+      "authorUrl": "https://www.google.com/maps/contrib/117969774555738775935?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2021-02-09T04:59:31.906Z",
+      "relativeDate": "5 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSUN5cmRTQ1NnEAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSUN5cmRTQ1NnEAE!2m1!1s0x0:0xe6cff85644ba7f57!3m1!1s2@1:CIHM0ogKEICAgICyrdSCSg%7C%7C?hl=id"
+    }
+  ]
+}

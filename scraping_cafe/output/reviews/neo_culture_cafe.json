@@ -1,0 +1,86 @@
+{
+  "cafeName": "Neo Culture Cafe",
+  "placeId": "ChIJVTiI-pPnaC4RN5RnXm8ma0E",
+  "totalReviews": 6,
+  "reviewsScraped": 6,
+  "reviews": [
+    {
+      "author": "sinarborteknik",
+      "authorUrl": "https://www.google.com/maps/contrib/113556018577026407202?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2026-01-19T00:53:05.563Z",
+      "relativeDate": "2 bulan lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "Ci9DQUlRQUNvZENodHljRjlvT20xMWNYUTVTVWszWlU1Qk9GVlFUbGxOZFZkdU1tYxAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sCi9DQUlRQUNvZENodHljRjlvT20xMWNYUTVTVWszWlU1Qk9GVlFUbGxOZFZkdU1tYxAB!2m1!1s0x0:0x416b266f5e679437!3m1!1s2@1:CAIQACodChtycF9oOm11cXQ5SUk3ZU5BOFVQTllNdVduMmc%7C%7C?hl=id"
+    },
+    {
+      "author": "Rodiana Soleh",
+      "authorUrl": "https://www.google.com/maps/contrib/112236814605635345649?hl=id",
+      "rating": 5,
+      "text": "Kami melayani siap hantar untuk partai kecil sedang besar",
+      "textTranslated": null,
+      "date": "2024-07-14T14:59:19.178Z",
+      "relativeDate": "setahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSURyLUxLbUxnEAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSURyLUxLbUxnEAE!2m1!1s0x0:0x416b266f5e679437!3m1!1s2@1:CIHM0ogKEICAgIDr-LKmLg%7C%7C?hl=id"
+    },
+    {
+      "author": "Agus Kristianto",
+      "authorUrl": "https://www.google.com/maps/contrib/111907973684508733237?hl=id",
+      "rating": 5,
+      "text": "Tempatnya nyaman buat nongkrong",
+      "textTranslated": null,
+      "date": "2020-09-23T16:56:30.234Z",
+      "relativeDate": "5 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSURDdXB5bUVnEAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSURDdXB5bUVnEAE!2m1!1s0x0:0x416b266f5e679437!3m1!1s2@1:CIHM0ogKEICAgIDCupymEg%7C%7C?hl=id"
+    },
+    {
+      "author": "Lissis Trata",
+      "authorUrl": "https://www.google.com/maps/contrib/102987888882843977644?hl=id",
+      "rating": 4,
+      "text": "",
+      "textTranslated": null,
+      "date": "2018-12-30T09:56:45.651Z",
+      "relativeDate": "7 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSURJaXJQZk1REAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSURJaXJQZk1REAE!2m1!1s0x0:0x416b266f5e679437!3m1!1s2@1:CIHM0ogKEICAgIDIirPfMQ%7C%7C?hl=id"
+    },
+    {
+      "author": "Suci Putryani",
+      "authorUrl": "https://www.google.com/maps/contrib/113425237755345300073?hl=id",
+      "rating": 3,
+      "text": "",
+      "textTranslated": null,
+      "date": "2018-11-14T18:40:41.693Z",
+      "relativeDate": "7 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSUNJanZUUXFRRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSUNJanZUUXFRRRAB!2m1!1s0x0:0x416b266f5e679437!3m1!1s2@1:CIHM0ogKEICAgICIjvTQqQE%7C%7C?hl=id"
+    },
+    {
+      "author": "Taufiq Qurrahman",
+      "authorUrl": "https://www.google.com/maps/contrib/111413099300104217449?hl=id",
+      "rating": 5,
+      "text": "Tempat asik untuk santai",
+      "textTranslated": null,
+      "date": "2017-09-25T15:50:04.363Z",
+      "relativeDate": "8 tahun lalu",
+      "likesCount": 1,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSUNBMjVESlBREAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSUNBMjVESlBREAE!2m1!1s0x0:0x416b266f5e679437!3m1!1s2@1:CIHM0ogKEICAgICA25DJPQ%7C%7C?hl=id"
+    }
+  ]
+}

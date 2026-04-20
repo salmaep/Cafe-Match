@@ -90,6 +90,8 @@ export default function MyCafeScreen() {
   const [address, setAddress] = useState('');
   const [phone, setPhone] = useState('');
   const [description, setDescription] = useState('');
+  const [latitude, setLatitude] = useState('');
+  const [longitude, setLongitude] = useState('');
   const [wifiAvailable, setWifiAvailable] = useState(false);
   const [wifiSpeed, setWifiSpeed] = useState('');
   const [hasMushola, setHasMushola] = useState(false);
@@ -145,6 +147,8 @@ export default function MyCafeScreen() {
     setAddress(data.address || '');
     setPhone(data.phone || '');
     setDescription(data.description || '');
+    setLatitude(data.latitude != null ? String(data.latitude) : '');
+    setLongitude(data.longitude != null ? String(data.longitude) : '');
     setWifiAvailable(!!data.wifiAvailable);
     setWifiSpeed(data.wifiSpeedMbps ? String(data.wifiSpeedMbps) : '');
     setHasMushola(!!data.hasMushola);
@@ -172,7 +176,21 @@ export default function MyCafeScreen() {
       facilityValue: key === 'wifi' && wifiSpeed ? wifiSpeed + ' Mbps' : null,
     }));
 
-    const payload = {
+    // Parse + validate coordinates (optional — only sent if both filled)
+    const latNum = latitude.trim() ? Number(latitude) : null;
+    const lngNum = longitude.trim() ? Number(longitude) : null;
+    if (latNum !== null && (isNaN(latNum) || latNum < -90 || latNum > 90)) {
+      Alert.alert('Error', 'Latitude harus antara -90 dan 90');
+      setSaving(false);
+      return;
+    }
+    if (lngNum !== null && (isNaN(lngNum) || lngNum < -180 || lngNum > 180)) {
+      Alert.alert('Error', 'Longitude harus antara -180 dan 180');
+      setSaving(false);
+      return;
+    }
+
+    const payload: any = {
       name: name.trim(),
       address: address.trim(),
       phone: phone.trim() || undefined,
@@ -183,6 +201,10 @@ export default function MyCafeScreen() {
       priceRange,
       facilities: facilitiesPayload,
     };
+    if (latNum !== null && lngNum !== null) {
+      payload.latitude = latNum;
+      payload.longitude = lngNum;
+    }
 
     const applyLocalUpdate = () => {
       // Merge payload into local cafe state so the read-only view re-renders
@@ -528,6 +550,65 @@ export default function MyCafeScreen() {
               placeholderTextColor={colors.textSecondary}
             />
           </View>
+
+          {/* Coordinates — required for map pin placement */}
+          <Text style={[styles.fieldLabel, { marginTop: spacing.md, marginBottom: spacing.xs }]}>
+            📍 Koordinat Lokasi
+          </Text>
+          <Text style={styles.coordHint}>
+            Dibutuhkan agar cafe kamu muncul di peta. Tap "Use current location" untuk isi otomatis.
+          </Text>
+          <View style={styles.coordRow}>
+            <View style={styles.coordField}>
+              <Text style={styles.fieldLabel}>Latitude</Text>
+              <TextInput
+                style={[styles.fieldInput, !editMode && styles.fieldInputReadonly]}
+                value={latitude}
+                onChangeText={setLatitude}
+                editable={editMode}
+                keyboardType="numeric"
+                placeholder="-6.9175"
+                placeholderTextColor={colors.textSecondary}
+              />
+            </View>
+            <View style={styles.coordField}>
+              <Text style={styles.fieldLabel}>Longitude</Text>
+              <TextInput
+                style={[styles.fieldInput, !editMode && styles.fieldInputReadonly]}
+                value={longitude}
+                onChangeText={setLongitude}
+                editable={editMode}
+                keyboardType="numeric"
+                placeholder="107.6191"
+                placeholderTextColor={colors.textSecondary}
+              />
+            </View>
+          </View>
+          {editMode && (
+            <TouchableOpacity
+              style={styles.useLocationBtn}
+              onPress={async () => {
+                try {
+                  const Location = await import('expo-location');
+                  const { status } = await Location.requestForegroundPermissionsAsync();
+                  if (status !== 'granted') {
+                    Alert.alert('Permission Denied', 'Lokasi diperlukan untuk fitur ini');
+                    return;
+                  }
+                  const loc = await Location.getCurrentPositionAsync({
+                    accuracy: Location.Accuracy.Balanced,
+                  });
+                  setLatitude(String(loc.coords.latitude));
+                  setLongitude(String(loc.coords.longitude));
+                  showToast('Lokasi saat ini terisi');
+                } catch (err: any) {
+                  Alert.alert('Error', 'Gagal mengambil lokasi: ' + (err?.message || 'unknown'));
+                }
+              }}
+            >
+              <Text style={styles.useLocationBtnText}>📍 Use current location</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Price Range */}
@@ -908,6 +989,28 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
   },
   fieldTextArea: { minHeight: 72, textAlignVertical: 'top' },
+
+  // Coordinates
+  coordHint: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
+    lineHeight: 15,
+  },
+  coordRow: { flexDirection: 'row', gap: spacing.sm },
+  coordField: { flex: 1 },
+  useLocationBtn: {
+    marginTop: spacing.sm,
+    backgroundColor: colors.accent,
+    paddingVertical: spacing.sm + 2,
+    borderRadius: radius.md,
+    alignItems: 'center',
+  },
+  useLocationBtnText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '700',
+  },
 
   // Price range
   priceRow: { flexDirection: 'row', gap: spacing.sm },

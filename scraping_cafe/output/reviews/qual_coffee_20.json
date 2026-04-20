@@ -1,0 +1,60 @@
+{
+  "cafeName": "Qual Coffee 2.0",
+  "placeId": "ChIJx-fHQEHnaC4RgUm_4aL_z8E",
+  "totalReviews": 4,
+  "reviewsScraped": 4,
+  "reviews": [
+    {
+      "author": "Amrullah Ridho",
+      "authorUrl": "https://www.google.com/maps/contrib/117536219258847405449?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2023-10-15T12:14:28.109Z",
+      "relativeDate": "2 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSUM1aVpxbE5nEAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSUM1aVpxbE5nEAE!2m1!1s0x0:0xc1cfffa2e1bf4981!3m1!1s2@1:CIHM0ogKEICAgIC5iZqlNg%7C%7C?hl=id"
+    },
+    {
+      "author": "Rizwan Family’s",
+      "authorUrl": "https://www.google.com/maps/contrib/103831054772604735201?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2023-10-09T02:30:49.288Z",
+      "relativeDate": "2 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSURaNy1QM3p3RRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSURaNy1QM3p3RRAB!2m1!1s0x0:0xc1cfffa2e1bf4981!3m1!1s2@1:CIHM0ogKEICAgIDZ7-P3zwE%7C%7C?hl=id"
+    },
+    {
+      "author": "SVEN",
+      "authorUrl": "https://www.google.com/maps/contrib/112550240310114666089?hl=id",
+      "rating": 5,
+      "text": "Minum kopi sambil sarapan...menunya enak murah dan tempatnya ala2 era kolonial gitu ..ntaps lah!",
+      "textTranslated": null,
+      "date": "2023-08-27T01:04:32.969Z",
+      "relativeDate": "2 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSURwcmZmQ3FnRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSURwcmZmQ3FnRRAB!2m1!1s0x0:0xc1cfffa2e1bf4981!3m1!1s2@1:CIHM0ogKEICAgIDprffCqgE%7C%7C?hl=id"
+    },
+    {
+      "author": "Lentera Cahaya TV",
+      "authorUrl": "https://www.google.com/maps/contrib/113473263645668185944?hl=id",
+      "rating": 5,
+      "text": "Qual Coffee is a coffee shop in Bandung, Indonesia that offers various kinds of coffee. It has a unique design with brick walls and a cozy atmosphere.",
+      "textTranslated": "Qual Coffee adalah kedai kopi di Bandung, Indonesia yang menawarkan beragam jenis kopi. Desainnya unik dengan dinding bata dan suasana yang nyaman.",
+      "date": "2023-08-25T10:57:10.993Z",
+      "relativeDate": "2 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSURwLVlfTGx3RRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSURwLVlfTGx3RRAB!2m1!1s0x0:0xc1cfffa2e1bf4981!3m1!1s2@1:CIHM0ogKEICAgIDp-Y_LlwE%7C%7C?hl=id"
+    }
+  ]
+}

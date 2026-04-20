@@ -14,7 +14,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocation } from '../context/LocationContext';
 import { MOCK_CAFES } from '../data/mockCafes';
-import api from '../services/api';
+import api, { fetchGlobalLeaderboard } from '../services/api';
 import { Cafe, Purpose } from '../types';
 import { colors, spacing, radius } from '../theme';
 
@@ -93,6 +93,12 @@ export default function TrendingScreen() {
   const insets = useSafeAreaInsets();
   const { latitude, longitude } = useLocation();
 
+  // Main tab toggle: Trending Cafes vs Global Leaderboard
+  const [mainTab, setMainTab] = useState<'cafes' | 'leaderboard'>('cafes');
+  const [globalLeaderboard, setGlobalLeaderboard] = useState<any[]>([]);
+  const [lbLoading, setLbLoading] = useState(false);
+
+  // Trending cafes state
   const [cafes, setCafes] = useState<Cafe[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeFilter, setActiveFilter] = useState<'All' | Purpose>('All');
@@ -136,6 +142,17 @@ export default function TrendingScreen() {
       .sort((a, b) => (b.favoritesCount || 0) - (a.favoritesCount || 0))
       .slice(0, 10);
   };
+
+  // Load global leaderboard when tab switches
+  useEffect(() => {
+    if (mainTab !== 'leaderboard') return;
+    if (globalLeaderboard.length > 0) return; // already loaded
+    setLbLoading(true);
+    fetchGlobalLeaderboard()
+      .then(setGlobalLeaderboard)
+      .catch(() => setGlobalLeaderboard([]))
+      .finally(() => setLbLoading(false));
+  }, [mainTab]);
 
   const handleFilterSelect = (filter: 'All' | Purpose) => {
     setActiveFilter(filter);
@@ -216,72 +233,156 @@ export default function TrendingScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Text style={styles.backIcon}>←</Text>
-        </TouchableOpacity>
         <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>Trending Cafes 🔥</Text>
-          <Text style={styles.headerSubtitle}>Top cafes in your area</Text>
+          <Text style={styles.headerTitle}>CafeMatch</Text>
         </View>
-        <View style={styles.headerRight} />
       </View>
 
-      {/* Purpose Filter Pills */}
-      <View style={styles.filterBar}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filterScroll}
+      {/* Main tabs: Trending Cafes vs Global Leaderboard */}
+      <View style={styles.mainTabs}>
+        <TouchableOpacity
+          style={[styles.mainTab, mainTab === 'cafes' && styles.mainTabActive]}
+          onPress={() => setMainTab('cafes')}
         >
-          {PURPOSE_FILTERS.map(filter => {
-            const isActive = activeFilter === filter;
-            return (
-              <TouchableOpacity
-                key={filter}
-                style={[
-                  styles.filterPill,
-                  isActive ? styles.filterPillActive : styles.filterPillInactive,
-                ]}
-                onPress={() => handleFilterSelect(filter)}
-                activeOpacity={0.75}
-              >
-                <Text
-                  style={[
-                    styles.filterPillText,
-                    isActive ? styles.filterPillTextActive : styles.filterPillTextInactive,
-                  ]}
-                >
-                  {filter}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-
-        {activeFilter !== 'All' && (
-          <TouchableOpacity style={styles.resetBtn} onPress={handleReset} activeOpacity={0.75}>
-            <Text style={styles.resetBtnText}>Reset</Text>
-          </TouchableOpacity>
-        )}
+          <Text style={[styles.mainTabText, mainTab === 'cafes' && styles.mainTabTextActive]}>
+            ☕ Trending Cafes
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.mainTab, mainTab === 'leaderboard' && styles.mainTabActive]}
+          onPress={() => setMainTab('leaderboard')}
+        >
+          <Text style={[styles.mainTabText, mainTab === 'leaderboard' && styles.mainTabTextActive]}>
+            🏆 Leaderboard
+          </Text>
+        </TouchableOpacity>
       </View>
 
-      {/* Content */}
-      {loading ? (
-        <View style={styles.centered}>
-          <ActivityIndicator size="large" color={colors.accent} />
-        </View>
-      ) : (
-        <FlatList
-          data={cafes}
-          keyExtractor={item => item.id}
-          renderItem={renderItem}
-          ListEmptyComponent={renderEmpty}
-          contentContainerStyle={
-            cafes.length === 0 ? styles.listEmptyContent : styles.listContent
-          }
-          showsVerticalScrollIndicator={false}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
-        />
+      {/* ── Tab: Trending Cafes ────────────────────────────────────── */}
+      {mainTab === 'cafes' && (
+        <>
+          {/* Purpose Filter Pills */}
+          <View style={styles.filterBar}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.filterScroll}
+            >
+              {PURPOSE_FILTERS.map(filter => {
+                const isActive = activeFilter === filter;
+                return (
+                  <TouchableOpacity
+                    key={filter}
+                    style={[
+                      styles.filterPill,
+                      isActive ? styles.filterPillActive : styles.filterPillInactive,
+                    ]}
+                    onPress={() => handleFilterSelect(filter)}
+                    activeOpacity={0.75}
+                  >
+                    <Text
+                      style={[
+                        styles.filterPillText,
+                        isActive ? styles.filterPillTextActive : styles.filterPillTextInactive,
+                      ]}
+                    >
+                      {filter}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+
+            {activeFilter !== 'All' && (
+              <TouchableOpacity style={styles.resetBtn} onPress={handleReset} activeOpacity={0.75}>
+                <Text style={styles.resetBtnText}>Reset</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {/* Content */}
+          {loading ? (
+            <View style={styles.centered}>
+              <ActivityIndicator size="large" color={colors.accent} />
+            </View>
+          ) : (
+            <FlatList
+              data={cafes}
+              keyExtractor={item => item.id}
+              renderItem={renderItem}
+              ListEmptyComponent={renderEmpty}
+              contentContainerStyle={
+                cafes.length === 0 ? styles.listEmptyContent : styles.listContent
+              }
+              showsVerticalScrollIndicator={false}
+              ItemSeparatorComponent={() => <View style={styles.separator} />}
+            />
+          )}
+        </>
+      )}
+
+      {/* ── Tab: Global Leaderboard ─────────────────────────────────── */}
+      {mainTab === 'leaderboard' && (
+        <>
+          {lbLoading ? (
+            <View style={styles.centered}>
+              <ActivityIndicator size="large" color={colors.accent} />
+            </View>
+          ) : globalLeaderboard.length === 0 ? (
+            <View style={styles.centered}>
+              <Text style={{ fontSize: 48, marginBottom: 12 }}>🏆</Text>
+              <Text style={{ fontSize: 16, color: colors.textSecondary }}>
+                Belum ada data leaderboard
+              </Text>
+            </View>
+          ) : (
+            <FlatList
+              data={globalLeaderboard}
+              keyExtractor={(item) => String(item.userId)}
+              contentContainerStyle={styles.listContent}
+              showsVerticalScrollIndicator={false}
+              ListHeaderComponent={
+                <Text style={styles.lbHeader}>
+                  Top Users · All Cafes
+                </Text>
+              }
+              renderItem={({ item }) => {
+                const rank = item.rank;
+                const rankEmoji =
+                  rank === 1 ? '👑' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`;
+                return (
+                  <View
+                    style={[
+                      styles.lbRow,
+                      rank <= 3 && { borderLeftWidth: 3, borderLeftColor: RANK_COLORS[rank] || colors.surface },
+                    ]}
+                  >
+                    <View style={[styles.lbRankBadge, { backgroundColor: RANK_COLORS[rank] || colors.surface }]}>
+                      <Text style={styles.lbRankText}>{rankEmoji}</Text>
+                    </View>
+                    <View style={styles.lbAvatar}>
+                      <Text style={styles.lbAvatarText}>{(item.name || '?')[0].toUpperCase()}</Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.lbName}>{item.name}</Text>
+                      <View style={styles.lbDetails}>
+                        <Text style={styles.lbStat}>☕ {item.totalCheckins} check-in</Text>
+                        <Text style={styles.lbStatSep}>·</Text>
+                        <Text style={styles.lbStat}>🗺️ {item.uniqueCafes} cafes</Text>
+                        <Text style={styles.lbStatSep}>·</Text>
+                        <Text style={styles.lbStat}>⏱️ {item.totalDuration}</Text>
+                      </View>
+                    </View>
+                    <View style={styles.lbScoreBox}>
+                      <Text style={styles.lbScoreNum}>{item.score}</Text>
+                      <Text style={styles.lbScoreLabel}>pts</Text>
+                    </View>
+                  </View>
+                );
+              }}
+            />
+          )}
+        </>
       )}
     </View>
   );
@@ -485,4 +586,74 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingHorizontal: spacing.xl,
   },
+
+  // ── Main tabs ─────────────────────────────
+  mainTabs: {
+    flexDirection: 'row',
+    backgroundColor: colors.white,
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.sm,
+    gap: spacing.sm,
+  },
+  mainTab: {
+    flex: 1,
+    paddingVertical: spacing.sm + 2,
+    alignItems: 'center',
+    borderRadius: radius.full,
+    backgroundColor: colors.surface,
+  },
+  mainTabActive: {
+    backgroundColor: colors.primary,
+  },
+  mainTabText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.textSecondary,
+  },
+  mainTabTextActive: {
+    color: colors.white,
+  },
+
+  // ── Global Leaderboard ────────────────────
+  lbHeader: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: colors.primary,
+    marginBottom: spacing.md,
+  },
+  lbRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.white,
+    borderRadius: radius.md,
+    padding: spacing.sm + 2,
+    marginBottom: spacing.sm,
+    elevation: 1,
+  },
+  lbRankBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: spacing.sm,
+  },
+  lbRankText: { fontSize: 14, fontWeight: '800', color: colors.primary },
+  lbAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.accent + '20',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: spacing.sm,
+  },
+  lbAvatarText: { fontSize: 16, fontWeight: '700', color: colors.accent },
+  lbName: { fontSize: 15, fontWeight: '700', color: colors.primary },
+  lbDetails: { flexDirection: 'row', alignItems: 'center', marginTop: 2, flexWrap: 'wrap' },
+  lbStat: { fontSize: 11, color: colors.textSecondary },
+  lbStatSep: { fontSize: 11, color: colors.textSecondary, marginHorizontal: 3 },
+  lbScoreBox: { alignItems: 'center', marginLeft: spacing.sm },
+  lbScoreNum: { fontSize: 20, fontWeight: '900', color: colors.accent },
+  lbScoreLabel: { fontSize: 9, color: colors.textSecondary, fontWeight: '600' },
 });

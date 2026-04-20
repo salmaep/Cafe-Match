@@ -1,0 +1,86 @@
+{
+  "cafeName": "Breakthrough Cafe & Coffee",
+  "placeId": "ChIJz6HYomjnaC4RsTp3cVsp9xc",
+  "totalReviews": 6,
+  "reviewsScraped": 6,
+  "reviews": [
+    {
+      "author": "Edy Sutanto",
+      "authorUrl": "https://www.google.com/maps/contrib/112862559459646048500?hl=id",
+      "rating": 2,
+      "text": "Biasa... Pelayanan Lama... Mahal... Antri...",
+      "textTranslated": null,
+      "date": "2023-08-04T05:25:20.366Z",
+      "relativeDate": "2 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSUNwN3N5LWxBRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSUNwN3N5LWxBRRAB!2m1!1s0x0:0x17f7295b71773ab1!3m1!1s2@1:CIHM0ogKEICAgICp7sy-lAE%7C%7C?hl=id"
+    },
+    {
+      "author": "Meggi Brodi",
+      "authorUrl": "https://www.google.com/maps/contrib/106071626954710639907?hl=id",
+      "rating": 3,
+      "text": "Pokoknya mantab lah",
+      "textTranslated": null,
+      "date": "2022-10-19T09:27:12.159Z",
+      "relativeDate": "3 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSURlOC1XbjNRRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSURlOC1XbjNRRRAB!2m1!1s0x0:0x17f7295b71773ab1!3m1!1s2@1:CIHM0ogKEICAgIDe8-Wn3QE%7C%7C?hl=id"
+    },
+    {
+      "author": "Deni Iskandar",
+      "authorUrl": "https://www.google.com/maps/contrib/102729764999608610489?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2022-05-09T09:54:10.098Z",
+      "relativeDate": "3 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSUQydk1xdnZRRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSUQydk1xdnZRRRAB!2m1!1s0x0:0x17f7295b71773ab1!3m1!1s2@1:CIHM0ogKEICAgID2vMqvvQE%7C%7C?hl=id"
+    },
+    {
+      "author": "rinto rindra",
+      "authorUrl": "https://www.google.com/maps/contrib/102063661951304728676?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2022-01-04T12:43:07.476Z",
+      "relativeDate": "4 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSUNtNVoteVNnEAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSUNtNVoteVNnEAE!2m1!1s0x0:0x17f7295b71773ab1!3m1!1s2@1:CIHM0ogKEICAgICm5Z-ySg%7C%7C?hl=id"
+    },
+    {
+      "author": "劉家洋",
+      "authorUrl": "https://www.google.com/maps/contrib/115104988567671731014?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2021-03-02T01:54:25.179Z",
+      "relativeDate": "5 tahun lalu",
+      "likesCount": 1,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSUR5MHVEZ2lRRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSUR5MHVEZ2lRRRAB!2m1!1s0x0:0x17f7295b71773ab1!3m1!1s2@1:CIHM0ogKEICAgIDy0uDgiQE%7C%7C?hl=id"
+    },
+    {
+      "author": "Andy Wirya",
+      "authorUrl": "https://www.google.com/maps/contrib/118308555648588405047?hl=id",
+      "rating": 4,
+      "text": "",
+      "textTranslated": null,
+      "date": "2020-02-29T20:32:01.430Z",
+      "relativeDate": "6 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSURzcXVMWVFnEAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSURzcXVMWVFnEAE!2m1!1s0x0:0x17f7295b71773ab1!3m1!1s2@1:CIHM0ogKEICAgIDsquLYQg%7C%7C?hl=id"
+    }
+  ]
+}

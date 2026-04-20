@@ -1,0 +1,21 @@
+{
+  "cafeName": "Kirana Coffee shop",
+  "placeId": "ChIJ96zaFZnpaC4RpGNHyhA2gic",
+  "totalReviews": 1,
+  "reviewsScraped": 1,
+  "reviews": [
+    {
+      "author": "EJ",
+      "authorUrl": "https://www.google.com/maps/contrib/111752511861465057882?hl=id",
+      "rating": 5,
+      "text": "tempat yang nyaman, pelayanan memuaskan, dan tentunya rasa yang nikmat baik kopi maupun non kopi nya ada. tersedia juga colokan, dekaatt dari rumah pokonya jooss!!!",
+      "textTranslated": null,
+      "date": "2023-09-08T09:23:16.450Z",
+      "relativeDate": "2 tahun lalu",
+      "likesCount": 1,
+      "responseFromOwner": "Terima kasih banyak untuk reviewnya :)",
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSUNacXBDaWhRRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSUNacXBDaWhRRRAB!2m1!1s0x0:0x27823610ca4763a4!3m1!1s2@1:CIHM0ogKEICAgICZqpCihQE%7C%7C?hl=id"
+    }
+  ]
+}

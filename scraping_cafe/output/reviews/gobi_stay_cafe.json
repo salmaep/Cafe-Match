@@ -1,0 +1,60 @@
+{
+  "cafeName": "Gobi Stay Cafe",
+  "placeId": "ChIJhZVL-u3daC4R-Sp-J5yske0",
+  "totalReviews": 4,
+  "reviewsScraped": 4,
+  "reviews": [
+    {
+      "author": "Meta Herawati",
+      "authorUrl": "https://www.google.com/maps/contrib/116026317589983272537?hl=id",
+      "rating": 1,
+      "text": "Cafe nya enak tapi di sayangkan gasopan masih nongkrong udah di usir",
+      "textTranslated": null,
+      "date": "2026-01-16T15:33:31.901Z",
+      "relativeDate": "2 bulan lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "Ci9DQUlRQUNvZENodHljRjlvT2xsTlQybFljRlo0U1RrelFVSjNTVUZLWVRWMFVWRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sCi9DQUlRQUNvZENodHljRjlvT2xsTlQybFljRlo0U1RrelFVSjNTVUZLWVRWMFVWRRAB!2m1!1s0x0:0xed91ac9c277e2af9!3m1!1s2@1:CAIQACodChtycF9oOllNT2lYcFZ4STkzQUJ3SUFKYTV0UVE%7C%7C?hl=id"
+    },
+    {
+      "author": "Andi Mulyawan",
+      "authorUrl": "https://www.google.com/maps/contrib/117125726451310988960?hl=id",
+      "rating": 5,
+      "text": "Kopi nya mantul enak",
+      "textTranslated": null,
+      "date": "2024-01-13T02:15:33.975Z",
+      "relativeDate": "2 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSUNOZ3RlbmhBRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSUNOZ3RlbmhBRRAB!2m1!1s0x0:0xed91ac9c277e2af9!3m1!1s2@1:CIHM0ogKEICAgICNgtenhAE%7C%7C?hl=id"
+    },
+    {
+      "author": "Hani Saffanah",
+      "authorUrl": "https://www.google.com/maps/contrib/101006981929197268271?hl=id",
+      "rating": 3,
+      "text": "cafe nya nyaman,view nya indah banget citi light+lapangan,makanan enak dan harga juga relatif murah cuma yang disayangkan penyajiannya aga lama mungkin karena banyak pengunjung aku maklum,cumaa kedepannya semoga bisa lebih baik yaaa",
+      "textTranslated": null,
+      "date": "2023-07-25T08:26:23.739Z",
+      "relativeDate": "2 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSURKejhUcGRnEAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSURKejhUcGRnEAE!2m1!1s0x0:0xed91ac9c277e2af9!3m1!1s2@1:CIHM0ogKEICAgIDJz8Tpdg%7C%7C?hl=id"
+    },
+    {
+      "author": "Miftahudin Azis A",
+      "authorUrl": "https://www.google.com/maps/contrib/118213934782167173736?hl=id",
+      "rating": 5,
+      "text": "coffeeshop satu tempat dengan lapangan minisoccer, susasana yg cozy dan cocok buat istirahat.. ada varian minuman yg recomended buat dicoba, ada makanan berat juga buat ngisi perut beres olahraga..",
+      "textTranslated": null,
+      "date": "2023-06-08T13:25:38.860Z",
+      "relativeDate": "2 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSUR4cnNHdDVRRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSUR4cnNHdDVRRRAB!2m1!1s0x0:0xed91ac9c277e2af9!3m1!1s2@1:CIHM0ogKEICAgIDxrsGt5QE%7C%7C?hl=id"
+    }
+  ]
+}

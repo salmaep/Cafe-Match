@@ -50,7 +50,14 @@ export default function OwnerDashboardScreen() {
   const loadDashboard = async () => {
     try {
       const data = await fetchOwnerDashboard();
-      setDashboard(data);
+      // Merge with safe defaults so nested fields can never be undefined
+      setDashboard({
+        hasCafe: data?.hasCafe ?? false,
+        cafe: data?.cafe ?? null,
+        analytics: data?.analytics ?? { totalViews: 0, totalClicks: 0 },
+        activePromotion: data?.activePromotion ?? null,
+        pendingCount: data?.pendingCount ?? 0,
+      });
     } catch {
       setDashboard(MOCK_DASHBOARD);
     } finally {
@@ -127,23 +134,29 @@ function DashboardTab({
   onTabChange: (tab: TabKey) => void;
 }) {
   const d = dashboard;
+  // Defensive defaults — backend may return null/missing nested fields
+  // when owner has no cafe yet or stats haven't been computed.
+  const analytics = d?.analytics ?? { totalViews: 0, totalClicks: 0 };
+  const cafe = d?.cafe ?? null;
+  const activePromotion = d?.activePromotion ?? null;
+
   const statusColor =
-    d.activePromotion?.status === 'active'
+    activePromotion?.status === 'active'
       ? colors.success
-      : d.activePromotion?.status === 'expired'
+      : activePromotion?.status === 'expired'
         ? colors.error
         : colors.accent;
 
   const stats = [
-    { icon: '👁️', label: 'Views (30d)', value: d.analytics.totalViews, color: '#5B9BD5' },
-    { icon: '🖱️', label: 'Clicks (30d)', value: d.analytics.totalClicks, color: '#70AD47' },
-    { icon: '❤️', label: 'Favorites', value: d.cafe?.favoritesCount || 0, color: '#E05252' },
-    { icon: '🔖', label: 'Bookmarks', value: d.cafe?.bookmarksCount || 0, color: colors.accent },
+    { icon: '👁️', label: 'Views (30d)', value: analytics.totalViews ?? 0, color: '#5B9BD5' },
+    { icon: '🖱️', label: 'Clicks (30d)', value: analytics.totalClicks ?? 0, color: '#70AD47' },
+    { icon: '❤️', label: 'Favorites', value: cafe?.favoritesCount || 0, color: '#E05252' },
+    { icon: '🔖', label: 'Bookmarks', value: cafe?.bookmarksCount || 0, color: colors.accent },
   ];
 
   const ctr =
-    d.analytics.totalViews > 0
-      ? Math.round((d.analytics.totalClicks / d.analytics.totalViews) * 1000) / 10
+    (analytics.totalViews ?? 0) > 0
+      ? Math.round(((analytics.totalClicks ?? 0) / (analytics.totalViews || 1)) * 1000) / 10
       : 0;
 
   return (
@@ -181,7 +194,7 @@ function DashboardTab({
 
       {/* Promotion status */}
       <Text style={styles.sectionTitle}>Active Promotion</Text>
-      {d.activePromotion ? (
+      {activePromotion ? (
         <TouchableOpacity
           style={[styles.promoCard, { borderLeftColor: statusColor }]}
           onPress={() => onTabChange('promotions')}
@@ -190,21 +203,21 @@ function DashboardTab({
           <View style={styles.promoCardTop}>
             <View>
               <Text style={styles.promoCardType}>
-                {d.activePromotion.type === 'new_cafe' ? '🆕  New Cafe Highlight' : '⭐  Featured Promo'}
+                {activePromotion.type === 'new_cafe' ? '🆕  New Cafe Highlight' : '⭐  Featured Promo'}
               </Text>
-              <Text style={styles.promoCardPackage}>{d.activePromotion.packageName}</Text>
+              <Text style={styles.promoCardPackage}>{activePromotion.packageName ?? 'Promotion'}</Text>
             </View>
             <View style={[styles.statusPill, { backgroundColor: statusColor + '18' }]}>
               <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
               <Text style={[styles.statusLabel, { color: statusColor }]}>
-                {d.activePromotion.status.toUpperCase()}
+                {(activePromotion.status ?? 'unknown').toUpperCase()}
               </Text>
             </View>
           </View>
           <View style={styles.promoCardBottom}>
             <Text style={styles.promoExpiryLabel}>
-              {d.activePromotion.daysRemaining > 0
-                ? `${d.activePromotion.daysRemaining} days remaining`
+              {(activePromotion.daysRemaining ?? 0) > 0
+                ? `${activePromotion.daysRemaining} days remaining`
                 : 'Expired'}
             </Text>
             <Text style={styles.promoManageLink}>Manage →</Text>

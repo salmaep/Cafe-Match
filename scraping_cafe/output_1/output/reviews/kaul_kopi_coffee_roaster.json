@@ -1,0 +1,21 @@
+{
+  "cafeName": "KAUL KOPI - COFFEE ROASTER",
+  "placeId": "ChIJRTHiE7XDaC4RsO4akqwJQ2A",
+  "totalReviews": 1,
+  "reviewsScraped": 1,
+  "reviews": [
+    {
+      "author": "henday mulyana",
+      "authorUrl": "https://www.google.com/maps/contrib/100509623939981225309?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2024-03-21T11:05:52.196Z",
+      "relativeDate": "2 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSUQ5bTl1NDN3RRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSUQ5bTl1NDN3RRAB!2m1!1s0x0:0x604309ac921aeeb0!3m1!1s2@1:CIHM0ogKEICAgID9m9u43wE%7C%7C?hl=id"
+    }
+  ]
+}

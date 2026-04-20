@@ -1,0 +1,21 @@
+{
+  "cafeName": "Minkop Coffee Shop",
+  "placeId": "ChIJk7FM37HdaC4R4i4uH-0dU6w",
+  "totalReviews": 1,
+  "reviewsScraped": 1,
+  "reviews": [
+    {
+      "author": "Yeni Rohaeni",
+      "authorUrl": "https://www.google.com/maps/contrib/105987809663544602266?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2024-12-01T21:41:24.265Z",
+      "relativeDate": "setahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSURQNW9fWmNREAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSURQNW9fWmNREAE!2m1!1s0x0:0xac531ded1f2e2ee2!3m1!1s2@1:CIHM0ogKEICAgIDP5o_ZcQ%7C%7C?hl=id"
+    }
+  ]
+}

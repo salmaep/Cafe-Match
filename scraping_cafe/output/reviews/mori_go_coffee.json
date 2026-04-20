@@ -1,0 +1,21 @@
+{
+  "cafeName": "Mori Go Coffee",
+  "placeId": "ChIJIaq_G7nnaC4RL2rQTe70zk8",
+  "totalReviews": 1,
+  "reviewsScraped": 1,
+  "reviews": [
+    {
+      "author": "Hilya Garibaldi",
+      "authorUrl": "https://www.google.com/maps/contrib/107077277452814064445?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2023-09-05T12:52:15.447Z",
+      "relativeDate": "2 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSUNaak5UYk1REAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSUNaak5UYk1REAE!2m1!1s0x0:0x4fcef4ee4dd06a2f!3m1!1s2@1:CIHM0ogKEICAgICZjNTbMQ%7C%7C?hl=id"
+    }
+  ]
+}

@@ -2,6 +2,7 @@ import { DataSource } from 'typeorm';
 import * as dotenv from 'dotenv';
 import { seedPurposes } from './purposes.seed';
 import { seedCafes } from './cafes.seed';
+import { seedScrapedCafes } from './cafe-scraping.seed';
 import { User } from '../../users/entities/user.entity';
 import { Cafe } from '../../cafes/entities/cafe.entity';
 import { CafeFacility } from '../../cafes/entities/cafe-facility.entity';
@@ -53,8 +54,13 @@ async function run() {
   console.log('--- Seeding Purposes ---');
   await seedPurposes(dataSource);
 
-  console.log('\n--- Seeding Cafes ---');
-  await seedCafes(dataSource);
+  // Scraped cafe data is now the primary source.
+  // The old dummy seedCafes() is still available but skipped by default.
+  // Uncomment the next line to fall back to the legacy dummy data:
+  // await seedCafes(dataSource);
+
+  console.log('\n--- Seeding Scraped Cafes ---');
+  await seedScrapedCafes(dataSource);
 
   await dataSource.destroy();
   console.log('\nDone!');

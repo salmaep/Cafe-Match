@@ -1,0 +1,21 @@
+{
+  "cafeName": "16th Street Coffee House",
+  "placeId": "ChIJzbeCe8XpaC4RxN3wphK2Qio",
+  "totalReviews": 1,
+  "reviewsScraped": 1,
+  "reviews": [
+    {
+      "author": "MC Tours",
+      "authorUrl": "https://www.google.com/maps/contrib/112113537796769207142?hl=id",
+      "rating": 4,
+      "text": "",
+      "textTranslated": null,
+      "date": "2023-08-14T07:27:11.313Z",
+      "relativeDate": "2 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSURwb0xtZllnEAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSURwb0xtZllnEAE!2m1!1s0x0:0x2a42b612a6f0ddc4!3m1!1s2@1:CIHM0ogKEICAgIDpoLmfYg%7C%7C?hl=id"
+    }
+  ]
+}

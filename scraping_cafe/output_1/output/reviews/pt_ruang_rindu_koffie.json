@@ -1,0 +1,73 @@
+{
+  "cafeName": "PT Ruang Rindu Koffie",
+  "placeId": "ChIJr-WH-nnpaC4RG7tiH0OXx4Q",
+  "totalReviews": 5,
+  "reviewsScraped": 5,
+  "reviews": [
+    {
+      "author": "Utomo Ramadhani",
+      "authorUrl": "https://www.google.com/maps/contrib/101625928853875206186?hl=id",
+      "rating": 5,
+      "text": "Suplier kopi mantaaap, sdh export juga 👍👍👍",
+      "textTranslated": null,
+      "date": "2023-03-31T12:50:41.520Z",
+      "relativeDate": "3 tahun lalu",
+      "likesCount": 1,
+      "responseFromOwner": "Makasih Mas Mamat. Sukses pula buat hoby Kymco-nya. Ditunggu ngopi di rumah lagi.\n",
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSUNSeG96RGdBRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSUNSeG96RGdBRRAB!2m1!1s0x0:0x84c797431f62bb1b!3m1!1s2@1:CIHM0ogKEICAgICRxozDgAE%7C%7C?hl=id"
+    },
+    {
+      "author": "JAVA DSGN (PORTBAY)",
+      "authorUrl": "https://www.google.com/maps/contrib/116564637910053684648?hl=id",
+      "rating": 5,
+      "text": "👍👍👍👍👍",
+      "textTranslated": null,
+      "date": "2022-04-23T22:38:20.922Z",
+      "relativeDate": "3 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSUMyOGE3VHhBRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSUMyOGE3VHhBRRAB!2m1!1s0x0:0x84c797431f62bb1b!3m1!1s2@1:CIHM0ogKEICAgIC28a7TxAE%7C%7C?hl=id"
+    },
+    {
+      "author": "Pius Ajah",
+      "authorUrl": "https://www.google.com/maps/contrib/114463516469934182450?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2022-03-16T15:14:17.724Z",
+      "relativeDate": "4 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSURXdExtWGxRRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSURXdExtWGxRRRAB!2m1!1s0x0:0x84c797431f62bb1b!3m1!1s2@1:CIHM0ogKEICAgIDWtLmXlQE%7C%7C?hl=id"
+    },
+    {
+      "author": "jaya man",
+      "authorUrl": "https://www.google.com/maps/contrib/118110604069230528449?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2021-09-11T03:15:49.138Z",
+      "relativeDate": "4 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSUM2X1pyR0hBEAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSUM2X1pyR0hBEAE!2m1!1s0x0:0x84c797431f62bb1b!3m1!1s2@1:CIHM0ogKEICAgIC6_ZrGHA%7C%7C?hl=id"
+    },
+    {
+      "author": "Rosa Rindu Koffie",
+      "authorUrl": "https://www.google.com/maps/contrib/116199578720351625649?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2019-11-03T14:30:28.599Z",
+      "relativeDate": "6 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSUQwMGJDTzN3RRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSUQwMGJDTzN3RRAB!2m1!1s0x0:0x84c797431f62bb1b!3m1!1s2@1:CIHM0ogKEICAgID00bCO3wE%7C%7C?hl=id"
+    }
+  ]
+}

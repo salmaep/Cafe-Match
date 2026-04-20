@@ -1,0 +1,73 @@
+{
+  "cafeName": "Ramayana Cafe",
+  "placeId": "ChIJp78GgO_naC4RGZeU4zP4YOc",
+  "totalReviews": 5,
+  "reviewsScraped": 5,
+  "reviews": [
+    {
+      "author": "Dhanie Rama",
+      "authorUrl": "https://www.google.com/maps/contrib/106902812932588592765?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2020-05-13T04:52:02.188Z",
+      "relativeDate": "5 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSURjNE5xNkZnEAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSURjNE5xNkZnEAE!2m1!1s0x0:0xe760f833e3949719!3m1!1s2@1:CIHM0ogKEICAgIDc4Nq6Fg%7C%7C?hl=id"
+    },
+    {
+      "author": "Luka Fanni",
+      "authorUrl": "https://www.google.com/maps/contrib/108278601063854514464?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2018-06-15T16:52:01.946Z",
+      "relativeDate": "7 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSUN3cHBYOWNnEAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSUN3cHBYOWNnEAE!2m1!1s0x0:0xe760f833e3949719!3m1!1s2@1:CIHM0ogKEICAgICwppX9cg%7C%7C?hl=id"
+    },
+    {
+      "author": "mine “a_booi”",
+      "authorUrl": "https://www.google.com/maps/contrib/116176089010111153802?hl=id",
+      "rating": 4,
+      "text": "it was a cool places",
+      "textTranslated": "itu adalah tempat yang keren.",
+      "date": "2017-11-04T01:50:20.764Z",
+      "relativeDate": "8 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSUN3czlyNU9BEAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSUN3czlyNU9BEAE!2m1!1s0x0:0xe760f833e3949719!3m1!1s2@1:CIHM0ogKEICAgICws9r5OA%7C%7C?hl=id"
+    },
+    {
+      "author": "Diaz TSM",
+      "authorUrl": "https://www.google.com/maps/contrib/111951296125441193142?hl=id",
+      "rating": 5,
+      "text": "Segalanya",
+      "textTranslated": null,
+      "date": "2016-10-09T18:01:54.380Z",
+      "relativeDate": "9 tahun lalu",
+      "likesCount": 1,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSURRejQybU5nEAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSURRejQybU5nEAE!2m1!1s0x0:0xe760f833e3949719!3m1!1s2@1:CIHM0ogKEICAgIDQz42mNg%7C%7C?hl=id"
+    },
+    {
+      "author": "Ferry Surya",
+      "authorUrl": "https://www.google.com/maps/contrib/105321191743813725855?hl=id",
+      "rating": 5,
+      "text": "Free Super Wifi & Free Karaoke .... Juara ....",
+      "textTranslated": "Gratis Super Wifi & Karaoke Gratis....Juara....",
+      "date": "2016-08-14T02:45:55.910Z",
+      "relativeDate": "9 tahun lalu",
+      "likesCount": 1,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSURneDVDaXlRRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSURneDVDaXlRRRAB!2m1!1s0x0:0xe760f833e3949719!3m1!1s2@1:CIHM0ogKEICAgIDgx5CiyQE%7C%7C?hl=id"
+    }
+  ]
+}

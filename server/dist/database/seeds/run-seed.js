@@ -36,7 +36,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const typeorm_1 = require("typeorm");
 const dotenv = __importStar(require("dotenv"));
 const purposes_seed_1 = require("./purposes.seed");
-const cafes_seed_1 = require("./cafes.seed");
+const cafe_scraping_seed_1 = require("./cafe-scraping.seed");
 const user_entity_1 = require("../../users/entities/user.entity");
 const cafe_entity_1 = require("../../cafes/entities/cafe.entity");
 const cafe_facility_entity_1 = require("../../cafes/entities/cafe-facility.entity");
@@ -83,8 +83,8 @@ async function run() {
     console.log('Database connected.\n');
     console.log('--- Seeding Purposes ---');
     await (0, purposes_seed_1.seedPurposes)(dataSource);
-    console.log('\n--- Seeding Cafes ---');
-    await (0, cafes_seed_1.seedCafes)(dataSource);
+    console.log('\n--- Seeding Scraped Cafes ---');
+    await (0, cafe_scraping_seed_1.seedScrapedCafes)(dataSource);
     await dataSource.destroy();
     console.log('\nDone!');
 }

@@ -28,6 +28,37 @@ export class OwnerService {
   ) {}
 
   async getOwnerCafe(userId: number): Promise<Cafe | null> {
+    // Prefer a cafe that has an active promotion (so dashboard shows promo data).
+    // If none, fall back to the cafe with any promotion. Else just the first owned cafe.
+    const cafesWithActive: any[] = await this.dataSource.query(
+      `SELECT c.id FROM cafes c
+       JOIN promotions p ON p.cafe_id = c.id AND p.status = 'active'
+       WHERE c.owner_id = ?
+       LIMIT 1`,
+      [userId],
+    );
+    if (cafesWithActive.length > 0) {
+      return this.cafesRepo.findOne({
+        where: { id: cafesWithActive[0].id },
+        relations: ['facilities', 'menus', 'photos'],
+      });
+    }
+
+    const cafesWithAnyPromo: any[] = await this.dataSource.query(
+      `SELECT c.id FROM cafes c
+       JOIN promotions p ON p.cafe_id = c.id
+       WHERE c.owner_id = ?
+       ORDER BY p.created_at DESC
+       LIMIT 1`,
+      [userId],
+    );
+    if (cafesWithAnyPromo.length > 0) {
+      return this.cafesRepo.findOne({
+        where: { id: cafesWithAnyPromo[0].id },
+        relations: ['facilities', 'menus', 'photos'],
+      });
+    }
+
     return this.cafesRepo.findOne({
       where: { ownerId: userId },
       relations: ['facilities', 'menus', 'photos'],
@@ -97,11 +128,34 @@ export class OwnerService {
       return { hasCafe: false };
     }
 
-    // Active promotion
-    const activePromotion = await this.promotionsRepo.findOne({
+    // Prefer active, then pending_review, then pending_payment, else any latest
+    let activePromotion = await this.promotionsRepo.findOne({
       where: { cafeId: cafe.id, status: 'active' },
       relations: ['package'],
+      order: { createdAt: 'DESC' },
     });
+    if (!activePromotion) {
+      activePromotion = await this.promotionsRepo.findOne({
+        where: { cafeId: cafe.id, status: 'pending_review' },
+        relations: ['package'],
+        order: { createdAt: 'DESC' },
+      });
+    }
+    if (!activePromotion) {
+      activePromotion = await this.promotionsRepo.findOne({
+        where: { cafeId: cafe.id, status: 'pending_payment' },
+        relations: ['package'],
+        order: { createdAt: 'DESC' },
+      });
+    }
+    if (!activePromotion) {
+      // Fall back to the latest promotion of any status (expired/rejected)
+      activePromotion = await this.promotionsRepo.findOne({
+        where: { cafeId: cafe.id },
+        relations: ['package'],
+        order: { createdAt: 'DESC' },
+      });
+    }
 
     // Pending promotions
     const pendingPromotions = await this.promotionsRepo.find({

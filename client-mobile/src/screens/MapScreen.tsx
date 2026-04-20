@@ -21,13 +21,14 @@ import {
 import Swiper from "react-native-deck-swiper";
 import MapView, { Marker, Circle } from "react-native-maps";
 import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
+import { ScrollView as GHScrollView } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { usePreferences } from "../context/PreferencesContext";
 import { useLocation } from "../context/LocationContext";
 import { useShortlist } from "../context/ShortlistContext";
-import { fetchCafes, fetchPromotedCafes } from "../services/api";
+import { fetchCafes, fetchPromotedCafes, fetchActiveCheckin, checkOutApi, fetchFriendsMap, throwEmojiApi } from "../services/api";
 import { MOCK_CAFES } from "../data/mockCafes";
 import { Cafe } from "../types";
 import { parseSearchQuery, ParsedSearch } from "../utils/searchParser";
@@ -35,6 +36,22 @@ import { colors, spacing, radius } from "../theme";
 
 const { width, height } = Dimensions.get("window");
 const RADIUS_OPTIONS = [0.5, 1, 2];
+
+// ─── DEV TOGGLE ──────────────────────────────────────────────────────────
+// Set to `true` to disable the radius filter entirely (fetches all cafes,
+// skips client-side distance filter). Revert to `false` for production.
+const DEV_DISABLE_RADIUS = true;
+// ─────────────────────────────────────────────────────────────────────────
+
+/** Format seconds as HH:MM:SS or MM:SS for short durations */
+function formatDuration(totalSec: number): string {
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  if (h > 0) return `${h}:${pad(m)}:${pad(s)}`;
+  return `${pad(m)}:${pad(s)}`;
+}
 
 export default function MapScreen() {
   const navigation = useNavigation<StackNavigationProp<any>>();
@@ -46,7 +63,8 @@ export default function MapScreen() {
   const sheetRef = useRef<BottomSheet>(null);
 
   const [allCafes, setAllCafes] = useState<Cafe[]>([]);
-  const [displayCafes, setDisplayCafes] = useState<Cafe[]>([]);
+  const [displayCafes, setDisplayCafes] = useState<Cafe[]>([]); // map pins (wider)
+  const [listCafes, setListCafes] = useState<Cafe[]>([]);       // drawer list (radius-filtered)
   const [featuredCafes, setFeaturedCafes] = useState<Cafe[]>([]);
   const [selectedCafe, setSelectedCafe] = useState<Cafe | null>(null);
   const [loading, setLoading] = useState(true);
@@ -54,6 +72,31 @@ export default function MapScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchActive, setSearchActive] = useState(false);
   const [parsedSearch, setParsedSearch] = useState<ParsedSearch | null>(null);
+
+  // Active check-in state
+  const [activeCheckin, setActiveCheckin] = useState<any>(null);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [checkinDurationSec, setCheckinDurationSec] = useState(0);
+
+  // Friends currently checked in (for map overlay)
+  const [friendsOnMap, setFriendsOnMap] = useState<any[]>([]);
+  const [emojiTargetFriend, setEmojiTargetFriend] = useState<any | null>(null);
+
+  // Pin visibility toggles
+  const [showCafePins, setShowCafePins] = useState(true);
+  const [showFriendPins, setShowFriendPins] = useState(true);
+
+  // Group friends by cafe (for count badges)
+  const friendsByCafe = useMemo(() => {
+    const map = new Map<number, any[]>();
+    for (const f of friendsOnMap) {
+      if (!f.currentCafe?.id) continue;
+      const cafeId = f.currentCafe.id;
+      if (!map.has(cafeId)) map.set(cafeId, []);
+      map.get(cafeId)!.push(f);
+    }
+    return map;
+  }, [friendsOnMap]);
 
   // AI search popup state
   const [searchPopupVisible, setSearchPopupVisible] = useState(false);
@@ -129,8 +172,10 @@ export default function MapScreen() {
   const loadCafes = useCallback(
     async (rad: number) => {
       setLoading(true);
+      // DEV toggle: when radius is disabled, fetch a huge radius so backend returns everything
+      const effectiveRadius = DEV_DISABLE_RADIUS ? 9999 : rad;
       try {
-        const cafes = await fetchCafes(center.latitude, center.longitude, rad);
+        const cafes = await fetchCafes(center.latitude, center.longitude, effectiveRadius);
         setAllCafes(cafes.length > 0 ? cafes : MOCK_CAFES);
       } catch {
         setAllCafes(MOCK_CAFES);
@@ -160,32 +205,179 @@ export default function MapScreen() {
     loadCafes(radiusKm);
   }, [radiusKm]);
 
-  // Apply filters
+  // Fetch active check-in on mount + poll every 60s
+  const refreshActiveCheckin = useCallback(async () => {
+    try {
+      const active = await fetchActiveCheckin();
+      setActiveCheckin(active || null);
+    } catch {
+      setActiveCheckin(null);
+    }
+  }, []);
+
   useEffect(() => {
-    let result = [...allCafes];
+    refreshActiveCheckin();
+    const interval = setInterval(refreshActiveCheckin, 60000);
+    return () => clearInterval(interval);
+  }, [refreshActiveCheckin]);
+
+  // Also refresh whenever the map screen regains focus (e.g. after returning from CafeDetail)
+  useFocusEffect(
+    useCallback(() => {
+      refreshActiveCheckin();
+    }, [refreshActiveCheckin]),
+  );
+
+  // Fetch friends on map (polling every 30s while map is visible)
+  const refreshFriendsMap = useCallback(async () => {
+    try {
+      const list = await fetchFriendsMap();
+      setFriendsOnMap(Array.isArray(list) ? list : []);
+    } catch {
+      setFriendsOnMap([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshFriendsMap();
+    const interval = setInterval(refreshFriendsMap, 30000);
+    return () => clearInterval(interval);
+  }, [refreshFriendsMap]);
+
+  useFocusEffect(
+    useCallback(() => {
+      refreshFriendsMap();
+    }, [refreshFriendsMap]),
+  );
+
+  const handleThrowEmoji = async (emoji: string) => {
+    if (!emojiTargetFriend) return;
+    try {
+      await throwEmojiApi(emojiTargetFriend.id, emoji);
+      setEmojiTargetFriend(null);
+    } catch {
+      setEmojiTargetFriend(null);
+    }
+  };
+
+  // Real-time ticker: update elapsed seconds every 1s while checked in
+  useEffect(() => {
+    if (!activeCheckin?.checkInAt) {
+      setCheckinDurationSec(0);
+      return;
+    }
+    const update = () => {
+      const ms = Date.now() - new Date(activeCheckin.checkInAt).getTime();
+      setCheckinDurationSec(Math.max(0, Math.floor(ms / 1000))); // now seconds
+    };
+    update();
+    const interval = setInterval(update, 1000);
+    return () => clearInterval(interval);
+  }, [activeCheckin?.checkInAt]);
+
+  const handleCheckOut = async () => {
+    if (!activeCheckin) return;
+    setCheckoutLoading(true);
+    try {
+      await checkOutApi(activeCheckin.id);
+      setActiveCheckin(null);
+      setCheckinDurationSec(0);
+    } catch (err: any) {
+      // Silent fail — user can retry
+    }
+    setCheckoutLoading(false);
+  };
+
+  // Shared Purpose label → backend slug mapping (used by wizard + search filters)
+  const PURPOSE_SLUG_MAP: Record<string, string> = {
+    'Me Time': 'me-time',
+    'Date': 'date',
+    'Family Time': 'family',
+    'Group Study': 'group-work',
+    'WFC': 'wfc',
+  };
+
+  // Apply filters — two parallel outputs:
+  //   displayCafes (map pins): ALWAYS shows ALL cafes, ignoring radius/wizard/search
+  //                            (the map is a wide overview). Only search overrides this
+  //                            so user sees matching pins highlighted.
+  //   listCafes (drawer list): applies wizard + search + radius filter
+  useEffect(() => {
+    // Map pins — always all cafes from the backend, ignoring filters.
+    // Exception: if the user submitted a search, we still filter pins so the map
+    // reflects the search (e.g. user searched "wifi" → only wifi cafes on map).
+    let pinsResult = [...allCafes];
+    if (searchActive && parsedSearch && parsedSearch.labels.length > 0) {
+      if (parsedSearch.purposes.length > 0) {
+        pinsResult = pinsResult.filter((c) => {
+          const byName = parsedSearch!.purposes.some((p) => c.purposes.includes(p));
+          const byScore = parsedSearch!.purposes.some((p) => {
+            const slug = PURPOSE_SLUG_MAP[p];
+            return slug && (c.purposeScores?.[slug] || 0) >= 60;
+          });
+          return byName || byScore;
+        });
+      }
+      if (parsedSearch.facilities.length > 0) {
+        pinsResult = pinsResult.filter((c) => {
+          const byFacility = parsedSearch!.facilities.some((f) => c.facilities.includes(f));
+          const byDetected = parsedSearch!.facilities.some((f) => {
+            const key = f.toLowerCase().replace(/[^a-z]/g, '_');
+            return c.detectedFacilities?.some((d) => d.includes(key) || key.includes(d));
+          });
+          return byFacility || byDetected;
+        });
+      }
+    }
+    setDisplayCafes(pinsResult);
+
+    // Drawer list — apply wizard + search + radius
+    let listResult = [...allCafes];
     if (preferences?.purpose) {
-      result = result.filter((c) => c.purposes.includes(preferences.purpose!));
+      const slug = PURPOSE_SLUG_MAP[preferences.purpose];
+      listResult = listResult.filter((c) => {
+        const byName = c.purposes.includes(preferences.purpose!);
+        const byScore = !!slug && (c.purposeScores?.[slug] || 0) >= 40;
+        return byName || byScore;
+      });
     }
     if (preferences?.amenities && preferences.amenities.length > 0) {
-      result = result.filter((c) =>
-        preferences.amenities!.some((a) => c.facilities.includes(a)),
-      );
+      listResult = listResult.filter((c) => {
+        const byFacility = preferences.amenities!.some((a) => c.facilities.includes(a));
+        const byDetected = preferences.amenities!.some((a) => {
+          const key = a.toLowerCase().replace(/[^a-z]/g, '_');
+          return c.detectedFacilities?.some((d) => d === key || d.includes(key) || key.includes(d));
+        });
+        return byFacility || byDetected;
+      });
     }
     if (parsedSearch && parsedSearch.labels.length > 0) {
       if (parsedSearch.purposes.length > 0) {
-        result = result.filter((c) =>
-          parsedSearch!.purposes.some((p) => c.purposes.includes(p)),
-        );
+        listResult = listResult.filter((c) => {
+          const byName = parsedSearch!.purposes.some((p) => c.purposes.includes(p));
+          const byScore = parsedSearch!.purposes.some((p) => {
+            const slug = PURPOSE_SLUG_MAP[p];
+            return slug && (c.purposeScores?.[slug] || 0) >= 60;
+          });
+          return byName || byScore;
+        });
       }
       if (parsedSearch.facilities.length > 0) {
-        result = result.filter((c) =>
-          parsedSearch!.facilities.some((f) => c.facilities.includes(f)),
-        );
+        listResult = listResult.filter((c) => {
+          const byFacility = parsedSearch!.facilities.some((f) => c.facilities.includes(f));
+          const byDetected = parsedSearch!.facilities.some((f) => {
+            const key = f.toLowerCase().replace(/[^a-z]/g, '_');
+            return c.detectedFacilities?.some((d) => d.includes(key) || key.includes(d));
+          });
+          return byFacility || byDetected;
+        });
       }
     }
-    result = result.filter((c) => c.distance <= radiusKm);
-    setDisplayCafes(result);
-  }, [allCafes, preferences, parsedSearch, radiusKm]);
+    listResult = listResult
+      .filter((c) => c.distance <= radiusKm)
+      .sort((a, b) => (a.distance || 999) - (b.distance || 999));
+    setListCafes(listResult);
+  }, [allCafes, preferences, parsedSearch, radiusKm, searchActive]);
 
   const handleSearch = () => {
     Keyboard.dismiss();
@@ -363,42 +555,91 @@ export default function MapScreen() {
           fillColor="rgba(212, 139, 58, 0.08)"
           strokeWidth={1.5}
         />
-        {displayCafes.map((cafe) =>
-          isNewCafePromo(cafe) ? (
+        {/* Cafe pins (togglable) */}
+        {showCafePins && displayCafes.map((cafe) => {
+          const friendCount = friendsByCafe.get(Number(cafe.id))?.length || 0;
+          return isNewCafePromo(cafe) ? (
             <Marker
               key={cafe.id}
-              coordinate={{
-                latitude: cafe.latitude,
-                longitude: cafe.longitude,
-              }}
+              coordinate={{ latitude: cafe.latitude, longitude: cafe.longitude }}
               onPress={() => onMarkerPress(cafe)}
               anchor={{ x: 0.5, y: 1 }}
             >
               <View style={styles.newPinContainer}>
                 <Animated.View
-                  style={[
-                    styles.newPinLabel,
-                    { transform: [{ translateY: bounceAnim }] },
-                  ]}
+                  style={[styles.newPinLabel, { transform: [{ translateY: bounceAnim }] }]}
                 >
                   <Text style={styles.newPinLabelText}>NEW!</Text>
                 </Animated.View>
                 <View style={styles.newPinDot} />
+                {friendCount > 0 && (
+                  <View style={styles.friendCountBadge}>
+                    <Text style={styles.friendCountText}>{friendCount}👤</Text>
+                  </View>
+                )}
               </View>
             </Marker>
           ) : (
             <Marker
               key={cafe.id}
-              coordinate={{
-                latitude: cafe.latitude,
-                longitude: cafe.longitude,
-              }}
+              coordinate={{ latitude: cafe.latitude, longitude: cafe.longitude }}
               onPress={() => onMarkerPress(cafe)}
-              pinColor={colors.primary}
-            />
-          ),
+              anchor={friendCount > 0 ? { x: 0.5, y: 1 } : undefined}
+              pinColor={friendCount > 0 ? colors.accent : colors.primary}
+            >
+              {friendCount > 0 && (
+                <View style={styles.cafePinWithFriends}>
+                  <View style={styles.friendCountBadge}>
+                    <Text style={styles.friendCountText}>{friendCount}👤</Text>
+                  </View>
+                  <View style={styles.cafePinDot} />
+                </View>
+              )}
+            </Marker>
+          );
+        })}
+
+        {/* Friend avatar pins on the map (togglable, offset slightly so they don't overlap cafe pin) */}
+        {showFriendPins && friendsOnMap.map((f) =>
+          f.currentCafe ? (
+            <Marker
+              key={`friend-${f.id}`}
+              coordinate={{
+                latitude: f.currentCafe.latitude + 0.00015, // slight offset to avoid pin overlap
+                longitude: f.currentCafe.longitude + 0.00015,
+              }}
+              onPress={() => setEmojiTargetFriend(f)}
+              anchor={{ x: 0.5, y: 1 }}
+              zIndex={10}
+            >
+              <View style={styles.friendPinContainer}>
+                <View style={styles.friendPinAvatar}>
+                  <Text style={styles.friendPinAvatarText}>
+                    {(f.name || '?')[0].toUpperCase()}
+                  </Text>
+                </View>
+                <View style={styles.friendPinTail} />
+              </View>
+            </Marker>
+          ) : null,
         )}
       </MapView>
+
+      {/* Pin toggle buttons (top right of map) */}
+      <View style={[styles.pinToggles, { top: insets.top + 80 + (activeCheckin ? 60 : 0), right: spacing.md }]}>
+        <TouchableOpacity
+          style={[styles.pinToggle, showCafePins && styles.pinToggleActive]}
+          onPress={() => setShowCafePins((v) => !v)}
+        >
+          <Text style={styles.pinToggleEmoji}>☕</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.pinToggle, showFriendPins && styles.pinToggleActive]}
+          onPress={() => setShowFriendPins((v) => !v)}
+        >
+          <Text style={styles.pinToggleEmoji}>👥</Text>
+        </TouchableOpacity>
+      </View>
 
       {/* Toast */}
       {showToast && (
@@ -564,6 +805,76 @@ export default function MapScreen() {
         </Animated.View>
       )}
 
+      {/* Emoji picker modal (shown when user taps a friend's pin) */}
+      {emojiTargetFriend && (
+        <TouchableOpacity
+          style={styles.emojiBackdrop}
+          activeOpacity={1}
+          onPress={() => setEmojiTargetFriend(null)}
+        >
+          <View style={styles.emojiPicker}>
+            <Text style={styles.emojiPickerTitle}>
+              {emojiTargetFriend.name}
+            </Text>
+            <Text style={styles.emojiPickerSub}>
+              📍 {emojiTargetFriend.currentCafe?.name}
+            </Text>
+            {emojiTargetFriend.checkInAt && (
+              <Text style={styles.emojiPickerDuration}>
+                ⏱️ Checked in {formatDuration(
+                  Math.max(0, Math.floor((Date.now() - new Date(emojiTargetFriend.checkInAt).getTime()) / 1000))
+                )} ago
+              </Text>
+            )}
+            <View style={styles.emojiRow}>
+              {['👋', '☕', '🔥', '💥', '😂', '❤️', '🎉', '😎'].map((e) => (
+                <TouchableOpacity
+                  key={e}
+                  style={styles.emojiBtn}
+                  onPress={() => handleThrowEmoji(e)}
+                  activeOpacity={0.6}
+                >
+                  <Text style={styles.emojiBtnText}>{e}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <TouchableOpacity
+              style={styles.emojiCancelBtn}
+              onPress={() => setEmojiTargetFriend(null)}
+            >
+              <Text style={styles.emojiCancelText}>Batal</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      )}
+
+      {/* Active Check-in Card (floating overlay) */}
+      {activeCheckin && (
+        <View style={[styles.checkinCard, { top: insets.top + 80 }]}>
+          <View style={styles.checkinCardLeft}>
+            <View style={styles.checkinDot} />
+          </View>
+          <View style={styles.checkinCardBody}>
+            <Text style={styles.checkinCardLabel}>
+              CHECKED IN · {formatDuration(checkinDurationSec)}
+            </Text>
+            <Text style={styles.checkinCardName} numberOfLines={1}>
+              {activeCheckin.cafe?.name || activeCheckin.cafeName || 'Active cafe'}
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={styles.checkoutBtn}
+            onPress={handleCheckOut}
+            disabled={checkoutLoading}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.checkoutBtnText}>
+              {checkoutLoading ? '...' : 'Check Out'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       {/* Bottom Sheet Drawer */}
       <BottomSheet
         ref={sheetRef}
@@ -626,7 +937,7 @@ export default function MapScreen() {
             <View style={styles.featuredSection}>
               <Text style={styles.featuredTitle}>Featured Today ✨</Text>
               <View style={styles.featuredListWrap}>
-                <ScrollView
+                <GHScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
                   nestedScrollEnabled
@@ -711,7 +1022,7 @@ export default function MapScreen() {
                       </TouchableOpacity>
                     );
                   })}
-                </ScrollView>
+                </GHScrollView>
               </View>
             </View>
           )}
@@ -771,16 +1082,21 @@ export default function MapScreen() {
             )}
           </View>
 
-          {/* Cafe list */}
+          {/* Cafe list — radius-filtered, respects wizard + search */}
           <View style={styles.listSection}>
             <View style={styles.listHeader}>
               <Text style={styles.listTitle}>
                 {loading
                   ? "Loading cafes..."
-                  : `${displayCafes.length} cafes nearby`}
+                  : listCafes.length === 0
+                    ? "No cafes within this radius"
+                    : `${listCafes.length} cafes within ${radiusKm} km`}
               </Text>
               {searchActive && (
                 <Text style={styles.listSubtitle}>Filtered by search</Text>
+              )}
+              {!searchActive && preferences?.purpose && (
+                <Text style={styles.listSubtitle}>{preferences.purpose}</Text>
               )}
             </View>
 
@@ -788,10 +1104,10 @@ export default function MapScreen() {
               <View style={styles.loadingBox}>
                 <ActivityIndicator color={colors.accent} size="large" />
               </View>
-            ) : displayCafes.length === 0 ? (
+            ) : listCafes.length === 0 ? (
               <View style={styles.emptyBox}>
                 <Text style={styles.emptyText}>
-                  No cafes found in this area
+                  No cafes found within {radiusKm} km
                 </Text>
                 <TouchableOpacity
                   onPress={resetFilters}
@@ -801,7 +1117,7 @@ export default function MapScreen() {
                 </TouchableOpacity>
               </View>
             ) : (
-              displayCafes.map((cafe) => (
+              listCafes.map((cafe) => (
                 <React.Fragment key={cafe.id}>
                   {renderCafeCard({ item: cafe })}
                   <View style={styles.cardSep} />
@@ -933,16 +1249,16 @@ const styles = StyleSheet.create({
   dismissPinText: { fontSize: 12, color: colors.textSecondary },
 
   // Featured
-  featuredSection: { marginBottom: spacing.md },
+  featuredSection: { marginBottom: 8 },
   featuredTitle: {
     fontSize: 15,
-    fontWeight: "700",
+    fontWeight: '700',
     color: colors.primary,
     marginBottom: spacing.sm,
   },
   featuredListWrap: {
-    // Explicit height so nested ScrollView knows its bounds inside BottomSheetScrollView
-    height: 290,
+    // Explicit height matching 200px card so nested scroll has fixed bounds
+    height: 200,
   },
   featuredScrollInner: {
     flexGrow: 0,
@@ -951,63 +1267,70 @@ const styles = StyleSheet.create({
     paddingRight: spacing.md,
   },
   featuredCard: {
-    width: 260,
+    width: 240,
+    height: 200,
     marginRight: 12,
     backgroundColor: colors.white,
     borderRadius: radius.md,
-    overflow: "hidden",
+    overflow: 'hidden',
     elevation: 3,
-    shadowColor: "#000",
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
-  featuredImage: { width: "100%", height: 140, resizeMode: "cover" },
+  featuredImage: { width: '100%', height: 110, resizeMode: 'cover' },
   featuredNewBadgeAbs: {
-    position: "absolute",
-    top: spacing.sm,
-    left: spacing.sm,
+    position: 'absolute',
+    top: 6,
+    left: 6,
     backgroundColor: colors.newCafePin,
     borderRadius: radius.sm,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
   },
   featuredNewBadgeText: {
-    fontSize: 10,
-    fontWeight: "800",
+    fontSize: 9,
+    fontWeight: '800',
     color: colors.white,
-    letterSpacing: 0.5,
+    letterSpacing: 0.4,
   },
-  featuredInfo: { padding: spacing.sm + 2 },
-  featuredPromoTitle: { fontSize: 14, fontWeight: "800", color: colors.accent },
+  featuredInfo: {
+    paddingHorizontal: 10,
+    paddingTop: 8,
+    paddingBottom: 0,
+    height: 90,
+  },
+  featuredPromoTitle: { fontSize: 14, fontWeight: '800', color: colors.accent },
   featuredPromoDesc: {
     fontSize: 12,
     color: colors.textSecondary,
-    marginTop: 3,
-    lineHeight: 16,
+    marginTop: 2,
+    lineHeight: 15,
   },
   validHoursChip: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: colors.surface,
     borderRadius: radius.full,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 3,
-    alignSelf: "flex-start",
-    marginTop: spacing.xs + 2,
-    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    alignSelf: 'flex-start',
+    marginTop: 4,
+    gap: 3,
   },
-  validHoursIcon: { fontSize: 11 },
-  validHoursText: { fontSize: 11, fontWeight: "600", color: colors.primary },
+  validHoursIcon: { fontSize: 10 },
+  validHoursText: { fontSize: 11, fontWeight: '600', color: colors.primary },
   featuredCafeName: {
-    fontSize: 12,
+    fontSize: 11,
     color: colors.textSecondary,
-    fontWeight: "600",
-    marginTop: spacing.xs + 2,
+    fontWeight: '600',
+    marginTop: 4,
+    marginBottom: 8,
   },
 
   // Controls
-  controlsSection: { marginBottom: spacing.sm },
+  controlsSection: { marginTop: 0, marginBottom: spacing.sm },
   radiusRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -1312,6 +1635,228 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "700",
     color: colors.primary,
+  },
+
+  // Active Check-in Card overlay
+  checkinCard: {
+    position: 'absolute',
+    left: spacing.md,
+    right: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.white,
+    borderRadius: radius.md,
+    paddingVertical: spacing.sm + 2,
+    paddingHorizontal: spacing.sm + 4,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.18,
+    shadowRadius: 8,
+    zIndex: 30,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.success,
+  },
+  checkinCardLeft: {
+    marginRight: spacing.sm,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkinDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: colors.success,
+  },
+  checkinCardBody: {
+    flex: 1,
+  },
+  checkinCardLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: colors.success,
+    letterSpacing: 0.6,
+  },
+  checkinCardName: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.primary,
+    marginTop: 2,
+  },
+  checkoutBtn: {
+    backgroundColor: colors.primary,
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 2,
+  },
+  checkoutBtnText: {
+    color: colors.white,
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+  },
+
+  // Friend pin on map
+  friendPinContainer: {
+    alignItems: 'center',
+  },
+  friendPinAvatar: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: colors.accent,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2.5,
+    borderColor: colors.white,
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+  },
+  friendPinAvatarText: {
+    color: colors.white,
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  friendPinTail: {
+    width: 0,
+    height: 0,
+    marginTop: -2,
+    borderLeftWidth: 6,
+    borderRightWidth: 6,
+    borderTopWidth: 8,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderTopColor: colors.white,
+  },
+
+  // Emoji picker modal (triggered by tapping a friend pin)
+  emojiBackdrop: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 200,
+  },
+  emojiPicker: {
+    backgroundColor: colors.white,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    margin: spacing.lg,
+    minWidth: 280,
+    alignItems: 'center',
+    elevation: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+  },
+  emojiPickerTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: colors.primary,
+    textAlign: 'center',
+  },
+  emojiPickerSub: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  emojiPickerDuration: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.success,
+    marginTop: 4,
+    marginBottom: spacing.md,
+    textAlign: 'center',
+  },
+  emojiRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 8,
+    marginBottom: spacing.sm,
+  },
+  emojiBtn: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: colors.surface,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emojiBtnText: {
+    fontSize: 28,
+  },
+  emojiCancelBtn: {
+    marginTop: spacing.sm,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+  },
+  emojiCancelText: {
+    color: colors.textSecondary,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+
+  // Pin toggle buttons (map overlay top-right)
+  pinToggles: {
+    position: 'absolute',
+    zIndex: 25,
+    gap: 8,
+  },
+  pinToggle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    opacity: 0.5,
+  },
+  pinToggleActive: {
+    opacity: 1,
+    borderWidth: 2,
+    borderColor: colors.accent,
+  },
+  pinToggleEmoji: {
+    fontSize: 18,
+  },
+
+  // Friend count badge (appears on cafe pins when friends are checked in there)
+  friendCountBadge: {
+    backgroundColor: colors.accent,
+    borderRadius: radius.full,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    marginTop: 2,
+    alignSelf: 'center',
+  },
+  friendCountText: {
+    color: colors.white,
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  cafePinWithFriends: {
+    alignItems: 'center',
+  },
+  cafePinDot: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: colors.accent,
+    borderWidth: 2,
+    borderColor: colors.white,
+    marginTop: 2,
   },
   searchPopupMapBtnLarge: {
     backgroundColor: colors.accent,

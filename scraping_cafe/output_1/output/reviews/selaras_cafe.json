@@ -1,0 +1,47 @@
+{
+  "cafeName": "Selaras Cafe",
+  "placeId": "ChIJr87B7hroaC4Re7paDGSWw4I",
+  "totalReviews": 3,
+  "reviewsScraped": 3,
+  "reviews": [
+    {
+      "author": "Kang Ind",
+      "authorUrl": "https://www.google.com/maps/contrib/110955590411339457125?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2025-04-06T15:57:43.637Z",
+      "relativeDate": "setahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnTURJeU1QR0pBEAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnTURJeU1QR0pBEAE!2m1!1s0x0:0x82c396640c5aba7b!3m1!1s2@1:CIHM0ogKEICAgMDIyMPGJA%7C%7C?hl=id"
+    },
+    {
+      "author": "Trie Music",
+      "authorUrl": "https://www.google.com/maps/contrib/115997228611203972269?hl=id",
+      "rating": 4,
+      "text": "",
+      "textTranslated": null,
+      "date": "2024-04-18T08:25:53.914Z",
+      "relativeDate": "setahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSUNqdFAzVG5nRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSUNqdFAzVG5nRRAB!2m1!1s0x0:0x82c396640c5aba7b!3m1!1s2@1:CIHM0ogKEICAgICjtP3TngE%7C%7C?hl=id"
+    },
+    {
+      "author": "Farras alifm",
+      "authorUrl": "https://www.google.com/maps/contrib/116102200153072186847?hl=id",
+      "rating": 5,
+      "text": "Comfy place nice to be used for meeting",
+      "textTranslated": "Tempat yang nyaman dan cocok untuk rapat.",
+      "date": "2018-06-08T17:17:10.770Z",
+      "relativeDate": "7 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSURBZ1lQMnZRRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSURBZ1lQMnZRRRAB!2m1!1s0x0:0x82c396640c5aba7b!3m1!1s2@1:CIHM0ogKEICAgIDAgYP2vQE%7C%7C?hl=id"
+    }
+  ]
+}

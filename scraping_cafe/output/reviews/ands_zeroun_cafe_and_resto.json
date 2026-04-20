@@ -1,0 +1,21 @@
+{
+  "cafeName": "And's Zeroun Cafe And Resto",
+  "placeId": "ChIJ8xBFGUzmaC4RFGJU4b_-DjA",
+  "totalReviews": 1,
+  "reviewsScraped": 1,
+  "reviews": [
+    {
+      "author": "Roy roby Wiyoto",
+      "authorUrl": "https://www.google.com/maps/contrib/115836812279651491321?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2023-12-08T15:21:55.940Z",
+      "relativeDate": "2 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSUNWMWJiQ2p3RRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSUNWMWJiQ2p3RRAB!2m1!1s0x0:0x300efebfe1546214!3m1!1s2@1:CIHM0ogKEICAgICV1bbCjwE%7C%7C?hl=id"
+    }
+  ]
+}

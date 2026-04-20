@@ -1,0 +1,21 @@
+{
+  "cafeName": "Color Box Bandung",
+  "placeId": "ChIJv-PTT5bpaC4RFZyORt-yO-I",
+  "totalReviews": 1,
+  "reviewsScraped": 1,
+  "reviews": [
+    {
+      "author": "Mianvt lestari",
+      "authorUrl": "https://www.google.com/maps/contrib/115408354113383277271?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2023-05-01T00:27:00.223Z",
+      "relativeDate": "2 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSURSamRhY1BREAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSURSamRhY1BREAE!2m1!1s0x0:0xe23bb2df468e9c15!3m1!1s2@1:CIHM0ogKEICAgIDRjdacPQ%7C%7C?hl=id"
+    }
+  ]
+}

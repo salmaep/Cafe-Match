@@ -78,6 +78,10 @@ import Toast from '../components/Toast';
 const { width, height } = Dimensions.get('window');
 const CARD_W = width * 0.85;
 
+// DEV TOGGLE: fetch all cafes regardless of wizard radius setting.
+// Revert to `false` for production.
+const DEV_DISABLE_RADIUS = true;
+
 export default function CardSwipeScreen() {
   const navigation = useNavigation<StackNavigationProp<any>>();
   const insets = useSafeAreaInsets();
@@ -111,7 +115,7 @@ export default function CardSwipeScreen() {
     try {
       const lat = preferences?.location?.latitude ?? latitude;
       const lng = preferences?.location?.longitude ?? longitude;
-      const rad = preferences?.radius ?? 2;
+      const rad = DEV_DISABLE_RADIUS ? 9999 : (preferences?.radius ?? 2);
 
       // Fetch regular cafes and promoted cafes in parallel
       const [allCafesRaw, promotedRaw] = await Promise.allSettled([
@@ -140,8 +144,36 @@ export default function CardSwipeScreen() {
         };
       });
 
-      let sorted = [...allCafes].sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0));
-      if (preferences?.purpose) {
+      // Map wizard Purpose → purpose_slug used in backend cafe_purpose_tags
+      const PURPOSE_SLUG_MAP: Record<string, string> = {
+        'Me Time': 'me-time',
+        'Date': 'date',
+        'Family Time': 'family',
+        'Group Study': 'group-work',
+        'WFC': 'wfc',
+      };
+
+      // Rank by purposeScore matching wizard selection; fall back to matchScore
+      const wizardPurpose = preferences?.purpose;
+      const wantedSlug = wizardPurpose ? PURPOSE_SLUG_MAP[wizardPurpose] : null;
+
+      const scored = allCafes.map((c) => {
+        let score = c.matchScore || 0;
+        if (wantedSlug && c.purposeScores?.[wantedSlug] != null) {
+          // Prefer the scraped purposeScore when available
+          score = c.purposeScores[wantedSlug];
+        }
+        return { cafe: c, score };
+      });
+
+      let sorted = scored.sort((a, b) => b.score - a.score).map((s) => s.cafe);
+
+      // If wizard selected a purpose, only keep cafes with score >= 40 for that purpose
+      if (wantedSlug) {
+        const matched = sorted.filter((c) => (c.purposeScores?.[wantedSlug] || 0) >= 40);
+        if (matched.length > 0) sorted = matched;
+      } else if (preferences?.purpose) {
+        // Legacy fallback — filter by purpose name string match
         const filtered = sorted.filter((c) => c.purposes.includes(preferences.purpose!));
         if (filtered.length > 0) sorted = filtered;
       }

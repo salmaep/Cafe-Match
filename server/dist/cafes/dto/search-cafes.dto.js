@@ -46,7 +46,7 @@ __decorate([
     (0, class_transformer_1.Type)(() => Number),
     (0, class_validator_1.IsNumber)(),
     (0, class_validator_1.IsPositive)(),
-    (0, class_validator_1.Max)(10000),
+    (0, class_validator_1.Max)(50000000),
     __metadata("design:type", Number)
 ], SearchCafesDto.prototype, "radius", void 0);
 __decorate([
@@ -85,7 +85,7 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_transformer_1.Type)(() => Number),
     (0, class_validator_1.IsPositive)(),
-    (0, class_validator_1.Max)(100),
+    (0, class_validator_1.Max)(2000),
     __metadata("design:type", Number)
 ], SearchCafesDto.prototype, "limit", void 0);
 //# sourceMappingURL=search-cafes.dto.js.map

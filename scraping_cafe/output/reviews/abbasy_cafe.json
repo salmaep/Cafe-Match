@@ -1,0 +1,73 @@
+{
+  "cafeName": "ABBASY CAFE",
+  "placeId": "ChIJ7QZE1hnDaC4RdDLHbFTUmCM",
+  "totalReviews": 5,
+  "reviewsScraped": 5,
+  "reviews": [
+    {
+      "author": "Taty Marlina",
+      "authorUrl": "https://www.google.com/maps/contrib/114580666467579959380?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2026-02-01T02:03:41.168Z",
+      "relativeDate": "2 bulan lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "Ci9DQUlRQUNvZENodHljRjlvT2w5SllsWTVUM0JuZEZaSmJqRllUbFJZYkVaMVpWRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sCi9DQUlRQUNvZENodHljRjlvT2w5SllsWTVUM0JuZEZaSmJqRllUbFJZYkVaMVpWRRAB!2m1!1s0x0:0x2398d4546cc73274!3m1!1s2@1:CAIQACodChtycF9oOl9JYlY5T3BndFZJbjFYTlRYbEZ1ZVE%7C%7C?hl=id"
+    },
+    {
+      "author": "Wijayanti Anggraeni",
+      "authorUrl": "https://www.google.com/maps/contrib/115595189895982646947?hl=id",
+      "rating": 5,
+      "text": "Memuaskan",
+      "textTranslated": null,
+      "date": "2026-01-02T07:02:39.653Z",
+      "relativeDate": "3 bulan lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "Ci9DQUlRQUNvZENodHljRjlvT21SWGFFTm9iWGt5ZGsxcU5WWllkWEZLVmw5c04wRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sCi9DQUlRQUNvZENodHljRjlvT21SWGFFTm9iWGt5ZGsxcU5WWllkWEZLVmw5c04wRRAB!2m1!1s0x0:0x2398d4546cc73274!3m1!1s2@1:CAIQACodChtycF9oOmRXaENobXkydk1qNVZYdXFKVl9sN0E%7C%7C?hl=id"
+    },
+    {
+      "author": "Pecellele Cakato",
+      "authorUrl": "https://www.google.com/maps/contrib/105819918921403802915?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2026-01-02T06:00:38.053Z",
+      "relativeDate": "3 bulan lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "Ci9DQUlRQUNvZENodHljRjlvT25RNFRUbDViMmxFYVU1dVlYTk5TRkl0ZEMxcVZFRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sCi9DQUlRQUNvZENodHljRjlvT25RNFRUbDViMmxFYVU1dVlYTk5TRkl0ZEMxcVZFRRAB!2m1!1s0x0:0x2398d4546cc73274!3m1!1s2@1:CAIQACodChtycF9oOnQ4TTl5b2lEaU5uYXNNSFItdC1qVEE%7C%7C?hl=id"
+    },
+    {
+      "author": "Emir Ahmad Pratama",
+      "authorUrl": "https://www.google.com/maps/contrib/103731766695627316649?hl=id",
+      "rating": 4,
+      "text": "",
+      "textTranslated": null,
+      "date": "2022-04-07T05:36:47.675Z",
+      "relativeDate": "4 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSURXOTRyVXN3RRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSURXOTRyVXN3RRAB!2m1!1s0x0:0x2398d4546cc73274!3m1!1s2@1:CIHM0ogKEICAgIDW94rUswE%7C%7C?hl=id"
+    },
+    {
+      "author": "Siti Nuraeni",
+      "authorUrl": "https://www.google.com/maps/contrib/102015875468534369190?hl=id",
+      "rating": 5,
+      "text": "enak murah meriah",
+      "textTranslated": null,
+      "date": "2021-04-02T15:27:00.280Z",
+      "relativeDate": "5 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSUNLdXNTTWFnEAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSUNLdXNTTWFnEAE!2m1!1s0x0:0x2398d4546cc73274!3m1!1s2@1:CIHM0ogKEICAgICKusSMag%7C%7C?hl=id"
+    }
+  ]
+}

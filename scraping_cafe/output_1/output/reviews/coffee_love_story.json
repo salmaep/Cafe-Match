@@ -1,0 +1,112 @@
+{
+  "cafeName": "Coffee Love Story",
+  "placeId": "ChIJ9SoAh5XdaC4R5Rau13orqdU",
+  "totalReviews": 8,
+  "reviewsScraped": 8,
+  "reviews": [
+    {
+      "author": "Na na na na",
+      "authorUrl": "https://www.google.com/maps/contrib/114577013417802611191?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2026-02-27T10:18:04.578Z",
+      "relativeDate": "sebulan lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "Ci9DQUlRQUNvZENodHljRjlvT2xJeVRqY3RRV294WDNrNE5XOHljREJvVG5kSk4zYxAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sCi9DQUlRQUNvZENodHljRjlvT2xJeVRqY3RRV294WDNrNE5XOHljREJvVG5kSk4zYxAB!2m1!1s0x0:0xd5a92b7ad7ae16e5!3m1!1s2@1:CAIQACodChtycF9oOlIyTjctQWoxX3k4NW8ycDBoTndJN3c%7C%7C?hl=id"
+    },
+    {
+      "author": "Asep Hatta",
+      "authorUrl": "https://www.google.com/maps/contrib/117684298278526319637?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2023-05-16T08:32:22.982Z",
+      "relativeDate": "2 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSUN4aG83dmJREAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSUN4aG83dmJREAE!2m1!1s0x0:0xd5a92b7ad7ae16e5!3m1!1s2@1:CIHM0ogKEICAgICxho7vbQ%7C%7C?hl=id"
+    },
+    {
+      "author": "Coffee Love Story",
+      "authorUrl": "https://www.google.com/maps/contrib/108057124573593520490?hl=id",
+      "rating": 5,
+      "text": "Pabrik Kopi",
+      "textTranslated": null,
+      "date": "2022-09-18T18:16:07.689Z",
+      "relativeDate": "Diedit 3 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSUNxOWU2U0JnEAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSUNxOWU2U0JnEAE!2m1!1s0x0:0xd5a92b7ad7ae16e5!3m1!1s2@1:CIHM0ogKEICAgICq9e6SBg%7C%7C?hl=id"
+    },
+    {
+      "author": "Tiar Ramadhan",
+      "authorUrl": "https://www.google.com/maps/contrib/110894849650519571492?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2022-07-03T10:43:13.757Z",
+      "relativeDate": "Diedit 3 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSURxMWN1c2h3RRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSURxMWN1c2h3RRAB!2m1!1s0x0:0xd5a92b7ad7ae16e5!3m1!1s2@1:CIHM0ogKEICAgIDq1cushwE%7C%7C?hl=id"
+    },
+    {
+      "author": "amaris praja",
+      "authorUrl": "https://www.google.com/maps/contrib/118101248773106546184?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2022-04-13T05:14:36.509Z",
+      "relativeDate": "4 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSUMyNVBTSER3EAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSUMyNVBTSER3EAE!2m1!1s0x0:0xd5a92b7ad7ae16e5!3m1!1s2@1:CIHM0ogKEICAgIC25PSHDw%7C%7C?hl=id"
+    },
+    {
+      "author": "Andra Permana Halim",
+      "authorUrl": "https://www.google.com/maps/contrib/103962794589007755887?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2021-09-03T16:47:40.823Z",
+      "relativeDate": "4 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSUM2eHJIV1hREAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSUM2eHJIV1hREAE!2m1!1s0x0:0xd5a92b7ad7ae16e5!3m1!1s2@1:CIHM0ogKEICAgIC6xrHWXQ%7C%7C?hl=id"
+    },
+    {
+      "author": "R Mustari",
+      "authorUrl": "https://www.google.com/maps/contrib/107506816978259041843?hl=id",
+      "rating": 5,
+      "text": "mantap",
+      "textTranslated": null,
+      "date": "2021-07-24T08:15:56.475Z",
+      "relativeDate": "4 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSUNhdE9mTFRBEAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSUNhdE9mTFRBEAE!2m1!1s0x0:0xd5a92b7ad7ae16e5!3m1!1s2@1:CIHM0ogKEICAgICatOfLTA%7C%7C?hl=id"
+    },
+    {
+      "author": "yani kurniasih",
+      "authorUrl": "https://www.google.com/maps/contrib/105612437407857239115?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2021-05-31T07:16:03.357Z",
+      "relativeDate": "4 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSUNxX0tYQ2lRRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSUNxX0tYQ2lRRRAB!2m1!1s0x0:0xd5a92b7ad7ae16e5!3m1!1s2@1:CIHM0ogKEICAgICq_KXCiQE%7C%7C?hl=id"
+    }
+  ]
+}

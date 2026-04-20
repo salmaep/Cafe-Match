@@ -1,0 +1,112 @@
+{
+  "cafeName": "Cafe Bahagia",
+  "placeId": "ChIJB0zriYLdaC4RsvT6CivH5zI",
+  "totalReviews": 8,
+  "reviewsScraped": 8,
+  "reviews": [
+    {
+      "author": "Syafiq Azhar",
+      "authorUrl": "https://www.google.com/maps/contrib/115038163906073848194?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2024-09-10T07:32:14.824Z",
+      "relativeDate": "setahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSUNIajVPdHJBRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSUNIajVPdHJBRRAB!2m1!1s0x0:0x32e7c72b0afaf4b2!3m1!1s2@1:CIHM0ogKEICAgICHj5OtrAE%7C%7C?hl=id"
+    },
+    {
+      "author": "Dede Rifki Arifandi",
+      "authorUrl": "https://www.google.com/maps/contrib/113236395063809018609?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2023-06-14T22:56:52.645Z",
+      "relativeDate": "2 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSUR4aThPbV9BRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSUR4aThPbV9BRRAB!2m1!1s0x0:0x32e7c72b0afaf4b2!3m1!1s2@1:CIHM0ogKEICAgIDxi8Om_AE%7C%7C?hl=id"
+    },
+    {
+      "author": "Sarah Andina Shafira",
+      "authorUrl": "https://www.google.com/maps/contrib/109165190224883240429?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2023-02-20T07:35:31.844Z",
+      "relativeDate": "3 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSUNodmJTNHRnRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSUNodmJTNHRnRRAB!2m1!1s0x0:0x32e7c72b0afaf4b2!3m1!1s2@1:CIHM0ogKEICAgIChvbS4tgE%7C%7C?hl=id"
+    },
+    {
+      "author": "Siti Nur",
+      "authorUrl": "https://www.google.com/maps/contrib/103918304484338977309?hl=id",
+      "rating": 5,
+      "text": "Pemandangan kota bandung, makanan juga relatif murah dengan rasa yang enak pastinya. Cocok buat tempat healing.",
+      "textTranslated": null,
+      "date": "2023-02-20T07:15:01.930Z",
+      "relativeDate": "3 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSUNodmRpR09nEAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSUNodmRpR09nEAE!2m1!1s0x0:0x32e7c72b0afaf4b2!3m1!1s2@1:CIHM0ogKEICAgIChvdiGOg%7C%7C?hl=id"
+    },
+    {
+      "author": "ahmad fauzi",
+      "authorUrl": "https://www.google.com/maps/contrib/103964546614170770077?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2023-01-24T00:14:02.100Z",
+      "relativeDate": "Diedit 3 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSURCaUlYbnVBRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSURCaUlYbnVBRRAB!2m1!1s0x0:0x32e7c72b0afaf4b2!3m1!1s2@1:CIHM0ogKEICAgIDBiIXnuAE%7C%7C?hl=id"
+    },
+    {
+      "author": "Juhardin Dapa",
+      "authorUrl": "https://www.google.com/maps/contrib/112255413330096604244?hl=id",
+      "rating": 5,
+      "text": "Maasya Allah enak tempat kopi nya",
+      "textTranslated": null,
+      "date": "2023-01-10T08:13:42.065Z",
+      "relativeDate": "3 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSURCaUoyYlV3EAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSURCaUoyYlV3EAE!2m1!1s0x0:0x32e7c72b0afaf4b2!3m1!1s2@1:CIHM0ogKEICAgIDBiJ2bUw%7C%7C?hl=id"
+    },
+    {
+      "author": "yusuf hasyim",
+      "authorUrl": "https://www.google.com/maps/contrib/110645741050703015140?hl=id",
+      "rating": 5,
+      "text": "Nikmat alhamdulillah",
+      "textTranslated": null,
+      "date": "2023-01-10T07:59:35.121Z",
+      "relativeDate": "3 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSURCaU5YS2xRRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSURCaU5YS2xRRRAB!2m1!1s0x0:0x32e7c72b0afaf4b2!3m1!1s2@1:CIHM0ogKEICAgIDBiNXKlQE%7C%7C?hl=id"
+    },
+    {
+      "author": "Ali Abusabiq",
+      "authorUrl": "https://www.google.com/maps/contrib/109484371766245715711?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2023-01-10T07:58:01.535Z",
+      "relativeDate": "3 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSURCaUpXRVRBEAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSURCaUpXRVRBEAE!2m1!1s0x0:0x32e7c72b0afaf4b2!3m1!1s2@1:CIHM0ogKEICAgIDBiJWETA%7C%7C?hl=id"
+    }
+  ]
+}

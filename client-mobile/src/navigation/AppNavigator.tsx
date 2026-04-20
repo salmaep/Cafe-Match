@@ -20,6 +20,13 @@ import OwnerDashboardScreen from '../screens/owner/OwnerDashboardScreen';
 import OwnerLoginScreen from '../screens/owner/OwnerLoginScreen';
 import OwnerRegisterScreen from '../screens/owner/OwnerRegisterScreen';
 import PromotionDetailScreen from '../screens/owner/PromotionDetailScreen';
+import ReviewsScreen from '../screens/ReviewsScreen';
+import WriteReviewScreen from '../screens/WriteReviewScreen';
+import LeaderboardScreen from '../screens/LeaderboardScreen';
+import FriendsScreen from '../screens/FriendsScreen';
+import AchievementsScreen from '../screens/AchievementsScreen';
+import NotificationsScreen from '../screens/NotificationsScreen';
+import RecapScreen from '../screens/RecapScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -28,7 +35,7 @@ const OwnerStack = createStackNavigator();
 function TabIcon({ label, focused }: { label: string; focused: boolean }) {
   const icons: Record<string, string> = {
     Discover: '🗺️',
-    Trending: '🔥',
+    Explore: '🔥',
     Shortlist: '★',
     Profile: '👤',
   };
@@ -57,7 +64,7 @@ function MainTabs() {
       })}
     >
       <Tab.Screen name="Discover" component={MapScreen} />
-      <Tab.Screen name="Trending" component={TrendingScreen} />
+      <Tab.Screen name="Explore" component={TrendingScreen} />
       <Tab.Screen
         name="Shortlist"
         component={ShortlistModal}
@@ -125,6 +132,18 @@ export default function AppNavigator() {
         name="PromotionDetail"
         component={PromotionDetailScreen}
         options={{ ...TransitionPresets.SlideFromRightIOS }}
+      />
+      {/* Social feature screens */}
+      <Stack.Screen name="Reviews" component={ReviewsScreen} />
+      <Stack.Screen name="WriteReview" component={WriteReviewScreen} />
+      <Stack.Screen name="Leaderboard" component={LeaderboardScreen} />
+      <Stack.Screen name="Friends" component={FriendsScreen} />
+      <Stack.Screen name="Achievements" component={AchievementsScreen} />
+      <Stack.Screen name="Notifications" component={NotificationsScreen} />
+      <Stack.Screen
+        name="Recap"
+        component={RecapScreen}
+        options={{ ...TransitionPresets.ModalPresentationIOS }}
       />
     </Stack.Navigator>
   );

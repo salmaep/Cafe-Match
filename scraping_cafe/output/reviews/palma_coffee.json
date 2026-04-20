@@ -1,0 +1,60 @@
+{
+  "cafeName": "Palma Coffee",
+  "placeId": "ChIJm3tOxondaC4RSzhqNuFWLDQ",
+  "totalReviews": 4,
+  "reviewsScraped": 4,
+  "reviews": [
+    {
+      "author": "Margaery Tyrell",
+      "authorUrl": "https://www.google.com/maps/contrib/114911405942028009996?hl=id",
+      "rating": 5,
+      "text": "Tempatnya menarik,baristanya kasep deui",
+      "textTranslated": null,
+      "date": "2023-05-27T11:37:34.015Z",
+      "relativeDate": "2 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSUN4aDVicGlRRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSUN4aDVicGlRRRAB!2m1!1s0x0:0x342c56e1366a384b!3m1!1s2@1:CIHM0ogKEICAgICxh5bpiQE%7C%7C?hl=id"
+    },
+    {
+      "author": "Nur Galih Suntara",
+      "authorUrl": "https://www.google.com/maps/contrib/109285218568635519438?hl=id",
+      "rating": 5,
+      "text": "Mantap si, harganya juga terjangkau🥰",
+      "textTranslated": null,
+      "date": "2023-05-27T09:36:31.974Z",
+      "relativeDate": "2 tahun lalu",
+      "likesCount": 3,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSUN4LS1ma2t3RRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSUN4LS1ma2t3RRAB!2m1!1s0x0:0x342c56e1366a384b!3m1!1s2@1:CIHM0ogKEICAgICx--fkkwE%7C%7C?hl=id"
+    },
+    {
+      "author": "nadiip.e rayendra",
+      "authorUrl": "https://www.google.com/maps/contrib/100006713919874595976?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2023-03-22T17:21:51.874Z",
+      "relativeDate": "3 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSUNSNEo3eDRRRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSUNSNEo3eDRRRRAB!2m1!1s0x0:0x342c56e1366a384b!3m1!1s2@1:CIHM0ogKEICAgICR4J7x4QE%7C%7C?hl=id"
+    },
+    {
+      "author": "Adam MRizqi",
+      "authorUrl": "https://www.google.com/maps/contrib/106492847404687369262?hl=id",
+      "rating": 5,
+      "text": "Tempatnya nyaman pelayanannya baik",
+      "textTranslated": null,
+      "date": "2023-03-20T05:14:25.224Z",
+      "relativeDate": "3 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSURoMS0yWjlnRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSURoMS0yWjlnRRAB!2m1!1s0x0:0x342c56e1366a384b!3m1!1s2@1:CIHM0ogKEICAgIDh1-2Z9gE%7C%7C?hl=id"
+    }
+  ]
+}

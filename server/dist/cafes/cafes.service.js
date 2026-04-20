@@ -37,6 +37,61 @@ let CafesService = class CafesService {
         this.requirementsRepository = requirementsRepository;
         this.dataSource = dataSource;
     }
+    async loadPurposeMatchers() {
+        const purposes = await this.dataSource.query(`
+      SELECT id, name, slug
+      FROM purposes
+      ORDER BY display_order ASC
+    `);
+        const reqs = await this.requirementsRepository.find();
+        const reqsByPurpose = new Map();
+        for (const r of reqs) {
+            if (!reqsByPurpose.has(r.purposeId))
+                reqsByPurpose.set(r.purposeId, []);
+            reqsByPurpose.get(r.purposeId).push({
+                facilityKey: r.facilityKey,
+                isMandatory: r.isMandatory,
+                weight: r.weight,
+            });
+        }
+        return purposes.map((p) => {
+            const requirements = reqsByPurpose.get(p.id) || [];
+            const maxScore = requirements.reduce((s, r) => s + r.weight, 0);
+            return {
+                id: p.id,
+                name: p.name,
+                slug: p.slug,
+                requirements,
+                maxScore,
+            };
+        });
+    }
+    computePurposesAndScore(facilityKeys, matchers) {
+        const strictMatches = [];
+        const looseMatches = [];
+        for (const p of matchers) {
+            const mandatoryKeys = p.requirements
+                .filter((r) => r.isMandatory)
+                .map((r) => r.facilityKey);
+            const strictMet = mandatoryKeys.every((k) => facilityKeys.includes(k));
+            const matchedWeight = p.requirements
+                .filter((r) => facilityKeys.includes(r.facilityKey))
+                .reduce((s, r) => s + r.weight, 0);
+            const normalizedScore = p.maxScore > 0 ? Math.round((matchedWeight / p.maxScore) * 100) : 0;
+            if (strictMet && matchedWeight > 0) {
+                strictMatches.push({ name: p.name, score: normalizedScore });
+            }
+            else if (matchedWeight > 0) {
+                looseMatches.push({ name: p.name, score: normalizedScore });
+            }
+        }
+        const chosen = strictMatches.length > 0 ? strictMatches : looseMatches;
+        chosen.sort((a, b) => b.score - a.score);
+        const purposeNames = chosen.slice(0, 4).map((m) => m.name);
+        const bestScore = chosen.length > 0 ? chosen[0].score : 0;
+        const matchScore = Math.min(98, Math.max(60, bestScore || 65));
+        return { purposes: purposeNames, matchScore };
+    }
     async search(dto) {
         const hasGeo = dto.lat != null && dto.lng != null;
         if (!hasGeo) {
@@ -120,12 +175,18 @@ let CafesService = class CafesService {
         c.wifi_available AS wifiAvailable,
         c.wifi_speed_mbps AS wifiSpeedMbps,
         c.has_mushola AS hasMushola,
+        c.has_parking AS hasParking,
+        c.google_rating AS googleRating,
+        c.total_google_reviews AS totalGoogleReviews,
+        c.website,
         c.opening_hours AS openingHours,
         c.price_range AS priceRange,
         c.bookmarks_count AS bookmarksCount,
         c.favorites_count AS favoritesCount,
         c.has_active_promotion AS hasActivePromotion,
         c.active_promotion_type AS activePromotionType,
+        c.promotion_content AS promotionContentJson,
+        c.new_cafe_content AS newCafeContentJson,
         ph.url AS primaryPhotoUrl,
         promo.content_title AS promoTitle,
         promo.content_description AS promoDescription,
@@ -153,6 +214,7 @@ let CafesService = class CafesService {
         const cafeIds = results.map((r) => r.id);
         let facilitiesMap = new Map();
         let photosMap = new Map();
+        let purposeTagsMap = new Map();
         if (cafeIds.length > 0) {
             const placeholders = cafeIds.map(() => '?').join(',');
             const rawFacilities = await this.dataSource.query(`SELECT cafe_id AS cafeId, facility_key AS facilityKey, facility_value AS facilityValue
@@ -169,65 +231,147 @@ let CafesService = class CafesService {
                     photosMap.set(p.cafeId, []);
                 photosMap.get(p.cafeId).push({ url: p.url, displayOrder: p.displayOrder, isPrimary: !!p.isPrimary });
             }
+            try {
+                const rawTags = await this.dataSource.query(`SELECT cafe_id AS cafeId, purpose_slug AS purposeSlug, score
+           FROM cafe_purpose_tags WHERE cafe_id IN (${placeholders})`, cafeIds);
+                for (const t of rawTags) {
+                    if (!purposeTagsMap.has(t.cafeId))
+                        purposeTagsMap.set(t.cafeId, []);
+                    purposeTagsMap.get(t.cafeId).push({ purposeSlug: t.purposeSlug, score: t.score });
+                }
+            }
+            catch {
+            }
         }
+        const parseJson = (v) => {
+            if (v == null)
+                return null;
+            if (typeof v === 'string') {
+                try {
+                    return JSON.parse(v);
+                }
+                catch {
+                    return null;
+                }
+            }
+            return v;
+        };
+        const purposeMatchers = await this.loadPurposeMatchers();
         return {
-            data: results.map((r) => ({
-                ...r,
-                latitude: parseFloat(r.latitude),
-                longitude: parseFloat(r.longitude),
-                distanceMeters: Math.round(r.distanceMeters),
-                wifiAvailable: !!r.wifiAvailable,
-                hasMushola: !!r.hasMushola,
-                hasActivePromotion: !!r.hasActivePromotion,
-                openingHours: typeof r.openingHours === 'string'
-                    ? JSON.parse(r.openingHours)
-                    : r.openingHours,
-                facilities: facilitiesMap.get(r.id) || [],
-                photos: photosMap.get(r.id) || (r.primaryPhotoUrl ? [{ url: r.primaryPhotoUrl, displayOrder: 0, isPrimary: true }] : []),
-                promotionContent: r.promoTitle ? {
-                    title: r.promoTitle,
-                    description: r.promoDescription,
-                    photoUrl: r.promoPhotoUrl,
-                } : null,
-            })),
+            data: results.map((r) => {
+                const storedPromotionContent = parseJson(r.promotionContentJson);
+                const storedNewCafeContent = parseJson(r.newCafeContentJson);
+                const inlinePromotion = r.promoTitle
+                    ? {
+                        title: r.promoTitle,
+                        description: r.promoDescription,
+                        promoPhoto: r.promoPhotoUrl,
+                    }
+                    : null;
+                const promotionContent = inlinePromotion || storedPromotionContent;
+                const { promotionContentJson, newCafeContentJson, promoTitle, promoDescription, promoPhotoUrl, ...rest } = r;
+                const cafeFacilities = facilitiesMap.get(r.id) || [];
+                const facilityKeys = cafeFacilities.map((f) => f.facilityKey);
+                const { purposes, matchScore } = this.computePurposesAndScore(facilityKeys, purposeMatchers);
+                const tagList = purposeTagsMap.get(r.id) || [];
+                const purposeScores = {};
+                for (const t of tagList)
+                    purposeScores[t.purposeSlug] = t.score;
+                const googleMapsUrl = r.googleMapsUrl ||
+                    `https://maps.google.com/?q=${r.latitude},${r.longitude}`;
+                return {
+                    ...rest,
+                    latitude: parseFloat(r.latitude),
+                    longitude: parseFloat(r.longitude),
+                    distanceMeters: Math.round(r.distanceMeters),
+                    distance: Math.round(r.distanceMeters / 100) / 10,
+                    wifiAvailable: !!r.wifiAvailable,
+                    hasMushola: !!r.hasMushola,
+                    hasParking: !!r.hasParking,
+                    hasActivePromotion: !!r.hasActivePromotion,
+                    googleRating: r.googleRating != null ? parseFloat(r.googleRating) : null,
+                    totalGoogleReviews: r.totalGoogleReviews ?? null,
+                    website: r.website ?? null,
+                    googleMapsUrl,
+                    openingHours: typeof r.openingHours === 'string'
+                        ? JSON.parse(r.openingHours)
+                        : r.openingHours,
+                    facilities: cafeFacilities,
+                    detectedFacilities: facilityKeys,
+                    photos: photosMap.get(r.id) ||
+                        (r.primaryPhotoUrl
+                            ? [{ url: r.primaryPhotoUrl, displayOrder: 0, isPrimary: true }]
+                            : []),
+                    promotionContent,
+                    newCafeContent: storedNewCafeContent,
+                    purposes,
+                    purposeScores,
+                    matchScore: r.matchScore ?? matchScore,
+                };
+            }),
             meta: { page, limit, total: parseInt(total, 10) },
         };
     }
     async filterByPurpose(nearbyCafes, purposeId) {
-        const requirements = await this.requirementsRepository.find({
-            where: { purposeId },
-        });
-        if (requirements.length === 0)
-            return nearbyCafes;
-        const mandatoryKeys = requirements
-            .filter((r) => r.isMandatory)
-            .map((r) => r.facilityKey);
-        const allKeys = requirements.map((r) => r.facilityKey);
         const cafeIds = nearbyCafes.data.map((c) => c.id);
         if (cafeIds.length === 0) {
             return { data: [], meta: { ...nearbyCafes.meta, total: 0 } };
         }
-        const facilities = await this.facilitiesRepository.find({
-            where: { cafeId: (0, typeorm_2.In)(cafeIds), facilityKey: (0, typeorm_2.In)(allKeys) },
-        });
-        const facilityMap = new Map();
-        for (const f of facilities) {
-            if (!facilityMap.has(f.cafeId))
-                facilityMap.set(f.cafeId, []);
-            facilityMap.get(f.cafeId).push(f.facilityKey);
+        const [purposeRow] = await this.dataSource.query(`SELECT slug FROM purposes WHERE id = ?`, [purposeId]);
+        const purposeSlug = purposeRow?.slug;
+        const scoreByCafeId = new Map();
+        if (purposeSlug) {
+            try {
+                const placeholders = cafeIds.map(() => '?').join(',');
+                const tagRows = await this.dataSource.query(`SELECT cafe_id AS cafeId, score
+           FROM cafe_purpose_tags
+           WHERE purpose_slug = ? AND cafe_id IN (${placeholders})`, [purposeSlug, ...cafeIds]);
+                for (const t of tagRows) {
+                    scoreByCafeId.set(Number(t.cafeId), parseInt(t.score, 10));
+                }
+            }
+            catch {
+            }
         }
-        const scored = nearbyCafes.data
+        let scored = nearbyCafes.data
             .map((cafe) => {
-            const keys = facilityMap.get(cafe.id) || [];
-            if (!mandatoryKeys.every((k) => keys.includes(k)))
-                return null;
-            const matchScore = requirements
-                .filter((r) => keys.includes(r.facilityKey))
-                .reduce((sum, r) => sum + r.weight, 0);
-            return { ...cafe, matchScore };
+            const score = scoreByCafeId.get(Number(cafe.id));
+            if (score != null && score >= 40) {
+                return { ...cafe, matchScore: score };
+            }
+            return null;
         })
-            .filter(Boolean)
-            .sort((a, b) => b.matchScore - a.matchScore || a.distanceMeters - b.distanceMeters);
+            .filter(Boolean);
+        if (scored.length === 0) {
+            const requirements = await this.requirementsRepository.find({ where: { purposeId } });
+            if (requirements.length > 0) {
+                const mandatoryKeys = requirements
+                    .filter((r) => r.isMandatory)
+                    .map((r) => r.facilityKey);
+                const allKeys = requirements.map((r) => r.facilityKey);
+                const facilities = await this.facilitiesRepository.find({
+                    where: { cafeId: (0, typeorm_2.In)(cafeIds), facilityKey: (0, typeorm_2.In)(allKeys) },
+                });
+                const facilityMap = new Map();
+                for (const f of facilities) {
+                    if (!facilityMap.has(f.cafeId))
+                        facilityMap.set(f.cafeId, []);
+                    facilityMap.get(f.cafeId).push(f.facilityKey);
+                }
+                scored = nearbyCafes.data
+                    .map((cafe) => {
+                    const keys = facilityMap.get(cafe.id) || [];
+                    if (!mandatoryKeys.every((k) => keys.includes(k)))
+                        return null;
+                    const matchScore = requirements
+                        .filter((r) => keys.includes(r.facilityKey))
+                        .reduce((sum, r) => sum + r.weight, 0);
+                    return { ...cafe, matchScore };
+                })
+                    .filter(Boolean);
+            }
+        }
+        scored.sort((a, b) => b.matchScore - a.matchScore || a.distanceMeters - b.distanceMeters);
         return {
             data: scored,
             meta: { ...nearbyCafes.meta, total: scored.length },
@@ -240,7 +384,39 @@ let CafesService = class CafesService {
         });
         if (!cafe)
             throw new common_1.NotFoundException('Cafe not found');
-        return cafe;
+        const facilityKeys = (cafe.facilities || []).map((f) => f.facilityKey);
+        const purposeMatchers = await this.loadPurposeMatchers();
+        const { purposes, matchScore } = this.computePurposesAndScore(facilityKeys, purposeMatchers);
+        const purposeScores = {};
+        try {
+            const tags = await this.dataSource.query(`SELECT purpose_slug AS purposeSlug, score FROM cafe_purpose_tags WHERE cafe_id = ?`, [id]);
+            for (const t of tags)
+                purposeScores[t.purposeSlug] = t.score;
+        }
+        catch {
+        }
+        let reviewsSummary = [];
+        try {
+            reviewsSummary = await this.dataSource.query(`SELECT rr.category, ROUND(AVG(rr.score), 1) AS avgScore, COUNT(*) AS count
+         FROM review_ratings rr JOIN reviews r ON r.id = rr.review_id
+         WHERE r.cafe_id = ? GROUP BY rr.category`, [id]);
+        }
+        catch {
+        }
+        const googleMapsUrl = cafe.googleMapsUrl ||
+            `https://maps.google.com/?q=${cafe.latitude},${cafe.longitude}`;
+        return {
+            ...cafe,
+            latitude: Number(cafe.latitude),
+            longitude: Number(cafe.longitude),
+            googleMapsUrl,
+            googleRating: cafe.googleRating != null ? Number(cafe.googleRating) : null,
+            purposes,
+            purposeScores,
+            detectedFacilities: facilityKeys,
+            matchScore,
+            reviewsSummary,
+        };
     }
     async create(dto) {
         const slug = this.generateSlug(dto.name);
@@ -276,34 +452,45 @@ let CafesService = class CafesService {
     async findPromotedCafes(type) {
         const qb = this.cafesRepository
             .createQueryBuilder('c')
+            .leftJoinAndSelect('c.facilities', 'facilities')
+            .leftJoinAndSelect('c.photos', 'photos')
             .where('c.isActive = :active', { active: true })
             .andWhere('c.hasActivePromotion = :promoted', { promoted: true });
         if (type) {
             qb.andWhere('c.activePromotionType = :type', { type });
         }
         const cafes = await qb.getMany();
+        const promoMap = new Map();
         if (!type || type === 'featured_promo') {
-            const cafeIds = cafes.filter(c => c.activePromotionType === 'featured_promo').map(c => c.id);
+            const cafeIds = cafes
+                .filter((c) => c.activePromotionType === 'featured_promo')
+                .map((c) => c.id);
             if (cafeIds.length > 0) {
-                const promotions = await this.dataSource.query(`SELECT p.cafe_id, p.content_title, p.content_description, p.content_photo_url,
-                  p.highlighted_facilities, pkg.name AS package_name, pkg.display_order
+                const promotions = await this.dataSource.query(`SELECT p.cafe_id, p.content_title AS contentTitle, p.content_description AS contentDescription,
+                  p.content_photo_url AS contentPhotoUrl,
+                  pkg.name AS package_name, pkg.display_order
            FROM promotions p
            JOIN advertisement_packages pkg ON p.package_id = pkg.id
            WHERE p.cafe_id IN (${cafeIds.map(() => '?').join(',')})
              AND p.status = 'active' AND p.expires_at > NOW()
            ORDER BY pkg.display_order DESC`, cafeIds);
-                const promoMap = new Map();
                 for (const p of promotions) {
                     if (!promoMap.has(p.cafe_id))
                         promoMap.set(p.cafe_id, p);
                 }
-                return cafes.map((cafe) => ({
-                    ...cafe,
-                    promotion: promoMap.get(cafe.id) || null,
-                }));
             }
         }
-        return cafes;
+        const purposeMatchers = await this.loadPurposeMatchers();
+        return cafes.map((cafe) => {
+            const facilityKeys = (cafe.facilities || []).map((f) => f.facilityKey);
+            const { purposes, matchScore } = this.computePurposesAndScore(facilityKeys, purposeMatchers);
+            return {
+                ...cafe,
+                purposes,
+                matchScore,
+                promotion: promoMap.get(cafe.id) || null,
+            };
+        });
     }
     generateSlug(name) {
         return (name

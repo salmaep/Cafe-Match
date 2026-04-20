@@ -1,0 +1,47 @@
+{
+  "cafeName": "Tjikopi Coffee Shop",
+  "placeId": "ChIJKXN2JjLnaC4RaGPNZdR3lz8",
+  "totalReviews": 3,
+  "reviewsScraped": 3,
+  "reviews": [
+    {
+      "author": "Kang Rian syauqi",
+      "authorUrl": "https://www.google.com/maps/contrib/115645801236456852173?hl=id",
+      "rating": 5,
+      "text": "Aman",
+      "textTranslated": null,
+      "date": "2021-11-09T09:45:15.097Z",
+      "relativeDate": "4 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSUNHaTlQLXJRRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSUNHaTlQLXJRRRAB!2m1!1s0x0:0x3f9777d465cd6368!3m1!1s2@1:CIHM0ogKEICAgICGi9P-rQE%7C%7C?hl=id"
+    },
+    {
+      "author": "Wiji Purwito",
+      "authorUrl": "https://www.google.com/maps/contrib/108849557779912293452?hl=id",
+      "rating": 3,
+      "text": "Tempatnya kecil, strategis dan parkir luas...",
+      "textTranslated": null,
+      "date": "2021-10-31T23:29:58.170Z",
+      "relativeDate": "4 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSUNHNGZiRWx3RRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSUNHNGZiRWx3RRAB!2m1!1s0x0:0x3f9777d465cd6368!3m1!1s2@1:CIHM0ogKEICAgICG4fbElwE%7C%7C?hl=id"
+    },
+    {
+      "author": "Deadi DJ",
+      "authorUrl": "https://www.google.com/maps/contrib/113159769543282134443?hl=id",
+      "rating": 3,
+      "text": "",
+      "textTranslated": null,
+      "date": "2021-10-09T12:49:49.849Z",
+      "relativeDate": "4 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSUQ2dzVMQXBnRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSUQ2dzVMQXBnRRAB!2m1!1s0x0:0x3f9777d465cd6368!3m1!1s2@1:CIHM0ogKEICAgID6w5LApgE%7C%7C?hl=id"
+    }
+  ]
+}

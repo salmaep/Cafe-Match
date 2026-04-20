@@ -1,0 +1,60 @@
+{
+  "cafeName": "NgoPri Galeryliez",
+  "placeId": "ChIJD8VcuhDDaC4R4yU4zWH85Ck",
+  "totalReviews": 4,
+  "reviewsScraped": 4,
+  "reviews": [
+    {
+      "author": "Riki Sejati",
+      "authorUrl": "https://www.google.com/maps/contrib/105562746686066027302?hl=id",
+      "rating": 4,
+      "text": "",
+      "textTranslated": null,
+      "date": "2024-01-22T09:36:51.251Z",
+      "relativeDate": "2 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSUROdHAyOWtnRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSUROdHAyOWtnRRAB!2m1!1s0x0:0x29e4fc61cd3825e3!3m1!1s2@1:CIHM0ogKEICAgIDNtp29kgE%7C%7C?hl=id"
+    },
+    {
+      "author": "Supri Bowie",
+      "authorUrl": "https://www.google.com/maps/contrib/103421946711904574413?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2018-08-10T07:55:07.747Z",
+      "relativeDate": "7 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSURRMDVPcGJnEAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSURRMDVPcGJnEAE!2m1!1s0x0:0x29e4fc61cd3825e3!3m1!1s2@1:CIHM0ogKEICAgIDQ05Opbg%7C%7C?hl=id"
+    },
+    {
+      "author": "Ikhsan Ikhsan",
+      "authorUrl": "https://www.google.com/maps/contrib/115877605384508323272?hl=id",
+      "rating": 5,
+      "text": "Alhamdulillah baik",
+      "textTranslated": null,
+      "date": "2018-04-09T04:40:27.601Z",
+      "relativeDate": "8 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSUNnaUxYWW9nRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSUNnaUxYWW9nRRAB!2m1!1s0x0:0x29e4fc61cd3825e3!3m1!1s2@1:CIHM0ogKEICAgICgiLXYogE%7C%7C?hl=id"
+    },
+    {
+      "author": "Niko Aji Purnomo",
+      "authorUrl": "https://www.google.com/maps/contrib/116210446202486728535?hl=id",
+      "rating": 2,
+      "text": "",
+      "textTranslated": null,
+      "date": "2017-04-04T09:54:50.044Z",
+      "relativeDate": "9 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSURRNnBYbUJnEAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSURRNnBYbUJnEAE!2m1!1s0x0:0x29e4fc61cd3825e3!3m1!1s2@1:CIHM0ogKEICAgIDQ6pXmBg%7C%7C?hl=id"
+    }
+  ]
+}

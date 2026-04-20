@@ -89,7 +89,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     setUser(null);
-    await AsyncStorage.multiRemove(['user', 'jwt_token']);
+    // Wipe auth + any user-specific cached data
+    const allKeys = await AsyncStorage.getAllKeys();
+    const keysToRemove = ['user', 'jwt_token'];
+    // Also drop any owner-cafe override caches tied to the previous session
+    for (const k of allKeys) {
+      if (k.startsWith('owner_cafe_override_')) keysToRemove.push(k);
+    }
+    await AsyncStorage.multiRemove(keysToRemove);
   };
 
   return (

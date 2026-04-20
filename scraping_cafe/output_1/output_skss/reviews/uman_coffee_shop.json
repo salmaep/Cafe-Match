@@ -1,0 +1,34 @@
+{
+  "cafeName": "UMAN COFFEE SHOP",
+  "placeId": "ChIJt5iaK-ndaC4R_oXnnjBzHkU",
+  "totalReviews": 2,
+  "reviewsScraped": 2,
+  "reviews": [
+    {
+      "author": "Papa Bella",
+      "authorUrl": "https://www.google.com/maps/contrib/102325607851343511376?hl=id",
+      "rating": 4,
+      "text": "Kopinya selalu fresh terdapat banyak jenis kopi yg ditawarkan, full wash, honey, green bean, bagi pencinta kopi wajib coba wine coffee mantul pokonamah",
+      "textTranslated": null,
+      "date": "2022-01-17T07:20:28.430Z",
+      "relativeDate": "4 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSURteUxxckhnEAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSURteUxxckhnEAE!2m1!1s0x0:0x451e73309ee785fe!3m1!1s2@1:CIHM0ogKEICAgIDmyLqrHg%7C%7C?hl=id"
+    },
+    {
+      "author": "Riman Budiana",
+      "authorUrl": "https://www.google.com/maps/contrib/111482216874353984431?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2020-09-14T04:24:52.465Z",
+      "relativeDate": "5 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSURDdUxXN0t3EAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSURDdUxXN0t3EAE!2m1!1s0x0:0x451e73309ee785fe!3m1!1s2@1:CIHM0ogKEICAgIDCuLW7Kw%7C%7C?hl=id"
+    }
+  ]
+}

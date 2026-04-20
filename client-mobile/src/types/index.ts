@@ -41,6 +41,14 @@ export interface Cafe {
     promoOffer?: string;
     promoPhoto?: string;
   };
+  // Enriched from scraped Google Places data
+  googleRating?: number | null;
+  totalGoogleReviews?: number | null;
+  googleMapsUrl?: string | null;
+  website?: string | null;
+  // Purpose scores from review analysis (slug → 0-100)
+  purposeScores?: Record<string, number>;
+  detectedFacilities?: string[];
 }
 
 export type Purpose = 'Me Time' | 'Date' | 'Family Time' | 'Group Study' | 'WFC';
@@ -84,6 +92,8 @@ export interface User {
   name: string;
   email: string;
   role?: 'user' | 'owner' | 'admin';
+  friendCode?: string;
+  avatarUrl?: string;
 }
 
 export interface AuthResponse {
@@ -121,4 +131,110 @@ export interface BackendPurpose {
   description?: string;
   icon?: string;
   displayOrder: number;
+}
+
+// ── Social Feature Types ──────────────────────────────────────────────
+
+export interface Review {
+  id: string;
+  userId: number;
+  userName: string;
+  userAvatar?: string;
+  cafeId: string;
+  text?: string;
+  ratings: { category: string; score: number }[];
+  media?: { id: number; mediaType: 'photo' | 'video'; url: string; displayOrder: number }[];
+  createdAt: string;
+}
+
+export interface ReviewSummary {
+  category: string;
+  avgScore: number;
+  count: number;
+}
+
+export interface CheckinData {
+  id: string;
+  cafeId: string;
+  cafeName?: string;
+  checkInAt: string;
+  checkOutAt?: string;
+  durationMinutes?: number;
+}
+
+export interface LeaderboardEntry {
+  rank: number;
+  userId: number;
+  name: string;
+  avatarUrl?: string;
+  checkinCount: number;
+  badge: string | null;
+}
+
+export interface StreakInfo {
+  current: number;
+  longest: number;
+  active: boolean;
+  lastCheckinDate?: string;
+}
+
+export interface Friend {
+  id: number;
+  name: string;
+  avatarUrl?: string;
+  friendCode: string;
+  currentCafe?: {
+    id: number;
+    name: string;
+    latitude: number;
+    longitude: number;
+  };
+  checkInAt?: string;
+}
+
+export interface FriendRequest {
+  id: number;
+  senderId: number;
+  sender: { id: number; name: string; avatarUrl?: string };
+  status: string;
+  createdAt: string;
+}
+
+export interface AchievementDef {
+  id: number;
+  slug: string;
+  name: string;
+  description: string;
+  category: string;
+  tier: string;
+  threshold: number;
+  purposeSlug?: string;
+  progress: number;
+  unlocked: boolean;
+  unlockedAt?: string;
+}
+
+export interface AppNotification {
+  id: number;
+  type: string;
+  title: string;
+  body: string;
+  data?: any;
+  isRead: boolean;
+  createdAt: string;
+}
+
+export interface RecapData {
+  yearTitle: string;
+  totalCheckins: number;
+  totalCafesVisited: number;
+  totalDurationHours: number;
+  topCafes: { cafeId: string; name: string; photo?: string; visits: number }[];
+  topPurpose: string;
+  totalReviews: number;
+  achievementsUnlocked: number;
+  friendsMade: number;
+  longestStreak: number;
+  favoriteDay: string;
+  averageSessionMinutes: number;
 }

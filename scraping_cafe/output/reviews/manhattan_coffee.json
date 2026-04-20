@@ -1,0 +1,21 @@
+{
+  "cafeName": "Manhattan Coffee",
+  "placeId": "ChIJ-TX5wx3oaC4Rwzldy6mzeiU",
+  "totalReviews": 1,
+  "reviewsScraped": 1,
+  "reviews": [
+    {
+      "author": "Arliandi",
+      "authorUrl": "https://www.google.com/maps/contrib/117842231018183781757?hl=id",
+      "rating": 3,
+      "text": "",
+      "textTranslated": null,
+      "date": "2019-06-21T06:16:29.693Z",
+      "relativeDate": "6 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSUNrdE0yV2dBRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSUNrdE0yV2dBRRAB!2m1!1s0x0:0x257ab3a9cb5d39c3!3m1!1s2@1:CIHM0ogKEICAgICktM2WgAE%7C%7C?hl=id"
+    }
+  ]
+}

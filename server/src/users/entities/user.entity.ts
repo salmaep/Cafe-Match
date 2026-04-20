@@ -26,6 +26,12 @@ export class User {
   @Column({ type: 'enum', enum: ['user', 'admin', 'owner'], default: 'user' })
   role: string;
 
+  @Column({ name: 'friend_code', length: 8, unique: true })
+  friendCode: string;
+
+  @Column({ name: 'avatar_url', length: 500, nullable: true })
+  avatarUrl: string;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

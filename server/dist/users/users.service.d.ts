@@ -11,4 +11,5 @@ export declare class UsersService {
         name: string;
         role?: string;
     }): Promise<User>;
+    private generateUniqueFriendCode;
 }

@@ -10,12 +10,15 @@ import {
 import { MOCK_CAFES } from "../data/mockCafes";
 
 // Change this to your local network IP when running the backend
-const BASE_URL = "http://192.168.68.69:3000/api/v1";
+const BASE_URL = "http://192.168.1.40:3000/api/v1";
 
 const api: AxiosInstance = axios.create({
   baseURL: BASE_URL,
-  timeout: 10000,
+  timeout: 30000, // 30s — accommodates slow WiFi + large responses (553 cafes)
   headers: { "Content-Type": "application/json" },
+  // Allow large JSON bodies (reviews with many photos as data URIs, etc.)
+  maxBodyLength: 50 * 1024 * 1024,
+  maxContentLength: 50 * 1024 * 1024,
 });
 
 // Attach JWT token to every request
@@ -36,20 +39,48 @@ function mapBackendCafe(raw: any, userLat?: number, userLng?: number): Cafe {
         .map((p: any) => p.url)
     : ["https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800"];
 
-  const facilities: string[] =
-    raw.facilities?.map((f: any) => {
-      const keyMap: Record<string, string> = {
-        wifi: "WiFi",
-        power_outlet: "Power Outlet",
-        mushola: "Mushola",
-        parking: "Parking",
-        kid_friendly: "Kid-Friendly",
-        quiet_atmosphere: "Quiet Atmosphere",
-        large_tables: "Large Tables",
-        outdoor_area: "Outdoor Area",
-      };
-      return keyMap[f.facilityKey] || f.facilityKey;
-    }) || [];
+  // Map all backend facility keys to friendly display labels.
+  // Multiple backend keys can map to the same label (e.g. wifi + strong_wifi → "WiFi").
+  const FACILITY_KEY_MAP: Record<string, string> = {
+    wifi: "WiFi",
+    strong_wifi: "WiFi",
+    power_outlet: "Power Outlet",
+    power_outlets: "Power Outlet",
+    mushola: "Mushola",
+    prayer_room: "Mushola",
+    parking: "Parking",
+    kid_friendly: "Kid-Friendly",
+    quiet_atmosphere: "Quiet Atmosphere",
+    large_tables: "Large Tables",
+    outdoor_area: "Outdoor Area",
+    outdoor_seating: "Outdoor Area",
+    cozy_seating: "Cozy Seating",
+    ambient_lighting: "Ambient Lighting",
+    intimate_seating: "Intimate Seating",
+    noise_tolerant: "Family Friendly",
+    spacious: "Spacious",
+    whiteboard: "Whiteboard",
+    bookable_space: "Bookable Space",
+    smoking_area: "Smoking Area",
+  };
+
+  const rawFacilityLabels: string[] =
+    raw.facilities
+      ?.map((f: any) => {
+        const key = typeof f === "string" ? f : f.facilityKey;
+        if (!key) return null;
+        return (
+          FACILITY_KEY_MAP[key] ||
+          // Prettify unknown keys: "foo_bar" → "Foo Bar"
+          key
+            .replace(/_/g, " ")
+            .replace(/\b\w/g, (c: string) => c.toUpperCase())
+        );
+      })
+      .filter(Boolean) || [];
+
+  // Dedupe labels so "WiFi" doesn't appear twice when both wifi + strong_wifi are set
+  const facilities: string[] = Array.from(new Set(rawFacilityLabels));
 
   // Group menu items by category
   const menuMap = new Map<
@@ -137,7 +168,14 @@ function mapBackendCafe(raw: any, userLat?: number, userLng?: number): Cafe {
     promoPhoto,
     hasActivePromotion: raw.hasActivePromotion,
     activePromotionType: raw.activePromotionType,
-  };
+    // Scraped / enriched fields
+    googleRating: raw.googleRating ?? null,
+    totalGoogleReviews: raw.totalGoogleReviews ?? null,
+    googleMapsUrl: raw.googleMapsUrl ?? null,
+    website: raw.website ?? null,
+    purposeScores: raw.purposeScores || {},
+    detectedFacilities: raw.detectedFacilities || [],
+  } as any;
 }
 
 function haversineKm(
@@ -168,14 +206,29 @@ export async function fetchCafes(
   purposeId?: number,
 ): Promise<Cafe[]> {
   try {
-    const params: any = { lat, lng, radius: radiusKm * 1000 };
+    // Backend DTO caps radius at 50,000,000 m. If client passes a huge km,
+    // clamp to avoid 400. This lets the DEV_DISABLE_RADIUS=9999km work without
+    // overflowing the max.
+    const radiusMeters = Math.min(radiusKm * 1000, 50_000_000);
+    // No list cap for testing — request a large limit so backend returns all
+    // matching cafes (DB has ~553). Backend DTO max raised to 1000 accordingly.
+    const params: any = { lat, lng, radius: radiusMeters, limit: 1000 };
     if (purposeId) params.purposeId = purposeId;
+    console.log(
+      `[fetchCafes] GET /cafes lat=${lat} lng=${lng} radius=${radiusMeters}m limit=1000`,
+    );
     const { data } = await api.get("/cafes", { params });
     const cafes = (data.data || data).map((c: any) =>
       mapBackendCafe(c, lat, lng),
     );
+    console.log(`[fetchCafes] ✅ received ${cafes.length} cafes from backend`);
     return cafes;
-  } catch {
+  } catch (err: any) {
+    const msg = err?.response?.data?.message || err?.message || "unknown";
+    console.error(
+      `[fetchCafes] ❌ FAILED — falling back to MOCK_CAFES. Reason:`,
+      msg,
+    );
     // Fallback to mock data with recalculated distances
     return MOCK_CAFES.map((c) => ({
       ...c,
@@ -234,6 +287,8 @@ export async function loginApi(
       name: data.user.name,
       email: data.user.email,
       role: data.user.role,
+      friendCode: data.user.friendCode,
+      avatarUrl: data.user.avatarUrl,
     },
   };
 }
@@ -249,6 +304,8 @@ export async function registerApi(
     name: data.name,
     email: data.email,
     role: data.role,
+    friendCode: data.friendCode,
+    avatarUrl: data.avatarUrl,
   };
 }
 
@@ -259,6 +316,8 @@ export async function fetchMe(): Promise<User> {
     name: data.name,
     email: data.email,
     role: data.role,
+    friendCode: data.friendCode,
+    avatarUrl: data.avatarUrl,
   };
 }
 
@@ -329,6 +388,204 @@ export async function trackAnalytics(
   } catch {
     // Silent fail for analytics
   }
+}
+
+// ─── Reviews ───
+
+export async function fetchReviews(cafeId: string, page = 1) {
+  const { data } = await api.get(`/reviews/cafe/${cafeId}`, {
+    params: { page },
+  });
+  const reviews = (data.data || data).map((r: any) => ({
+    id: String(r.id),
+    userId: r.userId,
+    userName: r.user?.name || "Anonim",
+    userAvatar: r.user?.avatarUrl,
+    cafeId: String(r.cafeId),
+    text: r.text,
+    ratings: (r.ratings || []).map((rt: any) => ({
+      category: rt.category,
+      score: rt.score,
+    })),
+    media: (r.media || []).map((m: any) => ({
+      id: m.id,
+      mediaType: m.mediaType,
+      url: m.url,
+      displayOrder: m.displayOrder || 0,
+    })),
+    createdAt: r.createdAt,
+  }));
+  return { reviews, meta: data.meta };
+}
+
+export async function fetchReviewSummary(cafeId: string) {
+  const { data } = await api.get(`/reviews/cafe/${cafeId}/summary`);
+  return data as { category: string; avgScore: number; count: number }[];
+}
+
+export async function createReview(
+  cafeId: string,
+  dto: {
+    text?: string;
+    ratings: { category: string; score: number }[];
+    media?: { mediaType: "photo" | "video"; url: string }[];
+  },
+) {
+  const { data } = await api.post(`/reviews/${cafeId}`, dto);
+  return data;
+}
+
+export async function updateReview(
+  reviewId: string,
+  dto: { text?: string; ratings: { category: string; score: number }[] },
+) {
+  const { data } = await api.put(`/reviews/${reviewId}`, dto);
+  return data;
+}
+
+export async function deleteReview(reviewId: string) {
+  await api.delete(`/reviews/${reviewId}`);
+}
+
+// ─── Check-ins ───
+
+export async function checkInApi(cafeId: number, lat: number, lng: number) {
+  const { data } = await api.post("/checkins/in", {
+    cafeId,
+    latitude: lat,
+    longitude: lng,
+  });
+  return data;
+}
+
+export async function checkOutApi(checkinId?: number, cafeId?: number) {
+  const { data } = await api.post("/checkins/out", { checkinId, cafeId });
+  return data;
+}
+
+export async function fetchActiveCheckin() {
+  try {
+    const { data } = await api.get("/checkins/active");
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchCheckinHistory(page = 1) {
+  const { data } = await api.get("/checkins/history", { params: { page } });
+  return data;
+}
+
+export async function fetchLeaderboard(cafeId: string) {
+  const { data } = await api.get(`/checkins/cafe/${cafeId}/leaderboard`);
+  return data as {
+    rank: number;
+    userId: number;
+    name: string;
+    avatarUrl?: string;
+    checkinCount: number;
+    badge: string | null;
+  }[];
+}
+
+export async function fetchStreak() {
+  const { data } = await api.get("/checkins/streak");
+  return data as { current: number; longest: number; active: boolean };
+}
+
+export async function fetchGlobalLeaderboard() {
+  const { data } = await api.get("/checkins/global-leaderboard");
+  return data;
+}
+
+// ─── Friends ───
+
+export async function sendFriendRequest(friendCode: string) {
+  const { data } = await api.post("/friends/request", { friendCode });
+  return data;
+}
+
+export async function acceptFriendRequest(requestId: number) {
+  const { data } = await api.put(`/friends/request/${requestId}/accept`);
+  return data;
+}
+
+export async function rejectFriendRequest(requestId: number) {
+  const { data } = await api.put(`/friends/request/${requestId}/reject`);
+  return data;
+}
+
+export async function fetchPendingRequests() {
+  const { data } = await api.get("/friends/requests/pending");
+  return data;
+}
+
+export async function fetchFriendsList() {
+  const { data } = await api.get("/friends");
+  return data;
+}
+
+export async function fetchFriendsMap() {
+  const { data } = await api.get("/friends/map");
+  return data;
+}
+
+export async function throwEmojiApi(friendId: number, emoji: string) {
+  const { data } = await api.post(`/friends/${friendId}/emoji`, { emoji });
+  return data;
+}
+
+// ─── Achievements ───
+
+export async function fetchMyAchievements() {
+  const { data } = await api.get("/achievements/me");
+  return data;
+}
+
+export async function fetchAllAchievements() {
+  const { data } = await api.get("/achievements");
+  return data;
+}
+
+// ─── Notifications ───
+
+export async function fetchNotifications(page = 1) {
+  const { data } = await api.get("/notifications", { params: { page } });
+  return data;
+}
+
+export async function fetchUnreadCount() {
+  const { data } = await api.get("/notifications/unread-count");
+  return typeof data === "number" ? data : data.count || 0;
+}
+
+export async function markNotificationRead(id: number) {
+  await api.put(`/notifications/${id}/read`);
+}
+
+export async function markAllNotificationsRead() {
+  await api.put("/notifications/read-all");
+}
+
+export async function registerPushToken(token: string, platform: string) {
+  await api.post("/notifications/register-token", { token, platform });
+}
+
+// ─── Recap ───
+
+export async function fetchRecap(year: number) {
+  try {
+    const { data } = await api.get(`/recaps/${year}`);
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+export async function generateRecap(year: number) {
+  const { data } = await api.post("/recaps/generate", { year });
+  return data;
 }
 
 export { haversineKm };

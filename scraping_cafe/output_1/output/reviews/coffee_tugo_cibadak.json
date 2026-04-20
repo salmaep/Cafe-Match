@@ -1,0 +1,60 @@
+{
+  "cafeName": "Coffee Tugo - Cibadak",
+  "placeId": "ChIJR-W07s_naC4RGRvmlI0NoAo",
+  "totalReviews": 4,
+  "reviewsScraped": 4,
+  "reviews": [
+    {
+      "author": "Satriadi Pramono",
+      "authorUrl": "https://www.google.com/maps/contrib/105648066829261161477?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2024-06-07T12:55:23.259Z",
+      "relativeDate": "setahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSUR6LUlXS1ZREAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSUR6LUlXS1ZREAE!2m1!1s0x0:0xaa00d8d94e61b19!3m1!1s2@1:CIHM0ogKEICAgIDz-IWKVQ%7C%7C?hl=id"
+    },
+    {
+      "author": "jamal harahap",
+      "authorUrl": "https://www.google.com/maps/contrib/103952948241673016014?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2024-05-11T16:49:46.399Z",
+      "relativeDate": "setahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSUNUOU5teWVREAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSUNUOU5teWVREAE!2m1!1s0x0:0xaa00d8d94e61b19!3m1!1s2@1:CIHM0ogKEICAgICT9NmyeQ%7C%7C?hl=id"
+    },
+    {
+      "author": "Marshanda",
+      "authorUrl": "https://www.google.com/maps/contrib/112762954044147873300?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2023-11-20T11:46:05.168Z",
+      "relativeDate": "2 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSUNsNGJhempnRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSUNsNGJhempnRRAB!2m1!1s0x0:0xaa00d8d94e61b19!3m1!1s2@1:CIHM0ogKEICAgICl4bazjgE%7C%7C?hl=id"
+    },
+    {
+      "author": "Anna",
+      "authorUrl": "https://www.google.com/maps/contrib/116895525507865113825?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2023-04-19T10:01:12.573Z",
+      "relativeDate": "2 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSURSak9HV2F3EAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSURSak9HV2F3EAE!2m1!1s0x0:0xaa00d8d94e61b19!3m1!1s2@1:CIHM0ogKEICAgIDRjOGWaw%7C%7C?hl=id"
+    }
+  ]
+}

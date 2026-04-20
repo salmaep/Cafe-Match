@@ -1,0 +1,60 @@
+{
+  "cafeName": "Kalitaliberika Coffee Shop",
+  "placeId": "ChIJw-3CpOPdaC4R07kl4lo70Pk",
+  "totalReviews": 4,
+  "reviewsScraped": 4,
+  "reviews": [
+    {
+      "author": "TR Information",
+      "authorUrl": "https://www.google.com/maps/contrib/109448916702428341826?hl=id",
+      "rating": 5,
+      "text": "👍🏻",
+      "textTranslated": null,
+      "date": "2020-10-07T02:39:03.167Z",
+      "relativeDate": "5 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSURDcllidW1nRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSURDcllidW1nRRAB!2m1!1s0x0:0xf9d03b5ae225b9d3!3m1!1s2@1:CIHM0ogKEICAgIDCrYbumgE%7C%7C?hl=id"
+    },
+    {
+      "author": "Angga Aprillian",
+      "authorUrl": "https://www.google.com/maps/contrib/116149931409384202255?hl=id",
+      "rating": 5,
+      "text": "Mantapp",
+      "textTranslated": null,
+      "date": "2020-10-07T01:11:34.680Z",
+      "relativeDate": "5 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSURDcmR6anBBRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSURDcmR6anBBRRAB!2m1!1s0x0:0xf9d03b5ae225b9d3!3m1!1s2@1:CIHM0ogKEICAgIDCrdzjpAE%7C%7C?hl=id"
+    },
+    {
+      "author": "Muhamad Arya Ardiansyah_XI MIPA 7",
+      "authorUrl": "https://www.google.com/maps/contrib/102278656744354888048?hl=id",
+      "rating": 5,
+      "text": "Tempatnya bikin suasana santuy, adem ayem yoyoy",
+      "textTranslated": null,
+      "date": "2020-10-06T23:35:18.442Z",
+      "relativeDate": "5 tahun lalu",
+      "likesCount": 1,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSURDcmNpMGlRRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSURDcmNpMGlRRRAB!2m1!1s0x0:0xf9d03b5ae225b9d3!3m1!1s2@1:CIHM0ogKEICAgIDCrci0iQE%7C%7C?hl=id"
+    },
+    {
+      "author": "ajeng triana",
+      "authorUrl": "https://www.google.com/maps/contrib/114950387360579252232?hl=id",
+      "rating": 5,
+      "text": "Tempat nya pw bet anggap aja rumah sendiri kata mas mas nya dapet nuansa baru bagi angkringan nih",
+      "textTranslated": null,
+      "date": "2020-10-06T21:49:43.994Z",
+      "relativeDate": "5 tahun lalu",
+      "likesCount": 2,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSURDemF1QlVBEAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSURDemF1QlVBEAE!2m1!1s0x0:0xf9d03b5ae225b9d3!3m1!1s2@1:CIHM0ogKEICAgIDCzauBUA%7C%7C?hl=id"
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "cafeName": "Our Coffee",
+  "placeId": "ChIJx9_Azi_daC4RNU0-gJBVRUk",
+  "totalReviews": 1,
+  "reviewsScraped": 1,
+  "reviews": [
+    {
+      "author": "Rizky Darmawan",
+      "authorUrl": "https://www.google.com/maps/contrib/114800682166194741281?hl=id",
+      "rating": 5,
+      "text": "Kopi susunya best dengan harga yg murah dibandingkan yg lain",
+      "textTranslated": null,
+      "date": "2023-02-27T13:46:18.353Z",
+      "relativeDate": "3 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSURoMEsydTN3RRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSURoMEsydTN3RRAB!2m1!1s0x0:0x49455590803e4d35!3m1!1s2@1:CIHM0ogKEICAgIDh0K2u3wE%7C%7C?hl=id"
+    }
+  ]
+}

@@ -1,0 +1,73 @@
+{
+  "cafeName": "Adinda Coffee",
+  "placeId": "ChIJrw4_TDnDaC4Rm3UsVbwe8Fc",
+  "totalReviews": 5,
+  "reviewsScraped": 5,
+  "reviews": [
+    {
+      "author": "Rifsan Ahmad",
+      "authorUrl": "https://www.google.com/maps/contrib/100375005933621562139?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2021-11-11T11:27:06.615Z",
+      "relativeDate": "4 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSUNHeDhlT3ZBRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSUNHeDhlT3ZBRRAB!2m1!1s0x0:0x57f01ebc552c759b!3m1!1s2@1:CIHM0ogKEICAgICGx8eOvAE%7C%7C?hl=id"
+    },
+    {
+      "author": "Mangprang 1144",
+      "authorUrl": "https://www.google.com/maps/contrib/111856092420991918623?hl=id",
+      "rating": 5,
+      "text": "Wow sedap dan mantap sekali dan gurih",
+      "textTranslated": null,
+      "date": "2021-02-23T12:28:39.134Z",
+      "relativeDate": "5 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSUR5Mk1icnp3RRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSUR5Mk1icnp3RRAB!2m1!1s0x0:0x57f01ebc552c759b!3m1!1s2@1:CIHM0ogKEICAgIDy2MbrzwE%7C%7C?hl=id"
+    },
+    {
+      "author": "Zafier A",
+      "authorUrl": "https://www.google.com/maps/contrib/114890811116756699648?hl=id",
+      "rating": 5,
+      "text": "Kopi Ningrat dengan harga merakyat",
+      "textTranslated": null,
+      "date": "2021-02-23T11:37:03.182Z",
+      "relativeDate": "5 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSUR5MklLb3NBRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSUR5MklLb3NBRRAB!2m1!1s0x0:0x57f01ebc552c759b!3m1!1s2@1:CIHM0ogKEICAgIDy2IKosAE%7C%7C?hl=id"
+    },
+    {
+      "author": "tayib nubatunis",
+      "authorUrl": "https://www.google.com/maps/contrib/117847280544576056869?hl=id",
+      "rating": 5,
+      "text": "Kopi Pendatang Baru terbaik",
+      "textTranslated": null,
+      "date": "2021-02-22T09:25:49.894Z",
+      "relativeDate": "5 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSUR5eUphNHJ3RRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSUR5eUphNHJ3RRAB!2m1!1s0x0:0x57f01ebc552c759b!3m1!1s2@1:CIHM0ogKEICAgIDyyJa4rwE%7C%7C?hl=id"
+    },
+    {
+      "author": "Jim Bronk",
+      "authorUrl": "https://www.google.com/maps/contrib/115677211405978626199?hl=id",
+      "rating": 5,
+      "text": "tempatnya memang kecil  cukup utk 5 orang duduk...tapi si abang shef kopi nya friendly banget..dan kopi dibuat secara manuabrew ..bisa blajar bikin kopi juga😀...bahan pilihan ..sirop monin punya bro...ksini deh gak kecewa..gak kalah rasa kopinya sama yg branded...cek aja dah",
+      "textTranslated": null,
+      "date": "2021-02-19T13:02:17.452Z",
+      "relativeDate": "5 tahun lalu",
+      "likesCount": 1,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSUN5XzhhQ25nRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSUN5XzhhQ25nRRAB!2m1!1s0x0:0x57f01ebc552c759b!3m1!1s2@1:CIHM0ogKEICAgICy_8aCngE%7C%7C?hl=id"
+    }
+  ]
+}

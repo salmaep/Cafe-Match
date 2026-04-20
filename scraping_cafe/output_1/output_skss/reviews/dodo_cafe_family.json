@@ -1,0 +1,21 @@
+{
+  "cafeName": "Dodo Cafe Family",
+  "placeId": "ChIJd212itrdaC4Rg2HVmNljYYU",
+  "totalReviews": 1,
+  "reviewsScraped": 1,
+  "reviews": [
+    {
+      "author": "Supriyadi BBLM",
+      "authorUrl": "https://www.google.com/maps/contrib/114621835765212967349?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2025-12-06T14:19:51.500Z",
+      "relativeDate": "4 bulan lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "Ci9DQUlRQUNvZENodHljRjlvT25GUVJqZFNTall0TjNkUlZpMVpSSHBIUkVWblkxRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sCi9DQUlRQUNvZENodHljRjlvT25GUVJqZFNTall0TjNkUlZpMVpSSHBIUkVWblkxRRAB!2m1!1s0x0:0x856163d998d56183!3m1!1s2@1:CAIQACodChtycF9oOnFQRjdSSjYtN3dRVi1ZRHpHREVnY1E%7C%7C?hl=id"
+    }
+  ]
+}

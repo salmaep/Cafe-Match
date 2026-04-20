@@ -1,0 +1,112 @@
+{
+  "cafeName": "Amaze Coffee",
+  "placeId": "ChIJu7T4EuPDaC4RqhoIiADMtiU",
+  "totalReviews": 8,
+  "reviewsScraped": 8,
+  "reviews": [
+    {
+      "author": "Rezky Fahlevi",
+      "authorUrl": "https://www.google.com/maps/contrib/111607650086829340796?hl=id",
+      "rating": 5,
+      "text": "enak, tempatnya luaa, cuma sayang, kemarinn kemarin ada rental ps4 tapi sekarang udah gaada",
+      "textTranslated": null,
+      "date": "2026-02-07T14:33:15.798Z",
+      "relativeDate": "2 bulan lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "Ci9DQUlRQUNvZENodHljRjlvT2s5S1NtTjNSRUZMYTFkemEzZFdhV1J1YmtkTk5XYxAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sCi9DQUlRQUNvZENodHljRjlvT2s5S1NtTjNSRUZMYTFkemEzZFdhV1J1YmtkTk5XYxAB!2m1!1s0x0:0x25b6cc0088081aaa!3m1!1s2@1:CAIQACodChtycF9oOk9KSmN3REFLa1dza3dWaWRubkdNNWc%7C%7C?hl=id"
+    },
+    {
+      "author": "jihad wipa",
+      "authorUrl": "https://www.google.com/maps/contrib/116050939362877895813?hl=id",
+      "rating": 5,
+      "text": "Tempatnya enak, nyaman, pelayanannya bagus, makanan dan minumannya juga enak enak. Gud 👍🏼🆒",
+      "textTranslated": null,
+      "date": "2025-09-10T11:29:08.574Z",
+      "relativeDate": "7 bulan lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "Ci9DQUlRQUNvZENodHljRjlvT210cGNsOVdiR1ZIVmtOdFVGUktWM0J3TTBWS1ptYxAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sCi9DQUlRQUNvZENodHljRjlvT210cGNsOVdiR1ZIVmtOdFVGUktWM0J3TTBWS1ptYxAB!2m1!1s0x0:0x25b6cc0088081aaa!3m1!1s2@1:CAIQACodChtycF9oOmtpcl9WbGVHVkNtUFRKV3BwM0VKZmc%7C%7C?hl=id"
+    },
+    {
+      "author": "Lina Karlina",
+      "authorUrl": "https://www.google.com/maps/contrib/112315961586969893287?hl=id",
+      "rating": 5,
+      "text": "Tempat yang nyaman dan sangat cocok untuk nongkrong2 bersama teman dan kerabat dgn menu minuman dan makanan yang murah untuk sekelas coffee shop",
+      "textTranslated": null,
+      "date": "2024-12-23T04:27:25.846Z",
+      "relativeDate": "setahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSUR2bmVHeGhRRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSUR2bmVHeGhRRRAB!2m1!1s0x0:0x25b6cc0088081aaa!3m1!1s2@1:CIHM0ogKEICAgIDvneGxhQE%7C%7C?hl=id"
+    },
+    {
+      "author": "Hafidza Ravi Ismail",
+      "authorUrl": "https://www.google.com/maps/contrib/107564938698450285855?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2024-09-11T11:58:02.367Z",
+      "relativeDate": "setahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSURIa0t2R1JnEAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSURIa0t2R1JnEAE!2m1!1s0x0:0x25b6cc0088081aaa!3m1!1s2@1:CIHM0ogKEICAgIDHkKvGRg%7C%7C?hl=id"
+    },
+    {
+      "author": "lutfi bagja",
+      "authorUrl": "https://www.google.com/maps/contrib/100767392801573781145?hl=id",
+      "rating": 5,
+      "text": "keren bangett ih tempatnyaa!!",
+      "textTranslated": null,
+      "date": "2024-09-11T11:56:21.903Z",
+      "relativeDate": "setahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSURIa0l1MlV3EAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSURIa0l1MlV3EAE!2m1!1s0x0:0x25b6cc0088081aaa!3m1!1s2@1:CIHM0ogKEICAgIDHkIu2Uw%7C%7C?hl=id"
+    },
+    {
+      "author": "aditya",
+      "authorUrl": "https://www.google.com/maps/contrib/111387284172682287311?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2024-09-11T11:56:18.438Z",
+      "relativeDate": "setahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSURIa0l2bWtnRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSURIa0l2bWtnRRAB!2m1!1s0x0:0x25b6cc0088081aaa!3m1!1s2@1:CIHM0ogKEICAgIDHkIvmkgE%7C%7C?hl=id"
+    },
+    {
+      "author": "AGUNG KUSRIYANTO NUGROHO",
+      "authorUrl": "https://www.google.com/maps/contrib/101431883645432131486?hl=id",
+      "rating": 5,
+      "text": "Murah bgt, tempatnya ok bgt apalagi pelayanannya...\nMantap",
+      "textTranslated": null,
+      "date": "2024-04-13T01:32:37.982Z",
+      "relativeDate": "2 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSUREN2Z1eTlRRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSUREN2Z1eTlRRRAB!2m1!1s0x0:0x25b6cc0088081aaa!3m1!1s2@1:CIHM0ogKEICAgIDD7fuy9QE%7C%7C?hl=id"
+    },
+    {
+      "author": "AKBAR FITRIA KUSMANA",
+      "authorUrl": "https://www.google.com/maps/contrib/108608796150799822852?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2024-01-14T11:36:31.377Z",
+      "relativeDate": "2 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSUNOdHAtc2F3EAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSUNOdHAtc2F3EAE!2m1!1s0x0:0x25b6cc0088081aaa!3m1!1s2@1:CIHM0ogKEICAgICNtp-saw%7C%7C?hl=id"
+    }
+  ]
+}

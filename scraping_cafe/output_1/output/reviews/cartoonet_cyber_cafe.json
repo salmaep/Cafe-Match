@@ -1,0 +1,21 @@
+{
+  "cafeName": "Cartoonet Cyber Cafe",
+  "placeId": "ChIJZzmixE3maC4RVDlP6WgPhOo",
+  "totalReviews": 1,
+  "reviewsScraped": 1,
+  "reviews": [
+    {
+      "author": "DhaFreeze 07",
+      "authorUrl": "https://www.google.com/maps/contrib/117911454116800298749?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2017-07-08T13:41:19.371Z",
+      "relativeDate": "8 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSUNRME1lbVBREAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSUNRME1lbVBREAE!2m1!1s0x0:0xea840f68e94f3954!3m1!1s2@1:CIHM0ogKEICAgICQ0MemPQ%7C%7C?hl=id"
+    }
+  ]
+}

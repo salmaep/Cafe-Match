@@ -65,6 +65,18 @@ export class Cafe {
   @Column({ name: 'has_mushola', default: false })
   hasMushola: boolean;
 
+  @Column({ name: 'has_parking', default: false })
+  hasParking: boolean;
+
+  @Column({ name: 'google_rating', type: 'decimal', precision: 2, scale: 1, nullable: true })
+  googleRating: number;
+
+  @Column({ name: 'total_google_reviews', type: 'int', unsigned: true, nullable: true })
+  totalGoogleReviews: number;
+
+  @Column({ length: 500, nullable: true })
+  website: string;
+
   @Column({ name: 'opening_hours', type: 'json', nullable: true })
   openingHours: Record<string, string>;
 
@@ -95,6 +107,26 @@ export class Cafe {
     nullable: true,
   })
   activePromotionType: string;
+
+  // Rich content for featured_promo (Type B) cafes
+  @Column({ name: 'promotion_content', type: 'json', nullable: true })
+  promotionContent: {
+    title: string;
+    description: string;
+    validHours?: string;
+    validDays?: string;
+    promoPhoto?: string;
+  } | null;
+
+  // Rich content for new_cafe (Type A) cafes
+  @Column({ name: 'new_cafe_content', type: 'json', nullable: true })
+  newCafeContent: {
+    openingSince: string;
+    highlightText: string;
+    keunggulan: string[];
+    promoOffer?: string;
+    promoPhoto?: string;
+  } | null;
 
   @Index()
   @Column({ name: 'is_active', default: true })

@@ -1,0 +1,60 @@
+{
+  "cafeName": "CAFE SI KEMBAR",
+  "placeId": "ChIJycpZ5STdaC4R3FnH_qXX0iM",
+  "totalReviews": 4,
+  "reviewsScraped": 4,
+  "reviews": [
+    {
+      "author": "Regi Rochmansyah",
+      "authorUrl": "https://www.google.com/maps/contrib/115472835926150514338?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2022-05-12T15:47:05.117Z",
+      "relativeDate": "3 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChZDSUhNMG9nS0VJQ0FnSUQydW96bkR3EAE",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChZDSUhNMG9nS0VJQ0FnSUQydW96bkR3EAE!2m1!1s0x0:0x23d2d7a5fec759dc!3m1!1s2@1:CIHM0ogKEICAgID2uoznDw%7C%7C?hl=id"
+    },
+    {
+      "author": "Haifa Yasmin",
+      "authorUrl": "https://www.google.com/maps/contrib/114317715950164720837?hl=id",
+      "rating": 5,
+      "text": "",
+      "textTranslated": null,
+      "date": "2020-11-15T10:44:46.697Z",
+      "relativeDate": "5 tahun lalu",
+      "likesCount": 0,
+      "responseFromOwner": null,
+      "reviewId": "ChRDSUhNMG9nS0VJQ0FnSUNpODlrSxAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChRDSUhNMG9nS0VJQ0FnSUNpODlrSxAB!2m1!1s0x0:0x23d2d7a5fec759dc!3m1!1s2@1:CIHM0ogKEICAgICi89kK%7C%7C?hl=id"
+    },
+    {
+      "author": "Yekaa Store",
+      "authorUrl": "https://www.google.com/maps/contrib/105107430835644131797?hl=id",
+      "rating": 5,
+      "text": "Tempatnya nyaman banget",
+      "textTranslated": null,
+      "date": "2020-11-01T14:57:43.738Z",
+      "relativeDate": "5 tahun lalu",
+      "likesCount": 1,
+      "responseFromOwner": null,
+      "reviewId": "ChdDSUhNMG9nS0VJQ0FnSUNpMXR1bHFRRRAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChdDSUhNMG9nS0VJQ0FnSUNpMXR1bHFRRRAB!2m1!1s0x0:0x23d2d7a5fec759dc!3m1!1s2@1:CIHM0ogKEICAgICi1tulqQE%7C%7C?hl=id"
+    },
+    {
+      "author": "AL-ISTIQOMAH OFFICIAL",
+      "authorUrl": "https://www.google.com/maps/contrib/109992550257147595792?hl=id",
+      "rating": 5,
+      "text": "Keren tempatnya buat nongkronh",
+      "textTranslated": null,
+      "date": "2020-10-23T13:22:45.139Z",
+      "relativeDate": "5 tahun lalu",
+      "likesCount": 2,
+      "responseFromOwner": null,
+      "reviewId": "ChRDSUhNMG9nS0VJQ0FnSUNpaklBNBAB",
+      "reviewUrl": "https://www.google.com/maps/reviews/data=!4m8!14m7!1m6!2m5!1sChRDSUhNMG9nS0VJQ0FnSUNpaklBNBAB!2m1!1s0x0:0x23d2d7a5fec759dc!3m1!1s2@1:CIHM0ogKEICAgICijIA4%7C%7C?hl=id"
+    }
+  ]
+}

@@ -16,6 +16,13 @@ import { PromotionsModule } from './promotions/promotions.module';
 import { PaymentsModule } from './payments/payments.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { AdminModule } from './admin/admin.module';
+import { ReviewsModule } from './reviews/reviews.module';
+import { CheckinsModule } from './checkins/checkins.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { AchievementsModule } from './achievements/achievements.module';
+import { FriendsModule } from './friends/friends.module';
+import { RecapsModule } from './recaps/recaps.module';
+import { EventsModule } from './gateway/events.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 
@@ -51,6 +58,13 @@ import { RolesGuard } from './common/guards/roles.guard';
     PaymentsModule,
     AnalyticsModule,
     AdminModule,
+    ReviewsModule,
+    CheckinsModule,
+    NotificationsModule,
+    AchievementsModule,
+    FriendsModule,
+    RecapsModule,
+    EventsModule,
   ],
   providers: [
     {

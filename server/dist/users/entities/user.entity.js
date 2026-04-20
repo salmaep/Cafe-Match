@@ -19,6 +19,8 @@ let User = class User {
     passwordHash;
     name;
     role;
+    friendCode;
+    avatarUrl;
     createdAt;
     updatedAt;
     bookmarks;
@@ -45,6 +47,14 @@ __decorate([
     (0, typeorm_1.Column)({ type: 'enum', enum: ['user', 'admin', 'owner'], default: 'user' }),
     __metadata("design:type", String)
 ], User.prototype, "role", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'friend_code', length: 8, unique: true }),
+    __metadata("design:type", String)
+], User.prototype, "friendCode", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'avatar_url', length: 500, nullable: true }),
+    __metadata("design:type", String)
+], User.prototype, "avatarUrl", void 0);
 __decorate([
     (0, typeorm_1.CreateDateColumn)({ name: 'created_at' }),
     __metadata("design:type", Date)

@@ -10,7 +10,7 @@ import {
 import { MOCK_CAFES } from "../data/mockCafes";
 
 // Change this to your local network IP when running the backend
-const BASE_URL = "http://192.168.1.40:3000/api/v1";
+const BASE_URL = "http://192.168.1.36:3000/api/v1";
 
 const api: AxiosInstance = axios.create({
   baseURL: BASE_URL,
@@ -246,11 +246,15 @@ export async function fetchCafeDetail(id: string): Promise<Cafe | null> {
   }
 }
 
-export async function fetchPromotedCafes(type?: string): Promise<Cafe[]> {
+export async function fetchPromotedCafes(
+  type?: string,
+  userLat?: number,
+  userLng?: number,
+): Promise<Cafe[]> {
   try {
     const params = type ? { type } : {};
     const { data } = await api.get("/cafes/promoted", { params });
-    return data.map((c: any) => mapBackendCafe(c));
+    return data.map((c: any) => mapBackendCafe(c, userLat, userLng));
   } catch {
     return MOCK_CAFES.filter((c) => c.promotionType);
   }

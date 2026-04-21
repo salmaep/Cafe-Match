@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, Alert, ActivityIndicator,
 } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
@@ -22,6 +23,15 @@ export default function FriendsScreen() {
   const [friendCode, setFriendCode] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyCode = async () => {
+    const code = (user as any)?.friendCode;
+    if (!code) return;
+    await Clipboard.setStringAsync(code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1800);
+  };
 
   useEffect(() => {
     loadData();
@@ -78,6 +88,14 @@ export default function FriendsScreen() {
       <View style={styles.codeBox}>
         <Text style={styles.codeLabel}>Kode Pertemanan Kamu</Text>
         <Text style={styles.codeText}>{(user as any)?.friendCode || '—'}</Text>
+        <TouchableOpacity
+          style={[styles.copyBtn, copied && styles.copyBtnDone]}
+          onPress={handleCopyCode}
+          disabled={!(user as any)?.friendCode}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.copyBtnText}>{copied ? '✓ Tersalin' : '📋 Salin Kode'}</Text>
+        </TouchableOpacity>
         <Text style={styles.codeHint}>Bagikan kode ini ke teman kamu</Text>
       </View>
 
@@ -169,6 +187,16 @@ const styles = StyleSheet.create({
   },
   codeLabel: { fontSize: 12, color: colors.textSecondary, fontWeight: '600' },
   codeText: { fontSize: 28, fontWeight: '900', color: colors.accent, letterSpacing: 4, marginVertical: spacing.xs },
+  copyBtn: {
+    backgroundColor: colors.accent,
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 2,
+    marginTop: spacing.xs,
+    marginBottom: spacing.xs,
+  },
+  copyBtnDone: { backgroundColor: colors.success },
+  copyBtnText: { color: colors.white, fontSize: 13, fontWeight: '700' },
   codeHint: { fontSize: 11, color: colors.textSecondary },
 
   tabs: { flexDirection: 'row', paddingHorizontal: spacing.md, gap: spacing.xs, marginBottom: spacing.sm },

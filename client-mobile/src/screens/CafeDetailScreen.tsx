@@ -379,6 +379,20 @@ export default function CafeDetailScreen() {
       const loc = await (
         await import("expo-location")
       ).getCurrentPositionAsync({ accuracy: 6 }); // BestForNavigation
+
+      // Client-side 300m guard so the user gets immediate feedback
+      // (the server enforces the same limit as the source of truth).
+      const distMeters =
+        haversineKm(loc.coords.latitude, loc.coords.longitude, cafe.latitude, cafe.longitude) * 1000;
+      if (distMeters > 300) {
+        Alert.alert(
+          "Terlalu jauh untuk check-in",
+          `Kamu berjarak ${Math.round(distMeters)}m dari ${cafe.name}. Maksimal 300m.`,
+        );
+        setCheckingIn(false);
+        return;
+      }
+
       const result: any = await checkInApi(
         Number(cafe.id),
         loc.coords.latitude,
@@ -756,13 +770,15 @@ export default function CafeDetailScreen() {
           <Text style={styles.actionIcon}>{isBookmarked ? "🔖" : "📑"}</Text>
           <Text style={styles.actionLabel}>Bookmark</Text>
         </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.checkinBtn}
-          onPress={handleCheckIn}
-          disabled={checkingIn}
-        >
-          <Text style={styles.checkinBtnText}>{checkingIn ? "..." : "📍"}</Text>
-        </TouchableOpacity>
+        {user && (
+          <TouchableOpacity
+            style={styles.checkinBtn}
+            onPress={handleCheckIn}
+            disabled={checkingIn}
+          >
+            <Text style={styles.checkinBtnText}>{checkingIn ? "..." : "📍"}</Text>
+          </TouchableOpacity>
+        )}
         <TouchableOpacity
           style={[
             styles.shortlistBtn,

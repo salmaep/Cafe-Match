@@ -23,6 +23,7 @@ export default function OwnerRegisterScreen() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [cafeName, setCafeName] = useState('');
   const [cafeAddress, setCafeAddress] = useState('');
   const [phone, setPhone] = useState('');
@@ -109,14 +110,24 @@ export default function OwnerRegisterScreen() {
             autoCapitalize="none"
           />
           <Text style={styles.label}>Password *</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Min. 8 characters"
-            placeholderTextColor={colors.textSecondary}
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-          />
+          <View style={styles.passwordWrap}>
+            <TextInput
+              style={styles.passwordInput}
+              placeholder="Min. 8 characters"
+              placeholderTextColor={colors.textSecondary}
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPassword}
+              autoCapitalize="none"
+            />
+            <TouchableOpacity
+              style={styles.eyeBtn}
+              onPress={() => setShowPassword((v) => !v)}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Text style={styles.eyeIcon}>{showPassword ? '🙈' : '👁️'}</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Cafe Info */}
@@ -233,6 +244,22 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'transparent',
   },
+  passwordWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  passwordInput: {
+    flex: 1,
+    padding: spacing.md,
+    fontSize: 15,
+    color: colors.primary,
+  },
+  eyeBtn: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+  eyeIcon: { fontSize: 18 },
   textArea: {
     minHeight: 80,
     textAlignVertical: 'top',

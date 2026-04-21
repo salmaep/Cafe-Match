@@ -143,6 +143,7 @@ export default function ProfileScreen() {
           <Text style={styles.menuLabel}>Notifikasi</Text>
           <Text style={styles.menuArrow}>→</Text>
         </TouchableOpacity>
+        {/* Recap menu — hidden temporarily, structure preserved
         <TouchableOpacity
           style={styles.menuItem}
           onPress={() => navigation.navigate('Recap')}
@@ -151,11 +152,14 @@ export default function ProfileScreen() {
           <Text style={styles.menuLabel}>Recap {new Date().getFullYear()}</Text>
           <Text style={styles.menuArrow}>→</Text>
         </TouchableOpacity>
+        */}
+        {/* Settings — hidden temporarily until functionality is added
         <TouchableOpacity style={styles.menuItem}>
           <Text style={styles.menuIcon}>⚙️</Text>
           <Text style={styles.menuLabel}>Settings</Text>
           <Text style={styles.menuArrow}>→</Text>
         </TouchableOpacity>
+        */}
       </View>
 
       <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>

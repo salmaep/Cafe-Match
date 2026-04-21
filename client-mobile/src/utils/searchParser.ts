@@ -6,6 +6,8 @@ export interface ParsedSearch {
   needsLargeTables: boolean;
   labels: string[]; // Human-readable labels for parsed filters
   locationHint?: { label: string; latitude: number; longitude: number };
+  /** Explicit radius in km parsed from queries like "within 5 km" / "dalam 3km". */
+  radiusKm?: number;
 }
 
 // Keyword → Facility mapping (supports Indonesian + English)
@@ -91,5 +93,18 @@ export function parseSearchQuery(query: string): ParsedSearch {
     }
   }
 
-  return { facilities, purposes, needsLargeTables, labels, locationHint };
+  // Parse radius hints like "within 5 km", "dalam 3 km", "<2km", "5km"
+  let radiusKm: number | undefined;
+  const radiusMatch =
+    q.match(/(?:within|dalam|under|kurang dari|<)\s*(\d+(?:\.\d+)?)\s*km/) ||
+    q.match(/(\d+(?:\.\d+)?)\s*km\b/);
+  if (radiusMatch) {
+    const val = parseFloat(radiusMatch[1]);
+    if (val > 0 && val <= 50) {
+      radiusKm = val;
+      labels.push(`≤ ${val} km`);
+    }
+  }
+
+  return { facilities, purposes, needsLargeTables, labels, locationHint, radiusKm };
 }

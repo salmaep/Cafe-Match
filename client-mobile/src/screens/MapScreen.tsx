@@ -29,6 +29,7 @@ import { usePreferences } from "../context/PreferencesContext";
 import { useLocation } from "../context/LocationContext";
 import { useShortlist } from "../context/ShortlistContext";
 import { fetchCafes, fetchPromotedCafes, fetchActiveCheckin, checkOutApi, fetchFriendsMap, throwEmojiApi } from "../services/api";
+import { useAuth } from "../context/AuthContext";
 import { MOCK_CAFES } from "../data/mockCafes";
 import { Cafe } from "../types";
 import { parseSearchQuery, ParsedSearch } from "../utils/searchParser";
@@ -59,6 +60,7 @@ export default function MapScreen() {
   const { preferences, setPreferences } = usePreferences();
   const { latitude: userLat, longitude: userLng } = useLocation();
   const { addToShortlist, isInShortlist } = useShortlist();
+  const { user } = useAuth();
   const mapRef = useRef<MapView>(null);
   const sheetRef = useRef<BottomSheet>(null);
 
@@ -172,8 +174,10 @@ export default function MapScreen() {
   const loadCafes = useCallback(
     async (rad: number) => {
       setLoading(true);
-      // DEV toggle: when radius is disabled, fetch a huge radius so backend returns everything
-      const effectiveRadius = DEV_DISABLE_RADIUS ? 9999 : rad;
+      // Fetch a wider pool than the active pill so when the user expands the
+      // radius from 2km → 5km we don't need to refetch. Client-side filter
+      // (in the unified useEffect below) trims the visible result set.
+      const effectiveRadius = Math.max(rad, DEV_DISABLE_RADIUS ? 9999 : 10);
       try {
         const cafes = await fetchCafes(center.latitude, center.longitude, effectiveRadius);
         setAllCafes(cafes.length > 0 ? cafes : MOCK_CAFES);
@@ -181,7 +185,7 @@ export default function MapScreen() {
         setAllCafes(MOCK_CAFES);
       }
       try {
-        const featured = await fetchPromotedCafes("featured_promo");
+        const featured = await fetchPromotedCafes("featured_promo", center.latitude, center.longitude);
         setFeaturedCafes(
           featured.length > 0
             ? featured
@@ -205,15 +209,27 @@ export default function MapScreen() {
     loadCafes(radiusKm);
   }, [radiusKm]);
 
-  // Fetch active check-in on mount + poll every 60s
+  // Sync the map radius pill with the wizard's chosen radius whenever the
+  // wizard updates preferences. Keeps Discover and CardSwipe consistent.
+  useEffect(() => {
+    if (preferences?.radius && preferences.radius !== radiusKm) {
+      setRadiusKm(preferences.radius);
+    }
+  }, [preferences?.radius]);
+
+  // Fetch active check-in on mount + poll every 60s (auth users only)
   const refreshActiveCheckin = useCallback(async () => {
+    if (!user) {
+      setActiveCheckin(null);
+      return;
+    }
     try {
       const active = await fetchActiveCheckin();
       setActiveCheckin(active || null);
     } catch {
       setActiveCheckin(null);
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     refreshActiveCheckin();
@@ -297,86 +313,81 @@ export default function MapScreen() {
     'WFC': 'wfc',
   };
 
-  // Apply filters — two parallel outputs:
-  //   displayCafes (map pins): ALWAYS shows ALL cafes, ignoring radius/wizard/search
-  //                            (the map is a wide overview). Only search overrides this
-  //                            so user sees matching pins highlighted.
-  //   listCafes (drawer list): applies wizard + search + radius filter
-  useEffect(() => {
-    // Map pins — always all cafes from the backend, ignoring filters.
-    // Exception: if the user submitted a search, we still filter pins so the map
-    // reflects the search (e.g. user searched "wifi" → only wifi cafes on map).
-    let pinsResult = [...allCafes];
-    if (searchActive && parsedSearch && parsedSearch.labels.length > 0) {
-      if (parsedSearch.purposes.length > 0) {
-        pinsResult = pinsResult.filter((c) => {
-          const byName = parsedSearch!.purposes.some((p) => c.purposes.includes(p));
-          const byScore = parsedSearch!.purposes.some((p) => {
-            const slug = PURPOSE_SLUG_MAP[p];
-            return slug && (c.purposeScores?.[slug] || 0) >= 60;
-          });
-          return byName || byScore;
-        });
-      }
-      if (parsedSearch.facilities.length > 0) {
-        pinsResult = pinsResult.filter((c) => {
-          const byFacility = parsedSearch!.facilities.some((f) => c.facilities.includes(f));
-          const byDetected = parsedSearch!.facilities.some((f) => {
-            const key = f.toLowerCase().replace(/[^a-z]/g, '_');
-            return c.detectedFacilities?.some((d) => d.includes(key) || key.includes(d));
-          });
-          return byFacility || byDetected;
-        });
-      }
-    }
-    setDisplayCafes(pinsResult);
+  // Robust amenity matcher (must match the one in CardSwipeScreen).
+  const AMENITY_KEY_MAP: Record<string, string[]> = {
+    'WiFi': ['wifi', 'strong_wifi', 'internet'],
+    'Power Outlet': ['power_outlet', 'power_outlets', 'outlet'],
+    'Mushola': ['mushola', 'prayer_room'],
+    'Parking': ['parking'],
+    'Kid-Friendly': ['kid_friendly', 'family_friendly', 'noise_tolerant'],
+    'Quiet Atmosphere': ['quiet_atmosphere', 'quiet'],
+    'Large Tables': ['large_tables', 'spacious'],
+    'Outdoor Area': ['outdoor_area', 'outdoor_seating', 'outdoor'],
+  };
+  const cafeHasAmenity = (cafe: Cafe, amenity: string): boolean => {
+    if ((cafe.facilities ?? []).includes(amenity as any)) return true;
+    const keys = AMENITY_KEY_MAP[amenity] ?? [
+      amenity.toLowerCase().replace(/[^a-z0-9]/g, '_'),
+    ];
+    const detected = (cafe.detectedFacilities ?? []).map((d: string) => String(d).toLowerCase());
+    return keys.some((k) => detected.includes(k));
+  };
 
-    // Drawer list — apply wizard + search + radius
-    let listResult = [...allCafes];
-    if (preferences?.purpose) {
-      const slug = PURPOSE_SLUG_MAP[preferences.purpose];
-      listResult = listResult.filter((c) => {
-        const byName = c.purposes.includes(preferences.purpose!);
-        const byScore = !!slug && (c.purposeScores?.[slug] || 0) >= 40;
-        return byName || byScore;
-      });
-    }
-    if (preferences?.amenities && preferences.amenities.length > 0) {
-      listResult = listResult.filter((c) => {
-        const byFacility = preferences.amenities!.some((a) => c.facilities.includes(a));
-        const byDetected = preferences.amenities!.some((a) => {
-          const key = a.toLowerCase().replace(/[^a-z]/g, '_');
-          return c.detectedFacilities?.some((d) => d === key || d.includes(key) || key.includes(d));
-        });
-        return byFacility || byDetected;
-      });
-    }
-    if (parsedSearch && parsedSearch.labels.length > 0) {
-      if (parsedSearch.purposes.length > 0) {
-        listResult = listResult.filter((c) => {
-          const byName = parsedSearch!.purposes.some((p) => c.purposes.includes(p));
-          const byScore = parsedSearch!.purposes.some((p) => {
-            const slug = PURPOSE_SLUG_MAP[p];
-            return slug && (c.purposeScores?.[slug] || 0) >= 60;
-          });
+  // Apply active filters (wizard purpose, wizard amenities, search, radius) to
+  // BOTH the map pins and the drawer list so the user always sees the same set.
+  useEffect(() => {
+    const applyFilters = (cafes: Cafe[]): Cafe[] => {
+      let result = [...cafes];
+
+      // Wizard purpose filter
+      if (preferences?.purpose) {
+        const slug = PURPOSE_SLUG_MAP[preferences.purpose];
+        result = result.filter((c) => {
+          const byName = (c.purposes ?? []).includes(preferences.purpose!);
+          const byScore = !!slug && (c.purposeScores?.[slug] || 0) >= 40;
           return byName || byScore;
         });
       }
-      if (parsedSearch.facilities.length > 0) {
-        listResult = listResult.filter((c) => {
-          const byFacility = parsedSearch!.facilities.some((f) => c.facilities.includes(f));
-          const byDetected = parsedSearch!.facilities.some((f) => {
-            const key = f.toLowerCase().replace(/[^a-z]/g, '_');
-            return c.detectedFacilities?.some((d) => d.includes(key) || key.includes(d));
-          });
-          return byFacility || byDetected;
-        });
+
+      // Wizard amenity filter — ALL selected amenities must be present
+      if (preferences?.amenities && preferences.amenities.length > 0) {
+        result = result.filter((c) =>
+          preferences.amenities!.every((a) => cafeHasAmenity(c, a)),
+        );
       }
-    }
-    listResult = listResult
-      .filter((c) => c.distance <= radiusKm)
-      .sort((a, b) => (a.distance || 999) - (b.distance || 999));
-    setListCafes(listResult);
+
+      // Search filter
+      if (parsedSearch && parsedSearch.labels.length > 0) {
+        if (parsedSearch.purposes.length > 0) {
+          result = result.filter((c) => {
+            const byName = parsedSearch!.purposes.some((p) => c.purposes.includes(p));
+            const byScore = parsedSearch!.purposes.some((p) => {
+              const slug = PURPOSE_SLUG_MAP[p];
+              return slug && (c.purposeScores?.[slug] || 0) >= 60;
+            });
+            return byName || byScore;
+          });
+        }
+        if (parsedSearch.facilities.length > 0) {
+          result = result.filter((c) => {
+            const byFacility = parsedSearch!.facilities.some((f) => c.facilities.includes(f));
+            const byDetected = parsedSearch!.facilities.some((f) => {
+              const key = f.toLowerCase().replace(/[^a-z]/g, '_');
+              return c.detectedFacilities?.some((d) => d.includes(key) || key.includes(d));
+            });
+            return byFacility || byDetected;
+          });
+        }
+      }
+
+      // Radius filter — applies to both pins and list so map only shows what's reachable
+      result = result.filter((c) => (c.distance ?? 0) <= radiusKm);
+      return result.sort((a, b) => (a.distance || 999) - (b.distance || 999));
+    };
+
+    const filtered = applyFilters(allCafes);
+    setDisplayCafes(filtered);
+    setListCafes(filtered);
   }, [allCafes, preferences, parsedSearch, radiusKm, searchActive]);
 
   const handleSearch = () => {
@@ -389,20 +400,41 @@ export default function MapScreen() {
     setParsedSearch(parsed);
     setSearchActive(true);
 
-    // Build search result cafes from allCafes
-    let results = [...allCafes];
-    if (parsed.purposes.length > 0) {
-      results = results.filter((c) =>
-        parsed.purposes.some((p) => c.purposes.includes(p)),
-      );
+    // If user typed an explicit radius (e.g. "wifi within 5 km"), apply it to the
+    // map's radius filter so pins + list shrink/expand accordingly.
+    if (parsed.radiusKm) setRadiusKm(parsed.radiusKm);
+
+    // Effective radius for ranking/filtering — parsed radius wins over current pill.
+    const effectiveRadius = parsed.radiusKm ?? radiusKm;
+
+    // Score each cafe by keyword relevance (purpose + facility hits)
+    const scored = allCafes
+      .filter((c) => (c.distance ?? 0) <= effectiveRadius)
+      .map((c) => {
+        let score = 0;
+        for (const p of parsed.purposes) {
+          if (c.purposes.includes(p)) score += 3;
+          const slug = PURPOSE_SLUG_MAP[p];
+          if (slug && (c.purposeScores?.[slug] || 0) >= 60) score += 2;
+        }
+        for (const f of parsed.facilities) {
+          if (c.facilities.includes(f)) score += 2;
+          const key = f.toLowerCase().replace(/[^a-z]/g, '_');
+          if (c.detectedFacilities?.some((d) => d.includes(key) || key.includes(d))) score += 1;
+        }
+        return { cafe: c, score };
+      })
+      .filter((s) => s.score > 0)
+      .sort((a, b) => b.score - a.score || (a.cafe.distance || 999) - (b.cafe.distance || 999))
+      .map((s) => s.cafe);
+
+    // Show up to 5 (or fewer if we don't have that many matches)
+    const top = scored.slice(0, 5);
+    if (top.length === 0) {
+      showSearchPopup([]);
+    } else {
+      showSearchPopup(top);
     }
-    if (parsed.facilities.length > 0) {
-      results = results.filter((c) =>
-        parsed.facilities.some((f) => c.facilities.includes(f)),
-      );
-    }
-    if (results.length === 0) results = allCafes.slice(0, 5);
-    showSearchPopup(results.slice(0, 8));
   };
 
   const clearSearch = () => {
@@ -1107,8 +1139,15 @@ export default function MapScreen() {
             ) : listCafes.length === 0 ? (
               <View style={styles.emptyBox}>
                 <Text style={styles.emptyText}>
-                  No cafes found within {radiusKm} km
+                  {hasAnyFilter
+                    ? `No cafes match your current filters within ${radiusKm} km`
+                    : `No cafes found within ${radiusKm} km`}
                 </Text>
+                {hasAnyFilter && (
+                  <Text style={[styles.emptyText, { fontSize: 12, marginTop: 6 }]}>
+                    Try increasing the radius or clearing filters.
+                  </Text>
+                )}
                 <TouchableOpacity
                   onPress={resetFilters}
                   style={styles.emptyReset}

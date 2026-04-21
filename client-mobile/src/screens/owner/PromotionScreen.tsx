@@ -15,31 +15,6 @@ import api from '../../services/api';
 import { colors, spacing, radius } from '../../theme';
 import CreatePromotionScreen from './CreatePromotionScreen';
 
-const MOCK_PROMOTIONS = [
-  {
-    id: 1,
-    type: 'featured_promo',
-    status: 'active',
-    contentTitle: 'Buy 1 Get 1 All Coffee',
-    contentDescription: 'Valid for all coffee drinks every Wednesday',
-    billingCycle: 'monthly',
-    package: { name: 'Featured Promo Basic', priceMonthly: 150000 },
-    startedAt: '2026-03-15T00:00:00.000Z',
-    expiresAt: '2026-05-15T00:00:00.000Z',
-  },
-  {
-    id: 2,
-    type: 'new_cafe',
-    status: 'expired',
-    contentTitle: null,
-    contentDescription: null,
-    billingCycle: 'monthly',
-    package: { name: 'New Cafe Highlight', priceMonthly: 100000 },
-    startedAt: '2026-01-01T00:00:00.000Z',
-    expiresAt: '2026-02-01T00:00:00.000Z',
-  },
-];
-
 const STATUS_CONFIG: Record<string, { color: string; icon: string; label: string }> = {
   active: { color: colors.success, icon: '✅', label: 'ACTIVE' },
   expired: { color: colors.error, icon: '⏱️', label: 'EXPIRED' },
@@ -77,9 +52,9 @@ export default function PromotionScreen() {
   const loadPromotions = async () => {
     try {
       const data = await fetchOwnerPromotions();
-      setPromotions(data.length > 0 ? data : MOCK_PROMOTIONS);
+      setPromotions(Array.isArray(data) ? data : []);
     } catch {
-      setPromotions(MOCK_PROMOTIONS);
+      setPromotions([]);
     } finally {
       setLoading(false);
     }

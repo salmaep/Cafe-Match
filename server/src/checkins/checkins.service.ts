@@ -33,17 +33,16 @@ export class CheckinsService {
     const cafe = await this.cafeRepo.findOne({ where: { id: dto.cafeId, isActive: true } });
     if (!cafe) throw new NotFoundException('Cafe tidak ditemukan');
 
-    // 2. GPS distance check (100m)
+    // 2. GPS distance check (300m)
     // DEV TOGGLE: set CHECKIN_SKIP_GPS=true in .env to bypass this check for testing.
-    // Revert to production: remove the env var or set it to false.
     const distance = this.haversineMeters(
       dto.latitude, dto.longitude,
       Number(cafe.latitude), Number(cafe.longitude),
     );
     const skipGps = process.env.CHECKIN_SKIP_GPS === 'true';
-    if (!skipGps && distance > 100) {
+    if (!skipGps && distance > 300) {
       throw new BadRequestException(
-        `Kamu terlalu jauh dari cafe ini (${Math.round(distance)}m). Maksimal 100m untuk check-in.`,
+        `Kamu terlalu jauh dari cafe ini (${Math.round(distance)}m). Maksimal 300m untuk check-in.`,
       );
     }
 

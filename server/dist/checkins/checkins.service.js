@@ -47,8 +47,8 @@ let CheckinsService = class CheckinsService {
             throw new common_1.NotFoundException('Cafe tidak ditemukan');
         const distance = this.haversineMeters(dto.latitude, dto.longitude, Number(cafe.latitude), Number(cafe.longitude));
         const skipGps = process.env.CHECKIN_SKIP_GPS === 'true';
-        if (!skipGps && distance > 100) {
-            throw new common_1.BadRequestException(`Kamu terlalu jauh dari cafe ini (${Math.round(distance)}m). Maksimal 100m untuk check-in.`);
+        if (!skipGps && distance > 300) {
+            throw new common_1.BadRequestException(`Kamu terlalu jauh dari cafe ini (${Math.round(distance)}m). Maksimal 300m untuk check-in.`);
         }
         const active = await this.checkinRepo.findOne({
             where: { userId, checkOutAt: (0, typeorm_2.IsNull)() },

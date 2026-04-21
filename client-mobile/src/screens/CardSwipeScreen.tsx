@@ -19,58 +19,6 @@ import { useLocation } from '../context/LocationContext';
 import { fetchCafes, fetchPromotedCafes } from '../services/api';
 import { MOCK_CAFES } from '../data/mockCafes';
 
-// Fallback promo cards used when backend has no active promos
-const FALLBACK_PROMO_A: Cafe = {
-  id: 'promo-a-fallback',
-  name: 'Kopi Baru Kemang',
-  photos: ['https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800'],
-  distance: 1.2,
-  address: 'Jl. Kemang Raya No. 88, Jakarta Selatan',
-  latitude: -6.2615,
-  longitude: 106.8106,
-  purposes: ['Me Time', 'WFC'],
-  facilities: ['WiFi', 'Power Outlet'],
-  menu: [],
-  favoritesCount: 12,
-  bookmarksCount: 5,
-  promotionType: 'A',
-  hasActivePromotion: true,
-  activePromotionType: 'new_cafe',
-  newCafeContent: {
-    openingSince: 'March 2026',
-    highlightText: 'Freshly opened with a full specialty menu.',
-    keunggulan: ['Rooftop', 'Specialty Coffee', 'Free WiFi'],
-    promoOffer: 'Grand Opening: Buy 1 Get 1 all beverages this month!',
-    promoPhoto: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800',
-  },
-};
-
-const FALLBACK_PROMO_B: Cafe = {
-  id: 'promo-b-fallback',
-  name: 'Rumah Kopi Senopati',
-  photos: ['https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=800'],
-  distance: 0.8,
-  address: 'Jl. Senopati No. 23, Jakarta Selatan',
-  latitude: -6.2400,
-  longitude: 106.8050,
-  purposes: ['Date', 'Me Time'],
-  facilities: ['WiFi', 'Quiet Atmosphere', 'Outdoor Area'],
-  menu: [],
-  favoritesCount: 87,
-  bookmarksCount: 34,
-  promotionType: 'B',
-  promoTitle: 'Buy 1 Get 1 Latte',
-  promoDescription: 'Valid every Monday – Wednesday, all day long',
-  hasActivePromotion: true,
-  activePromotionType: 'featured_promo',
-  promotionContent: {
-    title: 'Buy 1 Get 1 Latte',
-    description: 'Every day 8PM–10PM, dine in only. Valid for all latte orders.',
-    validHours: '8PM – 10PM',
-    validDays: 'Monday – Wednesday',
-    promoPhoto: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=800',
-  },
-};
 import { Cafe } from '../types';
 import { colors, spacing, radius } from '../theme';
 import Toast from '../components/Toast';
@@ -78,9 +26,10 @@ import Toast from '../components/Toast';
 const { width, height } = Dimensions.get('window');
 const CARD_W = width * 0.85;
 
-// DEV TOGGLE: fetch all cafes regardless of wizard radius setting.
-// Revert to `false` for production.
-const DEV_DISABLE_RADIUS = true;
+// Fetch a wide pool from the backend (so the user can later expand the radius
+// from Discover without a refetch), but apply the wizard's chosen radius
+// strictly on the client so the deck mirrors what Discover will show.
+const FETCH_RADIUS_KM = 50;
 
 export default function CardSwipeScreen() {
   const navigation = useNavigation<StackNavigationProp<any>>();
@@ -115,12 +64,13 @@ export default function CardSwipeScreen() {
     try {
       const lat = preferences?.location?.latitude ?? latitude;
       const lng = preferences?.location?.longitude ?? longitude;
-      const rad = DEV_DISABLE_RADIUS ? 9999 : (preferences?.radius ?? 2);
+      const wizardRadius = preferences?.radius ?? 2;
 
-      // Fetch regular cafes and promoted cafes in parallel
+      // Fetch a wide pool so the radius filter is applied client-side and
+      // matches what Discover will compute.
       const [allCafesRaw, promotedRaw] = await Promise.allSettled([
-        fetchCafes(lat, lng, rad),
-        fetchPromotedCafes(),
+        fetchCafes(lat, lng, FETCH_RADIUS_KM),
+        fetchPromotedCafes(undefined, lat, lng),
       ]);
 
       let allCafes = allCafesRaw.status === 'fulfilled' ? allCafesRaw.value : [];
@@ -153,56 +103,124 @@ export default function CardSwipeScreen() {
         'WFC': 'wfc',
       };
 
-      // Rank by purposeScore matching wizard selection; fall back to matchScore
       const wizardPurpose = preferences?.purpose;
       const wantedSlug = wizardPurpose ? PURPOSE_SLUG_MAP[wizardPurpose] : null;
+      const wizardAmenities = preferences?.amenities ?? [];
 
-      const scored = allCafes.map((c) => {
+      // Robust amenity matcher: handles label, raw key, and synonyms.
+      // Returns true if `cafe` exposes the wizard amenity in any form.
+      const AMENITY_KEY_MAP: Record<string, string[]> = {
+        'WiFi': ['wifi', 'strong_wifi', 'internet'],
+        'Power Outlet': ['power_outlet', 'power_outlets', 'outlet'],
+        'Mushola': ['mushola', 'prayer_room'],
+        'Parking': ['parking'],
+        'Kid-Friendly': ['kid_friendly', 'family_friendly', 'noise_tolerant'],
+        'Quiet Atmosphere': ['quiet_atmosphere', 'quiet'],
+        'Large Tables': ['large_tables', 'spacious'],
+        'Outdoor Area': ['outdoor_area', 'outdoor_seating', 'outdoor'],
+      };
+      const cafeHasAmenity = (cafe: Cafe, amenity: string): boolean => {
+        const facLabels = (cafe.facilities ?? []) as any[];
+        if (facLabels.includes(amenity)) return true;
+        const keys = AMENITY_KEY_MAP[amenity] ?? [
+          amenity.toLowerCase().replace(/[^a-z0-9]/g, '_'),
+        ];
+        const detected = (cafe.detectedFacilities ?? []).map((d: string) =>
+          String(d).toLowerCase(),
+        );
+        return keys.some((k) => detected.includes(k));
+      };
+
+      // Same filter pipeline used by MapScreen — keeps Discover and CardSwipe in sync.
+      // ALL selected amenities + the chosen purpose must match (AND semantics).
+      const applyWizardFilter = (list: Cafe[], enforceRadius: boolean): Cafe[] => {
+        let result = list;
+        if (enforceRadius) {
+          result = result.filter((c) => (c.distance ?? 0) <= wizardRadius);
+        }
+        if (wantedSlug) {
+          result = result.filter((c) => {
+            const byScore = (c.purposeScores?.[wantedSlug] || 0) >= 40;
+            const byName = (c.purposes ?? []).includes(wizardPurpose!);
+            return byScore || byName;
+          });
+        } else if (preferences?.purpose) {
+          result = result.filter((c) => (c.purposes ?? []).includes(preferences.purpose!));
+        }
+        if (wizardAmenities.length > 0) {
+          // AND: every selected amenity must be present on the cafe
+          result = result.filter((c) => wizardAmenities.every((a) => cafeHasAmenity(c, a)));
+        }
+        return result;
+      };
+
+      // Rank
+      const scoreCafe = (c: Cafe) => {
         let score = c.matchScore || 0;
         if (wantedSlug && c.purposeScores?.[wantedSlug] != null) {
-          // Prefer the scraped purposeScore when available
           score = c.purposeScores[wantedSlug];
         }
-        return { cafe: c, score };
-      });
+        return score;
+      };
 
-      let sorted = scored.sort((a, b) => b.score - a.score).map((s) => s.cafe);
+      let filtered = applyWizardFilter(allCafes, true);
+      filtered.sort((a, b) => scoreCafe(b) - scoreCafe(a));
 
-      // If wizard selected a purpose, only keep cafes with score >= 40 for that purpose
-      if (wantedSlug) {
-        const matched = sorted.filter((c) => (c.purposeScores?.[wantedSlug] || 0) >= 40);
-        if (matched.length > 0) sorted = matched;
-      } else if (preferences?.purpose) {
-        // Legacy fallback — filter by purpose name string match
-        const filtered = sorted.filter((c) => c.purposes.includes(preferences.purpose!));
-        if (filtered.length > 0) sorted = filtered;
+      // Top 5 regular (non-promo) cafes within the wizard radius
+      const regular = filtered.filter((c) => !c.promotionType).slice(0, 5);
+
+      // Promo cards: also scoped to the user's radius so the next card after a
+      // swipe-right always exists. Promos that fall outside the radius are skipped.
+      const promosInRadius = promotedCafes.filter(
+        (c) => (c.distance ?? 0) <= wizardRadius,
+      );
+      const promoA = promosInRadius.find(
+        (c) => c.promotionType === 'A' || c.activePromotionType === 'new_cafe',
+      );
+      const promoB = promosInRadius.find(
+        (c) => c.promotionType === 'B' || c.activePromotionType === 'featured_promo',
+      );
+
+      // Build deck: start with regular cards in radius
+      let deck: Cafe[] = [...regular];
+
+      // Insert real promos at random middle positions (only if they fit in radius)
+      const realPromos: Cafe[] = [];
+      if (promoA) realPromos.push(promoA);
+      if (promoB) realPromos.push(promoB);
+
+      if (realPromos.length > 0) {
+        const usedPositions = new Set<number>();
+        for (const promo of realPromos) {
+          if (deck.find((d) => d.id === promo.id)) continue; // dedupe
+          const max = Math.max(1, deck.length);
+          let pos = 1 + Math.floor(Math.random() * max);
+          let safety = 0;
+          while (usedPositions.has(pos) && safety < 10) {
+            pos = 1 + Math.floor(Math.random() * max);
+            safety++;
+          }
+          usedPositions.add(pos);
+          deck.splice(pos, 0, promo);
+        }
       }
 
-      // Top 5 regular (non-promo) cafes
-      const regular = sorted.filter((c) => !c.promotionType).slice(0, 5);
+      // Dedupe by id (defensive — promos sometimes overlap with regular pool)
+      const seen = new Set<string>();
+      deck = deck.filter((c) => {
+        const id = String(c.id);
+        if (seen.has(id)) return false;
+        seen.add(id);
+        return true;
+      });
 
-      // Exactly 1 Type A + 1 Type B promo card — with fallbacks
-      const promoA: Cafe =
-        promotedCafes.find((c) => c.promotionType === 'A' || c.activePromotionType === 'new_cafe') ??
-        allCafes.find((c) => c.promotionType === 'A') ??
-        FALLBACK_PROMO_A;
-
-      const promoB: Cafe =
-        promotedCafes.find((c) => c.promotionType === 'B' || c.activePromotionType === 'featured_promo') ??
-        allCafes.find((c) => c.promotionType === 'B') ??
-        FALLBACK_PROMO_B;
-
-      // Build deck of up to 5 regular cards + insert 2 promos at positions 2 & 4 (middle)
-      const deck = regular.length >= 5 ? [...regular] : [...sorted.slice(0, 5)];
-
-      // Insert promo cards at random non-first, non-last positions (indices 1–3 for 5 cards)
-      const posA = 1 + Math.floor(Math.random() * 3); // 1, 2, or 3
-      let posB = 1 + Math.floor(Math.random() * 3);
-      while (posB === posA) posB = 1 + Math.floor(Math.random() * 3);
-
-      const insertPositions = [posA, posB].sort((a, b) => a - b);
-      deck.splice(insertPositions[0], 0, promoA);
-      deck.splice(insertPositions[1] + 1, 0, promoB);
+      // Final fallback: if filters wiped everything, relax radius and show
+      // top-ranked anywhere (Discover will display the same wider set).
+      if (deck.length === 0) {
+        const relaxed = applyWizardFilter(allCafes, false);
+        relaxed.sort((a, b) => scoreCafe(b) - scoreCafe(a));
+        deck = relaxed.slice(0, 5);
+      }
 
       setCafes(deck.length > 0 ? deck : MOCK_CAFES.slice(0, 5));
     } catch {
@@ -214,16 +232,23 @@ export default function CardSwipeScreen() {
 
   const handleSwipedRight = (cardIndex: number) => {
     const cafe = cafes[cardIndex];
-    if (cafe && !isInShortlist(cafe.id)) {
-      addToShortlist(cafe);
-      setToastMsg(`Added "${cafe.name}" to Shortlist!`);
-      setShowToast(true);
+    if (!cafe) return;
+    // Promo cafes from the backend have real IDs, but skip-on-error so the
+    // swiper never gets stuck if shortlist insert throws.
+    try {
+      if (!isInShortlist(cafe.id)) {
+        addToShortlist(cafe);
+        setToastMsg(`Added "${cafe.name}" to Shortlist!`);
+        setShowToast(true);
+      }
+    } catch {
+      // ignore — let the swiper continue to the next card
     }
   };
 
   const handleSwipedAll = () => {
+    if (allSwiped) return; // guard against double-fire
     setAllSwiped(true);
-    // Fix 6: Always navigate, with safety timeout
     setTimeout(() => {
       navigation.replace('MainTabs');
     }, 1200);
@@ -233,7 +258,20 @@ export default function CardSwipeScreen() {
 
   // Fix 2: Card with correctly stacked bottom overlay
   const renderCard = (cafe: Cafe) => {
-    if (!cafe) return null;
+    // Render a neutral placeholder instead of null when the swiper queries an
+    // out-of-bounds slot — returning null causes a blank, "stuck" card.
+    if (!cafe) {
+      return (
+        <View
+          style={[
+            styles.card,
+            { width: CARD_W, height: CARD_H, justifyContent: 'center', alignItems: 'center' },
+          ]}
+        >
+          <Text style={{ color: colors.textSecondary, fontSize: 14 }}>End of deck</Text>
+        </View>
+      );
+    }
     const saved = isInShortlist(cafe.id);
     const isTypeA = cafe.promotionType === 'A' || cafe.activePromotionType === 'new_cafe';
     const isTypeB = cafe.promotionType === 'B' || cafe.activePromotionType === 'featured_promo';
@@ -316,26 +354,29 @@ export default function CardSwipeScreen() {
           {/* ── Type A: New Cafe rich content ──────────────────────────── */}
           {isTypeA && (
             <>
-              {/* Grand opening offer banner — amber strip */}
-              {newCafe?.promoOffer ? (
-                <View style={styles.newCafeOfferBanner}>
-                  <Text style={styles.newCafeOfferText} numberOfLines={2}>
-                    🎉 {newCafe.promoOffer}
-                  </Text>
-                </View>
-              ) : null}
+              {/* Grand opening offer banner — amber strip. Falls back to a
+                  generic opening-period CTA when the owner hasn't filled one in. */}
+              <View style={styles.newCafeOfferBanner}>
+                <Text style={styles.newCafeOfferText} numberOfLines={2}>
+                  🎉 {newCafe?.promoOffer || 'Grand Opening — Buy 1 Get 1 during opening period!'}
+                </Text>
+              </View>
 
               <View style={styles.cardInfo}>
                 <Text style={styles.cafeName} numberOfLines={1}>{cafe.name}</Text>
-                {newCafe?.openingSince ? (
-                  <Text style={styles.openingSince}>
-                    ✨ Open since {newCafe.openingSince}
+                {/* Always show distance + opening info on new-cafe cards */}
+                <Text style={styles.cafeDistance}>
+                  {cafe.distance != null ? `${cafe.distance} km away` : ''}
+                  {newCafe?.openingSince ? `  ·  ✨ Open since ${newCafe.openingSince}` : ''}
+                </Text>
+                {/* Highlight text: explicit highlightText, then promoOffer fallback */}
+                {(newCafe?.highlightText || (!newCafe?.promoOffer && 'Newly opened cafe — give them a try!')) && (
+                  <Text style={styles.openingSince} numberOfLines={2}>
+                    🌟 {newCafe?.highlightText || 'Newly opened cafe — give them a try!'}
                   </Text>
-                ) : (
-                  <Text style={styles.cafeDistance}>{cafe.distance} km away</Text>
                 )}
                 {/* Keunggulan pills row */}
-                {newCafe?.keunggulan && newCafe.keunggulan.length > 0 && (
+                {newCafe?.keunggulan && newCafe.keunggulan.length > 0 ? (
                   <View style={styles.tagsRow}>
                     {newCafe.keunggulan.slice(0, 3).map((k) => (
                       <View key={k} style={styles.keunggulanPill}>
@@ -343,9 +384,7 @@ export default function CardSwipeScreen() {
                       </View>
                     ))}
                   </View>
-                )}
-                {/* Fallback: show purposes if no keunggulan */}
-                {(!newCafe?.keunggulan || newCafe.keunggulan.length === 0) && (
+                ) : (
                   <View style={styles.tagsRow}>
                     {(cafe.purposes ?? []).slice(0, 2).map((p) => (
                       <View key={p} style={styles.tag}>
@@ -460,7 +499,8 @@ export default function CardSwipeScreen() {
         onSwipedAll={handleSwipedAll}
         cardIndex={0}
         backgroundColor="transparent"
-        stackSize={3}
+        stackSize={Math.min(3, Math.max(1, cafes.length))}
+        infinite={false}
         stackSeparation={12}
         stackScale={4}
         animateOverlayLabelsOpacity

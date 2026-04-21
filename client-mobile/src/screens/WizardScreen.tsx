@@ -48,8 +48,38 @@ const AMENITIES: { label: Facility; icon: string }[] = [
 export default function WizardScreen() {
   const navigation = useNavigation<StackNavigationProp<any>>();
   const { setPreferences, setWizardCompleted } = usePreferences();
-  const { latitude: userLat, longitude: userLng } = useLocation();
+  const { latitude: userLat, longitude: userLng, refresh: refreshLocation } = useLocation();
   const [step, setStep] = useState(0);
+  const [preciseLat, setPreciseLat] = useState<number | null>(null);
+  const [preciseLng, setPreciseLng] = useState<number | null>(null);
+  const [locating, setLocating] = useState(false);
+
+  // Fetch a fresh, high-accuracy GPS fix the moment the user picks "current location".
+  const fetchPreciseLocation = async () => {
+    setLocating(true);
+    try {
+      const Location = await import('expo-location');
+      const perm = await Location.requestForegroundPermissionsAsync();
+      if (perm.status !== 'granted') {
+        // Fall back to context coords if permission denied
+        setPreciseLat(null);
+        setPreciseLng(null);
+        return;
+      }
+      const loc = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.BestForNavigation,
+      });
+      setPreciseLat(loc.coords.latitude);
+      setPreciseLng(loc.coords.longitude);
+      // Also propagate to global context so MapScreen/CardSwipe see the same fix.
+      refreshLocation();
+    } catch {
+      setPreciseLat(null);
+      setPreciseLng(null);
+    } finally {
+      setLocating(false);
+    }
+  };
   const slideAnim = useRef(new Animated.Value(0)).current;
 
   const [purpose, setPurpose] = useState<Purpose | undefined>();
@@ -91,12 +121,15 @@ export default function WizardScreen() {
 
   const handleFinish = () => {
     const useCustomCoords = locationType === 'custom' && customLat !== null && customLng !== null;
+    // Prefer the freshly-fetched precise GPS over the cached context coords
+    const lat = useCustomCoords ? customLat! : (preciseLat ?? userLat);
+    const lng = useCustomCoords ? customLng! : (preciseLng ?? userLng);
     const prefs: WizardPreferences = {
       purpose,
       location: {
         type: locationType,
-        latitude: useCustomCoords ? customLat! : userLat,
-        longitude: useCustomCoords ? customLng! : userLng,
+        latitude: lat,
+        longitude: lng,
         label: locationType === 'custom' ? customAddress || 'Custom Destination' : 'Current Location',
       },
       radius: radiusVal,
@@ -174,12 +207,26 @@ export default function WizardScreen() {
           <View style={styles.locationOptions}>
             <TouchableOpacity
               style={[styles.locationCard, locationType === 'current' && styles.optionCardActive]}
-              onPress={() => setLocationType('current')}
+              onPress={() => {
+                setLocationType('current');
+                fetchPreciseLocation();
+              }}
             >
               <Text style={styles.locationIcon}>📍</Text>
-              <Text style={[styles.locationLabel, locationType === 'current' && styles.optionLabelActive]}>
-                Use my current location
-              </Text>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.locationLabel, locationType === 'current' && styles.optionLabelActive]}>
+                  Use my current location
+                </Text>
+                {locationType === 'current' && (
+                  <Text style={styles.locationSub}>
+                    {locating
+                      ? 'Getting precise GPS...'
+                      : preciseLat != null
+                        ? `📡 ${preciseLat.toFixed(5)}, ${preciseLng!.toFixed(5)}`
+                        : `${userLat.toFixed(5)}, ${userLng.toFixed(5)}`}
+                  </Text>
+                )}
+              </View>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.locationCard, locationType === 'custom' && styles.optionCardActive]}
@@ -367,6 +414,7 @@ const styles = StyleSheet.create({
   },
   locationIcon: { fontSize: 24, marginRight: spacing.md },
   locationLabel: { fontSize: 15, fontWeight: '600', color: colors.primary },
+  locationSub: { fontSize: 11, color: colors.textSecondary, marginTop: 2 },
   textInput: {
     marginTop: spacing.md,
     backgroundColor: colors.surface,

@@ -46,8 +46,10 @@ export function LocationProvider({ children }: { children: ReactNode }) {
       }
 
       setHasPermission(true);
+      // Use highest-precision GPS so wizard radius/check-in rely on the
+      // user's actual coords, not a coarse balanced fix.
       const loc = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
+        accuracy: Location.Accuracy.BestForNavigation,
       });
       setLatitude(loc.coords.latitude);
       setLongitude(loc.coords.longitude);

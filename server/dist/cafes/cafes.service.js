@@ -89,7 +89,15 @@ let CafesService = class CafesService {
         chosen.sort((a, b) => b.score - a.score);
         const purposeNames = chosen.slice(0, 4).map((m) => m.name);
         const bestScore = chosen.length > 0 ? chosen[0].score : 0;
-        const matchScore = Math.min(98, Math.max(60, bestScore || 65));
+        let matchScore;
+        if (chosen.length === 0) {
+            matchScore = Math.min(40, 20 + facilityKeys.length * 3);
+        }
+        else {
+            const isStrict = strictMatches.length > 0;
+            const bonus = isStrict ? 10 : 0;
+            matchScore = Math.min(99, Math.max(20, bestScore + bonus));
+        }
         return { purposes: purposeNames, matchScore };
     }
     async search(dto) {

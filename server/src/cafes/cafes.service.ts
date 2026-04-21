@@ -109,8 +109,20 @@ export class CafesService {
     const purposeNames = chosen.slice(0, 4).map((m) => m.name);
     const bestScore = chosen.length > 0 ? chosen[0].score : 0;
 
-    // Boost low scores a bit so every cafe shows a reasonable match number
-    const matchScore = Math.min(98, Math.max(60, bestScore || 65));
+    // Spread scores across a wider, more meaningful range:
+    //   - No facility match at all  → ~25–35 (low but not zero)
+    //   - Loose match               → carry the raw normalized score (15–85)
+    //   - Strict match              → bonus of +10 to differentiate from loose
+    //   - Cap at 99 so a perfect cafe stays aspirational
+    let matchScore: number;
+    if (chosen.length === 0) {
+      // Facility-poor cafes vary by how many facilities they list overall
+      matchScore = Math.min(40, 20 + facilityKeys.length * 3);
+    } else {
+      const isStrict = strictMatches.length > 0;
+      const bonus = isStrict ? 10 : 0;
+      matchScore = Math.min(99, Math.max(20, bestScore + bonus));
+    }
 
     return { purposes: purposeNames, matchScore };
   }

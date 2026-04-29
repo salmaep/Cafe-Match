@@ -10,7 +10,7 @@ import {
 import { MOCK_CAFES } from "../data/mockCafes";
 
 // Change this to your local network IP when running the backend
-const BASE_URL = "http://192.168.1.36:3000/api/v1";
+const BASE_URL = "http://salma.imola.ai/api/v1";
 
 const api: AxiosInstance = axios.create({
   baseURL: BASE_URL,

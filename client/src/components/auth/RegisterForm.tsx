@@ -22,7 +22,7 @@ export default function RegisterForm() {
     setLoading(true);
     try {
       await register(email, password, name);
-      navigate('/login');
+      navigate('/login?next=wizard');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Registration failed');
     } finally {

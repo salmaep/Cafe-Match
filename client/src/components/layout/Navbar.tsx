@@ -5,7 +5,7 @@ export default function Navbar() {
   const { user, logout } = useAuth();
 
   return (
-    <nav className="bg-white shadow-sm border-b border-gray-200">
+    <nav className="hidden md:block bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
           <Link to="/" className="text-xl font-bold text-amber-700">
@@ -13,6 +13,12 @@ export default function Navbar() {
           </Link>
 
           <div className="flex items-center gap-4">
+            <Link to="/discover" className="text-gray-600 hover:text-amber-700 text-sm">
+              Discover
+            </Link>
+            <Link to="/trending" className="text-gray-600 hover:text-amber-700 text-sm">
+              Trending
+            </Link>
             {user ? (
               <>
                 <Link

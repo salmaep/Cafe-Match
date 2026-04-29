@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { MapContainer as LeafletMap, TileLayer, Marker, Popup, Circle, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import type { Cafe } from '../../types';
@@ -94,16 +94,22 @@ function RecenterMap({ center }: { center: [number, number] }) {
 }
 
 export default function MapView({ center, cafes, radius, onMapClick }: Props) {
+  const [showCafePins, setShowCafePins] = useState(true);
+  const [showUserPin, setShowUserPin] = useState(true);
+
   return (
-    <LeafletMap
+    <div className="relative h-full w-full">
+      <LeafletMap
       center={center}
       zoom={15}
       className="h-full w-full rounded-xl"
       style={{ minHeight: '400px' }}
     >
       <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+        url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+        subdomains="abcd"
+        maxZoom={20}
       />
       <RecenterMap center={center} />
       <MapClickHandler onClick={onMapClick} />
@@ -119,12 +125,14 @@ export default function MapView({ center, cafes, radius, onMapClick }: Props) {
           weight: 2,
         }}
       />
-      <Marker position={center} icon={userIcon}>
-        <Popup>Your location</Popup>
-      </Marker>
+      {showUserPin && (
+        <Marker position={center} icon={userIcon}>
+          <Popup>Your location</Popup>
+        </Marker>
+      )}
 
       {/* Cafe markers */}
-      {cafes.map((cafe) => (
+      {showCafePins && cafes.map((cafe) => (
         <Marker
           key={cafe.id}
           position={[cafe.latitude, cafe.longitude]}
@@ -155,6 +163,35 @@ export default function MapView({ center, cafes, radius, onMapClick }: Props) {
           </Popup>
         </Marker>
       ))}
-    </LeafletMap>
+      </LeafletMap>
+
+      {/* Pin toggle buttons (top-right overlay) */}
+      <div className="absolute top-3 right-3 z-[1000] flex flex-col gap-2">
+        <button
+          type="button"
+          onClick={() => setShowCafePins((v) => !v)}
+          title={showCafePins ? 'Hide cafe pins' : 'Show cafe pins'}
+          className={`w-11 h-11 rounded-full flex items-center justify-center text-xl shadow-md border-2 transition-colors ${
+            showCafePins
+              ? 'bg-[#D48B3A] border-[#D48B3A] text-white'
+              : 'bg-white border-white text-[#1C1C1A] hover:bg-[#F0EDE8]'
+          }`}
+        >
+          ☕
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowUserPin((v) => !v)}
+          title={showUserPin ? 'Hide my location' : 'Show my location'}
+          className={`w-11 h-11 rounded-full flex items-center justify-center text-xl shadow-md border-2 transition-colors ${
+            showUserPin
+              ? 'bg-[#D48B3A] border-[#D48B3A] text-white'
+              : 'bg-white border-white text-[#1C1C1A] hover:bg-[#F0EDE8]'
+          }`}
+        >
+          📍
+        </button>
+      </div>
+    </div>
   );
 }

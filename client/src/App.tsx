@@ -16,11 +16,17 @@ import PromotionPage from './pages/owner/PromotionPage';
 import PaymentPage from './pages/owner/PaymentPage';
 import PaymentSuccessPage from './pages/owner/PaymentSuccessPage';
 import PaymentFailedPage from './pages/owner/PaymentFailedPage';
+import WizardPage from './pages/WizardPage';
+import DiscoverPage from './pages/DiscoverPage';
+import TrendingPage from './pages/TrendingPage';
 
 function App() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Routes>
+        {/* Onboarding wizard — standalone, no top navbar */}
+        <Route path="/wizard" element={<WizardPage />} />
+
         {/* Owner portal — standalone auth pages */}
         <Route path="/owner/register" element={<OwnerRegisterPage />} />
         <Route path="/owner/login" element={<OwnerLoginPage />} />
@@ -50,6 +56,8 @@ function App() {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/bookmarks" element={<BookmarksPage />} />
           <Route path="/favorites" element={<FavoritesPage />} />
+          <Route path="/discover" element={<DiscoverPage />} />
+          <Route path="/trending" element={<TrendingPage />} />
         </Route>
       </Routes>
     </div>

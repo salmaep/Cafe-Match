@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
+import { Navigate } from "react-router-dom";
 import { useGeolocation } from "../hooks/useGeolocation";
 import { cafesApi, type SearchParams } from "../api/cafes.api";
 import { promotionsApi } from "../api/promotions.api";
+import { usePreferences } from "../context/PreferencesContext";
 import type { Cafe } from "../types";
 import MapView from "../components/map/MapContainer";
 import CafeCard from "../components/cafe/CafeCard";
@@ -18,6 +20,7 @@ interface Filters {
 }
 
 export default function HomePage() {
+  const { wizardCompleted } = usePreferences();
   const geo = useGeolocation();
   const [cafes, setCafes] = useState<Cafe[]>([]);
   const [loading, setLoading] = useState(false);
@@ -115,10 +118,12 @@ export default function HomePage() {
     );
   }
 
+  if (!wizardCompleted) return <Navigate to="/wizard" replace />;
+
   return (
-    <div className="flex flex-col lg:flex-row h-[calc(100vh-4rem)] gap-4 p-4">
-      {/* Map */}
-      <div className="lg:w-2/3 h-[50vh] lg:h-full">
+    <div className="flex flex-col lg:flex-row h-[calc(100vh-4rem)] gap-0 lg:gap-4 lg:p-4">
+      {/* Map — full above on mobile, 3/5 left on desktop */}
+      <div className="h-[55vh] lg:h-full lg:w-3/5 relative">
         {center && (
           <MapView
             center={center}
@@ -129,13 +134,15 @@ export default function HomePage() {
         )}
       </div>
 
-      {/* Sidebar */}
-      <div className="lg:w-1/3 flex flex-col gap-3 overflow-hidden">
+      {/* Sidebar / Bottom sheet on mobile */}
+      <div className="flex-1 lg:w-2/5 flex flex-col gap-3 overflow-hidden bg-white lg:bg-transparent rounded-t-2xl lg:rounded-none -mt-4 lg:mt-0 pt-4 px-4 lg:px-0 shadow-lg lg:shadow-none relative z-10">
+        {/* Drag handle for mobile bottom-sheet feel */}
+        <div className="lg:hidden mx-auto w-10 h-1 rounded-full bg-[#E8E4DD] -mt-1 mb-1" />
+
         <SearchBar onSearch={handleSearch} />
         <RadiusSlider radius={radius} onChange={setRadius} />
         <PurposeFilter selectedPurposeId={purposeId} onSelect={setPurposeId} />
 
-        {/* Featured Cafes (Type B promotions) */}
         {featuredCafes.length > 0 && (
           <div className="mb-2">
             <h3 className="text-sm font-semibold text-gray-700 mb-2">Featured Cafes</h3>
@@ -157,7 +164,7 @@ export default function HomePage() {
 
         <div className="text-sm text-gray-500">
           {loading ? "Searching..." : `${cafes.length} cafes found`}
-          <span className="ml-2 text-xs text-gray-400">
+          <span className="ml-2 text-xs text-gray-400 hidden md:inline">
             (click map to change location)
           </span>
         </div>

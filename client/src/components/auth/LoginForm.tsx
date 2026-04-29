@@ -1,6 +1,7 @@
 import { useState, FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { usePreferences } from '../../context/PreferencesContext';
 
 export default function LoginForm() {
   const [email, setEmail] = useState('');
@@ -8,6 +9,7 @@ export default function LoginForm() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
+  const { wizardCompleted } = usePreferences();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: FormEvent) => {
@@ -16,7 +18,7 @@ export default function LoginForm() {
     setLoading(true);
     try {
       await login(email, password);
-      navigate('/');
+      navigate(wizardCompleted ? '/' : '/wizard');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Login failed');
     } finally {

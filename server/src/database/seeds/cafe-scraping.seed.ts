@@ -211,9 +211,9 @@ export async function seedScrapedCafes(dataSource: DataSource): Promise<void> {
           c.address,
           c.coordinates.lat,
           c.coordinates.lng,
-          // location POINT(lng lat) — WKT uses longitude then latitude
-          c.coordinates.lng,
+          // location POINT(lat lng) — MySQL SRID 4326 expects latitude first
           c.coordinates.lat,
+          c.coordinates.lng,
           c.phone || null,
           c.placeId,
           googleMapsUrl,

@@ -25,6 +25,7 @@ import { RecapsModule } from './recaps/recaps.module';
 import { EventsModule } from './gateway/events.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
+import { ScraperSyncModule } from './scraper-sync/scraper-sync.module';
 
 @Module({
   imports: [
@@ -65,6 +66,7 @@ import { RolesGuard } from './common/guards/roles.guard';
     FriendsModule,
     RecapsModule,
     EventsModule,
+    ScraperSyncModule,
   ],
   providers: [
     {

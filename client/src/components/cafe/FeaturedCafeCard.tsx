@@ -18,17 +18,17 @@ interface Props {
 
 export default function FeaturedCafeCard({ cafe, promotion }: Props) {
   const hue = (cafe.id * 37) % 360;
-  const imgSrc = promotion?.content_photo_url ||
-    `data:image/svg+xml,${encodeURIComponent(
-      `<svg xmlns="http://www.w3.org/2000/svg" width="300" height="160">
+  const fallbackSvg = `data:image/svg+xml,${encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="300" height="160">
         <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stop-color="hsl(${hue},60%,75%)"/>
           <stop offset="100%" stop-color="hsl(${(hue + 40) % 360},50%,60%)"/>
         </linearGradient></defs>
         <rect width="300" height="160" fill="url(#g)"/>
         <text x="150" y="90" text-anchor="middle" font-size="40" fill="rgba(255,255,255,0.8)">&#9749;</text>
-      </svg>`
-    )}`;
+      </svg>`,
+  )}`;
+  const imgSrc = promotion?.content_photo_url || fallbackSvg;
 
   const handleClick = () => {
     analyticsApi.track(cafe.id, 'click').catch(() => {});
@@ -38,9 +38,17 @@ export default function FeaturedCafeCard({ cafe, promotion }: Props) {
     <Link
       to={`/cafe/${cafe.id}`}
       onClick={handleClick}
-      className="flex-shrink-0 w-64 bg-white rounded-xl shadow-sm border border-amber-100 overflow-hidden hover:shadow-md transition-shadow"
+      className="flex flex-col h-full flex-shrink-0 w-64 bg-white rounded-xl shadow-sm border border-amber-100 overflow-hidden hover:shadow-md transition-shadow"
     >
-      <img src={imgSrc} alt={cafe.name} className="w-full h-32 object-cover" />
+      <img
+        src={imgSrc}
+        alt={cafe.name}
+        className="w-full h-32 object-cover bg-[#F0EDE8]"
+        onError={(e) => {
+          const el = e.currentTarget as HTMLImageElement;
+          if (el.src !== fallbackSvg) el.src = fallbackSvg;
+        }}
+      />
       <div className="p-3">
         <h3 className="font-semibold text-gray-800 text-sm truncate">{cafe.name}</h3>
         {promotion?.content_title && (

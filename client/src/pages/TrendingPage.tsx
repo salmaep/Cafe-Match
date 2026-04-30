@@ -4,6 +4,7 @@ import { cafesApi } from '../api/cafes.api';
 import { purposesApi } from '../api/purposes.api';
 import type { Cafe, Purpose } from '../types';
 import { useGeolocation } from '../hooks/useGeolocation';
+import { getCafeImage, placeholderImage } from '../utils/cafeImage';
 
 const RANK_COLORS: Record<number, string> = {
   1: '#FFD700',
@@ -85,9 +86,7 @@ export default function TrendingPage() {
           <div className="space-y-3">
             {cafes.map((cafe, i) => {
               const rank = i + 1;
-              const photo =
-                cafe.photos?.[0]?.url ??
-                'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800';
+              const photo = getCafeImage(cafe);
               const distanceKm =
                 cafe.distanceMeters != null ? (cafe.distanceMeters / 1000).toFixed(1) : null;
               const rankBg = RANK_COLORS[rank] ?? '#F0EDE8';
@@ -109,6 +108,9 @@ export default function TrendingPage() {
                     src={photo}
                     alt={cafe.name}
                     className="shrink-0 w-[70px] h-[70px] rounded-xl object-cover bg-[#F0EDE8]"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = placeholderImage(cafe.id);
+                    }}
                   />
                   <div className="flex-1 min-w-0">
                     <h3 className="font-bold text-[#1C1C1A] mb-0.5 truncate">{cafe.name}</h3>

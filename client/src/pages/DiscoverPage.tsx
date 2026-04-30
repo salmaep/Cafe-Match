@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { cafesApi } from '../api/cafes.api';
 import type { Cafe } from '../types';
@@ -6,53 +6,95 @@ import { usePreferences } from '../context/PreferencesContext';
 import { useShortlist } from '../context/ShortlistContext';
 import SwipeCard from '../components/discover/SwipeCard';
 
+const SWIPE_THRESHOLD = 120;
+
 export default function DiscoverPage() {
   const navigate = useNavigate();
   const { preferences, wizardCompleted } = usePreferences();
-  const { addToShortlist, isInShortlist, shortlist } = useShortlist();
+  const { addToShortlist, removeFromShortlist, isInShortlist, shortlist } = useShortlist();
 
   const [cafes, setCafes] = useState<Cafe[]>([]);
   const [index, setIndex] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [animDir, setAnimDir] = useState<'left' | 'right' | null>(null);
+
+  const [dragX, setDragX] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const [exitDir, setExitDir] = useState<'left' | 'right' | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+  const startXRef = useRef(0);
+  const pointerIdRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!wizardCompleted) return;
-    const lat = preferences?.location?.latitude ?? -6.2;
-    const lng = preferences?.location?.longitude ?? 106.8;
-    const radius = (preferences?.radius ?? 2) * 1000;
+    const lat = preferences?.location?.latitude ?? -6.89;
+    const lng = preferences?.location?.longitude ?? 107.57;
+    // DEV: fetch all cafes regardless of wizard radius (mirrors mobile DEV_DISABLE_RADIUS)
+    const radius = 9999 * 1000;
 
     cafesApi
       .search({ lat, lng, radius, limit: 10 })
-      .then((res) => {
-        const data = res.data?.data ?? [];
-        setCafes(data);
-      })
+      .then((res) => setCafes(res.data?.data ?? []))
       .catch(() => setCafes([]))
       .finally(() => setLoading(false));
   }, [preferences, wizardCompleted]);
 
-  if (!wizardCompleted) return <Navigate to="/wizard" replace />;
+  // Auto-hide toast after 2.5s (mirrors mobile Toast component)
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 2500);
+    return () => clearTimeout(t);
+  }, [toast]);
 
   const current = cafes[index];
   const allDone = !loading && (cafes.length === 0 || index >= cafes.length);
 
-  const advance = (dir: 'left' | 'right') => {
-    setAnimDir(dir);
+  // Auto-redirect to home after all cafes swiped (mirrors mobile 1.2s delay)
+  useEffect(() => {
+    if (!allDone) return;
+    const t = setTimeout(() => navigate('/', { replace: true }), 1200);
+    return () => clearTimeout(t);
+  }, [allDone, navigate]);
+
+  if (!wizardCompleted) return <Navigate to="/wizard" replace />;
+
+  const triggerSwipe = (dir: 'left' | 'right') => {
+    if (dir === 'right' && current) {
+      addToShortlist(current);
+      setToast(`Added "${current.name}" to Shortlist!`);
+    }
+    setExitDir(dir);
+    setDragging(false);
     setTimeout(() => {
-      setAnimDir(null);
+      setExitDir(null);
+      setDragX(0);
       setIndex((i) => i + 1);
-    }, 250);
+    }, 300);
   };
 
-  const handlePass = () => {
-    if (!current) return;
-    advance('left');
+  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (exitDir) return;
+    pointerIdRef.current = e.pointerId;
+    startXRef.current = e.clientX;
+    setDragging(true);
+    e.currentTarget.setPointerCapture(e.pointerId);
   };
-  const handleLike = () => {
-    if (!current) return;
-    if (!isInShortlist(current.id)) addToShortlist(current);
-    advance('right');
+  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragging || pointerIdRef.current !== e.pointerId) return;
+    setDragX(e.clientX - startXRef.current);
+  };
+  const onPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (pointerIdRef.current !== e.pointerId) return;
+    pointerIdRef.current = null;
+    setDragging(false);
+    if (dragX > SWIPE_THRESHOLD) triggerSwipe('right');
+    else if (dragX < -SWIPE_THRESHOLD) triggerSwipe('left');
+    else {
+      // Small movement → treat as tap → open cafe detail
+      if (Math.abs(dragX) < 8 && current) {
+        navigate(`/cafe/${current.id}`);
+      }
+      setDragX(0);
+    }
   };
 
   if (loading) {
@@ -68,95 +110,132 @@ export default function DiscoverPage() {
     return (
       <div className="min-h-[80vh] flex flex-col items-center justify-center bg-[#FAF9F6] p-8 text-center">
         <span className="text-6xl mb-4">🗺️</span>
-        <h2 className="text-2xl font-bold text-[#1C1C1A] mb-1">No more cafes</h2>
-        <p className="text-[#8A8880] mb-6">
-          {shortlist.length > 0
-            ? `You shortlisted ${shortlist.length} cafe${shortlist.length > 1 ? 's' : ''}!`
-            : 'Try exploring on the map'}
-        </p>
-        <div className="flex gap-3">
-          <button
-            onClick={() => navigate('/')}
-            className="px-6 py-3 bg-[#1C1C1A] text-white font-bold rounded-xl hover:bg-black transition-colors"
-          >
-            Open Map
-          </button>
-          {shortlist.length > 0 && (
-            <button
-              onClick={() => navigate('/bookmarks')}
-              className="px-6 py-3 bg-[#D48B3A] text-white font-bold rounded-xl hover:bg-[#b87528] transition-colors"
-            >
-              View Shortlist ({shortlist.length})
-            </button>
-          )}
-        </div>
+        <h2 className="text-2xl font-bold text-[#1C1C1A] mb-1">No match?</h2>
+        <p className="text-[#8A8880]">Let's explore the map!</p>
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-[#FAF9F6] flex flex-col">
-      <header className="px-6 pt-6 pb-2 max-w-2xl w-full mx-auto flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-[#1C1C1A]">
-          Cafe<span className="text-[#D48B3A]">Match</span>
-        </h1>
-        <button
-          onClick={() => navigate('/bookmarks')}
-          className="relative w-11 h-11 rounded-full bg-[#D48B3A] text-white flex items-center justify-center shadow-md hover:bg-[#b87528] transition-colors"
-          title="Shortlist"
-        >
-          <span className="text-xl leading-none">★</span>
-          {shortlist.length > 0 && (
-            <span className="absolute -top-1 -right-1 bg-white text-[#D48B3A] text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 shadow">
-              {shortlist.length}
-            </span>
-          )}
-        </button>
-      </header>
+  let translateX = dragX;
+  let rotate = dragX / 20;
+  let opacity = 1;
+  let useTransition = !dragging;
+  if (exitDir === 'right') {
+    translateX = window.innerWidth;
+    rotate = 25;
+    opacity = 0;
+    useTransition = true;
+  } else if (exitDir === 'left') {
+    translateX = -window.innerWidth;
+    rotate = -25;
+    opacity = 0;
+    useTransition = true;
+  }
 
-      <div className="flex-1 flex items-center justify-center px-4 py-2">
-        <div
-          className={`w-full max-w-md transition-all duration-250 ${
-            animDir === 'left'
-              ? '-translate-x-full -rotate-12 opacity-0'
-              : animDir === 'right'
-                ? 'translate-x-full rotate-12 opacity-0'
-                : 'translate-x-0 rotate-0 opacity-100'
-          }`}
-        >
-          {current && (
-            <SwipeCard
-              cafe={current}
-              isSaved={isInShortlist(current.id)}
-              onSave={() => addToShortlist(current)}
-            />
-          )}
+  const likeOverlayOpacity = Math.max(0, Math.min(1, dragX / SWIPE_THRESHOLD));
+  const passOverlayOpacity = Math.max(0, Math.min(1, -dragX / SWIPE_THRESHOLD));
+
+  return (
+    <div className="h-screen md:h-[calc(100vh-64px)] bg-[#FAF9F6] flex flex-col relative overflow-hidden">
+      <div className="flex-1 flex items-start justify-center px-4 pt-[8vh] md:pt-[6vh] pb-3 select-none min-h-0">
+        <div className="relative w-full max-w-sm">
+          <div
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={onPointerUp}
+            onPointerCancel={onPointerUp}
+            className="touch-none cursor-grab active:cursor-grabbing w-full"
+            style={{
+              transform: `translateX(${translateX}px) rotate(${rotate}deg)`,
+              opacity,
+              transition: useTransition ? 'transform 0.3s ease-out, opacity 0.3s ease-out' : 'none',
+            }}
+          >
+            {current && (
+              <div className="relative">
+                <SwipeCard
+                  cafe={current}
+                  isSaved={isInShortlist(current.id)}
+                  onSave={() => {
+                    if (isInShortlist(current.id)) {
+                      removeFromShortlist(current.id);
+                      setToast(`Removed "${current.name}" from Shortlist`);
+                    } else {
+                      addToShortlist(current);
+                      setToast(`Added "${current.name}" to Shortlist!`);
+                    }
+                  }}
+                />
+                <div
+                  className="absolute top-8 left-8 -rotate-12 px-4 py-2 border-4 border-[#D48B3A] rounded-lg pointer-events-none"
+                  style={{ opacity: likeOverlayOpacity }}
+                >
+                  <span className="text-2xl font-extrabold text-[#D48B3A] tracking-wider">
+                    SHORTLIST ★
+                  </span>
+                </div>
+                <div
+                  className="absolute top-8 right-8 rotate-12 px-4 py-2 border-4 border-red-500 rounded-lg pointer-events-none"
+                  style={{ opacity: passOverlayOpacity }}
+                >
+                  <span className="text-2xl font-extrabold text-red-500 tracking-wider">
+                    NOPE
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      <footer className="px-6 pb-10 pt-4 max-w-md w-full mx-auto flex items-center justify-center gap-6">
+      {/* Shortlist FAB — bottom right (mirrors mobile, local-only — no auth) */}
+      <button
+        onClick={() => navigate('/shortlist')}
+        className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-[#D48B3A] text-white shadow-xl flex items-center justify-center hover:bg-[#b87528] transition-colors z-30"
+        title="View Shortlist"
+      >
+        <span className="text-2xl leading-none">★</span>
+        {shortlist.length > 0 && (
+          <span className="absolute -top-1 -right-1 bg-white text-[#D48B3A] text-[11px] font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1 shadow border border-[#D48B3A]">
+            {shortlist.length}
+          </span>
+        )}
+      </button>
+
+      {/* Footer action buttons — desktop only (mobile uses gesture, mirrors mobile CardSwipe) */}
+      <footer className="hidden md:flex px-6 pb-6 pt-2 max-w-md w-full mx-auto items-end justify-center gap-5 relative z-20">
         <button
-          onClick={handlePass}
-          className="w-16 h-16 rounded-full bg-white shadow-lg flex items-center justify-center text-3xl hover:scale-105 transition-transform border-2 border-red-200 hover:border-red-400"
+          onClick={() => triggerSwipe('left')}
+          disabled={!!exitDir}
+          className="w-12 h-12 rounded-full bg-white shadow flex items-center justify-center text-lg text-red-500 hover:bg-red-50 transition-colors border border-red-200 disabled:opacity-50"
           title="Pass"
         >
-          ❌
+          ✕
         </button>
         <button
-          onClick={handleLike}
-          className="w-20 h-20 rounded-full bg-[#D48B3A] shadow-xl flex items-center justify-center text-3xl text-white hover:scale-105 transition-transform"
-          title="Shortlist"
+          onClick={() => triggerSwipe('right')}
+          disabled={!!exitDir}
+          className="w-14 h-14 rounded-full bg-[#D48B3A] shadow-md flex items-center justify-center text-2xl text-white hover:bg-[#b87528] transition-colors disabled:opacity-50"
+          title="Shortlist & next"
         >
           ★
         </button>
         <button
-          onClick={handlePass}
-          className="w-16 h-16 rounded-full bg-white shadow-lg flex items-center justify-center text-3xl hover:scale-105 transition-transform border-2 border-gray-200 hover:border-gray-400"
+          onClick={() => triggerSwipe('left')}
+          disabled={!!exitDir}
+          className="w-12 h-12 rounded-full bg-white shadow flex items-center justify-center text-lg text-gray-500 hover:bg-gray-50 transition-colors border border-gray-200 disabled:opacity-50"
           title="Skip"
         >
-          ⏭️
+          ›
         </button>
       </footer>
+
+      {/* Toast (mirrors mobile Toast) */}
+      {toast && (
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-[#1C1C1A] text-white px-5 py-3 rounded-full shadow-xl z-40 text-sm font-semibold">
+          {toast}
+        </div>
+      )}
     </div>
   );
 }

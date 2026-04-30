@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import type { Cafe } from '../../types';
+import { getCafeImage, placeholderImage } from '../../utils/cafeImage';
 
 interface Props {
   cafe: Cafe;
@@ -9,9 +10,7 @@ interface Props {
 
 export default function SwipeCard({ cafe, isSaved, onSave }: Props) {
   const navigate = useNavigate();
-  const photo =
-    cafe.photos?.[0]?.url ??
-    'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800';
+  const photo = getCafeImage(cafe);
   const distanceKm =
     cafe.distanceMeters != null
       ? (cafe.distanceMeters / 1000).toFixed(1)
@@ -27,7 +26,14 @@ export default function SwipeCard({ cafe, isSaved, onSave }: Props) {
       onClick={() => navigate(`/cafe/${cafe.id}`)}
       className="relative w-full aspect-[3/4] max-w-md mx-auto bg-[#F0EDE8] rounded-2xl overflow-hidden cursor-pointer shadow-xl"
     >
-      <img src={photo} alt={cafe.name} className="absolute inset-0 w-full h-full object-cover" />
+      <img
+        src={photo}
+        alt={cafe.name}
+        className="absolute inset-0 w-full h-full object-cover"
+        onError={(e) => {
+          (e.currentTarget as HTMLImageElement).src = placeholderImage(cafe.id);
+        }}
+      />
       <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/95 via-black/55 to-transparent" />
 
       {cafe.matchScore != null && (
@@ -41,12 +47,19 @@ export default function SwipeCard({ cafe, isSaved, onSave }: Props) {
 
       <button
         type="button"
+        onPointerDown={(e) => {
+          e.stopPropagation();
+        }}
+        onPointerUp={(e) => {
+          e.stopPropagation();
+        }}
         onClick={(e) => {
           e.stopPropagation();
+          e.preventDefault();
           onSave();
         }}
-        className={`absolute top-4 left-4 w-11 h-11 rounded-full flex items-center justify-center transition-colors ${
-          isSaved ? 'bg-[#D48B3A]' : 'bg-white/25 hover:bg-white/40'
+        className={`absolute bottom-4 right-4 w-11 h-11 rounded-full flex items-center justify-center transition-colors shadow-lg z-20 ${
+          isSaved ? 'bg-[#D48B3A]' : 'bg-white/30 hover:bg-white/50 backdrop-blur-sm'
         }`}
       >
         <span className="text-2xl text-white leading-none">{isSaved ? '★' : '☆'}</span>

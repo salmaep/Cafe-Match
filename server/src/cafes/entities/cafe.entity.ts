@@ -132,6 +132,39 @@ export class Cafe {
   @Column({ name: 'is_active', default: true })
   isActive: boolean;
 
+  @Index()
+  @Column({ length: 100, nullable: true })
+  category: string;
+
+  @Index()
+  @Column({ length: 100, nullable: true })
+  city: string;
+
+  @Index()
+  @Column({ length: 100, nullable: true })
+  district: string;
+
+  @Column({ name: 'claimed_by_owner', default: false })
+  claimedByOwner: boolean;
+
+  @Column({ name: 'reviews_distribution', type: 'json', nullable: true })
+  reviewsDistribution: {
+    oneStar: number;
+    twoStar: number;
+    threeStar: number;
+    fourStar: number;
+    fiveStar: number;
+  } | null;
+
+  @Column({ name: 'pricing_raw', length: 50, nullable: true })
+  pricingRaw: string;
+
+  @Column({ name: 'last_scraped_at', type: 'timestamp', nullable: true })
+  lastScrapedAt: Date;
+
+  @Column({ name: 'scraper_source', length: 50, default: 'manual' })
+  scraperSource: string;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

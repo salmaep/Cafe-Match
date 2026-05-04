@@ -19,10 +19,12 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "seed": "ts-node src/database/seeds/run-seed.ts",
-    "migration:run": "ts-node --project tsconfig.migration.json ./node_modules/typeorm/cli.js migration:run -d src/database/data-source.ts",
-    "migration:revert": "ts-node --project tsconfig.migration.json ./node_modules/typeorm/cli.js migration:revert -d src/database/data-source.ts",
-    "meili:reindex": "ts-node --project tsconfig.migration.json src/meili/cli/reindex.ts",
-    "meili:resync-failed": "ts-node --project tsconfig.migration.json src/meili/cli/resync-failed.ts"
+    "migration:generate": "ts-node --transpile-only --project tsconfig.migration.json ./node_modules/typeorm/cli.js migration:generate -d src/database/data-source.ts",
+    "migration:create": "ts-node --transpile-only --project tsconfig.migration.json ./node_modules/typeorm/cli.js migration:create",
+    "migration:run": "ts-node --transpile-only --project tsconfig.migration.json ./node_modules/typeorm/cli.js migration:run -d src/database/data-source.ts",
+    "migration:revert": "ts-node --transpile-only --project tsconfig.migration.json ./node_modules/typeorm/cli.js migration:revert -d src/database/data-source.ts",
+    "meili:reindex": "ts-node --transpile-only --project tsconfig.migration.json src/meili/cli/reindex.ts",
+    "meili:resync-failed": "ts-node --transpile-only --project tsconfig.migration.json src/meili/cli/resync-failed.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

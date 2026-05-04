@@ -16,7 +16,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useShortlist } from '../context/ShortlistContext';
 import { usePreferences } from '../context/PreferencesContext';
 import { useLocation } from '../context/LocationContext';
-import { fetchCafes, fetchPromotedCafes } from '../services/api';
+import { useSearchCafes } from '../queries/cafes/use-search-cafes';
+import { usePromotedCafes } from '../queries/cafes/use-promoted-cafes';
+import { hitsToCafes } from '../queries/cafes/api';
+import { PURPOSE_SLUG_MAP } from '../constant/purpose';
 import { MOCK_CAFES } from '../data/mockCafes';
 
 // Fallback promo cards used when backend has no active promos
@@ -94,7 +97,6 @@ export default function CardSwipeScreen() {
   const [toastMsg, setToastMsg] = useState('');
   const [showToast, setShowToast] = useState(false);
   const [cafes, setCafes] = useState<Cafe[]>([]);
-  const [loading, setLoading] = useState(true);
 
   // Fix 1: Calculate available height for card centering
   const HEADER_H = insets.top + 72; // status bar + header row
@@ -106,111 +108,103 @@ export default function CardSwipeScreen() {
   const cardTop = Math.max(0, (availableH - CARD_H) / 2);
   const cardLeft = (width - CARD_W) / 2;
 
+  // ─── Cafe data via TanStack Query + Meilisearch ─────────────────────────
+  const lat = preferences?.location?.latitude ?? latitude;
+  const lng = preferences?.location?.longitude ?? longitude;
+  const radKm = DEV_DISABLE_RADIUS ? 9999 : (preferences?.radius ?? 2);
+
+  const cafesQuery = useSearchCafes({
+    lat: lat ?? undefined,
+    lng: lng ?? undefined,
+    radius: Math.min(radKm * 1000, 50_000_000),
+    limit: 50,
+  });
+  const promotedQuery = usePromotedCafes();
+
+  const loading = cafesQuery.isLoading || promotedQuery.isLoading;
+
   useEffect(() => {
-    loadCafes();
-  }, []);
+    if (cafesQuery.isFetching || promotedQuery.isFetching) return;
 
-  const loadCafes = async () => {
-    setLoading(true);
-    try {
-      const lat = preferences?.location?.latitude ?? latitude;
-      const lng = preferences?.location?.longitude ?? longitude;
-      const rad = DEV_DISABLE_RADIUS ? 9999 : (preferences?.radius ?? 2);
+    let allCafes: Cafe[] = cafesQuery.data
+      ? cafesQuery.data.pages.flatMap((p) =>
+          hitsToCafes(p, lat ?? undefined, lng ?? undefined),
+        )
+      : [];
+    const promotedCafes: Cafe[] = promotedQuery.data ?? [];
 
-      // Fetch regular cafes and promoted cafes in parallel
-      const [allCafesRaw, promotedRaw] = await Promise.allSettled([
-        fetchCafes(lat, lng, rad),
-        fetchPromotedCafes(),
-      ]);
-
-      let allCafes = allCafesRaw.status === 'fulfilled' ? allCafesRaw.value : [];
-      const promotedCafes = promotedRaw.status === 'fulfilled' ? promotedRaw.value : [];
-
-      if (!allCafes || allCafes.length === 0) {
-        allCafes = MOCK_CAFES.map((c) => ({ ...c }));
-      }
-
-      // Ensure all required fields are present
-      allCafes = allCafes.map((c) => {
-        const mock = MOCK_CAFES.find((m) => m.id === c.id);
-        return {
-          ...c,
-          photos: c.photos?.length ? c.photos : (mock?.photos ?? MOCK_CAFES[0].photos),
-          purposes: c.purposes?.length ? c.purposes : (mock?.purposes ?? ['Me Time']),
-          facilities: c.facilities?.length ? c.facilities : (mock?.facilities ?? []),
-          menu: c.menu?.length ? c.menu : (mock?.menu ?? []),
-          name: c.name || mock?.name || 'Cafe',
-          address: c.address || mock?.address || '',
-        };
-      });
-
-      // Map wizard Purpose → purpose_slug used in backend cafe_purpose_tags
-      const PURPOSE_SLUG_MAP: Record<string, string> = {
-        'Me Time': 'me-time',
-        'Date': 'date',
-        'Family Time': 'family',
-        'Group Study': 'group-work',
-        'WFC': 'wfc',
-      };
-
-      // Rank by purposeScore matching wizard selection; fall back to matchScore
-      const wizardPurpose = preferences?.purpose;
-      const wantedSlug = wizardPurpose ? PURPOSE_SLUG_MAP[wizardPurpose] : null;
-
-      const scored = allCafes.map((c) => {
-        let score = c.matchScore || 0;
-        if (wantedSlug && c.purposeScores?.[wantedSlug] != null) {
-          // Prefer the scraped purposeScore when available
-          score = c.purposeScores[wantedSlug];
-        }
-        return { cafe: c, score };
-      });
-
-      let sorted = scored.sort((a, b) => b.score - a.score).map((s) => s.cafe);
-
-      // If wizard selected a purpose, only keep cafes with score >= 40 for that purpose
-      if (wantedSlug) {
-        const matched = sorted.filter((c) => (c.purposeScores?.[wantedSlug] || 0) >= 40);
-        if (matched.length > 0) sorted = matched;
-      } else if (preferences?.purpose) {
-        // Legacy fallback — filter by purpose name string match
-        const filtered = sorted.filter((c) => c.purposes.includes(preferences.purpose!));
-        if (filtered.length > 0) sorted = filtered;
-      }
-
-      // Top 5 regular (non-promo) cafes
-      const regular = sorted.filter((c) => !c.promotionType).slice(0, 5);
-
-      // Exactly 1 Type A + 1 Type B promo card — with fallbacks
-      const promoA: Cafe =
-        promotedCafes.find((c) => c.promotionType === 'A' || c.activePromotionType === 'new_cafe') ??
-        allCafes.find((c) => c.promotionType === 'A') ??
-        FALLBACK_PROMO_A;
-
-      const promoB: Cafe =
-        promotedCafes.find((c) => c.promotionType === 'B' || c.activePromotionType === 'featured_promo') ??
-        allCafes.find((c) => c.promotionType === 'B') ??
-        FALLBACK_PROMO_B;
-
-      // Build deck of up to 5 regular cards + insert 2 promos at positions 2 & 4 (middle)
-      const deck = regular.length >= 5 ? [...regular] : [...sorted.slice(0, 5)];
-
-      // Insert promo cards at random non-first, non-last positions (indices 1–3 for 5 cards)
-      const posA = 1 + Math.floor(Math.random() * 3); // 1, 2, or 3
-      let posB = 1 + Math.floor(Math.random() * 3);
-      while (posB === posA) posB = 1 + Math.floor(Math.random() * 3);
-
-      const insertPositions = [posA, posB].sort((a, b) => a - b);
-      deck.splice(insertPositions[0], 0, promoA);
-      deck.splice(insertPositions[1] + 1, 0, promoB);
-
-      setCafes(deck.length > 0 ? deck : MOCK_CAFES.slice(0, 5));
-    } catch {
-      setCafes(MOCK_CAFES.slice(0, 5));
-    } finally {
-      setLoading(false);
+    if (!allCafes || allCafes.length === 0) {
+      allCafes = MOCK_CAFES.map((c) => ({ ...c }));
     }
-  };
+
+    // Ensure all required fields are present
+    allCafes = allCafes.map((c) => {
+      const mock = MOCK_CAFES.find((m) => m.id === c.id);
+      return {
+        ...c,
+        photos: c.photos?.length ? c.photos : (mock?.photos ?? MOCK_CAFES[0].photos),
+        purposes: c.purposes?.length ? c.purposes : (mock?.purposes ?? ['Me Time']),
+        facilities: c.facilities?.length ? c.facilities : (mock?.facilities ?? []),
+        menu: c.menu?.length ? c.menu : (mock?.menu ?? []),
+        name: c.name || mock?.name || 'Cafe',
+        address: c.address || mock?.address || '',
+      };
+    });
+
+    // Rank by purposeScore matching wizard selection; fall back to matchScore
+    const wizardPurpose = preferences?.purpose;
+    const wantedSlug = wizardPurpose ? PURPOSE_SLUG_MAP[wizardPurpose] : null;
+
+    const scored = allCafes.map((c) => {
+      let score = c.matchScore || 0;
+      if (wantedSlug && c.purposeScores?.[wantedSlug] != null) {
+        score = c.purposeScores[wantedSlug];
+      }
+      return { cafe: c, score };
+    });
+
+    let sorted = scored.sort((a, b) => b.score - a.score).map((s) => s.cafe);
+
+    if (wantedSlug) {
+      const matched = sorted.filter((c) => (c.purposeScores?.[wantedSlug] || 0) >= 40);
+      if (matched.length > 0) sorted = matched;
+    } else if (preferences?.purpose) {
+      const filtered = sorted.filter((c) => c.purposes.includes(preferences.purpose!));
+      if (filtered.length > 0) sorted = filtered;
+    }
+
+    const regular = sorted.filter((c) => !c.promotionType).slice(0, 5);
+
+    const promoA: Cafe =
+      promotedCafes.find((c) => c.promotionType === 'A' || c.activePromotionType === 'new_cafe') ??
+      allCafes.find((c) => c.promotionType === 'A') ??
+      FALLBACK_PROMO_A;
+
+    const promoB: Cafe =
+      promotedCafes.find((c) => c.promotionType === 'B' || c.activePromotionType === 'featured_promo') ??
+      allCafes.find((c) => c.promotionType === 'B') ??
+      FALLBACK_PROMO_B;
+
+    const deck = regular.length >= 5 ? [...regular] : [...sorted.slice(0, 5)];
+
+    const posA = 1 + Math.floor(Math.random() * 3);
+    let posB = 1 + Math.floor(Math.random() * 3);
+    while (posB === posA) posB = 1 + Math.floor(Math.random() * 3);
+
+    const insertPositions = [posA, posB].sort((a, b) => a - b);
+    deck.splice(insertPositions[0], 0, promoA);
+    deck.splice(insertPositions[1] + 1, 0, promoB);
+
+    setCafes(deck.length > 0 ? deck : MOCK_CAFES.slice(0, 5));
+  }, [
+    cafesQuery.data,
+    cafesQuery.isFetching,
+    promotedQuery.data,
+    promotedQuery.isFetching,
+    preferences?.purpose,
+    lat,
+    lng,
+  ]);
 
   const handleSwipedRight = (cardIndex: number) => {
     const cafe = cafes[cardIndex];

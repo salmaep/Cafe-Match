@@ -143,6 +143,7 @@ export class MeiliCafesService {
     try {
       await this.meili.getClient().createIndex(tmpName, { primaryKey: 'id' });
       const tmpIndex = this.meili.getClient().index(tmpName);
+      await this.meili.applySettingsToIndex(tmpIndex);
 
       const [countRow] = await this.q<{ total: string }>(
         `SELECT COUNT(*) AS total FROM cafes WHERE deleted_at IS NULL AND is_active = TRUE`,
@@ -272,10 +273,11 @@ export class MeiliCafesService {
       sort.push(`_geoPoint(${lat}, ${lng}):asc`);
     }
 
+    const hybridEnabled =
+      this.config.get<string>('MEILI_HYBRID_ENABLED', 'false') === 'true';
     const effectiveRatio =
       semanticRatio ?? Number(this.config.get('MEILI_SEMANTIC_RATIO', '0.5'));
-    const jinaKey = this.config.get<string>('JINA_API_KEY', '');
-    const useHybrid = !!jinaKey && effectiveRatio > 0;
+    const useHybrid = hybridEnabled && effectiveRatio > 0;
 
     const searchParams: SearchParams = {
       filter: filters.join(' AND '),

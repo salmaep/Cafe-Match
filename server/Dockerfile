@@ -28,7 +28,7 @@ COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/package.json ./
 
-EXPOSE 3000
+EXPOSE 3084
 USER node
 
 CMD ["node", "dist/main"]

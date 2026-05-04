@@ -50,6 +50,10 @@ export class SearchCafesDto {
   hasMushola?: string;
 
   @IsOptional()
+  @IsBooleanString()
+  hasParking?: string;
+
+  @IsOptional()
   @IsIn(['$', '$$', '$$$'])
   priceRange?: string;
 

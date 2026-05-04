@@ -50,7 +50,7 @@ export function toCafeDocument(raw: {
     .map((p) => p.url);
 
   const googleMapsUrl =
-    cafe.googleMapsUrl ||
+    cafe.googleMapsUrl ?? cafe.google_maps_url ??
     `https://maps.google.com/?q=${cafe.latitude},${cafe.longitude}`;
 
   return {
@@ -66,19 +66,19 @@ export function toCafeDocument(raw: {
       lat: Number(cafe.latitude),
       lng: Number(cafe.longitude),
     },
-    wifiAvailable: Boolean(cafe.wifiAvailable),
-    wifiSpeedMbps: cafe.wifiSpeedMbps ?? null,
-    hasMushola: Boolean(cafe.hasMushola),
-    hasParking: Boolean(cafe.hasParking),
-    hasActivePromotion: Boolean(cafe.hasActivePromotion),
-    isActive: Boolean(cafe.isActive),
-    priceRange: cafe.priceRange ?? '$$',
-    activePromotionType: cafe.activePromotionType ?? null,
-    googleRating: cafe.googleRating != null ? Number(cafe.googleRating) : null,
-    totalGoogleReviews: cafe.totalGoogleReviews ?? 0,
-    bookmarksCount: cafe.bookmarksCount ?? 0,
-    favoritesCount: cafe.favoritesCount ?? 0,
-    createdAt: cafe.createdAt ? new Date(cafe.createdAt).getTime() : Date.now(),
+    wifiAvailable: Boolean(cafe.wifiAvailable ?? cafe.wifi_available),
+    wifiSpeedMbps: (cafe.wifiSpeedMbps ?? cafe.wifi_speed_mbps) ?? null,
+    hasMushola: Boolean(cafe.hasMushola ?? cafe.has_mushola),
+    hasParking: Boolean(cafe.hasParking ?? cafe.has_parking),
+    hasActivePromotion: Boolean(cafe.hasActivePromotion ?? cafe.has_active_promotion),
+    isActive: Boolean(cafe.isActive ?? cafe.is_active),
+    priceRange: (cafe.priceRange ?? cafe.price_range) ?? '$$',
+    activePromotionType: (cafe.activePromotionType ?? cafe.active_promotion_type) ?? null,
+    googleRating: (cafe.googleRating ?? cafe.google_rating) != null ? Number(cafe.googleRating ?? cafe.google_rating) : null,
+    totalGoogleReviews: (cafe.totalGoogleReviews ?? cafe.total_google_reviews) ?? 0,
+    bookmarksCount: (cafe.bookmarksCount ?? cafe.bookmarks_count) ?? 0,
+    favoritesCount: (cafe.favoritesCount ?? cafe.favorites_count) ?? 0,
+    createdAt: cafe.createdAt ?? cafe.created_at ? new Date(cafe.createdAt ?? cafe.created_at).getTime() : Date.now(),
     facilities: facilities.map((f) => f.facilityKey),
     facilityValues: facilities.map((f) => f.facilityValue).filter(Boolean) as string[],
     menuItems: menus.slice(0, 20).map((m) => m.itemName),
@@ -86,6 +86,6 @@ export function toCafeDocument(raw: {
     primaryPhotoUrl: primaryPhoto?.url ?? null,
     photos: photoUrls,
     googleMapsUrl,
-    openingHours: cafe.openingHours ?? null,
+    openingHours: cafe.openingHours ?? cafe.opening_hours ?? null,
   };
 }

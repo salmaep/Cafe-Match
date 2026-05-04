@@ -28,14 +28,18 @@ import { StackNavigationProp } from "@react-navigation/stack";
 import { usePreferences } from "../context/PreferencesContext";
 import { useLocation } from "../context/LocationContext";
 import { useShortlist } from "../context/ShortlistContext";
-import { fetchCafes, fetchPromotedCafes, fetchActiveCheckin, checkOutApi, fetchFriendsMap, throwEmojiApi } from "../services/api";
+import { fetchActiveCheckin, checkOutApi, fetchFriendsMap, throwEmojiApi } from "../services/api";
+import { useSearchCafes } from "../queries/cafes/use-search-cafes";
+import { usePromotedCafes } from "../queries/cafes/use-promoted-cafes";
+import { hitsToCafes } from "../queries/cafes/api";
 import { MOCK_CAFES } from "../data/mockCafes";
 import { Cafe } from "../types";
 import { parseSearchQuery, ParsedSearch } from "../utils/searchParser";
 import { colors, spacing, radius } from "../theme";
+import { RADIUS_OPTIONS } from "../constant/ui/radius-options";
+import { PURPOSE_SLUG_MAP } from "../constant/purpose";
 
 const { width, height } = Dimensions.get("window");
-const RADIUS_OPTIONS = [0.5, 1, 2];
 
 // ─── DEV TOGGLE ──────────────────────────────────────────────────────────
 // Set to `true` to disable the radius filter entirely (fetches all cafes,
@@ -67,7 +71,6 @@ export default function MapScreen() {
   const [listCafes, setListCafes] = useState<Cafe[]>([]);       // drawer list (radius-filtered)
   const [featuredCafes, setFeaturedCafes] = useState<Cafe[]>([]);
   const [selectedCafe, setSelectedCafe] = useState<Cafe | null>(null);
-  const [loading, setLoading] = useState(true);
   const [radiusKm, setRadiusKm] = useState(preferences?.radius || 2);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchActive, setSearchActive] = useState(false);
@@ -169,41 +172,62 @@ export default function MapScreen() {
   // Bottom sheet snap points: peek (~12%), mid (50%), full (92%)
   const snapPoints = useMemo(() => ["12%", "50%", "92%"], []);
 
-  const loadCafes = useCallback(
-    async (rad: number) => {
-      setLoading(true);
-      // DEV toggle: when radius is disabled, fetch a huge radius so backend returns everything
-      const effectiveRadius = DEV_DISABLE_RADIUS ? 9999 : rad;
-      try {
-        const cafes = await fetchCafes(center.latitude, center.longitude, effectiveRadius);
-        setAllCafes(cafes.length > 0 ? cafes : MOCK_CAFES);
-      } catch {
-        setAllCafes(MOCK_CAFES);
-      }
-      try {
-        const featured = await fetchPromotedCafes("featured_promo");
-        setFeaturedCafes(
-          featured.length > 0
-            ? featured
-            : MOCK_CAFES.filter(
-                (c) => c.promotionType === "A" || c.promotionType === "B",
-              ),
-        );
-      } catch {
-        setFeaturedCafes(
-          MOCK_CAFES.filter(
-            (c) => c.promotionType === "A" || c.promotionType === "B",
-          ),
-        );
-      }
-      setLoading(false);
-    },
-    [center.latitude, center.longitude],
-  );
+  // ─── Cafe data via TanStack Query + Meilisearch ─────────────────────────
+  // Map screen needs all cafes for pin rendering, so request a high limit (1000)
+  // instead of paginating. Search popup will refetch with `q` filled.
+  const effectiveRadiusKm = DEV_DISABLE_RADIUS ? 9999 : radiusKm;
+  const cafesQuery = useSearchCafes({
+    lat: center.latitude,
+    lng: center.longitude,
+    radius: Math.min(effectiveRadiusKm * 1000, 50_000_000),
+    q: searchActive ? searchQuery : undefined,
+    limit: 1000,
+  });
+  const promotedQuery = usePromotedCafes("featured_promo");
+
+  const loading =
+    cafesQuery.isLoading ||
+    cafesQuery.isFetching ||
+    promotedQuery.isLoading;
+
+  // Bridge TanStack Query data → existing local state so downstream filter
+  // logic (purpose/amenity matching, distance sort) works unchanged.
+  useEffect(() => {
+    if (!cafesQuery.data) return;
+    const cafes = cafesQuery.data.pages.flatMap((p) =>
+      hitsToCafes(p, center.latitude, center.longitude),
+    );
+    setAllCafes(cafes.length > 0 ? cafes : MOCK_CAFES);
+  }, [cafesQuery.data, center.latitude, center.longitude]);
 
   useEffect(() => {
-    loadCafes(radiusKm);
-  }, [radiusKm]);
+    if (cafesQuery.isError) {
+      console.error("[MapScreen] cafes query failed:", cafesQuery.error);
+      setAllCafes(MOCK_CAFES);
+    }
+  }, [cafesQuery.isError, cafesQuery.error]);
+
+  useEffect(() => {
+    if (!promotedQuery.data) return;
+    const featured = promotedQuery.data;
+    setFeaturedCafes(
+      featured.length > 0
+        ? featured
+        : MOCK_CAFES.filter(
+            (c) => c.promotionType === "A" || c.promotionType === "B",
+          ),
+    );
+  }, [promotedQuery.data]);
+
+  useEffect(() => {
+    if (promotedQuery.isError) {
+      setFeaturedCafes(
+        MOCK_CAFES.filter(
+          (c) => c.promotionType === "A" || c.promotionType === "B",
+        ),
+      );
+    }
+  }, [promotedQuery.isError]);
 
   // Fetch active check-in on mount + poll every 60s
   const refreshActiveCheckin = useCallback(async () => {
@@ -286,15 +310,6 @@ export default function MapScreen() {
       // Silent fail — user can retry
     }
     setCheckoutLoading(false);
-  };
-
-  // Shared Purpose label → backend slug mapping (used by wizard + search filters)
-  const PURPOSE_SLUG_MAP: Record<string, string> = {
-    'Me Time': 'me-time',
-    'Date': 'date',
-    'Family Time': 'family',
-    'Group Study': 'group-work',
-    'WFC': 'wfc',
   };
 
   // Apply filters — two parallel outputs:
@@ -432,7 +447,7 @@ export default function MapScreen() {
     setPreferences(null);
     clearSearch();
     setRadiusKm(2);
-    loadCafes(2);
+    cafesQuery.refetch();
   };
 
   const hasAnyFilter =

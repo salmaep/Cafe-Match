@@ -14,7 +14,7 @@ export class CafeGoogleReview {
   @Column({ name: 'guest_name', length: 150 })
   guestName: string;
 
-  @Column({ name: 'guest_avatar', length: 1000, nullable: true })
+  @Column({ name: 'guest_avatar', type: 'varchar', length: 1000, nullable: true })
   guestAvatar: string | null;
 
   @Column({ type: 'tinyint', unsigned: true })
@@ -23,7 +23,7 @@ export class CafeGoogleReview {
   @Column({ type: 'text', nullable: true })
   comment: string | null;
 
-  @Column({ name: 'photo_url', length: 1000, nullable: true })
+  @Column({ name: 'photo_url', type: 'varchar', length: 1000, nullable: true })
   photoUrl: string | null;
 
   @Column({ name: 'external_hash', type: 'char', length: 64 })

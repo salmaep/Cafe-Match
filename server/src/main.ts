@@ -1,9 +1,12 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { json } from 'express';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  app.use(json({ limit: '10mb' }));
 
   app.setGlobalPrefix('api/v1');
 
@@ -20,6 +23,10 @@ async function bootstrap() {
     credentials: true,
   });
 
-  await app.listen(process.env.PORT ?? 3000);
+  const port = process.env.PORT ?? 3000;
+  await app.listen(port);
+
+  const url = await app.getUrl();
+  console.log(`\n🚀  Server running at ${url}/api/v1\n`);
 }
 bootstrap();

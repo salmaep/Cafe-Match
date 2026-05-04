@@ -29,39 +29,12 @@ export class MeiliService implements OnModuleInit {
     }
 
     this.cafesIndex = this.client.index(indexName);
-    await this.applySettings();
+    await this.applySettingsToIndex(this.cafesIndex);
     this.logger.log(`Meilisearch index "${indexName}" ready`);
   }
 
-  private async applySettings(): Promise<void> {
-    const jinaApiKey = this.config.get<string>('JINA_API_KEY', '');
-    const jinaModel = this.config.get<string>('JINA_MODEL', 'jina-embeddings-v3');
-    const jinaDimensions = this.config.get<number>('JINA_DIMENSIONS', 1024);
-
-    const embedders: Record<string, Embedder> = {};
-
-    if (jinaApiKey) {
-      embedders['jina'] = {
-        source: 'rest',
-        url: 'https://api.jina.ai/v1/embeddings',
-        apiKey: jinaApiKey,
-        dimensions: jinaDimensions,
-        documentTemplate:
-          'Cafe {{doc.name}} di {{doc.city}}. {{doc.description}}. Fasilitas: {{doc.facilities}}. Cocok untuk: {{doc.purposes}}.',
-        request: {
-          model: jinaModel,
-          task: 'retrieval.passage',
-          normalized: true,
-          embedding_type: 'float',
-          input: [{ text: '{{text}}' }],
-        },
-        response: {
-          data: [{ embedding: '{{embedding}}' }],
-        },
-      };
-    }
-
-    await this.cafesIndex.updateSettings({
+  async applySettingsToIndex(index: Index): Promise<void> {
+    await index.updateSettings({
       searchableAttributes: [
         'name',
         'description',
@@ -103,8 +76,38 @@ export class MeiliService implements OnModuleInit {
       ],
       typoTolerance: { enabled: true },
       stopWords: ['yang', 'di', 'dan', 'untuk', 'dengan', 'ke', 'dari', 'ini', 'itu'],
-      ...(jinaApiKey ? { embedders } : {}),
     });
+  }
+
+  // Call this separately after verifying JINA_API_KEY works.
+  async applyJinaEmbedder(): Promise<void> {
+    const jinaApiKey = this.config.get<string>('JINA_API_KEY', '');
+    if (!jinaApiKey) return;
+
+    const jinaModel = this.config.get<string>('JINA_MODEL', 'jina-embeddings-v3');
+    const jinaDimensions = parseInt(this.config.get<string>('JINA_DIMENSIONS', '1024'), 10);
+
+    const embedder: Embedder = {
+      source: 'rest',
+      url: 'https://api.jina.ai/v1/embeddings',
+      apiKey: jinaApiKey,
+      dimensions: jinaDimensions,
+      documentTemplate:
+        'Cafe {{doc.name}} di {{doc.city}}. {{doc.description}}. Fasilitas: {{doc.facilities}}. Cocok untuk: {{doc.purposes}}.',
+      request: {
+        model: jinaModel,
+        task: 'retrieval.passage',
+        normalized: true,
+        embedding_type: 'float',
+        input: [{ text: '{{text}}' }],
+      },
+      response: {
+        data: [{ embedding: '{{embedding}}' }],
+      },
+    };
+
+    await this.cafesIndex.updateSettings({ embedders: { jina: embedder } });
+    this.logger.log('Jina embedder configured on cafes index');
   }
 
   getIndex(): Index {

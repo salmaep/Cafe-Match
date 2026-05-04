@@ -2,6 +2,8 @@ import React, { useRef } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { NavigationContainer, NavigationContainerRef } from '@react-navigation/native';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from './src/lib/query-client';
 import { AuthProvider } from './src/context/AuthContext';
 import { ShortlistProvider } from './src/context/ShortlistContext';
 import { PreferencesProvider } from './src/context/PreferencesContext';
@@ -18,25 +20,27 @@ export default function App() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <NavigationContainer ref={navRef}>
-        <LocationProvider>
-          <AuthProvider>
-            <ShortlistProvider>
-              <PreferencesProvider>
-                <StatusBar style="dark" />
-                <AppNavigator />
-                <InAppNotificationBanner
-                  onTap={() => {
-                    try {
-                      navRef.current?.navigate('Notifications' as never);
-                    } catch {}
-                  }}
-                />
-              </PreferencesProvider>
-            </ShortlistProvider>
-          </AuthProvider>
-        </LocationProvider>
-      </NavigationContainer>
+      <QueryClientProvider client={queryClient}>
+        <NavigationContainer ref={navRef}>
+          <LocationProvider>
+            <AuthProvider>
+              <ShortlistProvider>
+                <PreferencesProvider>
+                  <StatusBar style="dark" />
+                  <AppNavigator />
+                  <InAppNotificationBanner
+                    onTap={() => {
+                      try {
+                        navRef.current?.navigate('Notifications' as never);
+                      } catch {}
+                    }}
+                  />
+                </PreferencesProvider>
+              </ShortlistProvider>
+            </AuthProvider>
+          </LocationProvider>
+        </NavigationContainer>
+      </QueryClientProvider>
     </GestureHandlerRootView>
   );
 }

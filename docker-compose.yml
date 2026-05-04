@@ -56,8 +56,9 @@ services:
       DB_HOST: mysql
       MEILI_HOST: http://meilisearch:7700
       NODE_ENV: production
+      PORT: "3084"
     ports:
-      - "${PORT:-3000}:3000"
+      - "${PORT:-3084}:3084"
     networks:
       - cafematch-net
     depends_on:
@@ -65,6 +66,22 @@ services:
         condition: service_healthy
       meilisearch:
         condition: service_healthy
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+      args:
+        # Baked into JS bundle at build time. Override per-environment (k8s, staging, prod).
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:3084/api/v1}
+    container_name: cafematch-client
+    restart: unless-stopped
+    ports:
+      - "${WEB_PORT:-3083}:3083"
+    networks:
+      - cafematch-net
+    depends_on:
+      - app
 
 networks:
   cafematch-net:

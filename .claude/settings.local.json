@@ -8,7 +8,8 @@
       "Bash(npx vite:*)",
       "Bash(npm -v)",
       "Bash(npx --version)",
-      "Bash(npx create-expo-app@latest client-mobile --template blank-typescript -- --no-install)"
+      "Bash(npx create-expo-app@latest client-mobile --template blank-typescript -- --no-install)",
+      "Bash(git commit -m ' *)"
     ]
   }
 }

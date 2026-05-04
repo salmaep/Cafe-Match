@@ -8,5 +8,6 @@ export declare class CafePhoto {
     caption: string;
     displayOrder: number;
     isPrimary: boolean;
+    deletedAt: Date | null;
     cafe: Cafe;
 }

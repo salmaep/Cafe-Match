@@ -22,6 +22,7 @@ let Review = class Review {
     text;
     createdAt;
     updatedAt;
+    deletedAt;
     user;
     cafe;
     ratings;
@@ -52,6 +53,10 @@ __decorate([
     (0, typeorm_1.UpdateDateColumn)({ name: 'updated_at' }),
     __metadata("design:type", Date)
 ], Review.prototype, "updatedAt", void 0);
+__decorate([
+    (0, typeorm_1.DeleteDateColumn)({ name: 'deleted_at', nullable: true }),
+    __metadata("design:type", Object)
+], Review.prototype, "deletedAt", void 0);
 __decorate([
     (0, typeorm_1.ManyToOne)(() => user_entity_1.User, { onDelete: 'CASCADE' }),
     (0, typeorm_1.JoinColumn)({ name: 'user_id' }),

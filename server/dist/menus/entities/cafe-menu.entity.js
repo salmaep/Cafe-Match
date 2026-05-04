@@ -20,6 +20,7 @@ let CafeMenu = class CafeMenu {
     price;
     description;
     isAvailable;
+    deletedAt;
     cafe;
 };
 exports.CafeMenu = CafeMenu;
@@ -52,6 +53,10 @@ __decorate([
     (0, typeorm_1.Column)({ name: 'is_available', default: true }),
     __metadata("design:type", Boolean)
 ], CafeMenu.prototype, "isAvailable", void 0);
+__decorate([
+    (0, typeorm_1.DeleteDateColumn)({ name: 'deleted_at', nullable: true }),
+    __metadata("design:type", Object)
+], CafeMenu.prototype, "deletedAt", void 0);
 __decorate([
     (0, typeorm_1.ManyToOne)(() => cafe_entity_1.Cafe, (cafe) => cafe.menus, { onDelete: 'CASCADE' }),
     (0, typeorm_1.JoinColumn)({ name: 'cafe_id' }),

@@ -7,5 +7,6 @@ export declare class CafeMenu {
     price: number;
     description: string;
     isAvailable: boolean;
+    deletedAt: Date | null;
     cafe: Cafe;
 }

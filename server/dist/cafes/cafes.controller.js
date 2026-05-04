@@ -38,6 +38,13 @@ let CafesController = class CafesController {
     create(dto) {
         return this.cafesService.create(dto);
     }
+    async softDelete(id) {
+        await this.cafesService.softRemove(id);
+    }
+    async restore(id) {
+        await this.cafesService.restore(id);
+        return { message: 'Cafe restored successfully' };
+    }
 };
 exports.CafesController = CafesController;
 __decorate([
@@ -73,6 +80,26 @@ __decorate([
     __metadata("design:paramtypes", [create_cafe_dto_1.CreateCafeDto]),
     __metadata("design:returntype", void 0)
 ], CafesController.prototype, "create", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('admin'),
+    (0, common_1.Delete)(':id'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.NO_CONTENT),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], CafesController.prototype, "softDelete", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('admin'),
+    (0, common_1.Post)(':id/restore'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], CafesController.prototype, "restore", null);
 exports.CafesController = CafesController = __decorate([
     (0, common_1.Controller)('cafes'),
     __metadata("design:paramtypes", [cafes_service_1.CafesService])

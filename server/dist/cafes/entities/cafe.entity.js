@@ -45,8 +45,17 @@ let Cafe = class Cafe {
     promotionContent;
     newCafeContent;
     isActive;
+    category;
+    city;
+    district;
+    claimedByOwner;
+    reviewsDistribution;
+    pricingRaw;
+    lastScrapedAt;
+    scraperSource;
     createdAt;
     updatedAt;
+    deletedAt;
     owner;
     facilities;
     menus;
@@ -182,6 +191,41 @@ __decorate([
     __metadata("design:type", Boolean)
 ], Cafe.prototype, "isActive", void 0);
 __decorate([
+    (0, typeorm_1.Index)(),
+    (0, typeorm_1.Column)({ length: 100, nullable: true }),
+    __metadata("design:type", String)
+], Cafe.prototype, "category", void 0);
+__decorate([
+    (0, typeorm_1.Index)(),
+    (0, typeorm_1.Column)({ length: 100, nullable: true }),
+    __metadata("design:type", String)
+], Cafe.prototype, "city", void 0);
+__decorate([
+    (0, typeorm_1.Index)(),
+    (0, typeorm_1.Column)({ length: 100, nullable: true }),
+    __metadata("design:type", String)
+], Cafe.prototype, "district", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'claimed_by_owner', default: false }),
+    __metadata("design:type", Boolean)
+], Cafe.prototype, "claimedByOwner", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'reviews_distribution', type: 'json', nullable: true }),
+    __metadata("design:type", Object)
+], Cafe.prototype, "reviewsDistribution", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'pricing_raw', length: 50, nullable: true }),
+    __metadata("design:type", String)
+], Cafe.prototype, "pricingRaw", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'last_scraped_at', type: 'timestamp', nullable: true }),
+    __metadata("design:type", Date)
+], Cafe.prototype, "lastScrapedAt", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'scraper_source', length: 50, default: 'manual' }),
+    __metadata("design:type", String)
+], Cafe.prototype, "scraperSource", void 0);
+__decorate([
     (0, typeorm_1.CreateDateColumn)({ name: 'created_at' }),
     __metadata("design:type", Date)
 ], Cafe.prototype, "createdAt", void 0);
@@ -189,6 +233,10 @@ __decorate([
     (0, typeorm_1.UpdateDateColumn)({ name: 'updated_at' }),
     __metadata("design:type", Date)
 ], Cafe.prototype, "updatedAt", void 0);
+__decorate([
+    (0, typeorm_1.DeleteDateColumn)({ name: 'deleted_at', nullable: true }),
+    __metadata("design:type", Object)
+], Cafe.prototype, "deletedAt", void 0);
 __decorate([
     (0, typeorm_1.ManyToOne)(() => user_entity_1.User, { nullable: true, onDelete: 'SET NULL' }),
     (0, typeorm_1.JoinColumn)({ name: 'owner_id' }),

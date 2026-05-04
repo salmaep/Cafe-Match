@@ -21,6 +21,7 @@ let CafePhoto = class CafePhoto {
     caption;
     displayOrder;
     isPrimary;
+    deletedAt;
     cafe;
 };
 exports.CafePhoto = CafePhoto;
@@ -57,6 +58,10 @@ __decorate([
     (0, typeorm_1.Column)({ name: 'is_primary', default: false }),
     __metadata("design:type", Boolean)
 ], CafePhoto.prototype, "isPrimary", void 0);
+__decorate([
+    (0, typeorm_1.DeleteDateColumn)({ name: 'deleted_at', nullable: true }),
+    __metadata("design:type", Object)
+], CafePhoto.prototype, "deletedAt", void 0);
 __decorate([
     (0, typeorm_1.ManyToOne)(() => cafe_entity_1.Cafe, (cafe) => cafe.photos, { onDelete: 'CASCADE' }),
     (0, typeorm_1.JoinColumn)({ name: 'cafe_id' }),

@@ -5,15 +5,12 @@ export declare class CafesController {
     private readonly cafesService;
     constructor(cafesService: CafesService);
     search(dto: SearchCafesDto): Promise<{
-        data: any;
+        data: any[];
         meta: {
             page: number;
             limit: number;
             total: number;
         };
-    } | {
-        data: any[];
-        meta: any;
     }>;
     getPromoted(type?: string): Promise<{
         purposes: string[];
@@ -58,8 +55,23 @@ export declare class CafesController {
             promoPhoto?: string;
         } | null;
         isActive: boolean;
+        category: string;
+        city: string;
+        district: string;
+        claimedByOwner: boolean;
+        reviewsDistribution: {
+            oneStar: number;
+            twoStar: number;
+            threeStar: number;
+            fourStar: number;
+            fiveStar: number;
+        } | null;
+        pricingRaw: string;
+        lastScrapedAt: Date;
+        scraperSource: string;
         createdAt: Date;
         updatedAt: Date;
+        deletedAt: Date | null;
         owner: import("../users/entities/user.entity").User;
         facilities: import("./entities/cafe-facility.entity").CafeFacility[];
         menus: import("../menus/entities/cafe-menu.entity").CafeMenu[];
@@ -113,8 +125,23 @@ export declare class CafesController {
             promoPhoto?: string;
         } | null;
         isActive: boolean;
+        category: string;
+        city: string;
+        district: string;
+        claimedByOwner: boolean;
+        reviewsDistribution: {
+            oneStar: number;
+            twoStar: number;
+            threeStar: number;
+            fourStar: number;
+            fiveStar: number;
+        } | null;
+        pricingRaw: string;
+        lastScrapedAt: Date;
+        scraperSource: string;
         createdAt: Date;
         updatedAt: Date;
+        deletedAt: Date | null;
         owner: import("../users/entities/user.entity").User;
         facilities: import("./entities/cafe-facility.entity").CafeFacility[];
         menus: import("../menus/entities/cafe-menu.entity").CafeMenu[];
@@ -168,8 +195,23 @@ export declare class CafesController {
             promoPhoto?: string;
         } | null;
         isActive: boolean;
+        category: string;
+        city: string;
+        district: string;
+        claimedByOwner: boolean;
+        reviewsDistribution: {
+            oneStar: number;
+            twoStar: number;
+            threeStar: number;
+            fourStar: number;
+            fiveStar: number;
+        } | null;
+        pricingRaw: string;
+        lastScrapedAt: Date;
+        scraperSource: string;
         createdAt: Date;
         updatedAt: Date;
+        deletedAt: Date | null;
         owner: import("../users/entities/user.entity").User;
         facilities: import("./entities/cafe-facility.entity").CafeFacility[];
         menus: import("../menus/entities/cafe-menu.entity").CafeMenu[];
@@ -177,5 +219,9 @@ export declare class CafesController {
         bookmarks: import("../bookmarks/entities/bookmark.entity").Bookmark[];
         favorites: import("../favorites/entities/favorite.entity").Favorite[];
         distanceMeters?: number;
+    }>;
+    softDelete(id: number): Promise<void>;
+    restore(id: number): Promise<{
+        message: string;
     }>;
 }

@@ -9,6 +9,7 @@ export declare class Review {
     text: string | null;
     createdAt: Date;
     updatedAt: Date;
+    deletedAt: Date | null;
     user: User;
     cafe: Cafe;
     ratings: ReviewRating[];

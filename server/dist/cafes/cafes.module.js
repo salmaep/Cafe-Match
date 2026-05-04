@@ -11,15 +11,22 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const cafe_entity_1 = require("./entities/cafe.entity");
 const cafe_facility_entity_1 = require("./entities/cafe-facility.entity");
+const cafe_menu_entity_1 = require("../menus/entities/cafe-menu.entity");
+const cafe_photo_entity_1 = require("../photos/entities/cafe-photo.entity");
+const review_entity_1 = require("../reviews/entities/review.entity");
 const purpose_requirement_entity_1 = require("../purposes/entities/purpose-requirement.entity");
 const cafes_controller_1 = require("./cafes.controller");
 const cafes_service_1 = require("./cafes.service");
+const meili_module_1 = require("../meili/meili.module");
 let CafesModule = class CafesModule {
 };
 exports.CafesModule = CafesModule;
 exports.CafesModule = CafesModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([cafe_entity_1.Cafe, cafe_facility_entity_1.CafeFacility, purpose_requirement_entity_1.PurposeRequirement])],
+        imports: [
+            typeorm_1.TypeOrmModule.forFeature([cafe_entity_1.Cafe, cafe_facility_entity_1.CafeFacility, cafe_menu_entity_1.CafeMenu, cafe_photo_entity_1.CafePhoto, review_entity_1.Review, purpose_requirement_entity_1.PurposeRequirement]),
+            meili_module_1.MeiliModule,
+        ],
         controllers: [cafes_controller_1.CafesController],
         providers: [cafes_service_1.CafesService],
         exports: [cafes_service_1.CafesService],

@@ -22,7 +22,7 @@ metadata:
   name: cafe-match-web
 subsets:
   - addresses:
-      - ip: <HOST_IP>
+      - ip: 192.168.88.184 # <--- YOUR UBUNTU PRIVATE IP
     ports:
       - port: 3083
 
@@ -46,6 +46,6 @@ metadata:
   name: cafe-match-api
 subsets:
   - addresses:
-      - ip: <HOST_IP>
+      - ip: 192.168.88.184 # <--- YOUR UBUNTU PRIVATE IP
     ports:
       - port: 3084

@@ -1,13 +1,19 @@
+# Single source of truth for env: server/.env
+# Run with: docker compose --env-file server/.env up -d --build
+# Compose file interpolates ${DB_PASSWORD}, ${MEILI_MASTER_KEY}, etc. from server/.env.
+#
+# client/.env is read by Vite during the client image build (inside the container).
+
 services:
   mysql:
     image: mysql:8.4
     container_name: cafematch-mysql
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-cafematch_root}
-      MYSQL_DATABASE: ${DB_DATABASE:-cafematch}
-      MYSQL_USER: ${DB_USERNAME:-cafematch}
-      MYSQL_PASSWORD: ${DB_PASSWORD:-cafematch_pass}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-cafematch_root}
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
     ports:
       - "3306:3306"
     volumes:
@@ -15,7 +21,6 @@ services:
     networks:
       - cafematch-net
     healthcheck:
-      # CMD-SHELL required so shell expands $MYSQL_ROOT_PASSWORD
       test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$$MYSQL_ROOT_PASSWORD"]
       interval: 10s
       timeout: 5s
@@ -27,7 +32,7 @@ services:
     container_name: cafematch-meili
     restart: unless-stopped
     environment:
-      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:-cafematch_meili_master_key}
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY}
       MEILI_ENV: ${MEILI_ENV:-development}
       MEILI_NO_ANALYTICS: "true"
     ports:
@@ -52,12 +57,13 @@ services:
     env_file:
       - ./server/.env
     environment:
-      # Override to use internal container hostnames instead of localhost
+      # Override host-only values to use docker network hostnames
       DB_HOST: mysql
       MEILI_HOST: http://meilisearch:7700
       NODE_ENV: production
+      PORT: "3084"
     ports:
-      - "${PORT:-3000}:3000"
+      - "3084:3084"
     networks:
       - cafematch-net
     depends_on:
@@ -65,6 +71,21 @@ services:
         condition: service_healthy
       meilisearch:
         condition: service_healthy
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+      # Vite reads VITE_API_URL from client/.env during the build (inside container).
+      # No build args needed here.
+    container_name: cafematch-client
+    restart: unless-stopped
+    ports:
+      - "3083:3083"
+    networks:
+      - cafematch-net
+    depends_on:
+      - app
 
 networks:
   cafematch-net:

@@ -4,6 +4,7 @@
   "main": "index.ts",
   "scripts": {
     "start": "expo start",
+    "start:fresh": "expo start --clear",
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web"
@@ -15,8 +16,10 @@
     "@react-navigation/bottom-tabs": "^7.15.9",
     "@react-navigation/native": "^7.2.2",
     "@react-navigation/stack": "^7.8.9",
+    "@tanstack/react-query": "^5.100.9",
     "axios": "^1.15.0",
     "expo": "~54.0.33",
+    "expo-constants": "^55.0.15",
     "expo-device": "~8.0.10",
     "expo-image-picker": "~17.0.10",
     "expo-linear-gradient": "~15.0.8",

@@ -59,7 +59,7 @@ export class ScraperSyncService {
     const [lng, lat] = dto.location;
     const openingHours = parseOpeningHours(dto.openingHours);
     const priceRange = parsePriceRange(dto.pricing);
-    const isActive = dto.status !== 'closed' && dto.status !== 'permanently_closed';
+    const isActive = dto.status === 'active';
 
     const [existing] = await this.dataSource.query(
       `SELECT id FROM cafes WHERE google_place_id = ? LIMIT 1`,

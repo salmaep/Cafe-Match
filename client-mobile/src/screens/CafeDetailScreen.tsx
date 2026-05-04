@@ -23,97 +23,25 @@ import {
   toggleBookmark,
   toggleFavorite,
   trackAnalytics,
-  fetchCafeDetail,
   haversineKm,
-  fetchReviewSummary,
-  fetchLeaderboard,
   checkInApi,
 } from "../services/api";
+import { useCafeDetail } from "../queries/cafes/use-cafe-detail";
+import { useReviewSummary } from "../queries/reviews/use-review-summary";
+import { useLeaderboard } from "../queries/checkins/use-leaderboard";
+import { useQueryClient } from "@tanstack/react-query";
+import { reviewKeys } from "../queries/reviews/keys";
 import { Cafe } from "../types";
 import { colors, spacing, radius } from "../theme";
+import { getFacilityIcon } from "../constant/ui/facility-icons";
+import {
+  prettyReviewCategory,
+  isMoodCategory,
+  isFacilityCategory,
+  isStarCategory,
+} from "../constant/ui/review-categories";
 
 const { width, height } = Dimensions.get("window");
-
-const FACILITY_ICONS: Record<string, string> = {
-  WiFi: "📶",
-  "Power Outlet": "🔌",
-  Mushola: "🕌",
-  Parking: "🅿️",
-  "Kid-Friendly": "👶",
-  "Quiet Atmosphere": "🤫",
-  "Large Tables": "🪑",
-  "Outdoor Area": "🌿",
-  "Cozy Seating": "🛋️",
-  "Ambient Lighting": "💡",
-  "Intimate Seating": "💕",
-  "Family Friendly": "👨‍👩‍👧",
-  Spacious: "🏛️",
-  Whiteboard: "📋",
-  "Bookable Space": "📅",
-  "Smoking Area": "🚬",
-};
-
-const getFacilityIcon = (label: string): string => {
-  if (FACILITY_ICONS[label]) return FACILITY_ICONS[label];
-  // Heuristic fallbacks for unknown labels based on common words
-  const lower = label.toLowerCase();
-  if (lower.includes("wifi") || lower.includes("internet")) return "📶";
-  if (
-    lower.includes("power") ||
-    lower.includes("outlet") ||
-    lower.includes("charge")
-  )
-    return "🔌";
-  if (lower.includes("park")) return "🅿️";
-  if (lower.includes("quiet") || lower.includes("calm")) return "🤫";
-  if (lower.includes("outdoor") || lower.includes("garden")) return "🌿";
-  if (lower.includes("kid") || lower.includes("family")) return "👶";
-  if (lower.includes("table")) return "🪑";
-  if (lower.includes("light")) return "💡";
-  if (lower.includes("seat") || lower.includes("cozy")) return "🛋️";
-  if (lower.includes("smoke") || lower.includes("smoking")) return "🚬";
-  if (lower.includes("pray") || lower.includes("mushola")) return "🕌";
-  if (lower.includes("book")) return "📅";
-  return "✓";
-};
-
-// Map review category keys (mood_*, facility_*) → human labels with emoji
-const REVIEW_CATEGORY_LABELS: Record<string, string> = {
-  overall: "⭐ Rating",
-  ambiance: "🎨 Suasana",
-  wfc: "💻 WFC",
-  food_quality: "🍽️ Makanan",
-  service: "🛎️ Pelayanan",
-  value_for_money: "💰 Harga",
-  kid_friendly: "👶 Ramah Anak",
-  mood_me_time: "🧘 Me Time",
-  "mood_me-time": "🧘 Me Time",
-  mood_date: "💑 Date",
-  mood_family: "👨‍👩‍👧 Family",
-  mood_family_time: "👨‍👩‍👧 Family",
-  mood_group_study: "📚 Group Study",
-  "mood_group-work": "📚 Group Study",
-  mood_wfc: "💻 WFC",
-  facility_wifi: "📶 WiFi",
-  facility_power_outlet: "🔌 Power",
-  facility_mushola: "🕌 Mushola",
-  facility_parking: "🅿️ Parking",
-  facility_kid_friendly: "👶 Kid-Friendly",
-  facility_quiet_atmosphere: "🤫 Quiet",
-  facility_large_tables: "🪑 Large Tables",
-  facility_outdoor_area: "🌿 Outdoor",
-};
-const prettyReviewCategory = (k: string) => {
-  if (REVIEW_CATEGORY_LABELS[k]) return REVIEW_CATEGORY_LABELS[k];
-  const stripped = k.replace(/^(mood_|facility_)/, "").replace(/[_-]/g, " ");
-  return stripped.replace(/\b\w/g, (c) => c.toUpperCase());
-};
-
-/** Category classifier for review signals */
-const isMoodCategory = (k: string) => k.startsWith("mood_");
-const isFacilityCategory = (k: string) => k.startsWith("facility_");
-const isStarCategory = (k: string) =>
-  !isMoodCategory(k) && !isFacilityCategory(k);
 
 type RouteParams = { CafeDetail: { cafe: Cafe } };
 
@@ -131,26 +59,36 @@ export default function CafeDetailScreen() {
   // Fix 7: Start with nav param data, then enrich with full backend detail.
   // Defensively fill in any missing arrays so subsequent .map() calls never
   // crash — even if the param object is partial.
-  const [cafe, setCafe] = useState<Cafe>(() => ({
-    ...(initialCafe || ({} as Cafe)),
-    photos: initialCafe?.photos ?? [],
-    purposes: initialCafe?.purposes ?? [],
-    facilities: initialCafe?.facilities ?? [],
-    menu: initialCafe?.menu ?? [],
-  } as Cafe));
-  const [detailLoading, setDetailLoading] = useState(
-    !initialCafe?.menu?.length || !initialCafe?.facilities?.length,
-  );
+  const cafeDetailQuery = useCafeDetail(initialCafe?.id);
+  const reviewSummaryQuery = useReviewSummary(initialCafe?.id);
+  const leaderboardQuery = useLeaderboard(initialCafe?.id);
+  const qc = useQueryClient();
+
+  // Cafe = full detail from server when available, otherwise fall back to nav param.
+  // Always normalize arrays so downstream .map() never crashes.
+  const cafe: Cafe = React.useMemo(() => {
+    const base = cafeDetailQuery.data ?? initialCafe ?? ({} as Cafe);
+    return {
+      ...(base as Cafe),
+      photos: base?.photos ?? [],
+      purposes: base?.purposes ?? [],
+      facilities: base?.facilities ?? [],
+      menu: base?.menu ?? [],
+    } as Cafe;
+  }, [cafeDetailQuery.data, initialCafe]);
+
+  const detailLoading =
+    cafeDetailQuery.isLoading &&
+    (!initialCafe?.menu?.length || !initialCafe?.facilities?.length);
+
+  const reviewSummary = reviewSummaryQuery.data ?? [];
+  const leaderboard = (leaderboardQuery.data ?? []).slice(0, 3);
+
   const [currentPhoto, setCurrentPhoto] = useState(0);
   const [isFavorited, setIsFavorited] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const inShortlist = isInShortlist(cafe.id);
 
-  // Reviews + Leaderboard
-  const [reviewSummary, setReviewSummary] = useState<
-    { category: string; avgScore: number; count: number }[]
-  >([]);
-  const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [checkingIn, setCheckingIn] = useState(false);
 
   // Merge mood signals from THREE sources into ONE unified list:
@@ -277,47 +215,20 @@ export default function CafeDetailScreen() {
 
   const closeZoom = () => setZoomVisible(false);
 
+  // Track view event once per cafe id
   useEffect(() => {
-    if (!initialCafe?.id) {
-      setDetailLoading(false);
-      return;
-    }
-    // Always fetch full detail to get complete menu, facilities, photos
-    fetchCafeDetail(initialCafe.id)
-      .then((full) => {
-        if (full) {
-          // Merge with safe defaults so subsequent .map() calls can't crash
-          setCafe({
-            ...full,
-            photos: full.photos ?? [],
-            purposes: full.purposes ?? [],
-            facilities: full.facilities ?? [],
-            menu: full.menu ?? [],
-          } as Cafe);
-        }
-      })
-      .finally(() => setDetailLoading(false));
+    if (!initialCafe?.id) return;
     trackAnalytics(initialCafe.id, "view");
-    // Load reviews summary + leaderboard
-    fetchReviewSummary(initialCafe.id)
-      .then(setReviewSummary)
-      .catch(() => {});
-    fetchLeaderboard(initialCafe.id)
-      .then((lb) => setLeaderboard(lb.slice(0, 3)))
-      .catch(() => {});
   }, [initialCafe?.id]);
 
-  // When WriteReviewScreen navigates back with a new review, refresh the summary
-  // optimistically — no full page re-render, no auto-refresh flash.
+  // When WriteReviewScreen navigates back with a new review, invalidate the
+  // summary cache so it refetches with the latest count.
   useEffect(() => {
     const signal =
       (route.params as any)?.newReviewTimestamp ||
       (route.params as any)?.newReview;
     if (!signal || !initialCafe?.id) return;
-    fetchReviewSummary(initialCafe.id)
-      .then(setReviewSummary)
-      .catch(() => {});
-    // Clear the param so it doesn't re-trigger on re-focus
+    qc.invalidateQueries({ queryKey: reviewKeys.summary(initialCafe.id) });
     navigation.setParams({
       newReviewTimestamp: undefined,
       newReview: undefined,

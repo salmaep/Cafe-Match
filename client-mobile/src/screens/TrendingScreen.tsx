@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -14,7 +14,9 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocation } from '../context/LocationContext';
 import { MOCK_CAFES } from '../data/mockCafes';
-import api, { fetchGlobalLeaderboard } from '../services/api';
+import { fetchGlobalLeaderboard } from '../services/api';
+import { useSearchCafes } from '../queries/cafes/use-search-cafes';
+import { hitsToCafes } from '../queries/cafes/api';
 import { Cafe, Purpose } from '../types';
 import { colors, spacing, radius } from '../theme';
 import NativeAdCard from '../components/NativeAdCard';
@@ -48,48 +50,16 @@ const RANK_COLORS: Record<number, string> = {
   3: '#CD7F32', // bronze
 };
 
-// ─── Simple backend-to-Cafe mapper ───
-function mapTrendingCafe(raw: any): Cafe {
-  const photos: string[] =
-    raw.photos && raw.photos.length > 0
-      ? raw.photos.map((p: any) => (typeof p === 'string' ? p : p.url || p))
-      : ['https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800'];
-
-  const facilities: string[] =
-    raw.facilities?.map((f: any) => {
-      if (typeof f === 'string') return f;
-      const keyMap: Record<string, string> = {
-        wifi: 'WiFi',
-        power_outlet: 'Power Outlet',
-        mushola: 'Mushola',
-        parking: 'Parking',
-        kid_friendly: 'Kid-Friendly',
-        quiet_atmosphere: 'Quiet Atmosphere',
-        large_tables: 'Large Tables',
-        outdoor_area: 'Outdoor Area',
-      };
-      return keyMap[f.facilityKey] || f.facilityKey;
-    }) || [];
-
-  const distance =
-    raw.distanceMeters != null
-      ? Math.round(raw.distanceMeters / 100) / 10
-      : 0;
-
-  return {
-    id: String(raw.id),
-    name: raw.name || '',
-    photos,
-    distance,
-    address: raw.address || '',
-    latitude: raw.latitude || 0,
-    longitude: raw.longitude || 0,
-    purposes: raw.purposes || [],
-    facilities: facilities as any,
-    menu: raw.menu || [],
-    favoritesCount: raw.favoritesCount || 0,
-    bookmarksCount: raw.bookmarksCount || 0,
-  };
+function getFallback(filter: 'All' | Purpose): Cafe[] {
+  let list = [...MOCK_CAFES];
+  if (filter !== 'All') {
+    list = list.filter(
+      (c) => c.purposes && c.purposes.includes(filter as Purpose),
+    );
+  }
+  return list
+    .sort((a, b) => (b.favoritesCount || 0) - (a.favoritesCount || 0))
+    .slice(0, 10);
 }
 
 export default function TrendingScreen() {
@@ -103,49 +73,29 @@ export default function TrendingScreen() {
   const [lbLoading, setLbLoading] = useState(false);
 
   // Trending cafes state
-  const [cafes, setCafes] = useState<Cafe[]>([]);
-  const [loading, setLoading] = useState(false);
   const [activeFilter, setActiveFilter] = useState<'All' | Purpose>('All');
 
-  const loadTrending = useCallback(async (filter: 'All' | Purpose) => {
-    setLoading(true);
-    try {
-      const params: Record<string, any> = {
-        lat: latitude,
-        lng: longitude,
-        radius: 5000,
-        sortBy: 'favoritesCount',
-        limit: 10,
-      };
-      if (filter !== 'All') {
-        const purposeId = PURPOSE_ID_MAP[filter];
-        if (purposeId) params.purposeId = purposeId;
-      }
+  const purposeId =
+    activeFilter !== 'All' ? PURPOSE_ID_MAP[activeFilter] : undefined;
 
-      const response = await api.get('/cafes', { params });
-      const raw: any[] = response.data?.data || response.data || [];
-      const mapped = raw.map(mapTrendingCafe);
-      setCafes(mapped.length > 0 ? mapped : getFallback(filter));
-    } catch {
-      setCafes(getFallback(filter));
-    } finally {
-      setLoading(false);
-    }
-  }, [latitude, longitude]);
+  const cafesQuery = useSearchCafes({
+    lat: latitude ?? undefined,
+    lng: longitude ?? undefined,
+    radius: 5000,
+    purposeId,
+    limit: 10,
+  });
 
-  useEffect(() => {
-    loadTrending(activeFilter);
-  }, [activeFilter, loadTrending]);
+  const cafes: Cafe[] = cafesQuery.data
+    ? cafesQuery.data.pages.flatMap((p) =>
+        hitsToCafes(p, latitude ?? undefined, longitude ?? undefined),
+      )
+    : [];
 
-  const getFallback = (filter: 'All' | Purpose): Cafe[] => {
-    let list = [...MOCK_CAFES];
-    if (filter !== 'All') {
-      list = list.filter(c => c.purposes && c.purposes.includes(filter as Purpose));
-    }
-    return list
-      .sort((a, b) => (b.favoritesCount || 0) - (a.favoritesCount || 0))
-      .slice(0, 10);
-  };
+  const displayCafes =
+    cafes.length > 0 ? cafes : getFallback(activeFilter);
+
+  const loading = cafesQuery.isLoading || cafesQuery.isFetching;
 
   // Load global leaderboard when tab switches
   useEffect(() => {
@@ -315,12 +265,12 @@ export default function TrendingScreen() {
             </View>
           ) : (
             <FlatList
-              data={interleaveAds(cafes.map((cafe, i) => ({ cafe, rank: i + 1 })))}
-              keyExtractor={item => (item.kind === 'ad' ? item.key : item.data.cafe.id)}
+              data={cafes}
+              keyExtractor={item => item.id}
               renderItem={renderItem}
               ListEmptyComponent={renderEmpty}
               contentContainerStyle={
-                cafes.length === 0 ? styles.listEmptyContent : styles.listContent
+                displayCafes.length === 0 ? styles.listEmptyContent : styles.listContent
               }
               showsVerticalScrollIndicator={false}
               ItemSeparatorComponent={() => <View style={styles.separator} />}

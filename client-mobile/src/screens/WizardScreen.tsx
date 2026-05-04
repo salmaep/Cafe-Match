@@ -34,6 +34,26 @@ const DESTINATION_SUGGESTIONS: { label: string; sublabel: string; latitude: numb
   { label: 'Jakarta Selatan', sublabel: 'DKI Jakarta', latitude: -6.2615, longitude: 106.8106 },
 ];
 
+// Parse coord strings — supports paste from Google Maps, spreadsheets, plain text.
+// Examples that work:
+//   "-6.9148492, 107.6648254"
+//   "-6.9148492 107.6648254"   (space separator)
+//   "-6.9148492;107.6648254"   (semicolon)
+//   "-6.9148492,107.6648254"   (no space)
+//   "(-6.9148492, 107.6648254)" (parentheses, e.g. from Google Maps)
+//   "  -6.9148492 ,  107.6648254  " (extra whitespace, tabs)
+function parseCoords(input: string): { lat: number; lng: number } | null {
+  // Strip outer whitespace, parentheses, brackets, and curly braces
+  const cleaned = input.trim().replace(/^[\(\[\{]+|[\)\]\}]+$/g, '').trim();
+  const match = cleaned.match(/^(-?\d+(?:\.\d+)?)\s*[,;\s]\s*(-?\d+(?:\.\d+)?)$/);
+  if (!match) return null;
+  const lat = Number(match[1]);
+  const lng = Number(match[2]);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
+  return { lat, lng };
+}
+
 const AMENITIES: { label: Facility; icon: string }[] = [
   { label: 'WiFi', icon: '📶' },
   { label: 'Power Outlet', icon: '🔌' },
@@ -112,6 +132,12 @@ export default function WizardScreen() {
       prev.includes(a) ? prev.filter((x) => x !== a) : [...prev, a]
     );
   };
+
+  // Block "Next" on Step 2 (location) when user picked custom but coords are empty.
+  const isNextDisabled =
+    step === 1 &&
+    locationType === 'custom' &&
+    (customLat === null || customLng === null);
 
   const renderProgressDots = () => (
     <View style={styles.dotsRow}>
@@ -195,16 +221,31 @@ export default function WizardScreen() {
             <>
               <TextInput
                 style={styles.textInput}
-                placeholder="e.g. Senopati, Jakarta"
+                placeholder="Nama daerah atau koordinat (-6.9175, 107.6191)"
                 placeholderTextColor={colors.textSecondary}
                 value={customAddress}
                 onChangeText={(text) => {
                   setCustomAddress(text);
-                  // Clear pinned coords when user types manually
-                  setCustomLat(null);
-                  setCustomLng(null);
+                  const coords = parseCoords(text);
+                  if (coords) {
+                    setCustomLat(coords.lat);
+                    setCustomLng(coords.lng);
+                  } else {
+                    setCustomLat(null);
+                    setCustomLng(null);
+                  }
                 }}
               />
+              {customAddress.length > 0 && (customLat === null || customLng === null) && (
+                <Text style={styles.coordHint}>
+                  ⚠️ Format koordinat: "lat, lng" — atau pilih suggestion di bawah
+                </Text>
+              )}
+              {customLat !== null && customLng !== null && (
+                <Text style={styles.coordOk}>
+                  ✓ Koordinat: {customLat.toFixed(4)}, {customLng.toFixed(4)}
+                </Text>
+              )}
               <Text style={styles.suggestLabel}>Suggested Destinations</Text>
               <View style={styles.suggestRow}>
                 {DESTINATION_SUGGESTIONS.map((s) => (
@@ -285,7 +326,11 @@ export default function WizardScreen() {
 
       {/* Bottom CTA */}
       <View style={styles.bottomBar}>
-        <TouchableOpacity style={styles.nextBtn} onPress={handleNext}>
+        <TouchableOpacity
+          style={[styles.nextBtn, isNextDisabled && styles.nextBtnDisabled]}
+          onPress={handleNext}
+          disabled={isNextDisabled}
+        >
           <Text style={styles.nextBtnText}>
             {step === TOTAL_STEPS - 1 ? 'Find My Cafe' : 'Next'}
           </Text>
@@ -374,6 +419,17 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     fontSize: 15,
     color: colors.primary,
+  },
+  coordHint: {
+    marginTop: spacing.sm,
+    fontSize: 12,
+    color: colors.accent,
+  },
+  coordOk: {
+    marginTop: spacing.sm,
+    fontSize: 12,
+    color: colors.success,
+    fontWeight: '600',
   },
   suggestLabel: {
     fontSize: 12,
@@ -476,6 +532,9 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     paddingVertical: spacing.md,
     alignItems: 'center',
+  },
+  nextBtnDisabled: {
+    opacity: 0.4,
   },
   nextBtnText: {
     color: colors.white,

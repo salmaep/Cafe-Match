@@ -1,4 +1,27 @@
 import { Facility, Purpose } from '../types';
+import { LOCATION_KEYWORDS, type LocationKeyword } from '../constant/search';
+
+export { LOCATION_KEYWORDS };
+
+// NOTE: Sejak migrasi ke Meilisearch (queries/cafes/use-search-cafes.ts), full-text
+// search di-handle server-side oleh Meili (lexical + hybrid kalau JINA_API_KEY ada).
+// File ini sekarang berperan sebagai UX HINT layer:
+//   - extractLocationHint(q): map kata kunci kota → koordinat (untuk re-center map)
+//   - parseSearchQuery(q): hasilkan label chips + filter suggestions untuk UI
+// Caller boleh apply hasil filter atau biarkan Meili yang handle. Jangan lagi
+// pakai parsedSearch sebagai SATU-SATUNYA filter — kirim juga `q` ke Meili.
+
+/**
+ * Cari kata kunci lokasi dalam query, return koordinat kota kalau match.
+ * Dipakai untuk re-center map saat user search "kafe di Tebet".
+ */
+export function extractLocationHint(query: string): LocationKeyword | undefined {
+  const q = query.toLowerCase().trim();
+  for (const [pattern, loc] of LOCATION_KEYWORDS) {
+    if (pattern.test(q)) return loc;
+  }
+  return undefined;
+}
 
 export interface ParsedSearch {
   facilities: Facility[];
@@ -27,17 +50,6 @@ const PURPOSE_KEYWORDS: [RegExp, Purpose][] = [
   [/\bfamily\b|\bkeluarga\b|\bfam\b|\banak-anak\b|\bbawa anak\b/i, 'Family Time'],
   [/\bstudy\b|\bbelajar\b|\btugas\b|\bkerja\s*kelompok\b|\bgroup\b|\bskripsi\b|\bkuliah\b/i, 'Group Study'],
   [/\bwfc\b|\bwork\b|\bkerja\b|\bremote\b|\blaptop\b|\bnongkrong\b|\bngerjain\b|\bnge-laptop\b|\bngelaptop\b/i, 'WFC'],
-];
-
-// Known location keywords → coordinates
-export const LOCATION_KEYWORDS: [RegExp, { label: string; latitude: number; longitude: number }][] = [
-  [/\bdago\b/i, { label: 'Dago, Bandung', latitude: -6.8800, longitude: 107.6100 }],
-  [/\btebet\b/i, { label: 'Tebet, Jakarta Selatan', latitude: -6.2241, longitude: 106.8446 }],
-  [/\bbandung\b/i, { label: 'Bandung', latitude: -6.9175, longitude: 107.6191 }],
-  [/\bjakarta\b/i, { label: 'Jakarta', latitude: -6.2088, longitude: 106.8456 }],
-  [/\bkemang\b/i, { label: 'Kemang, Jakarta Selatan', latitude: -6.2615, longitude: 106.8106 }],
-  [/\bsenopati\b/i, { label: 'Senopati, Jakarta Selatan', latitude: -6.2350, longitude: 106.8000 }],
-  [/\bsudirman\b/i, { label: 'Sudirman, Jakarta', latitude: -6.2088, longitude: 106.8456 }],
 ];
 
 export function parseSearchQuery(query: string): ParsedSearch {

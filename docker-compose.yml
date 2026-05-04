@@ -1,0 +1,75 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: cafematch-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-cafematch_root}
+      MYSQL_DATABASE: ${DB_DATABASE:-cafematch}
+      MYSQL_USER: ${DB_USERNAME:-cafematch}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-cafematch_pass}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - cafematch-net
+    healthcheck:
+      # CMD-SHELL required so shell expands $MYSQL_ROOT_PASSWORD
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.42
+    container_name: cafematch-meili
+    restart: unless-stopped
+    environment:
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:-cafematch_meili_master_key}
+      MEILI_ENV: ${MEILI_ENV:-development}
+      MEILI_NO_ANALYTICS: "true"
+    ports:
+      - "7700:7700"
+    volumes:
+      - meili_data:/meili_data
+    networks:
+      - cafematch-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:7700/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  app:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: cafematch-app
+    restart: unless-stopped
+    env_file:
+      - ./server/.env
+    environment:
+      # Override to use internal container hostnames instead of localhost
+      DB_HOST: mysql
+      MEILI_HOST: http://meilisearch:7700
+      NODE_ENV: production
+    ports:
+      - "${PORT:-3000}:3000"
+    networks:
+      - cafematch-net
+    depends_on:
+      mysql:
+        condition: service_healthy
+      meilisearch:
+        condition: service_healthy
+
+networks:
+  cafematch-net:
+    driver: bridge
+
+volumes:
+  mysql_data:
+  meili_data:

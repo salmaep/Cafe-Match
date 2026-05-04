@@ -1,23 +1,28 @@
-# Dependencies
+# ── Dependencies ─────────────────────────────────────────────────────────────
 node_modules/
 */node_modules/
 **/node_modules/
 
-# Environment files
+# ── Environment files ─────────────────────────────────────────────────────────
 .env
 .env.local
-.env.development.local
-.env.test.local
-.env.production.local
-*.env
+.env.*.local
+**/.env
+**/.env.local
+**/.env.*.local
+# Keep .env.example (template — safe to commit)
+!**/.env.example
 
-# Build output
+# ── Build output ──────────────────────────────────────────────────────────────
 dist/
 build/
-.next/
 out/
+.next/
+**/dist/
+**/build/
+*.tsbuildinfo
 
-# Logs
+# ── Logs ──────────────────────────────────────────────────────────────────────
 logs/
 *.log
 npm-debug.log*
@@ -25,11 +30,22 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# OS files
+# ── Test & coverage ───────────────────────────────────────────────────────────
+coverage/
+.nyc_output/
+
+# ── Docker data volumes (local) ───────────────────────────────────────────────
+mysql_data/
+mysql_dev_data/
+meili_data/
+meili_dev_data/
+
+# ── OS files ──────────────────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
+desktop.ini
 
-# Editor
+# ── Editor & IDE ──────────────────────────────────────────────────────────────
 .vscode/
 .idea/
 *.suo
@@ -38,6 +54,11 @@ Thumbs.db
 *.sln
 *.sw?
 
-# Cache
+# ── Cache ─────────────────────────────────────────────────────────────────────
 .cache/
 .parcel-cache/
+.eslintcache
+.stylelintcache
+
+# ── Claude Code (machine-specific local settings) ─────────────────────────────
+.claude/settings.local.json

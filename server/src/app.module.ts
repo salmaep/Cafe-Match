@@ -26,6 +26,7 @@ import { EventsModule } from './gateway/events.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { ScraperSyncModule } from './scraper-sync/scraper-sync.module';
+import { MeiliModule } from './meili/meili.module';
 
 @Module({
   imports: [
@@ -67,6 +68,7 @@ import { ScraperSyncModule } from './scraper-sync/scraper-sync.module';
     RecapsModule,
     EventsModule,
     ScraperSyncModule,
+    MeiliModule,
   ],
   providers: [
     {

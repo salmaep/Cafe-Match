@@ -1,6 +1,6 @@
 import {
   Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany,
-  JoinColumn, CreateDateColumn, UpdateDateColumn, Index,
+  JoinColumn, CreateDateColumn, UpdateDateColumn, DeleteDateColumn, Index,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Cafe } from '../../cafes/entities/cafe.entity';
@@ -27,6 +27,9 @@ export class Review {
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
+
+  @DeleteDateColumn({ name: 'deleted_at', nullable: true })
+  deletedAt: Date | null;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })

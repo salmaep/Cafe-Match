@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import type { Facility, PurposeLabel, WizardPreferences } from '../../types/wizard';
 import { usePreferences } from '../../context/PreferencesContext';
 import { useGeolocation } from '../../hooks/useGeolocation';
+import { parseCoords } from '../../utils/parseCoords';
 import { TOTAL_STEPS } from './wizardData';
 import StepPurpose from './StepPurpose';
 import StepLocation from './StepLocation';
@@ -59,6 +60,12 @@ export default function Wizard() {
     setAmenities((prev) => (prev.includes(a) ? prev.filter((x) => x !== a) : [...prev, a]));
   };
 
+  // Block "Next" on Step 2 (location) when user picked custom but coords are empty.
+  const isNextDisabled =
+    step === 1 &&
+    locationType === 'custom' &&
+    (customLat === null || customLng === null);
+
   return (
     <div className="min-h-screen flex flex-col bg-[#FAF9F6]">
       <header className="flex items-center justify-between px-6 pt-10 pb-3 max-w-2xl w-full mx-auto">
@@ -103,11 +110,19 @@ export default function Wizard() {
             <StepLocation
               locationType={locationType}
               customAddress={customAddress}
+              customLat={customLat}
+              customLng={customLng}
               onTypeChange={setLocationType}
               onAddressChange={(text) => {
                 setCustomAddress(text);
-                setCustomLat(null);
-                setCustomLng(null);
+                const coords = parseCoords(text);
+                if (coords) {
+                  setCustomLat(coords.lat);
+                  setCustomLng(coords.lng);
+                } else {
+                  setCustomLat(null);
+                  setCustomLng(null);
+                }
               }}
               onSuggestionPick={(s) => {
                 setCustomAddress(s.label);
@@ -125,7 +140,8 @@ export default function Wizard() {
         <button
           type="button"
           onClick={handleNext}
-          className="w-full py-4 bg-[#1C1C1A] hover:bg-black text-white font-bold rounded-xl transition-colors"
+          disabled={isNextDisabled}
+          className="w-full py-4 bg-[#1C1C1A] hover:bg-black text-white font-bold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#1C1C1A]"
         >
           {step === TOTAL_STEPS - 1 ? 'Find My Cafe' : 'Next'}
         </button>

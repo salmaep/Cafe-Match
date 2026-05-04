@@ -3,6 +3,8 @@ import { DESTINATION_SUGGESTIONS } from './wizardData';
 interface Props {
   locationType: 'current' | 'custom';
   customAddress: string;
+  customLat: number | null;
+  customLng: number | null;
   onTypeChange: (t: 'current' | 'custom') => void;
   onAddressChange: (text: string) => void;
   onSuggestionPick: (s: (typeof DESTINATION_SUGGESTIONS)[number]) => void;
@@ -11,10 +13,16 @@ interface Props {
 export default function StepLocation({
   locationType,
   customAddress,
+  customLat,
+  customLng,
   onTypeChange,
   onAddressChange,
   onSuggestionPick,
 }: Props) {
+  const showWarn =
+    customAddress.length > 0 && (customLat === null || customLng === null);
+  const showOk = customLat !== null && customLng !== null;
+
   return (
     <div className="w-full px-6 pt-8">
       <h2 className="text-3xl font-bold text-[#1C1C1A] mb-1">Where are you heading?</h2>
@@ -63,11 +71,21 @@ export default function StepLocation({
         <div className="mt-4">
           <input
             type="text"
-            placeholder="e.g. Senopati, Jakarta"
+            placeholder="Nama daerah atau koordinat (-6.9175, 107.6191)"
             value={customAddress}
             onChange={(e) => onAddressChange(e.target.value)}
             className="w-full bg-[#F0EDE8] rounded-xl px-4 py-3 text-base text-[#1C1C1A] outline-none focus:ring-2 focus:ring-[#D48B3A] placeholder:text-[#8A8880]"
           />
+          {showWarn && (
+            <p className="text-xs font-medium text-[#B58A2C] mt-2">
+              ⚠️ Format koordinat: "lat, lng" — atau pilih suggestion di bawah
+            </p>
+          )}
+          {showOk && (
+            <p className="text-xs font-semibold text-[#2F8F4E] mt-2">
+              ✓ Koordinat: {customLat!.toFixed(4)}, {customLng!.toFixed(4)}
+            </p>
+          )}
           <p className="text-xs font-semibold text-[#8A8880] mt-4 mb-2 uppercase tracking-wide">
             Suggested Destinations
           </p>

@@ -1,0 +1,51 @@
+# cafe-match.yaml — K8s Service + Endpoints bridging to host ports where
+# docker-compose runs. Routing & TLS handled by cafe-match-cert.yaml (Ingress).
+#
+# REPLACE <HOST_IP> with the docker host's private IP that your K8s nodes can reach.
+
+# ──────────────────────────────────────────────────────────────────────────────
+# WEB — host:3083 (Vite preview container)
+# ──────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Service
+metadata:
+  name: cafe-match-web
+spec:
+  ports:
+    - protocol: TCP
+      port: 3083
+      targetPort: 3083
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: cafe-match-web
+subsets:
+  - addresses:
+      - ip: <HOST_IP>
+    ports:
+      - port: 3083
+
+# ──────────────────────────────────────────────────────────────────────────────
+# API — host:3084 (NestJS container)
+# ──────────────────────────────────────────────────────────────────────────────
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cafe-match-api
+spec:
+  ports:
+    - protocol: TCP
+      port: 3084
+      targetPort: 3084
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: cafe-match-api
+subsets:
+  - addresses:
+      - ip: <HOST_IP>
+    ports:
+      - port: 3084

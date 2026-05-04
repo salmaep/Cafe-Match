@@ -14,10 +14,37 @@ export interface SearchParams {
   limit?: number;
 }
 
-export const cafesApi = {
-  search: (params: SearchParams) =>
-    apiClient.get<PaginatedResponse<Cafe>>('/cafes', { params }),
+// Meilisearch returns documents with `_geo: { lat, lng }` (the geo field) instead
+// of flat `latitude` / `longitude`. Map components and detail pages read the flat
+// shape, so normalize once at the API boundary.
+type MeiliCafeHit = Cafe & {
+  _geo?: { lat: number; lng: number };
+  distance?: number;
+};
 
-  getById: (id: number) =>
-    apiClient.get<Cafe>(`/cafes/${id}`),
+function normalizeHit(hit: MeiliCafeHit): Cafe {
+  const lat = hit._geo?.lat ?? hit.latitude;
+  const lng = hit._geo?.lng ?? hit.longitude;
+  return {
+    ...hit,
+    latitude: typeof lat === 'number' ? lat : Number(lat),
+    longitude: typeof lng === 'number' ? lng : Number(lng),
+  };
+}
+
+export const cafesApi = {
+  search: async (params: SearchParams) => {
+    const res = await apiClient.get<PaginatedResponse<MeiliCafeHit>>('/cafes', {
+      params,
+    });
+    return {
+      ...res,
+      data: {
+        ...res.data,
+        data: (res.data?.data ?? []).map(normalizeHit),
+      } as PaginatedResponse<Cafe>,
+    };
+  },
+
+  getById: (id: number) => apiClient.get<Cafe>(`/cafes/${id}`),
 };

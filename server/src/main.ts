@@ -19,7 +19,13 @@ async function bootstrap() {
   );
 
   app.enableCors({
-    origin: ['http://localhost:5173', /.*\.expo\.dev$/, /^http:\/\/192\.168\./],
+    origin: [
+      'http://localhost:3083',
+      'http://localhost:5173',
+      'https://salma.imola.ai',
+      /.*\.expo\.dev$/,
+      /^http:\/\/192\.168\./,
+    ],
     credentials: true,
   });
 

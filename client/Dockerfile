@@ -5,12 +5,11 @@ COPY package*.json ./
 RUN npm ci
 
 # Stage 2: build static assets
+# Vite reads `.env` from the project root automatically and bakes values into the bundle.
 FROM node:20-alpine AS build
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-ARG VITE_API_URL=http://localhost:3084/api/v1
-ENV VITE_API_URL=$VITE_API_URL
 RUN npm run build
 
 # Stage 3: serve via Vite preview

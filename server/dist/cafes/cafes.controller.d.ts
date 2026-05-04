@@ -58,6 +58,20 @@ export declare class CafesController {
             promoPhoto?: string;
         } | null;
         isActive: boolean;
+        category: string;
+        city: string;
+        district: string;
+        claimedByOwner: boolean;
+        reviewsDistribution: {
+            oneStar: number;
+            twoStar: number;
+            threeStar: number;
+            fourStar: number;
+            fiveStar: number;
+        } | null;
+        pricingRaw: string;
+        lastScrapedAt: Date;
+        scraperSource: string;
         createdAt: Date;
         updatedAt: Date;
         owner: import("../users/entities/user.entity").User;
@@ -113,6 +127,20 @@ export declare class CafesController {
             promoPhoto?: string;
         } | null;
         isActive: boolean;
+        category: string;
+        city: string;
+        district: string;
+        claimedByOwner: boolean;
+        reviewsDistribution: {
+            oneStar: number;
+            twoStar: number;
+            threeStar: number;
+            fourStar: number;
+            fiveStar: number;
+        } | null;
+        pricingRaw: string;
+        lastScrapedAt: Date;
+        scraperSource: string;
         createdAt: Date;
         updatedAt: Date;
         owner: import("../users/entities/user.entity").User;
@@ -168,6 +196,20 @@ export declare class CafesController {
             promoPhoto?: string;
         } | null;
         isActive: boolean;
+        category: string;
+        city: string;
+        district: string;
+        claimedByOwner: boolean;
+        reviewsDistribution: {
+            oneStar: number;
+            twoStar: number;
+            threeStar: number;
+            fourStar: number;
+            fiveStar: number;
+        } | null;
+        pricingRaw: string;
+        lastScrapedAt: Date;
+        scraperSource: string;
         createdAt: Date;
         updatedAt: Date;
         owner: import("../users/entities/user.entity").User;

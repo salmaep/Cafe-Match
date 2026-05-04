@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Navigate } from "react-router-dom";
-import { useGeolocation } from "../hooks/useGeolocation";
+import { useGeolocation, FALLBACK_LAT, FALLBACK_LNG } from "../hooks/useGeolocation";
 import { cafesApi, type SearchParams } from "../api/cafes.api";
 import { promotionsApi } from "../api/promotions.api";
 import { usePreferences } from "../context/PreferencesContext";
@@ -13,6 +13,11 @@ import PurposeFilter from "../components/search/PurposeFilter";
 import SearchBar from "../components/search/SearchBar";
 import RadiusSlider from "../components/search/RadiusSlider";
 import BottomSheet from "../components/layout/BottomSheet";
+import HybridAdSlot from "../components/HybridAdSlot";
+import InfiniteScrollSentinel from "../components/InfiniteScrollSentinel";
+
+const AD_INTERVAL = 5;
+const PAGE_SIZE = 20;
 
 interface Filters {
   q: string;
@@ -28,8 +33,14 @@ export default function HomePage() {
   const { wizardCompleted } = usePreferences();
   const geo = useGeolocation();
   const [cafes, setCafes] = useState<Cafe[]>([]);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [center, setCenter] = useState<[number, number] | null>(null);
+  // Track whether the current center came from GPS or a manual user action
+  // (map click / fallback button). When `gps`, GPS updates may overwrite center;
+  // when `manual`, GPS updates are ignored until user explicitly recenters.
+  const [centerSource, setCenterSource] = useState<'gps' | 'manual'>('gps');
   const [radius, setRadius] = useState(2000);
   const [purposeId, setPurposeId] = useState<number | null>(null);
   const [filters, setFilters] = useState<Filters>({
@@ -51,10 +62,11 @@ export default function HomePage() {
   }, [viewMode]);
 
   useEffect(() => {
-    if (geo.latitude && geo.longitude && !center) {
+    if (centerSource !== 'gps') return;
+    if (geo.latitude && geo.longitude) {
       setCenter([geo.latitude, geo.longitude]);
     }
-  }, [geo.latitude, geo.longitude, center]);
+  }, [geo.latitude, geo.longitude, centerSource]);
 
   useEffect(() => {
     promotionsApi
@@ -63,30 +75,63 @@ export default function HomePage() {
       .catch(() => {});
   }, []);
 
-  const fetchCafes = useCallback(async () => {
-    if (!center) return;
-    setLoading(true);
-    try {
-      const params: SearchParams = { lat: center[0], lng: center[1], radius };
-      if (purposeId) params.purposeId = purposeId;
-      if (filters.q) params.q = filters.q;
-      if (filters.wifiAvailable) params.wifiAvailable = "true";
-      if (filters.hasMushola) params.hasMushola = "true";
-      if (filters.priceRange) params.priceRange = filters.priceRange;
-      const res = await cafesApi.search(params);
-      setCafes(res.data.data);
-    } catch {
-      setCafes([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [center, radius, purposeId, filters]);
+  const fetchCafes = useCallback(
+    async (targetPage: number) => {
+      if (!center) return;
+      setLoading(true);
+      try {
+        const params: SearchParams = {
+          lat: center[0],
+          lng: center[1],
+          radius,
+          page: targetPage,
+          limit: PAGE_SIZE,
+        };
+        if (purposeId) params.purposeId = purposeId;
+        if (filters.q) params.q = filters.q;
+        if (filters.wifiAvailable) params.wifiAvailable = "true";
+        if (filters.hasMushola) params.hasMushola = "true";
+        if (filters.priceRange) params.priceRange = filters.priceRange;
+        const res = await cafesApi.search(params);
+        const incoming = res.data.data ?? [];
+        const totalCount = res.data.meta?.total ?? incoming.length;
+        // Append on page > 1, replace on page 1 (fresh search).
+        setCafes((prev) => (targetPage === 1 ? incoming : [...prev, ...incoming]));
+        setTotal(totalCount);
+      } catch {
+        if (targetPage === 1) setCafes([]);
+        setTotal(0);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [center, radius, purposeId, filters],
+  );
 
+  // Reset to page 1 + refetch whenever search inputs change.
   useEffect(() => {
-    fetchCafes();
-  }, [fetchCafes]);
+    setPage(1);
+    fetchCafes(1);
+  }, [center, radius, purposeId, filters, fetchCafes]);
 
-  const handleMapClick = (lat: number, lng: number) => setCenter([lat, lng]);
+  const hasMore = cafes.length < total;
+
+  const loadMore = () => {
+    if (loading || !hasMore) return;
+    const next = page + 1;
+    setPage(next);
+    fetchCafes(next);
+  };
+
+  const handleMapClick = (lat: number, lng: number) => {
+    setCenter([lat, lng]);
+    setCenterSource('manual');
+  };
+
+  const useMyLocation = () => {
+    setCenterSource('gps');
+    geo.refetch();
+  };
   const handleSearch = (newFilters: Filters) => setFilters(newFilters);
 
   // Debounce mobile search input
@@ -119,7 +164,10 @@ export default function HomePage() {
             in your browser.
           </p>
           <button
-            onClick={() => setCenter([-6.8965, 107.591])}
+            onClick={() => {
+              setCenter([FALLBACK_LAT, FALLBACK_LNG]);
+              setCenterSource('manual');
+            }}
             className="mt-4 px-4 py-2 bg-[#D48B3A] text-white rounded-lg text-sm"
           >
             Use Bandung as default
@@ -145,6 +193,21 @@ export default function HomePage() {
           />
         )}
       </div>
+
+      {/* "Use my location" floating button — mobile only. Sits above bottom sheet bar. */}
+      <button
+        type="button"
+        onClick={useMyLocation}
+        title="Gunakan lokasi saya"
+        className="lg:hidden fixed right-3 bottom-[calc(55vh+12px)] z-20 w-10 h-10 rounded-full bg-white shadow-lg border border-[#F0EDE8] flex items-center justify-center text-lg active:scale-95 transition-transform disabled:opacity-50"
+        disabled={geo.loading}
+      >
+        {geo.loading ? (
+          <div className="w-4 h-4 border-2 border-[#D48B3A] border-t-transparent rounded-full animate-spin" />
+        ) : (
+          <span className={centerSource === 'gps' ? 'text-[#D48B3A]' : 'text-[#8A8880]'}>📍</span>
+        )}
+      </button>
 
       <div className="lg:hidden">
         <BottomSheet
@@ -233,17 +296,26 @@ export default function HomePage() {
               <p className="text-sm font-bold text-[#1C1C1A]">
                 {loading
                   ? "Mencari kafe…"
-                  : cafes.length === 0
+                  : total === 0
                     ? "Tidak ada kafe ditemukan"
-                    : `${cafes.length} kafe dalam ${radius / 1000} km`}
+                    : `${total} kafe dalam ${radius / 1000} km`}
               </p>
             </div>
 
             {/* List — compact horizontal rows (matches Android MapScreen list) */}
             <div className="space-y-2">
-              {cafes.map((cafe) => (
-                <CafeListItem key={cafe.id} cafe={cafe} />
-              ))}
+              {cafes.flatMap((cafe, i) => {
+                const showAd = (i + 1) % AD_INTERVAL === 0 && i !== cafes.length - 1;
+                const nodes = [<CafeListItem key={cafe.id} cafe={cafe} />];
+                if (showAd) {
+                  const slotIdx = Math.floor(i / AD_INTERVAL);
+                  nodes.push(<HybridAdSlot key={`ad-${i}`} slotIndex={slotIdx} variant="list" />);
+                }
+                return nodes;
+              })}
+              {cafes.length > 0 && (
+                <InfiniteScrollSentinel onLoadMore={loadMore} hasMore={hasMore} loading={loading} />
+              )}
               {!loading && cafes.length === 0 && (
                 <div className="text-center py-10">
                   <span className="text-4xl mb-2 inline-block">☕</span>
@@ -275,6 +347,23 @@ export default function HomePage() {
               onMapClick={handleMapClick}
             />
           )}
+          {/* "Use my location" button — desktop overlay on map */}
+          <button
+            type="button"
+            onClick={useMyLocation}
+            title="Gunakan lokasi saya"
+            disabled={geo.loading}
+            className="absolute right-3 bottom-3 z-[1000] flex items-center gap-1.5 px-3 py-2 rounded-full bg-white shadow-lg border border-[#F0EDE8] text-xs font-semibold hover:border-[#D48B3A] hover:text-[#D48B3A] active:scale-95 transition-all disabled:opacity-50"
+          >
+            {geo.loading ? (
+              <div className="w-3.5 h-3.5 border-2 border-[#D48B3A] border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <span className={centerSource === 'gps' ? 'text-[#D48B3A]' : 'text-[#8A8880]'}>📍</span>
+            )}
+            <span className={centerSource === 'gps' ? 'text-[#D48B3A]' : 'text-[#1C1C1A]'}>
+              Lokasi saya
+            </span>
+          </button>
         </div>
 
         <div className="lg:flex-1 lg:flex lg:flex-col gap-3 lg:overflow-hidden">
@@ -339,7 +428,7 @@ export default function HomePage() {
                 </button>
               </div>
               <div className="text-sm text-gray-500 min-w-0 truncate">
-                {loading ? "Searching..." : `${cafes.length} cafes found`}
+                {loading ? "Searching..." : `${total} cafes found`}
               </div>
             </div>
             {!loading && cafes.length > 0 && (
@@ -356,21 +445,36 @@ export default function HomePage() {
           <div className="flex-1 overflow-y-auto pb-4">
             {viewMode === 'grid' ? (
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
-                {cafes.map((cafe) => (
-                  <CafeCard key={cafe.id} cafe={cafe} />
-                ))}
+                {cafes.flatMap((cafe, i) => {
+                  const showAd = (i + 1) % AD_INTERVAL === 0 && i !== cafes.length - 1;
+                  const nodes = [<CafeCard key={cafe.id} cafe={cafe} />];
+                  if (showAd) {
+                    const slotIdx = Math.floor(i / AD_INTERVAL);
+                    nodes.push(<HybridAdSlot key={`ad-${i}`} slotIndex={slotIdx} variant="card" />);
+                  }
+                  return nodes;
+                })}
               </div>
             ) : (
               <div className="space-y-2">
-                {cafes.map((cafe) => (
-                  <CafeListItem key={cafe.id} cafe={cafe} />
-                ))}
+                {cafes.flatMap((cafe, i) => {
+                  const showAd = (i + 1) % AD_INTERVAL === 0 && i !== cafes.length - 1;
+                  const nodes = [<CafeListItem key={cafe.id} cafe={cafe} />];
+                  if (showAd) {
+                    const slotIdx = Math.floor(i / AD_INTERVAL);
+                    nodes.push(<HybridAdSlot key={`ad-${i}`} slotIndex={slotIdx} variant="list" />);
+                  }
+                  return nodes;
+                })}
               </div>
             )}
             {!loading && cafes.length === 0 && (
               <p className="text-center text-gray-400 py-8">
                 No cafes found nearby
               </p>
+            )}
+            {cafes.length > 0 && (
+              <InfiniteScrollSentinel onLoadMore={loadMore} hasMore={hasMore} loading={loading} />
             )}
           </div>
         </div>
@@ -390,7 +494,7 @@ export default function HomePage() {
               <div>
                 <h2 className="text-xl font-bold text-[#1C1C1A]">All Cafes</h2>
                 <p className="text-sm text-[#8A8880] mt-0.5">
-                  {cafes.length} kafe dalam {radius / 1000} km
+                  {total} kafe dalam {radius / 1000} km
                 </p>
               </div>
               <button
@@ -404,10 +508,19 @@ export default function HomePage() {
             </div>
             <div className="flex-1 overflow-y-auto p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
-                {cafes.map((cafe) => (
-                  <CafeCard key={cafe.id} cafe={cafe} />
-                ))}
+                {cafes.flatMap((cafe, i) => {
+                  const showAd = (i + 1) % AD_INTERVAL === 0 && i !== cafes.length - 1;
+                  const nodes = [<CafeCard key={cafe.id} cafe={cafe} />];
+                  if (showAd) {
+                    const slotIdx = Math.floor(i / AD_INTERVAL);
+                    nodes.push(<HybridAdSlot key={`ad-${i}`} slotIndex={slotIdx} variant="card" />);
+                  }
+                  return nodes;
+                })}
               </div>
+              {cafes.length > 0 && (
+                <InfiniteScrollSentinel onLoadMore={loadMore} hasMore={hasMore} loading={loading} />
+              )}
             </div>
           </div>
         </div>

@@ -34,6 +34,7 @@ const recaps_module_1 = require("./recaps/recaps.module");
 const events_module_1 = require("./gateway/events.module");
 const jwt_auth_guard_1 = require("./common/guards/jwt-auth.guard");
 const roles_guard_1 = require("./common/guards/roles.guard");
+const scraper_sync_module_1 = require("./scraper-sync/scraper-sync.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -77,6 +78,7 @@ exports.AppModule = AppModule = __decorate([
             friends_module_1.FriendsModule,
             recaps_module_1.RecapsModule,
             events_module_1.EventsModule,
+            scraper_sync_module_1.ScraperSyncModule,
         ],
         providers: [
             {

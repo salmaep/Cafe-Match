@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { analyticsApi } from '../../api/analytics.api';
+import { placeholderImage } from '../../utils/cafeImage';
 
 interface Props {
   cafe: {
@@ -17,18 +18,8 @@ interface Props {
 }
 
 export default function FeaturedCafeCard({ cafe, promotion }: Props) {
-  const hue = (cafe.id * 37) % 360;
-  const fallbackSvg = `data:image/svg+xml,${encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="300" height="160">
-        <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="hsl(${hue},60%,75%)"/>
-          <stop offset="100%" stop-color="hsl(${(hue + 40) % 360},50%,60%)"/>
-        </linearGradient></defs>
-        <rect width="300" height="160" fill="url(#g)"/>
-        <text x="150" y="90" text-anchor="middle" font-size="40" fill="rgba(255,255,255,0.8)">&#9749;</text>
-      </svg>`,
-  )}`;
-  const imgSrc = promotion?.content_photo_url || fallbackSvg;
+  const fallback = placeholderImage(cafe.id);
+  const imgSrc = promotion?.content_photo_url || fallback;
 
   const handleClick = () => {
     analyticsApi.track(cafe.id, 'click').catch(() => {});
@@ -46,7 +37,7 @@ export default function FeaturedCafeCard({ cafe, promotion }: Props) {
         className="w-full h-32 object-cover bg-[#F0EDE8]"
         onError={(e) => {
           const el = e.currentTarget as HTMLImageElement;
-          if (el.src !== fallbackSvg) el.src = fallbackSvg;
+          if (el.src !== fallback) el.src = fallback;
         }}
       />
       <div className="p-3">

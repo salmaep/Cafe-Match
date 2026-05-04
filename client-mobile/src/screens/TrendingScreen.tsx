@@ -17,6 +17,10 @@ import { MOCK_CAFES } from '../data/mockCafes';
 import api, { fetchGlobalLeaderboard } from '../services/api';
 import { Cafe, Purpose } from '../types';
 import { colors, spacing, radius } from '../theme';
+import NativeAdCard from '../components/NativeAdCard';
+import { interleaveAds, WithAd } from '../utils/adInterleave';
+
+type ListItem = WithAd<{ cafe: Cafe; rank: number }>;
 
 // ─── Purpose filter options ───
 const PURPOSE_FILTERS: Array<'All' | Purpose> = [
@@ -163,8 +167,7 @@ export default function TrendingScreen() {
   };
 
   // ─── Render each ranked cafe item ───
-  const renderItem = ({ item, index }: { item: Cafe; index: number }) => {
-    const rank = index + 1;
+  const renderCafe = (item: Cafe, rank: number) => {
     const rankColor = RANK_COLORS[rank] || colors.surface;
     const rankTextColor = rank <= 3 ? colors.primary : colors.textSecondary;
 
@@ -219,6 +222,11 @@ export default function TrendingScreen() {
         </View>
       </TouchableOpacity>
     );
+  };
+
+  const renderItem = ({ item }: { item: ListItem }) => {
+    if (item.kind === 'ad') return <NativeAdCard />;
+    return renderCafe(item.data.cafe, item.data.rank);
   };
 
   const renderEmpty = () => (
@@ -307,8 +315,8 @@ export default function TrendingScreen() {
             </View>
           ) : (
             <FlatList
-              data={cafes}
-              keyExtractor={item => item.id}
+              data={interleaveAds(cafes.map((cafe, i) => ({ cafe, rank: i + 1 })))}
+              keyExtractor={item => (item.kind === 'ad' ? item.key : item.data.cafe.id)}
               renderItem={renderItem}
               ListEmptyComponent={renderEmpty}
               contentContainerStyle={

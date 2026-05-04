@@ -1,9 +1,10 @@
-import React, { useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { NavigationContainer, NavigationContainerRef } from '@react-navigation/native';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from './src/lib/query-client';
+import mobileAds from 'react-native-google-mobile-ads';
 import { AuthProvider } from './src/context/AuthContext';
 import { ShortlistProvider } from './src/context/ShortlistContext';
 import { PreferencesProvider } from './src/context/PreferencesContext';
@@ -17,6 +18,12 @@ import InAppNotificationBanner from './src/components/InAppNotificationBanner';
 
 export default function App() {
   const navRef = useRef<NavigationContainerRef<any>>(null);
+
+  useEffect(() => {
+    mobileAds()
+      .initialize()
+      .catch(() => {});
+  }, []);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

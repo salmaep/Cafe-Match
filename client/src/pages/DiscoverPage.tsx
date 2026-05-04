@@ -26,8 +26,8 @@ export default function DiscoverPage() {
 
   useEffect(() => {
     if (!wizardCompleted) return;
-    const lat = preferences?.location?.latitude ?? -6.89;
-    const lng = preferences?.location?.longitude ?? 107.57;
+    const lat = preferences?.location?.latitude ?? -6.9175;
+    const lng = preferences?.location?.longitude ?? 107.6191;
     // DEV: fetch all cafes regardless of wizard radius (mirrors mobile DEV_DISABLE_RADIUS)
     const radius = 9999 * 1000;
 

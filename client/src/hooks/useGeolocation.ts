@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 interface GeoState {
   latitude: number | null;
@@ -6,6 +6,11 @@ interface GeoState {
   error: string | null;
   loading: boolean;
 }
+
+// Fallback center used when GPS is denied / unavailable. All sample data is
+// in Bandung so we point there instead of (0, 0) or a random city.
+export const FALLBACK_LAT = -6.9175;
+export const FALLBACK_LNG = 107.6191;
 
 export function useGeolocation() {
   const [state, setState] = useState<GeoState>({
@@ -15,16 +20,17 @@ export function useGeolocation() {
     loading: true,
   });
 
-  useEffect(() => {
+  const refetch = useCallback(() => {
     if (!navigator.geolocation) {
-      setState((prev) => ({
-        ...prev,
+      setState({
+        latitude: null,
+        longitude: null,
         error: 'Geolocation is not supported',
         loading: false,
-      }));
+      });
       return;
     }
-
+    setState((prev) => ({ ...prev, loading: true, error: null }));
     navigator.geolocation.getCurrentPosition(
       (position) => {
         setState({
@@ -41,9 +47,14 @@ export function useGeolocation() {
           loading: false,
         }));
       },
-      { enableHighAccuracy: true, timeout: 10000 },
+      // High accuracy + 60s cache so quick re-mounts don't re-prompt the GPS.
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60_000 },
     );
   }, []);
 
-  return state;
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
+
+  return { ...state, refetch };
 }

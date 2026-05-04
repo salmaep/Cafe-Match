@@ -3,8 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { cafesApi } from '../api/cafes.api';
 import { purposesApi } from '../api/purposes.api';
 import type { Cafe, Purpose } from '../types';
-import { useGeolocation } from '../hooks/useGeolocation';
+import { useGeolocation, FALLBACK_LAT, FALLBACK_LNG } from '../hooks/useGeolocation';
 import { getCafeImage, placeholderImage } from '../utils/cafeImage';
+import HybridAdSlot from '../components/HybridAdSlot';
+import InfiniteScrollSentinel from '../components/InfiniteScrollSentinel';
+
+const AD_INTERVAL = 5;
+const PAGE_SIZE = 10;
 
 const RANK_COLORS: Record<number, string> = {
   1: '#FFD700',
@@ -14,11 +19,13 @@ const RANK_COLORS: Record<number, string> = {
 
 export default function TrendingPage() {
   const navigate = useNavigate();
-  const { latitude, longitude } = useGeolocation();
+  const { latitude, longitude, loading: geoLoading } = useGeolocation();
 
   const [purposes, setPurposes] = useState<Purpose[]>([]);
   const [activePurposeId, setActivePurposeId] = useState<number | null>(null);
   const [cafes, setCafes] = useState<Cafe[]>([]);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -28,20 +35,48 @@ export default function TrendingPage() {
       .catch(() => setPurposes([]));
   }, []);
 
-  useEffect(() => {
+  const fetchCafes = (targetPage: number) => {
     setLoading(true);
     cafesApi
       .search({
-        lat: latitude ?? -6.2,
-        lng: longitude ?? 106.8,
+        lat: latitude ?? FALLBACK_LAT,
+        lng: longitude ?? FALLBACK_LNG,
         radius: 5000,
         purposeId: activePurposeId ?? undefined,
-        limit: 10,
+        page: targetPage,
+        limit: PAGE_SIZE,
       })
-      .then((res) => setCafes(res.data?.data ?? []))
-      .catch(() => setCafes([]))
+      .then((res) => {
+        const incoming = res.data?.data ?? [];
+        const totalCount = res.data?.meta?.total ?? incoming.length;
+        setCafes((prev) => (targetPage === 1 ? incoming : [...prev, ...incoming]));
+        setTotal(totalCount);
+      })
+      .catch(() => {
+        if (targetPage === 1) setCafes([]);
+        setTotal(0);
+      })
       .finally(() => setLoading(false));
-  }, [latitude, longitude, activePurposeId]);
+  };
+
+  // Reset + refetch on filter / location change.
+  // Wait for GPS to resolve so we don't fetch with the Bandung fallback first
+  // and then refetch with the real GPS — that double-fetch flickers the list.
+  useEffect(() => {
+    if (geoLoading) return;
+    setPage(1);
+    fetchCafes(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [latitude, longitude, activePurposeId, geoLoading]);
+
+  const hasMore = cafes.length < total;
+
+  const loadMore = () => {
+    if (loading || !hasMore) return;
+    const next = page + 1;
+    setPage(next);
+    fetchCafes(next);
+  };
 
   return (
     <div className="min-h-screen bg-[#FAF9F6]">
@@ -92,46 +127,59 @@ export default function TrendingPage() {
               const rankBg = RANK_COLORS[rank] ?? '#F0EDE8';
               const rankText = rank <= 3 ? '#1C1C1A' : '#8A8880';
 
+              const showAdAfter =
+                (i + 1) % AD_INTERVAL === 0 && i !== cafes.length - 1;
+
               return (
-                <button
-                  key={cafe.id}
-                  onClick={() => navigate(`/cafe/${cafe.id}`)}
-                  className="w-full flex items-center gap-3 bg-white rounded-xl p-3 shadow-sm hover:shadow-md transition-shadow text-left"
-                >
-                  <div
-                    className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
-                    style={{ backgroundColor: rankBg, color: rankText }}
+                <div key={cafe.id}>
+                  <button
+                    onClick={() => navigate(`/cafe/${cafe.id}`)}
+                    className="w-full flex items-center gap-3 bg-white rounded-xl p-3 shadow-sm hover:shadow-md transition-shadow text-left"
                   >
-                    {rank}
-                  </div>
-                  <img
-                    src={photo}
-                    alt={cafe.name}
-                    className="shrink-0 w-[70px] h-[70px] rounded-xl object-cover bg-[#F0EDE8]"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src = placeholderImage(cafe.id);
-                    }}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-[#1C1C1A] mb-0.5 truncate">{cafe.name}</h3>
-                    {distanceKm && (
-                      <p className="text-xs text-[#8A8880] mb-1">{distanceKm} km</p>
-                    )}
-                    {cafe.priceRange && (
-                      <span className="inline-block bg-[#FDF6EC] rounded-full px-2 py-0.5 text-[11px] font-semibold text-[#D48B3A]">
-                        {cafe.priceRange}
+                    <div
+                      className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
+                      style={{ backgroundColor: rankBg, color: rankText }}
+                    >
+                      {rank}
+                    </div>
+                    <img
+                      src={photo}
+                      alt={cafe.name}
+                      className="shrink-0 w-[70px] h-[70px] rounded-xl object-cover bg-[#F0EDE8]"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = placeholderImage(cafe.id);
+                      }}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-bold text-[#1C1C1A] mb-0.5 truncate">{cafe.name}</h3>
+                      {distanceKm && (
+                        <p className="text-xs text-[#8A8880] mb-1">{distanceKm} km</p>
+                      )}
+                      {cafe.priceRange && (
+                        <span className="inline-block bg-[#FDF6EC] rounded-full px-2 py-0.5 text-[11px] font-semibold text-[#D48B3A]">
+                          {cafe.priceRange}
+                        </span>
+                      )}
+                    </div>
+                    <div className="shrink-0 flex flex-col items-center min-w-[40px]">
+                      <span className="text-base">❤️</span>
+                      <span className="text-xs font-bold text-[#D48B3A] mt-0.5">
+                        {cafe.favoritesCount ?? 0}
                       </span>
-                    )}
-                  </div>
-                  <div className="shrink-0 flex flex-col items-center min-w-[40px]">
-                    <span className="text-base">❤️</span>
-                    <span className="text-xs font-bold text-[#D48B3A] mt-0.5">
-                      {cafe.favoritesCount ?? 0}
-                    </span>
-                  </div>
-                </button>
+                    </div>
+                  </button>
+                  {showAdAfter && (
+                    <div className="mt-3">
+                      <HybridAdSlot
+                        slotIndex={Math.floor(i / AD_INTERVAL)}
+                        variant="list"
+                      />
+                    </div>
+                  )}
+                </div>
               );
             })}
+            <InfiniteScrollSentinel onLoadMore={loadMore} hasMore={hasMore} loading={loading} />
           </div>
         )}
       </div>

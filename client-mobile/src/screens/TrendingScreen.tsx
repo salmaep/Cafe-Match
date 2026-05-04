@@ -19,6 +19,10 @@ import { useSearchCafes } from '../queries/cafes/use-search-cafes';
 import { hitsToCafes } from '../queries/cafes/api';
 import { Cafe, Purpose } from '../types';
 import { colors, spacing, radius } from '../theme';
+import NativeAdCard from '../components/NativeAdCard';
+import { interleaveAds, WithAd } from '../utils/adInterleave';
+
+type ListItem = WithAd<{ cafe: Cafe; rank: number }>;
 
 // ─── Purpose filter options ───
 const PURPOSE_FILTERS: Array<'All' | Purpose> = [
@@ -113,8 +117,7 @@ export default function TrendingScreen() {
   };
 
   // ─── Render each ranked cafe item ───
-  const renderItem = ({ item, index }: { item: Cafe; index: number }) => {
-    const rank = index + 1;
+  const renderCafe = (item: Cafe, rank: number) => {
     const rankColor = RANK_COLORS[rank] || colors.surface;
     const rankTextColor = rank <= 3 ? colors.primary : colors.textSecondary;
 
@@ -169,6 +172,11 @@ export default function TrendingScreen() {
         </View>
       </TouchableOpacity>
     );
+  };
+
+  const renderItem = ({ item }: { item: ListItem }) => {
+    if (item.kind === 'ad') return <NativeAdCard />;
+    return renderCafe(item.data.cafe, item.data.rank);
   };
 
   const renderEmpty = () => (
@@ -257,7 +265,7 @@ export default function TrendingScreen() {
             </View>
           ) : (
             <FlatList
-              data={displayCafes}
+              data={cafes}
               keyExtractor={item => item.id}
               renderItem={renderItem}
               ListEmptyComponent={renderEmpty}

@@ -163,8 +163,12 @@ export default function OwnerRegisterPage() {
             <Input
               type="tel"
               value={form.phone}
-              onChange={(v) => set('phone', v)}
+              // Allow digits, spaces, hyphens, parentheses, and a leading "+"
+              onChange={(v) => set('phone', v.replace(/[^\d+\s\-()]/g, ''))}
               placeholder="+62 812 3456 7890"
+              inputMode="tel"
+              autoComplete="tel"
+              maxLength={20}
             />
           </div>
 
@@ -206,8 +210,10 @@ function Input({
   placeholder,
   required,
   minLength,
+  maxLength,
   autoComplete,
   invalid,
+  inputMode,
 }: {
   type?: string;
   value: string;
@@ -215,8 +221,10 @@ function Input({
   placeholder?: string;
   required?: boolean;
   minLength?: number;
+  maxLength?: number;
   autoComplete?: string;
   invalid?: boolean;
+  inputMode?: 'text' | 'tel' | 'email' | 'numeric' | 'decimal' | 'search' | 'url';
 }) {
   return (
     <input
@@ -226,7 +234,9 @@ function Input({
       placeholder={placeholder}
       required={required}
       minLength={minLength}
+      maxLength={maxLength}
       autoComplete={autoComplete}
+      inputMode={inputMode}
       className={`w-full px-4 py-3 rounded-xl text-[15px] text-[#1C1C1A] placeholder:text-[#8A8880] outline-none transition-all ${
         invalid
           ? 'bg-red-50 ring-2 ring-red-300 focus:ring-red-400'

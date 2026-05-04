@@ -78,28 +78,61 @@ export class OwnerService {
       .replace(/-+/g, '-')
       .trim() + '-' + Date.now().toString(36);
 
-    const cafe = this.cafesRepo.create({
-      name: dto.name,
-      slug,
-      address: dto.address,
-      phone: dto.phone || null,
-      description: dto.description || null,
-      latitude: dto.latitude || -6.8965,
-      longitude: dto.longitude || 107.591,
-      ownerId: userId,
-      googleMapsUrl: `https://www.google.com/maps?q=${dto.latitude || -6.8965},${dto.longitude || 107.591}`,
-    } as Partial<Cafe>);
+    const lat = dto.latitude ?? -6.9175;
+    const lng = dto.longitude ?? 107.6191;
 
-    return this.cafesRepo.save(cafe);
+    // Raw INSERT — TypeORM doesn't map the spatial `location` column, but the
+    // table requires it (NOT NULL POINT). Build the POINT from lat/lng.
+    const result: any = await this.cafesRepo.query(
+      `INSERT INTO cafes (
+         name, slug, address, phone, description,
+         latitude, longitude, location,
+         owner_id, google_maps_url, price_range, is_active,
+         wifi_available, has_mushola, has_parking,
+         has_active_promotion, bookmarks_count, favorites_count
+       ) VALUES (?, ?, ?, ?, ?,
+         ?, ?, ST_PointFromText(CONCAT('POINT(', ?, ' ', ?, ')'), 4326),
+         ?, ?, '$$', TRUE,
+         FALSE, FALSE, FALSE,
+         FALSE, 0, 0)`,
+      [
+        dto.name,
+        slug,
+        dto.address,
+        dto.phone || null,
+        dto.description || null,
+        lat,
+        lng,
+        lng, // POINT order: (lng lat)
+        lat,
+        userId,
+        `https://maps.google.com/?q=${lat},${lng}`,
+      ],
+    );
+
+    const insertedId = result?.insertId;
+    const cafe = await this.cafesRepo.findOne({ where: { id: insertedId } });
+    if (!cafe) throw new ConflictException('Failed to create cafe');
+    return cafe;
   }
 
   async updateCafe(userId: number, dto: UpdateCafeDto): Promise<Cafe> {
     const cafe = await this.requireOwnerCafe(userId);
     Object.assign(cafe, dto);
-    if (dto.latitude || dto.longitude) {
+    if (dto.latitude != null || dto.longitude != null) {
       cafe.googleMapsUrl = `https://www.google.com/maps?q=${cafe.latitude},${cafe.longitude}`;
     }
-    return this.cafesRepo.save(cafe);
+    const saved = await this.cafesRepo.save(cafe);
+
+    // Keep the spatial `location` column in sync with lat/lng for distance
+    // queries. Done via raw query because TypeORM doesn't map this column.
+    if (dto.latitude != null || dto.longitude != null) {
+      await this.cafesRepo.query(
+        `UPDATE cafes SET location = ST_PointFromText(CONCAT('POINT(', ?, ' ', ?, ')'), 4326) WHERE id = ?`,
+        [saved.longitude, saved.latitude, saved.id],
+      );
+    }
+    return saved;
   }
 
   async updateMenus(userId: number, items: UpdateMenuItemDto[]): Promise<CafeMenu[]> {

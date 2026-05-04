@@ -19,6 +19,7 @@ export interface Cafe {
   wifiAvailable: boolean;
   wifiSpeedMbps: number | null;
   hasMushola: boolean;
+  hasParking: boolean;
   openingHours: Record<string, string> | null;
   priceRange: string;
   bookmarksCount: number;

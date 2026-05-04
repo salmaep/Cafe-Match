@@ -24,6 +24,8 @@
     "migration:create": "ts-node --transpile-only --project tsconfig.migration.json ./node_modules/typeorm/cli.js migration:create",
     "migration:run": "ts-node --transpile-only --project tsconfig.migration.json ./node_modules/typeorm/cli.js migration:run -d src/database/data-source.ts",
     "migration:revert": "ts-node --transpile-only --project tsconfig.migration.json ./node_modules/typeorm/cli.js migration:revert -d src/database/data-source.ts",
+    "migration:run:prod": "node ./node_modules/typeorm/cli.js migration:run -d dist/database/data-source.js",
+    "migration:revert:prod": "node ./node_modules/typeorm/cli.js migration:revert -d dist/database/data-source.js",
     "meili:reindex": "ts-node --transpile-only --project tsconfig.migration.json src/meili/cli/reindex.ts",
     "meili:resync-failed": "ts-node --transpile-only --project tsconfig.migration.json src/meili/cli/resync-failed.ts"
   },

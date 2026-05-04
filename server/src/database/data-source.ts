@@ -8,7 +8,8 @@ export default new DataSource({
   username: process.env.DB_USERNAME || 'root',
   password: process.env.DB_PASSWORD || '',
   database: process.env.DB_DATABASE || 'cafematch',
-  migrations: ['src/database/migrations/*.ts'],
+  // __dirname-relative glob works in both dev (ts-node → .ts) and prod (node → .js).
+  migrations: [__dirname + '/migrations/*.{ts,js}'],
   // Fail fast if MySQL isn't responsive (default is 10s, we shorten to 5s)
   connectTimeout: 5000,
   extra: {

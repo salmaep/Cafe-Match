@@ -13,7 +13,6 @@ import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocation } from '../context/LocationContext';
-import { MOCK_CAFES } from '../data/mockCafes';
 import { fetchGlobalLeaderboard } from '../services/api';
 import { useSearchCafes } from '../queries/cafes/use-search-cafes';
 import { hitsToCafes } from '../queries/cafes/api';
@@ -50,18 +49,6 @@ const RANK_COLORS: Record<number, string> = {
   3: '#CD7F32', // bronze
 };
 
-function getFallback(filter: 'All' | Purpose): Cafe[] {
-  let list = [...MOCK_CAFES];
-  if (filter !== 'All') {
-    list = list.filter(
-      (c) => c.purposes && c.purposes.includes(filter as Purpose),
-    );
-  }
-  return list
-    .sort((a, b) => (b.favoritesCount || 0) - (a.favoritesCount || 0))
-    .slice(0, 10);
-}
-
 export default function TrendingScreen() {
   const navigation = useNavigation<StackNavigationProp<any>>();
   const insets = useSafeAreaInsets();
@@ -86,14 +73,17 @@ export default function TrendingScreen() {
     limit: 10,
   });
 
+  // Server (Meilisearch) handles search/filter/sort — purposeId is sent as query param.
   const cafes: Cafe[] = cafesQuery.data
     ? cafesQuery.data.pages.flatMap((p) =>
         hitsToCafes(p, latitude ?? undefined, longitude ?? undefined),
       )
     : [];
 
-  const displayCafes =
-    cafes.length > 0 ? cafes : getFallback(activeFilter);
+  // Build FlatList items with rank + interleaved ads.
+  const listItems: ListItem[] = interleaveAds(
+    cafes.map((cafe, i) => ({ cafe, rank: i + 1 })),
+  );
 
   const loading = cafesQuery.isLoading || cafesQuery.isFetching;
 
@@ -265,12 +255,14 @@ export default function TrendingScreen() {
             </View>
           ) : (
             <FlatList
-              data={cafes}
-              keyExtractor={item => item.id}
+              data={listItems}
+              keyExtractor={(item) =>
+                item.kind === 'ad' ? item.key : item.data.cafe.id
+              }
               renderItem={renderItem}
               ListEmptyComponent={renderEmpty}
               contentContainerStyle={
-                displayCafes.length === 0 ? styles.listEmptyContent : styles.listContent
+                cafes.length === 0 ? styles.listEmptyContent : styles.listContent
               }
               showsVerticalScrollIndicator={false}
               ItemSeparatorComponent={() => <View style={styles.separator} />}

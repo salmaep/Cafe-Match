@@ -1,6 +1,7 @@
 import type { Cafe } from '../types';
 
-// Cafe-themed Unsplash photos used as fallback (matches mobile MOCK_CAFES style)
+// Generic cafe-themed Unsplash placeholders for cafes that have no photos in DB.
+// (Image-only fallback — not mock data; cafe info itself always comes from server.)
 const FALLBACK_PHOTOS = [
   'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800',
   'https://images.unsplash.com/photo-1559305616-3f99cd43e353?w=800',

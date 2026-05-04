@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import * as Location from 'expo-location';
 import { Alert, Linking, Platform } from 'react-native';
-import { DEFAULT_LOCATION } from '../data/mockCafes';
+import { DEFAULT_LOCATION } from '../constant/location';
 
 interface LocationContextType {
   latitude: number;

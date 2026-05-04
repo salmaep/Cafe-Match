@@ -20,60 +20,6 @@ import { useSearchCafes } from '../queries/cafes/use-search-cafes';
 import { usePromotedCafes } from '../queries/cafes/use-promoted-cafes';
 import { hitsToCafes } from '../queries/cafes/api';
 import { PURPOSE_SLUG_MAP } from '../constant/purpose';
-import { MOCK_CAFES } from '../data/mockCafes';
-
-// Fallback promo cards used when backend has no active promos
-const FALLBACK_PROMO_A: Cafe = {
-  id: 'promo-a-fallback',
-  name: 'Kopi Baru Kemang',
-  photos: ['https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800'],
-  distance: 1.2,
-  address: 'Jl. Kemang Raya No. 88, Jakarta Selatan',
-  latitude: -6.2615,
-  longitude: 106.8106,
-  purposes: ['Me Time', 'WFC'],
-  facilities: ['WiFi', 'Power Outlet'],
-  menu: [],
-  favoritesCount: 12,
-  bookmarksCount: 5,
-  promotionType: 'A',
-  hasActivePromotion: true,
-  activePromotionType: 'new_cafe',
-  newCafeContent: {
-    openingSince: 'March 2026',
-    highlightText: 'Freshly opened with a full specialty menu.',
-    keunggulan: ['Rooftop', 'Specialty Coffee', 'Free WiFi'],
-    promoOffer: 'Grand Opening: Buy 1 Get 1 all beverages this month!',
-    promoPhoto: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800',
-  },
-};
-
-const FALLBACK_PROMO_B: Cafe = {
-  id: 'promo-b-fallback',
-  name: 'Rumah Kopi Senopati',
-  photos: ['https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=800'],
-  distance: 0.8,
-  address: 'Jl. Senopati No. 23, Jakarta Selatan',
-  latitude: -6.2400,
-  longitude: 106.8050,
-  purposes: ['Date', 'Me Time'],
-  facilities: ['WiFi', 'Quiet Atmosphere', 'Outdoor Area'],
-  menu: [],
-  favoritesCount: 87,
-  bookmarksCount: 34,
-  promotionType: 'B',
-  promoTitle: 'Buy 1 Get 1 Latte',
-  promoDescription: 'Valid every Monday – Wednesday, all day long',
-  hasActivePromotion: true,
-  activePromotionType: 'featured_promo',
-  promotionContent: {
-    title: 'Buy 1 Get 1 Latte',
-    description: 'Every day 8PM–10PM, dine in only. Valid for all latte orders.',
-    validHours: '8PM – 10PM',
-    validDays: 'Monday – Wednesday',
-    promoPhoto: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=800',
-  },
-};
 import { Cafe } from '../types';
 import { colors, spacing, radius } from '../theme';
 import Toast from '../components/Toast';
@@ -123,79 +69,58 @@ export default function CardSwipeScreen() {
 
   const loading = cafesQuery.isLoading || promotedQuery.isLoading;
 
+  // Build the swipe deck from server data only.
+  // Server (Meilisearch) already filters by geo radius + amenities + purposeId;
+  // we just take the top results, optionally rank-by-purpose-score for display
+  // priority, and interleave promoted cafes.
   useEffect(() => {
     if (cafesQuery.isFetching || promotedQuery.isFetching) return;
 
-    let allCafes: Cafe[] = cafesQuery.data
+    const allCafes: Cafe[] = cafesQuery.data
       ? cafesQuery.data.pages.flatMap((p) =>
           hitsToCafes(p, lat ?? undefined, lng ?? undefined),
         )
       : [];
     const promotedCafes: Cafe[] = promotedQuery.data ?? [];
 
-    if (!allCafes || allCafes.length === 0) {
-      allCafes = MOCK_CAFES.map((c) => ({ ...c }));
+    if (allCafes.length === 0 && promotedCafes.length === 0) {
+      setCafes([]);
+      return;
     }
 
-    // Ensure all required fields are present
-    allCafes = allCafes.map((c) => {
-      const mock = MOCK_CAFES.find((m) => m.id === c.id);
-      return {
-        ...c,
-        photos: c.photos?.length ? c.photos : (mock?.photos ?? MOCK_CAFES[0].photos),
-        purposes: c.purposes?.length ? c.purposes : (mock?.purposes ?? ['Me Time']),
-        facilities: c.facilities?.length ? c.facilities : (mock?.facilities ?? []),
-        menu: c.menu?.length ? c.menu : (mock?.menu ?? []),
-        name: c.name || mock?.name || 'Cafe',
-        address: c.address || mock?.address || '',
-      };
-    });
-
-    // Rank by purposeScore matching wizard selection; fall back to matchScore
     const wizardPurpose = preferences?.purpose;
     const wantedSlug = wizardPurpose ? PURPOSE_SLUG_MAP[wizardPurpose] : null;
 
-    const scored = allCafes.map((c) => {
-      let score = c.matchScore || 0;
-      if (wantedSlug && c.purposeScores?.[wantedSlug] != null) {
-        score = c.purposeScores[wantedSlug];
-      }
-      return { cafe: c, score };
-    });
-
-    let sorted = scored.sort((a, b) => b.score - a.score).map((s) => s.cafe);
-
-    if (wantedSlug) {
-      const matched = sorted.filter((c) => (c.purposeScores?.[wantedSlug] || 0) >= 40);
-      if (matched.length > 0) sorted = matched;
-    } else if (preferences?.purpose) {
-      const filtered = sorted.filter((c) => c.purposes.includes(preferences.purpose!));
-      if (filtered.length > 0) sorted = filtered;
-    }
+    // Display-order ranking using server-provided purposeScores / matchScore.
+    // (This is presentation logic on data the server already returned, not filtering.)
+    const sorted = wantedSlug
+      ? [...allCafes].sort(
+          (a, b) =>
+            (b.purposeScores?.[wantedSlug] || b.matchScore || 0) -
+            (a.purposeScores?.[wantedSlug] || a.matchScore || 0),
+        )
+      : allCafes;
 
     const regular = sorted.filter((c) => !c.promotionType).slice(0, 5);
 
-    const promoA: Cafe =
-      promotedCafes.find((c) => c.promotionType === 'A' || c.activePromotionType === 'new_cafe') ??
-      allCafes.find((c) => c.promotionType === 'A') ??
-      FALLBACK_PROMO_A;
+    const promoA = promotedCafes.find(
+      (c) => c.promotionType === 'A' || c.activePromotionType === 'new_cafe',
+    );
+    const promoB = promotedCafes.find(
+      (c) => c.promotionType === 'B' || c.activePromotionType === 'featured_promo',
+    );
 
-    const promoB: Cafe =
-      promotedCafes.find((c) => c.promotionType === 'B' || c.activePromotionType === 'featured_promo') ??
-      allCafes.find((c) => c.promotionType === 'B') ??
-      FALLBACK_PROMO_B;
+    const deck: Cafe[] = [...regular];
 
-    const deck = regular.length >= 5 ? [...regular] : [...sorted.slice(0, 5)];
+    // Interleave any available promos at random positions in the first 4 slots.
+    const insertAt = (cafe: Cafe) => {
+      const pos = Math.min(deck.length, 1 + Math.floor(Math.random() * 3));
+      deck.splice(pos, 0, cafe);
+    };
+    if (promoA) insertAt(promoA);
+    if (promoB) insertAt(promoB);
 
-    const posA = 1 + Math.floor(Math.random() * 3);
-    let posB = 1 + Math.floor(Math.random() * 3);
-    while (posB === posA) posB = 1 + Math.floor(Math.random() * 3);
-
-    const insertPositions = [posA, posB].sort((a, b) => a - b);
-    deck.splice(insertPositions[0], 0, promoA);
-    deck.splice(insertPositions[1] + 1, 0, promoB);
-
-    setCafes(deck.length > 0 ? deck : MOCK_CAFES.slice(0, 5));
+    setCafes(deck);
   }, [
     cafesQuery.data,
     cafesQuery.isFetching,
@@ -232,12 +157,12 @@ export default function CardSwipeScreen() {
     const isTypeA = cafe.promotionType === 'A' || cafe.activePromotionType === 'new_cafe';
     const isTypeB = cafe.promotionType === 'B' || cafe.activePromotionType === 'featured_promo';
 
-    // Pick background photo: promo photo if provided, else cafe photo
+    // Pick background photo: promo photo if provided, else cafe photo, else placeholder
     const bgPhoto =
       (isTypeB && (cafe.promotionContent?.promoPhoto || cafe.promoPhoto)) ||
       (isTypeA && cafe.newCafeContent?.promoPhoto) ||
       cafe.photos?.[0] ||
-      MOCK_CAFES[0].photos[0];
+      'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800';
 
     const promoContent = cafe.promotionContent;
     const newCafe = cafe.newCafeContent;
@@ -432,6 +357,18 @@ export default function CardSwipeScreen() {
       <View style={styles.emptyContainer}>
         <ActivityIndicator size="large" color={colors.accent} style={{ marginBottom: spacing.md }} />
         <Text style={styles.emptyTitle}>Finding cafes...</Text>
+      </View>
+    );
+  }
+
+  if (cafes.length === 0) {
+    return (
+      <View style={styles.emptyContainer}>
+        <Text style={styles.emptyEmoji}>☕</Text>
+        <Text style={styles.emptyTitle}>No cafes found</Text>
+        <Text style={styles.emptySubtitle}>
+          Try widening your radius or removing filters in the wizard.
+        </Text>
       </View>
     );
   }

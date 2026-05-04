@@ -32,7 +32,6 @@ import { fetchActiveCheckin, checkOutApi, fetchFriendsMap, throwEmojiApi } from 
 import { useSearchCafes } from "../queries/cafes/use-search-cafes";
 import { usePromotedCafes } from "../queries/cafes/use-promoted-cafes";
 import { hitsToCafes } from "../queries/cafes/api";
-import { MOCK_CAFES } from "../data/mockCafes";
 import { Cafe } from "../types";
 import { parseSearchQuery, ParsedSearch } from "../utils/searchParser";
 import { colors, spacing, radius } from "../theme";
@@ -192,40 +191,30 @@ export default function MapScreen() {
 
   // Bridge TanStack Query data → existing local state so downstream filter
   // logic (purpose/amenity matching, distance sort) works unchanged.
+  // Server (Meilisearch) handles geo + amenity filtering — no client-side mocks.
   useEffect(() => {
     if (!cafesQuery.data) return;
     const cafes = cafesQuery.data.pages.flatMap((p) =>
       hitsToCafes(p, center.latitude, center.longitude),
     );
-    setAllCafes(cafes.length > 0 ? cafes : MOCK_CAFES);
+    setAllCafes(cafes);
   }, [cafesQuery.data, center.latitude, center.longitude]);
 
   useEffect(() => {
     if (cafesQuery.isError) {
       console.error("[MapScreen] cafes query failed:", cafesQuery.error);
-      setAllCafes(MOCK_CAFES);
+      setAllCafes([]);
     }
   }, [cafesQuery.isError, cafesQuery.error]);
 
   useEffect(() => {
     if (!promotedQuery.data) return;
-    const featured = promotedQuery.data;
-    setFeaturedCafes(
-      featured.length > 0
-        ? featured
-        : MOCK_CAFES.filter(
-            (c) => c.promotionType === "A" || c.promotionType === "B",
-          ),
-    );
+    setFeaturedCafes(promotedQuery.data);
   }, [promotedQuery.data]);
 
   useEffect(() => {
     if (promotedQuery.isError) {
-      setFeaturedCafes(
-        MOCK_CAFES.filter(
-          (c) => c.promotionType === "A" || c.promotionType === "B",
-        ),
-      );
+      setFeaturedCafes([]);
     }
   }, [promotedQuery.isError]);
 

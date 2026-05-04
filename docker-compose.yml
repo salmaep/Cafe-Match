@@ -42,7 +42,7 @@ services:
     networks:
       - cafematch-net
     healthcheck:
-      test: ["CMD", "curl", "-f", http://localhost:7700/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:7700/health"]
       interval: 10s
       timeout: 5s
       retries: 10

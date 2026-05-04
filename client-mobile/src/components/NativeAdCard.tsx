@@ -1,22 +1,25 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Image, StyleSheet, ActivityIndicator } from 'react-native';
+import type { NativeAd as NativeAdType } from 'react-native-google-mobile-ads';
 import {
+  adsAvailable,
   NativeAd,
   NativeAdView,
   NativeAsset,
   NativeAssetType,
   NativeMediaView,
-} from 'react-native-google-mobile-ads';
+} from '../lib/ads';
 import { adUnitIds } from '../config/ads';
 import { colors, radius, spacing } from '../theme';
 
 export default function NativeAdCard() {
-  const [ad, setAd] = useState<NativeAd | null>(null);
+  const [ad, setAd] = useState<NativeAdType | null>(null);
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
+    if (!adsAvailable || !NativeAd) return;
     let cancelled = false;
-    let current: NativeAd | null = null;
+    let current: NativeAdType | null = null;
 
     NativeAd.createForAdRequest(adUnitIds.native)
       .then((loaded) => {
@@ -37,6 +40,10 @@ export default function NativeAdCard() {
     };
   }, []);
 
+  // In Expo Go (or any build without the native module) skip rendering entirely.
+  if (!adsAvailable || !NativeAdView || !NativeAsset || !NativeAssetType || !NativeMediaView) {
+    return null;
+  }
   if (failed) return null;
 
   if (!ad) {

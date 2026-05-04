@@ -4,7 +4,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { NavigationContainer, NavigationContainerRef } from '@react-navigation/native';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from './src/lib/query-client';
-import mobileAds from 'react-native-google-mobile-ads';
+import { mobileAds, adsAvailable } from './src/lib/ads';
 import { AuthProvider } from './src/context/AuthContext';
 import { ShortlistProvider } from './src/context/ShortlistContext';
 import { PreferencesProvider } from './src/context/PreferencesContext';
@@ -20,6 +20,7 @@ export default function App() {
   const navRef = useRef<NavigationContainerRef<any>>(null);
 
   useEffect(() => {
+    if (!adsAvailable) return;
     mobileAds()
       .initialize()
       .catch(() => {});

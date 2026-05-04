@@ -427,7 +427,7 @@ export default function CardSwipeScreen() {
     );
   }
 
-  if (loading || cafes.length === 0) {
+  if (loading) {
     return (
       <View style={styles.emptyContainer}>
         <ActivityIndicator size="large" color={colors.accent} style={{ marginBottom: spacing.md }} />

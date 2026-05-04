@@ -1,5 +1,5 @@
 import { Platform } from 'react-native';
-import { TestIds } from 'react-native-google-mobile-ads';
+import { TestIds } from '../lib/ads';
 
 // Set to true to force test ads on physical devices during QA in a release build.
 // Production builds should leave this false so real ads serve.

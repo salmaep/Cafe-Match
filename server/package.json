@@ -20,7 +20,9 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "seed": "ts-node src/database/seeds/run-seed.ts",
     "migration:run": "ts-node --project tsconfig.migration.json ./node_modules/typeorm/cli.js migration:run -d src/database/data-source.ts",
-    "migration:revert": "ts-node --project tsconfig.migration.json ./node_modules/typeorm/cli.js migration:revert -d src/database/data-source.ts"
+    "migration:revert": "ts-node --project tsconfig.migration.json ./node_modules/typeorm/cli.js migration:revert -d src/database/data-source.ts",
+    "meili:reindex": "ts-node --project tsconfig.migration.json src/meili/cli/reindex.ts",
+    "meili:resync-failed": "ts-node --project tsconfig.migration.json src/meili/cli/resync-failed.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -33,6 +35,7 @@
     "bcrypt": "^6.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
+    "meilisearch": "^0.58.0",
     "mysql2": "^3.20.0",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",

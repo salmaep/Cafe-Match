@@ -1,10 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { DataSource } from 'typeorm';
 import * as crypto from 'crypto';
 import { SyncCafeDto } from './dto/sync-cafe.dto';
 import { parseOpeningHours } from './parsers/opening-hours.parser';
 import { parseFeatures, parsePayment } from './parsers/features.parser';
 import { parsePriceRange } from './parsers/pricing.parser';
+import { MeiliCafesService } from '../meili/meili-cafes.service';
 
 export interface SyncResult {
   processed: number;
@@ -17,14 +19,20 @@ export interface SyncResult {
 export class ScraperSyncService {
   private readonly logger = new Logger(ScraperSyncService.name);
 
-  constructor(private readonly dataSource: DataSource) {}
+  constructor(
+    private readonly dataSource: DataSource,
+    private readonly config: ConfigService,
+    private readonly meiliCafes: MeiliCafesService,
+  ) {}
 
   async syncCafes(cafes: SyncCafeDto[]): Promise<SyncResult> {
     const result: SyncResult = { processed: 0, created: 0, updated: 0, errors: [] };
+    const upsertedIds: number[] = [];
 
     for (const cafe of cafes) {
       try {
-        await this.upsertCafe(cafe, result);
+        const cafeId = await this.upsertCafe(cafe, result);
+        if (cafeId) upsertedIds.push(cafeId);
         result.processed++;
       } catch (err: any) {
         this.logger.error(`Error syncing ${cafe.googlePlaceId}: ${err.message}`);
@@ -32,10 +40,22 @@ export class ScraperSyncService {
       }
     }
 
+    // Bulk-index to Meilisearch (fail-open — sync errors logged to retry queue)
+    if (this.config.get('MEILI_SYNC_ENABLED') !== 'false' && upsertedIds.length > 0) {
+      try {
+        await this.meiliCafes.indexCafes(upsertedIds);
+      } catch (err) {
+        this.logger.error('Meili bulk-index failed after scraper-sync batch', err);
+        for (const id of upsertedIds) {
+          await this.meiliCafes.queueFailure(id, 'index', String(err));
+        }
+      }
+    }
+
     return result;
   }
 
-  private async upsertCafe(dto: SyncCafeDto, result: SyncResult): Promise<void> {
+  private async upsertCafe(dto: SyncCafeDto, result: SyncResult): Promise<number | null> {
     const [lng, lat] = dto.location;
     const openingHours = parseOpeningHours(dto.openingHours);
     const priceRange = parsePriceRange(dto.pricing);
@@ -49,17 +69,17 @@ export class ScraperSyncService {
     if (existing) {
       await this.updateCafe(existing.id, dto, lat, lng, openingHours, priceRange, isActive);
       result.updated++;
+      // For existing cafes, replace google-owned relational data
+      await this.replaceGooglePhotos(existing.id, dto);
+      await this.replaceFacilities(existing.id, dto);
+      await this.upsertGoogleReviews(existing.id, dto);
+      return existing.id;
     } else {
       const cafeId = await this.insertCafe(dto, lat, lng, openingHours, priceRange, isActive);
       await this.insertRelations(cafeId, dto);
       result.created++;
-      return;
+      return cafeId;
     }
-
-    // For existing cafes, replace google-owned relational data
-    await this.replaceGooglePhotos(existing.id, dto);
-    await this.replaceFacilities(existing.id, dto);
-    await this.upsertGoogleReviews(existing.id, dto);
   }
 
   private async insertCafe(
@@ -174,9 +194,11 @@ export class ScraperSyncService {
   }
 
   private async insertRelations(cafeId: number, dto: SyncCafeDto): Promise<void> {
-    await this.replaceGooglePhotos(cafeId, dto);
-    await this.replaceFacilities(cafeId, dto);
-    await this.upsertGoogleReviews(cafeId, dto);
+    await Promise.all([
+      this.replaceGooglePhotos(cafeId, dto),
+      this.replaceFacilities(cafeId, dto),
+      this.upsertGoogleReviews(cafeId, dto),
+    ]);
   }
 
   private async replaceGooglePhotos(cafeId: number, dto: SyncCafeDto): Promise<void> {

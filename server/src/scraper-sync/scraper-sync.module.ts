@@ -7,10 +7,12 @@ import { CafeMenu } from '../menus/entities/cafe-menu.entity';
 import { CafeGoogleReview } from './entities/cafe-google-review.entity';
 import { ScraperSyncController } from './scraper-sync.controller';
 import { ScraperSyncService } from './scraper-sync.service';
+import { MeiliModule } from '../meili/meili.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Cafe, CafePhoto, CafeFacility, CafeMenu, CafeGoogleReview]),
+    MeiliModule,
   ],
   controllers: [ScraperSyncController],
   providers: [ScraperSyncService],

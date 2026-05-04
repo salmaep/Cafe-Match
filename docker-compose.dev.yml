@@ -1,0 +1,50 @@
+# Dev-only: spin up MySQL + Meilisearch only.
+# NestJS server runs on the host via: cd server && npm run start:dev
+#
+# Usage:
+#   docker compose -f docker-compose.dev.yml up -d
+#   docker compose -f docker-compose.dev.yml down
+
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: cafematch-mysql-dev
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: cafematch_root
+      MYSQL_DATABASE: cafematch
+      MYSQL_USER: cafematch
+      MYSQL_PASSWORD: cafematch_pass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_dev_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -pcafematch_root"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.42
+    container_name: cafematch-meili-dev
+    restart: unless-stopped
+    environment:
+      MEILI_MASTER_KEY: dev-master-key
+      MEILI_ENV: development
+      MEILI_NO_ANALYTICS: "true"
+    ports:
+      - "7700:7700"
+    volumes:
+      - meili_dev_data:/meili_data
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:7700/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  mysql_dev_data:
+  meili_dev_data:

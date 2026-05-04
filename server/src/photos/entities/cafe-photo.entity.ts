@@ -4,6 +4,7 @@ import {
   Column,
   ManyToOne,
   JoinColumn,
+  DeleteDateColumn,
   Index,
 } from 'typeorm';
 import { Cafe } from '../../cafes/entities/cafe.entity';
@@ -34,6 +35,9 @@ export class CafePhoto {
 
   @Column({ name: 'is_primary', default: false })
   isPrimary: boolean;
+
+  @DeleteDateColumn({ name: 'deleted_at', nullable: true })
+  deletedAt: Date | null;
 
   @ManyToOne(() => Cafe, (cafe) => cafe.photos, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'cafe_id' })

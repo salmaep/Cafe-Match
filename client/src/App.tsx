@@ -7,6 +7,7 @@ import CafeDetailPage from './pages/CafeDetailPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import BookmarksPage from './pages/BookmarksPage';
+import ShortlistPage from './pages/ShortlistPage';
 import FavoritesPage from './pages/FavoritesPage';
 import OwnerRegisterPage from './pages/owner/OwnerRegisterPage';
 import OwnerLoginPage from './pages/owner/OwnerLoginPage';
@@ -55,6 +56,7 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/bookmarks" element={<BookmarksPage />} />
+          <Route path="/shortlist" element={<ShortlistPage />} />
           <Route path="/favorites" element={<FavoritesPage />} />
           <Route path="/discover" element={<DiscoverPage />} />
           <Route path="/trending" element={<TrendingPage />} />

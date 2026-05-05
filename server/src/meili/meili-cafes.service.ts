@@ -60,6 +60,7 @@ export interface SearchCafesQuery {
   semanticRatio?: number;
   page?: number;
   limit?: number;
+  sort?: string;
 }
 
 export type CafeHit = CafeDocument & {
@@ -251,6 +252,7 @@ export class MeiliCafesService {
       semanticRatio,
       page = 1,
       limit = 50,
+      sort: sortMode,
     } = dto;
 
     const filters: string[] = ['isActive = true'];
@@ -269,7 +271,15 @@ export class MeiliCafesService {
     }
 
     const sort: string[] = [];
-    if (lat != null && lng != null) {
+    if (sortMode === 'trending') {
+      // Engagement-driven trending: favorites + bookmarks weight most, rating as tiebreaker.
+      // Meili can't sum fields, so we sort by the strongest signal first then tiebreak.
+      sort.push('favoritesCount:desc', 'bookmarksCount:desc', 'googleRating:desc');
+    } else if (sortMode === 'rating') {
+      sort.push('googleRating:desc', 'favoritesCount:desc');
+    } else if (sortMode === 'newest') {
+      sort.push('createdAt:desc');
+    } else if (lat != null && lng != null) {
       sort.push(`_geoPoint(${lat}, ${lng}):asc`);
     }
 

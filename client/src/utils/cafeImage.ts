@@ -21,10 +21,11 @@ export function placeholderImage(cafeId: number): string {
 }
 
 export function getCafeImage(cafe: Cafe): string {
-  if (!cafe.photos || cafe.photos.length === 0) return placeholderImage(cafe.id);
+  const photos = (cafe.photos ?? []).filter((p) => typeof p?.url === 'string' && p.url.length > 0);
+  if (photos.length === 0) return placeholderImage(cafe.id);
   // Prefer stable Google Places photo URLs (p/AF1Qip...) over unstable signed URLs (gps-cs-s/...)
-  const stable = cafe.photos.find((p) => p.url.includes('/p/AF1Qip'));
+  const stable = photos.find((p) => p.url.includes('/p/AF1Qip'));
   if (stable) return stable.url;
-  const primary = cafe.photos.find((p) => p.isPrimary);
-  return (primary || cafe.photos[0]).url;
+  const primary = photos.find((p) => p.isPrimary);
+  return (primary ?? photos[0]).url;
 }

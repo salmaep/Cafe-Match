@@ -24,6 +24,8 @@ export interface Cafe {
   priceRange: string;
   bookmarksCount: number;
   favoritesCount: number;
+  googleRating?: number | null;
+  totalGoogleReviews?: number;
   ownerId?: number;
   hasActivePromotion?: boolean;
   activePromotionType?: 'new_cafe' | 'featured_promo' | null;

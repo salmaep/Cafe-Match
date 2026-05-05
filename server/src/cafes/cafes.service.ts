@@ -41,8 +41,10 @@ export class CafesService {
       hasMushola: dto.hasMushola,
       priceRange: dto.priceRange,
       purposeId: dto.purposeId,
+      hasParking: dto.hasParking,
       page: dto.page,
       limit: dto.limit,
+      sort: dto.sort,
     });
   }
 

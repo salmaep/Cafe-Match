@@ -15,8 +15,9 @@ export default function BottomTabBar() {
   const { user } = useAuth();
 
   const TABS: Tab[] = [
-    { to: '/', label: 'Discover', icon: '🗺️', exact: true },
-    { to: '/trending', label: 'Explore', icon: '🔥' },
+    { to: '/discover', label: 'Discover', icon: '🃏' },
+    { to: '/trending', label: 'Trending', icon: '🔥' },
+    { to: '/', label: 'Explore', icon: '🗺️', exact: true },
     {
       to: '/shortlist',
       label: 'Shortlist',

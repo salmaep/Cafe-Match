@@ -515,36 +515,38 @@ export default function CafeDetailPage() {
           {/* Menu */}
           {Object.keys(menusByCategory).length > 0 && (
             <Section title="Menu">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-6">
-                {Object.entries(menusByCategory).map(([category, items]) => (
-                  <div key={category}>
-                    <h3 className="text-xs font-semibold text-[#8A8880] uppercase tracking-wider mb-2">
-                      {category}
-                    </h3>
-                    <div>
-                      {items.map((item) => (
-                        <div
-                          key={item.id}
-                          className="flex justify-between items-start py-2.5 border-b border-[#F0EDE8] last:border-0 gap-3"
-                        >
-                          <div className="flex-1 min-w-0">
-                            <div className="text-[15px] text-[#1C1C1A]">
-                              {item.itemName}
+              <div className="bg-white rounded-2xl border border-[#F0EDE8] shadow-sm p-5 lg:p-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-6">
+                  {Object.entries(menusByCategory).map(([category, items]) => (
+                    <div key={category}>
+                      <h3 className="text-xs font-semibold text-[#8A8880] uppercase tracking-wider mb-2">
+                        {category}
+                      </h3>
+                      <div>
+                        {items.map((item) => (
+                          <div
+                            key={item.id}
+                            className="flex justify-between items-start py-2.5 border-b border-[#F0EDE8] last:border-0 gap-3"
+                          >
+                            <div className="flex-1 min-w-0">
+                              <div className="text-[15px] text-[#1C1C1A]">
+                                {item.itemName}
+                              </div>
+                              {item.description && (
+                                <p className="text-xs text-[#8A8880] mt-0.5">
+                                  {item.description}
+                                </p>
+                              )}
                             </div>
-                            {item.description && (
-                              <p className="text-xs text-[#8A8880] mt-0.5">
-                                {item.description}
-                              </p>
-                            )}
+                            <span className="text-[15px] text-[#D48B3A] font-semibold whitespace-nowrap">
+                              Rp {Number(item.price).toLocaleString('id-ID')}
+                            </span>
                           </div>
-                          <span className="text-[15px] text-[#D48B3A] font-semibold whitespace-nowrap">
-                            Rp {Number(item.price).toLocaleString('id-ID')}
-                          </span>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </Section>
           )}

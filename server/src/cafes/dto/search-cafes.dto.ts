@@ -67,4 +67,9 @@ export class SearchCafesDto {
   @IsPositive()
   @Max(2000) // DEV: raised from 100 for testing — show all ~553 cafes on map
   limit?: number = 50;
+
+  // 'trending' = sort by engagement+rating, 'distance' = nearest first (default).
+  @IsOptional()
+  @IsIn(['distance', 'trending', 'rating', 'newest'])
+  sort?: string;
 }

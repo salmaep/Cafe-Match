@@ -9,20 +9,28 @@ import {
   Platform,
   Alert,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
+import * as WebBrowser from 'expo-web-browser';
+import * as Linking from 'expo-linking';
 import { useAuth } from '../context/AuthContext';
 import { colors, spacing, radius } from '../theme';
 
+const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3084/api/v1';
+
+WebBrowser.maybeCompleteAuthSession();
+
 export default function AuthModal() {
   const navigation = useNavigation<StackNavigationProp<any>>();
-  const { login, register } = useAuth();
+  const { login, register, loginWithToken } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [socialLoading, setSocialLoading] = useState<'google' | 'facebook' | null>(null);
 
   const handleSubmit = async () => {
     if (!email || !password) {
@@ -47,6 +55,51 @@ export default function AuthModal() {
       navigation.goBack();
     } else {
       Alert.alert('Error', result.error || 'Something went wrong');
+    }
+  };
+
+  const handleSocialLogin = async (provider: 'google' | 'facebook') => {
+    try {
+      setSocialLoading(provider);
+      const redirectUrl = Linking.createURL('auth/callback');
+      const authUrl = `${API_BASE}/auth/${provider}?mobile_redirect=${encodeURIComponent(redirectUrl)}`;
+
+      const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUrl);
+
+      if (result.type !== 'success') {
+        setSocialLoading(null);
+        return;
+      }
+
+      const url = new URL(result.url);
+      const token = url.searchParams.get('token');
+      const twoFaRequired = url.searchParams.get('twoFaRequired');
+
+      if (twoFaRequired === '1') {
+        Alert.alert(
+          '2FA belum didukung di mobile',
+          'Akun Anda mengaktifkan 2FA. Silakan login lewat web dulu.',
+        );
+        setSocialLoading(null);
+        return;
+      }
+
+      if (!token) {
+        Alert.alert('Login gagal', 'Token tidak diterima dari server.');
+        setSocialLoading(null);
+        return;
+      }
+
+      const r = await loginWithToken(token);
+      setSocialLoading(null);
+      if (r.success) {
+        navigation.goBack();
+      } else {
+        Alert.alert('Login gagal', r.error || 'Coba lagi.');
+      }
+    } catch (err: any) {
+      setSocialLoading(null);
+      Alert.alert('Error', err?.message || 'Login dengan ' + provider + ' gagal.');
     }
   };
 
@@ -105,7 +158,7 @@ export default function AuthModal() {
         <TouchableOpacity
           style={[styles.submitBtn, loading && styles.submitBtnDisabled]}
           onPress={handleSubmit}
-          disabled={loading}
+          disabled={loading || socialLoading !== null}
         >
           {loading ? (
             <ActivityIndicator color={colors.white} />
@@ -113,6 +166,43 @@ export default function AuthModal() {
             <Text style={styles.submitText}>
               {isLogin ? 'Login' : 'Register'}
             </Text>
+          )}
+        </TouchableOpacity>
+
+        {/* Social login */}
+        <View style={styles.socialDivider}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>atau lanjutkan dengan</Text>
+          <View style={styles.dividerLine} />
+        </View>
+
+        <TouchableOpacity
+          style={[styles.socialBtn, styles.googleBtn]}
+          onPress={() => handleSocialLogin('google')}
+          disabled={socialLoading !== null || loading}
+        >
+          {socialLoading === 'google' ? (
+            <ActivityIndicator color={colors.primary} />
+          ) : (
+            <>
+              <Text style={styles.googleIcon}>G</Text>
+              <Text style={styles.googleText}>Google</Text>
+            </>
+          )}
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.socialBtn, styles.fbBtn]}
+          onPress={() => handleSocialLogin('facebook')}
+          disabled={socialLoading !== null || loading}
+        >
+          {socialLoading === 'facebook' ? (
+            <ActivityIndicator color={colors.white} />
+          ) : (
+            <>
+              <Text style={styles.fbIcon}>f</Text>
+              <Text style={styles.fbText}>Facebook</Text>
+            </>
           )}
         </TouchableOpacity>
 
@@ -130,22 +220,6 @@ export default function AuthModal() {
 
         <TouchableOpacity style={styles.closeBtn} onPress={() => navigation.goBack()}>
           <Text style={styles.closeText}>Maybe later</Text>
-        </TouchableOpacity>
-
-        {/* Owner portal entry */}
-        <View style={styles.ownerDivider}>
-          <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>or</Text>
-          <View style={styles.dividerLine} />
-        </View>
-        <TouchableOpacity
-          style={styles.ownerBtn}
-          onPress={() => {
-            navigation.goBack();
-            navigation.navigate('OwnerLogin');
-          }}
-        >
-          <Text style={styles.ownerBtnText}>☕  Are you a cafe owner?  Login here</Text>
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
@@ -204,27 +278,50 @@ const styles = StyleSheet.create({
   },
   submitBtnDisabled: { opacity: 0.6 },
   submitText: { color: colors.white, fontSize: 16, fontWeight: '700' },
+
+  socialDivider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: spacing.lg,
+    marginBottom: spacing.md,
+    gap: spacing.sm,
+  },
+  dividerLine: { flex: 1, height: 1, backgroundColor: colors.surface },
+  dividerText: { fontSize: 12, color: colors.textSecondary },
+
+  socialBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.md - 2,
+    borderRadius: radius.md,
+    marginBottom: spacing.sm,
+    gap: spacing.sm,
+  },
+  googleBtn: {
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.surface,
+  },
+  googleIcon: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: '#4285F4',
+  },
+  googleText: { color: colors.primary, fontSize: 15, fontWeight: '600' },
+
+  fbBtn: { backgroundColor: '#1877F2' },
+  fbIcon: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: colors.white,
+    fontFamily: Platform.OS === 'ios' ? 'Helvetica' : undefined,
+  },
+  fbText: { color: colors.white, fontSize: 15, fontWeight: '600' },
+
   switchBtn: { alignItems: 'center', marginTop: spacing.md },
   switchText: { fontSize: 14, color: colors.textSecondary },
   switchLink: { color: colors.accent, fontWeight: '600' },
   closeBtn: { alignItems: 'center', marginTop: spacing.md },
   closeText: { fontSize: 14, color: colors.textSecondary },
-  ownerDivider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: spacing.lg,
-    marginBottom: spacing.sm,
-    gap: spacing.sm,
-  },
-  dividerLine: { flex: 1, height: 1, backgroundColor: colors.surface },
-  dividerText: { fontSize: 12, color: colors.textSecondary },
-  ownerBtn: {
-    borderWidth: 1.5,
-    borderColor: colors.accent + '60',
-    borderRadius: radius.md,
-    paddingVertical: spacing.sm + 4,
-    alignItems: 'center',
-    backgroundColor: colors.accent + '08',
-  },
-  ownerBtnText: { fontSize: 14, color: colors.accent, fontWeight: '600' },
 });

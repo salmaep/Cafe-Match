@@ -17,8 +17,24 @@ export class User {
   @Column({ length: 255, unique: true })
   email: string;
 
-  @Column({ name: 'password_hash', length: 255 })
-  passwordHash: string;
+  @Column({ name: 'password_hash', type: 'varchar', length: 255, nullable: true })
+  passwordHash: string | null;
+
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  phone: string | null;
+
+  @Column({ name: 'phone_verified', default: false })
+  phoneVerified: boolean;
+
+  @Column({ name: 'two_fa_enabled', default: false })
+  twoFaEnabled: boolean;
+
+  // 'local' | 'google' | 'facebook'
+  @Column({ length: 20, default: 'local' })
+  provider: string;
+
+  @Column({ name: 'provider_id', type: 'varchar', length: 255, nullable: true })
+  providerId: string | null;
 
   @Column({ length: 100 })
   name: string;

@@ -2,10 +2,18 @@ import { createContext, useContext, useState, useEffect, type ReactNode } from '
 import type { User } from '../types';
 import { authApi } from '../api/auth.api';
 
+export interface PendingTwoFa {
+  otpId: string;
+  expiresAt: string;
+  phoneHint?: string;
+}
+
 interface AuthContextType {
   user: User | null;
   token: string | null;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<PendingTwoFa | null>;
+  loginWithToken: (token: string) => Promise<void>;
+  verify2fa: (otpId: string, code: string) => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<void>;
   logout: () => void;
   isLoading: boolean;
@@ -33,11 +41,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [token]);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<PendingTwoFa | null> => {
     const res = await authApi.login({ email, password });
+    if ('twoFaRequired' in res.data) {
+      return {
+        otpId: res.data.otpId,
+        expiresAt: res.data.expiresAt,
+        phoneHint: res.data.phoneHint,
+      };
+    }
     localStorage.setItem('token', res.data.accessToken);
     setToken(res.data.accessToken);
     setUser(res.data.user);
+    return null;
+  };
+
+  const verify2fa = async (otpId: string, code: string) => {
+    const res = await authApi.verify2fa({ otpId, code });
+    localStorage.setItem('token', res.data.accessToken);
+    setToken(res.data.accessToken);
+    setUser(res.data.user);
+  };
+
+  const loginWithToken = async (newToken: string) => {
+    localStorage.setItem('token', newToken);
+    setToken(newToken);
+    const me = await authApi.getMe();
+    setUser(me.data);
   };
 
   const register = async (email: string, password: string, name: string) => {
@@ -51,7 +81,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, register, logout, isLoading }}>
+    <AuthContext.Provider
+      value={{ user, token, login, loginWithToken, verify2fa, register, logout, isLoading }}
+    >
       {children}
     </AuthContext.Provider>
   );

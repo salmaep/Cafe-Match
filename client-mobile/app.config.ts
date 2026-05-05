@@ -4,6 +4,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: 'CafeMatch',
   slug: 'cafematch',
+  scheme: 'cafematch',
   version: '1.0.0',
   orientation: 'portrait',
   icon: './assets/icon.png',
@@ -29,17 +30,15 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   web: {
     favicon: './assets/favicon.png',
   },
-  plugins: [
-    [
-      'react-native-google-mobile-ads',
-      {
-        androidAppId: 'ca-app-pub-3940256099942544~3347511713',
-        iosAppId: 'ca-app-pub-3940256099942544~1458002511',
-        userTrackingUsageDescription:
-          'This identifier will be used to deliver more relevant ads to you.',
-      },
-    ],
-  ],
+  plugins: ['expo-web-browser'],
+  // Ads plugin disabled — uncomment after configuring AdMob
+  // plugins: [
+  //   'expo-web-browser',
+  //   [
+  //     'react-native-google-mobile-ads',
+  //     { androidAppId: '...', iosAppId: '...' },
+  //   ],
+  // ],
   extra: {
     apiBaseUrl: process.env.EXPO_PUBLIC_API_URL,
   },

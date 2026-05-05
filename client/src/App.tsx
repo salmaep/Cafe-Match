@@ -20,6 +20,7 @@ import PaymentFailedPage from './pages/owner/PaymentFailedPage';
 import WizardPage from './pages/WizardPage';
 import DiscoverPage from './pages/DiscoverPage';
 import TrendingPage from './pages/TrendingPage';
+import AuthCallbackPage from './pages/AuthCallbackPage';
 
 function App() {
   return (
@@ -27,6 +28,9 @@ function App() {
       <Routes>
         {/* Onboarding wizard — standalone, no top navbar */}
         <Route path="/wizard" element={<WizardPage />} />
+
+        {/* Social OAuth callback — standalone */}
+        <Route path="/auth/callback" element={<AuthCallbackPage />} />
 
         {/* Owner portal — standalone auth pages */}
         <Route path="/owner/register" element={<OwnerRegisterPage />} />

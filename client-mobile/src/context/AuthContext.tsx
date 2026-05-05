@@ -8,6 +8,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   register: (name: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  loginWithToken: (token: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
 }
 
@@ -16,6 +17,7 @@ const AuthContext = createContext<AuthContextType>({
   isLoading: true,
   login: async () => ({ success: false }),
   register: async () => ({ success: false }),
+  loginWithToken: async () => ({ success: false }),
   logout: async () => {},
 });
 
@@ -87,6 +89,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const loginWithToken = async (token: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      await AsyncStorage.setItem('jwt_token', token);
+      const me = await fetchMe();
+      await AsyncStorage.setItem('user', JSON.stringify(me));
+      setUser(me);
+      return { success: true };
+    } catch (err: any) {
+      await AsyncStorage.removeItem('jwt_token');
+      return { success: false, error: 'Token tidak valid.' };
+    }
+  };
+
   const logout = async () => {
     setUser(null);
     // Wipe auth + any user-specific cached data
@@ -100,7 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, login, register, loginWithToken, logout }}>
       {children}
     </AuthContext.Provider>
   );

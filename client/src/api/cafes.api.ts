@@ -12,6 +12,7 @@ export interface SearchParams {
   priceRange?: string;
   page?: number;
   limit?: number;
+  sort?: 'distance' | 'trending' | 'rating' | 'newest';
 }
 
 // Meilisearch returns documents with `_geo: { lat, lng }` (the geo field) instead

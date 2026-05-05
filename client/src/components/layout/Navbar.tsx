@@ -57,8 +57,9 @@ export default function Navbar() {
 
           {/* Primary nav — centered */}
           <div className="flex items-center justify-center gap-1">
-            <NavItem to="/" label="Discover" exact />
-            <NavItem to="/trending" label="Explore" />
+            <NavItem to="/discover" label="Discover" />
+            <NavItem to="/trending" label="Trending" />
+            <NavItem to="/" label="Explore" exact />
             <NavItem
               to="/shortlist"
               label="Shortlist"

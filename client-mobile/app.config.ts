@@ -9,7 +9,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   orientation: 'portrait',
   icon: './assets/icon.png',
   userInterfaceStyle: 'light',
-  newArchEnabled: true,
+  newArchEnabled: false,
   splash: {
     image: './assets/splash-icon.png',
     resizeMode: 'contain',
@@ -41,5 +41,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   // ],
   extra: {
     apiBaseUrl: process.env.EXPO_PUBLIC_API_URL,
+    eas: {
+      projectId: '3a248a2a-407e-49bf-ae6e-16fa84499b98',
+    },
   },
 });

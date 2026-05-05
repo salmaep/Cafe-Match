@@ -27,5 +27,5 @@ export function getCafeImage(cafe: Cafe): string {
   const stable = photos.find((p) => p.url.includes('/p/AF1Qip'));
   if (stable) return stable.url;
   const primary = photos.find((p) => p.isPrimary);
-  return (primary ?? photos[0]).url;
+  return (primary || photos[0]).url;
 }

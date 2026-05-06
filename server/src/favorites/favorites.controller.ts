@@ -4,6 +4,7 @@ import {
   Get,
   Param,
   ParseIntPipe,
+  Query,
   UseGuards,
   Request,
 } from '@nestjs/common';
@@ -24,7 +25,7 @@ export class FavoritesController {
   }
 
   @Get()
-  findAll(@Request() req: any) {
-    return this.favoritesService.findByUser(req.user.id);
+  findAll(@Request() req: any, @Query('since') since?: string) {
+    return this.favoritesService.findByUser(req.user.id, since);
   }
 }

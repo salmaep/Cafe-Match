@@ -12,8 +12,7 @@ import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
-import { fetchFavorites, toggleFavorite } from '../services/api';
-import { Cafe } from '../types';
+import { fetchFavorites, toggleFavorite, FavoriteEntry } from '../services/api';
 import { colors, spacing, radius } from '../theme';
 
 export default function FavoritesScreen() {
@@ -21,14 +20,16 @@ export default function FavoritesScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
 
-  const [cafes, setCafes] = useState<Cafe[]>([]);
+  // Only show favorites from the last 7 days so the list stays fresh.
+  const [cafes, setCafes] = useState<FavoriteEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
 
   const loadFavorites = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await fetchFavorites();
+      // Server filters to last 7 days; client just renders.
+      const data = await fetchFavorites('7d');
       setCafes(data);
     } catch {
       setCafes([]);
@@ -43,7 +44,7 @@ export default function FavoritesScreen() {
     }
   }, [user, loadFavorites]);
 
-  const handleUnfavorite = async (cafe: Cafe) => {
+  const handleUnfavorite = async (cafe: FavoriteEntry) => {
     // Optimistic removal
     setCafes(prev => prev.filter(c => c.id !== cafe.id));
     setRemovingId(cafe.id);
@@ -106,7 +107,7 @@ export default function FavoritesScreen() {
   }
 
   // ─── Render Item ───
-  const renderItem = ({ item }: { item: Cafe }) => {
+  const renderItem = ({ item }: { item: FavoriteEntry }) => {
     const photoUri =
       item.photos && item.photos.length > 0
         ? item.photos[0]
@@ -185,6 +186,10 @@ export default function FavoritesScreen() {
           )}
         </View>
       </View>
+
+      {cafes.length > 0 && (
+        <Text style={styles.windowLabel}>Last 7 days</Text>
+      )}
 
       {/* List */}
       <FlatList
@@ -379,5 +384,14 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     textAlign: 'center',
     paddingHorizontal: spacing.xl,
+  },
+  windowLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
   },
 });

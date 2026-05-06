@@ -58,33 +58,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { success: true };
     } catch (err: any) {
       const message =
-        err?.response?.data?.message || 'Login failed. Please check your credentials.';
-      // Fallback: mock login if backend is unreachable (network error)
-      if (!err?.response) {
-        const mockUser: User = { id: '1', name: 'Coffee Lover', email, role: 'user' };
-        setUser(mockUser);
-        await AsyncStorage.setItem('user', JSON.stringify(mockUser));
-        return { success: true };
-      }
+        err?.response?.data?.message ||
+        (err?.response
+          ? 'Login failed. Please check your credentials.'
+          : 'Cannot reach server. Check your connection.');
       return { success: false, error: message };
     }
   };
 
   const register = async (name: string, email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      const newUser = await registerApi(name, email, password);
+      await registerApi(name, email, password);
       // Auto-login after register
-      const loginResult = await login(email, password);
-      return loginResult;
+      return await login(email, password);
     } catch (err: any) {
       const message =
-        err?.response?.data?.message || 'Registration failed. Please try again.';
-      if (!err?.response) {
-        const mockUser: User = { id: '1', name, email, role: 'user' };
-        setUser(mockUser);
-        await AsyncStorage.setItem('user', JSON.stringify(mockUser));
-        return { success: true };
-      }
+        err?.response?.data?.message ||
+        (err?.response
+          ? 'Registration failed. Please try again.'
+          : 'Cannot reach server. Check your connection.');
       return { success: false, error: message };
     }
   };

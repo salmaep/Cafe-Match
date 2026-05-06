@@ -4,6 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import CafeMatchLogo from '../components/CafeMatchLogo';
 import { colors } from '../theme';
+import { APP_VERSION } from '../constant/version';
 
 export default function SplashScreen() {
   const navigation = useNavigation<StackNavigationProp<any>>();
@@ -25,9 +26,12 @@ export default function SplashScreen() {
 
   return (
     <View style={styles.container}>
-      <Animated.View style={{ opacity: fadeAnim }}>
+      <Animated.View style={{ opacity: fadeAnim, alignItems: 'center' }}>
         <CafeMatchLogo size={64} />
       </Animated.View>
+      <Animated.Text style={[styles.version, { opacity: fadeAnim }]}>
+        v{APP_VERSION}
+      </Animated.Text>
     </View>
   );
 }
@@ -38,5 +42,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  version: {
+    position: 'absolute',
+    bottom: 40,
+    fontSize: 12,
+    color: colors.textSecondary,
+    fontWeight: '600',
+    letterSpacing: 0.5,
   },
 });

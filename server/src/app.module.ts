@@ -28,6 +28,8 @@ import { RolesGuard } from './common/guards/roles.guard';
 import { ScraperSyncModule } from './scraper-sync/scraper-sync.module';
 import { MeiliModule } from './meili/meili.module';
 import { SeoModule } from './seo/seo.module';
+import { HealthModule } from './health/health.module';
+import { DestinationsModule } from './destinations/destinations.module';
 
 @Module({
   imports: [
@@ -71,6 +73,8 @@ import { SeoModule } from './seo/seo.module';
     ScraperSyncModule,
     MeiliModule,
     SeoModule,
+    HealthModule,
+    DestinationsModule,
   ],
   providers: [
     {

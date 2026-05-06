@@ -20,7 +20,9 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://api.salma.imola.ai/api/v1"
+        "EXPO_PUBLIC_API_URL": "https://api.salma.imola.ai/api/v1",
+        "EXPO_PUBLIC_GOOGLE_MAPS_API_KEY": "AIzaSyD52bHgX6uJ9TRUaKcDdlLeaEGpLndV0Bc",
+        "EXPO_PUBLIC_GOOGLE_MAPS_MAP_ID": "f466e6bb607f3b39930379ff"
       }
     },
     "production": {
@@ -29,7 +31,9 @@
         "buildType": "app-bundle"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://api.salma.imola.ai/api/v1"
+        "EXPO_PUBLIC_API_URL": "https://api.salma.imola.ai/api/v1",
+        "EXPO_PUBLIC_GOOGLE_MAPS_API_KEY": "AIzaSyD52bHgX6uJ9TRUaKcDdlLeaEGpLndV0Bc",
+        "EXPO_PUBLIC_GOOGLE_MAPS_MAP_ID": "f466e6bb607f3b39930379ff"
       }
     }
   },

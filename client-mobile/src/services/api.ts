@@ -23,18 +23,24 @@ export const toggleFavorite = toggleFavoriteApi;
 // ─── Purposes ───
 
 export async function fetchPurposes(): Promise<BackendPurpose[]> {
-  try {
-    const { data } = await api.get("/purposes");
-    return data;
-  } catch {
-    return [
-      { id: 1, slug: "me-time", name: "Me Time", displayOrder: 0 },
-      { id: 2, slug: "date", name: "Date", displayOrder: 1 },
-      { id: 3, slug: "family-time", name: "Family Time", displayOrder: 2 },
-      { id: 4, slug: "group-study", name: "Group Study", displayOrder: 3 },
-      { id: 5, slug: "wfc", name: "WFC", displayOrder: 4 },
-    ];
-  }
+  const { data } = await api.get("/purposes");
+  return data;
+}
+
+// ─── Destinations ───
+
+export interface BackendDestination {
+  id: number;
+  label: string;
+  sublabel: string | null;
+  latitude: number;
+  longitude: number;
+  displayOrder: number;
+}
+
+export async function fetchDestinations(): Promise<BackendDestination[]> {
+  const { data } = await api.get("/destinations");
+  return data;
 }
 
 // ─── Auth ───
@@ -88,21 +94,24 @@ export async function fetchMe(): Promise<User> {
 // ─── Bookmarks & Favorites ───
 
 export async function fetchBookmarks(): Promise<Cafe[]> {
-  try {
-    const { data } = await api.get("/bookmarks");
-    return data.map((b: any) => mapBackendCafe(b.cafe));
-  } catch {
-    return [];
-  }
+  const { data } = await api.get("/bookmarks");
+  return data.map((b: any) => mapBackendCafe(b.cafe));
 }
 
-export async function fetchFavorites(): Promise<Cafe[]> {
-  try {
-    const { data } = await api.get("/favorites");
-    return data.map((f: any) => mapBackendCafe(f.cafe));
-  } catch {
-    return [];
-  }
+export type FavoriteEntry = Cafe & { favoritedAt: string };
+
+/**
+ * Fetch favorites. Pass `since` (e.g. "7d", "24h") to limit to recent ones —
+ * server filters by `created_at`. Without `since` returns all-time favorites.
+ */
+export async function fetchFavorites(since?: string): Promise<FavoriteEntry[]> {
+  const { data } = await api.get("/favorites", {
+    params: since ? { since } : undefined,
+  });
+  return data.map((f: any) => ({
+    ...mapBackendCafe(f.cafe),
+    favoritedAt: f.createdAt,
+  }));
 }
 
 // ─── Owner ───
@@ -118,12 +127,8 @@ export async function fetchOwnerCafe(): Promise<any> {
 }
 
 export async function fetchOwnerPromotions(): Promise<any[]> {
-  try {
-    const { data } = await api.get("/promotions/mine");
-    return data;
-  } catch {
-    return [];
-  }
+  const { data } = await api.get("/promotions/mine");
+  return data;
 }
 
 // ─── Analytics ───

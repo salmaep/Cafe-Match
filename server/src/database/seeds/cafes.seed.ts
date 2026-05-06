@@ -1,4 +1,5 @@
 import { DataSource } from 'typeorm';
+import { buildCafeSlug } from '../../common/utils/slug.util';
 
 interface CafeMenuSeed {
   category: string;
@@ -3141,18 +3142,7 @@ const cafes: CafeSeed[] = [
   },
 ];
 
-function generateSlug(name: string): string {
-  return (
-    name
-      .toLowerCase()
-      .replace(/[^a-z0-9\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      .trim() +
-    '-' +
-    Date.now().toString(36)
-  );
-}
+// Slug is now built from cafe id after insert via the shared util — see seedCafes loop.
 
 function slugSeedForUrl(name: string): string {
   return name
@@ -3188,13 +3178,13 @@ export async function seedCafes(dataSource: DataSource): Promise<void> {
       continue;
     }
 
-    const slug = generateSlug(cafe.name);
     const googleMapsUrl = `https://www.google.com/maps?q=${cafe.latitude},${cafe.longitude}`;
 
     const hasParking =
       cafe.hasParking ?? cafe.facilities.includes('parking');
 
-    // Insert cafe row with all columns including new promotion fields
+    // Insert cafe row with all columns including new promotion fields.
+    // Slug is set in a follow-up UPDATE because it embeds the auto-generated id.
     const result = await dataSource.query(
       `INSERT INTO cafes (
         name, slug, description, address, latitude, longitude,
@@ -3202,13 +3192,12 @@ export async function seedCafes(dataSource: DataSource): Promise<void> {
         has_mushola, has_parking, opening_hours, price_range,
         has_active_promotion, active_promotion_type,
         promotion_content, new_cafe_content
-      ) VALUES (?, ?, ?, ?, ?, ?,
+      ) VALUES (?, NULL, ?, ?, ?, ?,
         ?, ?, ?, ?,
         ?, ?, ?, ?,
         ?, ?, ?, ?)`,
       [
         cafe.name,
-        slug,
         cafe.description,
         cafe.address,
         cafe.latitude,
@@ -3229,6 +3218,8 @@ export async function seedCafes(dataSource: DataSource): Promise<void> {
     );
 
     const cafeId = result.insertId;
+    const slug = buildCafeSlug(cafe.name, cafeId);
+    await dataSource.query('UPDATE cafes SET slug = ? WHERE id = ?', [slug, cafeId]);
 
     // Insert facilities
     for (const key of cafe.facilities) {

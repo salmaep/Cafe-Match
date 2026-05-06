@@ -3,6 +3,7 @@ import { MapContainer as LeafletMap, TileLayer, Marker, Popup, Circle, useMap, u
 import L from 'leaflet';
 import type { Cafe } from '../../types';
 import { formatDistance } from '../../utils/haversine';
+import { cafeUrl } from '../../utils/cafeUrl';
 import 'leaflet/dist/leaflet.css';
 
 // User location marker — blue pulsing dot
@@ -154,7 +155,7 @@ export default function MapView({ center, cafes, radius, onMapClick }: Props) {
               )}
               <br />
               <a
-                href={`/cafe/${cafe.id}`}
+                href={cafeUrl(cafe)}
                 className="text-blue-500 underline"
               >
                 View details

@@ -7,6 +7,8 @@ import { PurposeRequirement } from '../purposes/entities/purpose-requirement.ent
 import { SearchCafesDto } from './dto/search-cafes.dto';
 import { CreateCafeDto } from './dto/create-cafe.dto';
 import { MeiliCafesService } from '../meili/meili-cafes.service';
+import { buildCafeSlug, cafeSlugOrFallback } from '../common/utils/slug.util';
+import { FACILITY_CATALOG } from './facility-catalog';
 
 interface PurposeMatcher {
   id: number;
@@ -39,13 +41,31 @@ export class CafesService {
       radius: dto.radius,
       wifiAvailable: dto.wifiAvailable,
       hasMushola: dto.hasMushola,
+      hasParking: dto.hasParking,
+      facilities: dto.facilities,
       priceRange: dto.priceRange,
       purposeId: dto.purposeId,
-      hasParking: dto.hasParking,
       page: dto.page,
       limit: dto.limit,
       sort: dto.sort,
     });
+  }
+
+  // ── Filter catalog (MySQL catalog + Meili counts) ──────────────────────────
+
+  async getFilters() {
+    const counts = await this.meiliCafes.getFacilityCounts();
+    return {
+      groups: FACILITY_CATALOG.map((group) => ({
+        key: group.key,
+        label: group.label,
+        options: group.items.map((item) => ({
+          key: item.key,
+          label: item.label,
+          count: counts[item.key] ?? 0,
+        })),
+      })),
+    };
   }
 
   // ── Detail (MySQL — always fresh from source of truth) ─────────────────────
@@ -89,6 +109,7 @@ export class CafesService {
 
     return {
       ...cafe,
+      slug: cafeSlugOrFallback(cafe),
       latitude: Number(cafe.latitude),
       longitude: Number(cafe.longitude),
       googleMapsUrl,
@@ -152,12 +173,11 @@ export class CafesService {
   // ── Create (admin) ──────────────────────────────────────────────────────────
 
   async create(dto: CreateCafeDto) {
-    const slug = this.generateSlug(dto.name);
     const googleMapsUrl = `https://www.google.com/maps?q=${dto.latitude},${dto.longitude}`;
 
     const cafe = this.cafesRepository.create({
       name: dto.name,
-      slug,
+      slug: null,
       description: dto.description,
       address: dto.address,
       latitude: dto.latitude,
@@ -173,6 +193,9 @@ export class CafesService {
     } as Partial<Cafe>);
 
     const saved = await this.cafesRepository.save(cafe);
+
+    saved.slug = buildCafeSlug(saved.name, saved.id);
+    await this.cafesRepository.save(saved);
 
     if (dto.facilities?.length) {
       for (const f of dto.facilities) {
@@ -313,16 +336,4 @@ export class CafesService {
     return { purposes: purposeNames, matchScore };
   }
 
-  private generateSlug(name: string): string {
-    return (
-      name
-        .toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, '')
-        .replace(/\s+/g, '-')
-        .replace(/-+/g, '-')
-        .trim() +
-      '-' +
-      Date.now().toString(36)
-    );
-  }
 }

@@ -16,6 +16,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   ios: {
     supportsTablet: true,
+    googleServicesFile: process.env.GOOGLE_SERVICES_PLIST ?? './GoogleService-Info.plist',
   },
   android: {
     adaptiveIcon: {
@@ -25,11 +26,19 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     edgeToEdgeEnabled: true,
     predictiveBackGestureEnabled: false,
     package: 'com.anonymous.cafematch',
+    googleServicesFile: process.env.GOOGLE_SERVICES_JSON ?? './google-services.json',
   },
   web: {
     favicon: './assets/favicon.png',
   },
   plugins: [
+    '@react-native-firebase/app',
+    [
+      'expo-build-properties',
+      {
+        ios: { useFrameworks: 'static' },
+      },
+    ],
     [
       'react-native-google-mobile-ads',
       {

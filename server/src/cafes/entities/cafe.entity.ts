@@ -25,8 +25,8 @@ export class Cafe {
   @Column({ length: 255 })
   name: string;
 
-  @Column({ length: 255, unique: true })
-  slug: string;
+  @Column({ type: 'varchar', length: 255, unique: true, nullable: true })
+  slug: string | null;
 
   @Column({ type: 'text', nullable: true })
   description: string;

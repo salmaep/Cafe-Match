@@ -5,6 +5,7 @@ import { NavigationContainer, NavigationContainerRef } from '@react-navigation/n
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from './src/lib/query-client';
 import { mobileAds, adsAvailable } from './src/lib/ads';
+import { logScreenView } from './src/utils/analytics';
 import { AuthProvider } from './src/context/AuthContext';
 import { ShortlistProvider } from './src/context/ShortlistContext';
 import { PreferencesProvider } from './src/context/PreferencesContext';
@@ -18,6 +19,7 @@ import InAppNotificationBanner from './src/components/InAppNotificationBanner';
 
 export default function App() {
   const navRef = useRef<NavigationContainerRef<any>>(null);
+  const lastScreenName = useRef<string | undefined>(undefined);
 
   useEffect(() => {
     if (!adsAvailable) return;
@@ -26,10 +28,30 @@ export default function App() {
       .catch(() => {});
   }, []);
 
+  const handleNavReady = () => {
+    const route = navRef.current?.getCurrentRoute();
+    if (route?.name) {
+      lastScreenName.current = route.name;
+      logScreenView(route.name);
+    }
+  };
+
+  const handleNavStateChange = () => {
+    const route = navRef.current?.getCurrentRoute();
+    if (route?.name && route.name !== lastScreenName.current) {
+      lastScreenName.current = route.name;
+      logScreenView(route.name);
+    }
+  };
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <QueryClientProvider client={queryClient}>
-        <NavigationContainer ref={navRef}>
+        <NavigationContainer
+          ref={navRef}
+          onReady={handleNavReady}
+          onStateChange={handleNavStateChange}
+        >
           <LocationProvider>
             <AuthProvider>
               <ShortlistProvider>

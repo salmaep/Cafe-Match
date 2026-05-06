@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import type { Cafe } from '../../types';
 import { formatDistance } from '../../utils/haversine';
 import { getCafeImage, placeholderImage } from '../../utils/cafeImage';
+import { cafeUrl } from '../../utils/cafeUrl';
 
 interface Props {
   cafe: Cafe;
@@ -14,7 +15,7 @@ interface Props {
 export default function CafeListItem({ cafe }: Props) {
   return (
     <Link
-      to={`/cafe/${cafe.id}`}
+      to={cafeUrl(cafe)}
       className="flex items-center gap-3 bg-white rounded-xl border border-[#F0EDE8] p-2.5 hover:border-[#D48B3A] hover:shadow-sm transition-all"
     >
       <img

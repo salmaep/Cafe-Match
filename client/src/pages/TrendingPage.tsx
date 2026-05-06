@@ -5,8 +5,10 @@ import { purposesApi } from '../api/purposes.api';
 import type { Cafe, Purpose } from '../types';
 import { useGeolocation, FALLBACK_LAT, FALLBACK_LNG } from '../hooks/useGeolocation';
 import { getCafeImage, placeholderImage } from '../utils/cafeImage';
+import { cafeUrl } from '../utils/cafeUrl';
 import HybridAdSlot from '../components/HybridAdSlot';
 import InfiniteScrollSentinel from '../components/InfiniteScrollSentinel';
+import Seo from '../components/seo/Seo';
 
 const PAGE_SIZE = 24;
 const AD_INTERVAL = 10;
@@ -81,6 +83,10 @@ export default function TrendingPage() {
 
   return (
     <div className="min-h-screen bg-[#FAF9F6] pb-24">
+      <Seo
+        title="Trending cafes"
+        description="See which cafes are getting the most votes and bookmarks this week."
+      />
       {/* Header — clean, brand-consistent */}
       <header className="bg-white border-b border-[#F0EDE8]">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-5">
@@ -129,7 +135,7 @@ export default function TrendingPage() {
             {/* Top 1 — winner card */}
             {top1 && (
               <div className="trending-fade-in">
-                <WinnerCard cafe={top1} onClick={() => navigate(`/cafe/${top1.id}`)} />
+                <WinnerCard cafe={top1} onClick={() => navigate(cafeUrl(top1))} />
               </div>
             )}
 
@@ -140,14 +146,14 @@ export default function TrendingPage() {
                   <RunnerUpCard
                     cafe={top2}
                     rank={2}
-                    onClick={() => navigate(`/cafe/${top2.id}`)}
+                    onClick={() => navigate(cafeUrl(top2))}
                   />
                 )}
                 {top3 && (
                   <RunnerUpCard
                     cafe={top3}
                     rank={3}
-                    onClick={() => navigate(`/cafe/${top3.id}`)}
+                    onClick={() => navigate(cafeUrl(top3))}
                   />
                 )}
               </div>
@@ -180,7 +186,7 @@ export default function TrendingPage() {
                         cafe={cafe}
                         rank={rank}
                         maxFavorites={top1?.favoritesCount ?? 1}
-                        onClick={() => navigate(`/cafe/${cafe.id}`)}
+                        onClick={() => navigate(cafeUrl(cafe))}
                       />
                     </div>,
                   );

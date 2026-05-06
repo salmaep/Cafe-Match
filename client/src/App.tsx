@@ -1,4 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
+import Seo from './components/seo/Seo';
+import { useTrackPageView } from './utils/analytics';
 import UserLayout from './components/layout/UserLayout';
 import OwnerLayout from './components/layout/OwnerLayout';
 import OwnerRoute from './components/auth/OwnerRoute';
@@ -22,8 +24,10 @@ import DiscoverPage from './pages/DiscoverPage';
 import TrendingPage from './pages/TrendingPage';
 
 function App() {
+  useTrackPageView();
   return (
     <div className="min-h-screen bg-gray-50">
+      <Seo />
       <Routes>
         {/* Onboarding wizard — standalone, no top navbar */}
         <Route path="/wizard" element={<WizardPage />} />
@@ -52,7 +56,7 @@ function App() {
         {/* User-facing app with top navbar */}
         <Route element={<UserLayout />}>
           <Route path="/" element={<HomePage />} />
-          <Route path="/cafe/:id" element={<CafeDetailPage />} />
+          <Route path="/cafe/:slug" element={<CafeDetailPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/bookmarks" element={<BookmarksPage />} />

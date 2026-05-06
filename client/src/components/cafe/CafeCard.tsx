@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import type { Cafe } from '../../types';
 import { formatDistance } from '../../utils/haversine';
 import { getCafeImage, placeholderImage } from '../../utils/cafeImage';
+import { cafeUrl } from '../../utils/cafeUrl';
 
 interface Props {
   cafe: Cafe;
@@ -10,7 +11,7 @@ interface Props {
 export default function CafeCard({ cafe }: Props) {
   return (
     <Link
-      to={`/cafe/${cafe.id}`}
+      to={cafeUrl(cafe)}
       className="block bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow"
     >
       <img

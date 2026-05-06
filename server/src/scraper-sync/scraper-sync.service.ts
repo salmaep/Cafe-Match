@@ -4,9 +4,15 @@ import { DataSource } from 'typeorm';
 import * as crypto from 'crypto';
 import { SyncCafeDto } from './dto/sync-cafe.dto';
 import { parseOpeningHours } from './parsers/opening-hours.parser';
-import { parseFeatures, parsePayment } from './parsers/features.parser';
+import {
+  parseFeatures,
+  parsePayment,
+  ParsedFacility,
+  DerivedFlags,
+} from './parsers/features.parser';
 import { parsePriceRange } from './parsers/pricing.parser';
 import { MeiliCafesService } from '../meili/meili-cafes.service';
+import { buildCafeSlug } from '../common/utils/slug.util';
 
 export interface SyncResult {
   processed: number;
@@ -61,22 +67,45 @@ export class ScraperSyncService {
     const priceRange = parsePriceRange(dto.pricing);
     const isActive = dto.status === 'active';
 
+    // Parse once — child rows + boolean columns share the same source.
+    const parsedFeatures = parseFeatures(dto.features ?? []);
+    const paymentFacilities = parsePayment(dto.payment as Record<string, unknown> | null);
+    const allFacilities = [...parsedFeatures.facilities, ...paymentFacilities];
+
+    // Boolean flags: OR-merge DTO explicit field with parsed-from-features.
+    // For has_mushola the DTO has no field, so it relies entirely on parsing.
+    const flags: DerivedFlags = {
+      wifiAvailable: !!dto.wifiAvailable || parsedFeatures.derivedFlags.wifiAvailable,
+      hasParking: !!dto.hasParking || parsedFeatures.derivedFlags.hasParking,
+      hasMushola: parsedFeatures.derivedFlags.hasMushola,
+    };
+
+    // Idempotency: lookup by google_place_id (UNIQUE in scraper context).
+    // Existing row → UPDATE + replace child rows (no append, no duplicate).
+    // Missing row → INSERT new.
     const [existing] = await this.dataSource.query(
       `SELECT id FROM cafes WHERE google_place_id = ? LIMIT 1`,
       [dto.googlePlaceId],
     );
 
     if (existing) {
-      await this.updateCafe(existing.id, dto, lat, lng, openingHours, priceRange, isActive);
+      await this.updateCafe(
+        existing.id, dto, lat, lng, openingHours, priceRange, isActive, flags,
+      );
       result.updated++;
-      // For existing cafes, replace google-owned relational data
       await this.replaceGooglePhotos(existing.id, dto);
-      await this.replaceFacilities(existing.id, dto);
+      await this.replaceFacilities(existing.id, allFacilities);
       await this.upsertGoogleReviews(existing.id, dto);
       return existing.id;
     } else {
-      const cafeId = await this.insertCafe(dto, lat, lng, openingHours, priceRange, isActive);
-      await this.insertRelations(cafeId, dto);
+      const cafeId = await this.insertCafe(
+        dto, lat, lng, openingHours, priceRange, isActive, flags,
+      );
+      await Promise.all([
+        this.replaceGooglePhotos(cafeId, dto),
+        this.replaceFacilities(cafeId, allFacilities),
+        this.upsertGoogleReviews(cafeId, dto),
+      ]);
       result.created++;
       return cafeId;
     }
@@ -89,28 +118,26 @@ export class ScraperSyncService {
     openingHours: Record<string, string> | null,
     priceRange: string,
     isActive: boolean,
+    flags: DerivedFlags,
   ): Promise<number> {
-    const slug = this.generateSlug(dto.name, dto.googlePlaceId);
-
     const result: any = await this.dataSource.query(
       `INSERT INTO cafes (
         name, slug, description, address, latitude, longitude,
         location, phone, google_place_id, google_maps_url, website,
-        wifi_available, has_parking, opening_hours, price_range, pricing_raw,
+        wifi_available, has_parking, has_mushola, opening_hours, price_range, pricing_raw,
         google_rating, total_google_reviews, is_active,
         category, city, district, claimed_by_owner, reviews_distribution,
         last_scraped_at, scraper_source
       ) VALUES (
-        ?, ?, ?, ?, ?, ?,
+        ?, NULL, ?, ?, ?, ?,
         ST_PointFromText(CONCAT('POINT(', ?, ' ', ?, ')'), 4326), ?, ?, ?, ?,
-        ?, ?, ?, ?, ?,
+        ?, ?, ?, ?, ?, ?,
         ?, ?, ?,
         ?, ?, ?, ?, ?,
         NOW(), 'google_scraper'
       )`,
       [
         dto.name.trim(),
-        slug,
         dto.description ?? null,
         dto.address.trim(),
         lat,
@@ -121,8 +148,9 @@ export class ScraperSyncService {
         dto.googlePlaceId,
         dto.urlGoogleMaps ?? null,
         dto.website ?? null,
-        dto.wifiAvailable ? 1 : 0,
-        dto.hasParking ? 1 : 0,
+        flags.wifiAvailable ? 1 : 0,
+        flags.hasParking ? 1 : 0,
+        flags.hasMushola ? 1 : 0,
         openingHours ? JSON.stringify(openingHours) : null,
         priceRange,
         dto.pricing ?? null,
@@ -137,7 +165,11 @@ export class ScraperSyncService {
       ],
     );
 
-    return result.insertId;
+    const cafeId: number = result.insertId;
+    const slug = buildCafeSlug(dto.name.trim(), cafeId);
+    await this.dataSource.query(`UPDATE cafes SET slug = ? WHERE id = ?`, [slug, cafeId]);
+
+    return cafeId;
   }
 
   private async updateCafe(
@@ -148,17 +180,24 @@ export class ScraperSyncService {
     openingHours: Record<string, string> | null,
     priceRange: string,
     isActive: boolean,
+    flags: DerivedFlags,
   ): Promise<void> {
     // Smart merge: do NOT overwrite owner_id, bookmarks_count, favorites_count,
-    // has_active_promotion, active_promotion_type, promotion_content, new_cafe_content, has_mushola
+    // has_active_promotion, active_promotion_type, promotion_content, new_cafe_content.
+    // For boolean flags (wifi_available, has_parking, has_mushola): OR-merge —
+    // never downgrade an admin-set TRUE to FALSE just because the scraper missed it.
+    const slug = buildCafeSlug(dto.name.trim(), cafeId);
+
     await this.dataSource.query(
       `UPDATE cafes SET
-        name=?, address=?, phone=?, description=?,
+        name=?, slug=?, address=?, phone=?, description=?,
         latitude=?, longitude=?,
         location=ST_PointFromText(CONCAT('POINT(', ?, ' ', ?, ')'), 4326),
         opening_hours=?, google_maps_url=?, website=?,
         google_rating=?, total_google_reviews=?,
-        wifi_available=?, has_parking=?,
+        wifi_available = (wifi_available OR ?),
+        has_parking    = (has_parking    OR ?),
+        has_mushola    = (has_mushola    OR ?),
         price_range=?, pricing_raw=?, is_active=?,
         category=?, city=?, district=?,
         claimed_by_owner=?, reviews_distribution=?,
@@ -166,6 +205,7 @@ export class ScraperSyncService {
       WHERE id=?`,
       [
         dto.name.trim(),
+        slug,
         dto.address.trim(),
         dto.phone?.trim() ?? null,
         dto.description ?? null,
@@ -178,8 +218,9 @@ export class ScraperSyncService {
         dto.website ?? null,
         dto.rating ?? null,
         dto.totalReviews ?? null,
-        dto.wifiAvailable ? 1 : 0,
-        dto.hasParking ? 1 : 0,
+        flags.wifiAvailable ? 1 : 0,
+        flags.hasParking ? 1 : 0,
+        flags.hasMushola ? 1 : 0,
         priceRange,
         dto.pricing ?? null,
         isActive ? 1 : 0,
@@ -191,14 +232,6 @@ export class ScraperSyncService {
         cafeId,
       ],
     );
-  }
-
-  private async insertRelations(cafeId: number, dto: SyncCafeDto): Promise<void> {
-    await Promise.all([
-      this.replaceGooglePhotos(cafeId, dto),
-      this.replaceFacilities(cafeId, dto),
-      this.upsertGoogleReviews(cafeId, dto),
-    ]);
   }
 
   private async replaceGooglePhotos(cafeId: number, dto: SyncCafeDto): Promise<void> {
@@ -233,13 +266,13 @@ export class ScraperSyncService {
     }
   }
 
-  private async replaceFacilities(cafeId: number, dto: SyncCafeDto): Promise<void> {
+  private async replaceFacilities(
+    cafeId: number,
+    facilities: ParsedFacility[],
+  ): Promise<void> {
+    // Idempotent: wipe then re-insert. UNIQUE(cafe_id, facility_key) protects
+    // against concurrent duplicates if this ever runs in parallel.
     await this.dataSource.query(`DELETE FROM cafe_facilities WHERE cafe_id = ?`, [cafeId]);
-
-    const facilities = [
-      ...parseFeatures(dto.features ?? []),
-      ...parsePayment(dto.payment as Record<string, unknown> | null),
-    ];
 
     const seen = new Set<string>();
     for (const fac of facilities) {
@@ -281,15 +314,4 @@ export class ScraperSyncService {
     }
   }
 
-  private generateSlug(name: string, placeId: string): string {
-    const base = name
-      .toLowerCase()
-      .replace(/[^a-z0-9\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      .replace(/^-|-$/g, '')
-      .slice(0, 80);
-    const suffix = placeId.slice(-8).toLowerCase().replace(/[^a-z0-9]/g, '');
-    return `${base || 'cafe'}-${suffix}`;
-  }
 }

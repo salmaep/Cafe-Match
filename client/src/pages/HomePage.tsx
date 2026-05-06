@@ -13,17 +13,18 @@ import FeaturedCafeCard from "../components/cafe/FeaturedCafeCard";
 import PurposeFilter from "../components/search/PurposeFilter";
 import SearchBar from "../components/search/SearchBar";
 import RadiusSlider from "../components/search/RadiusSlider";
+import FilterPanel from "../components/search/FilterPanel";
 import BottomSheet from "../components/layout/BottomSheet";
 import HybridAdSlot from "../components/HybridAdSlot";
 import InfiniteScrollSentinel from "../components/InfiniteScrollSentinel";
+import Seo from "../components/seo/Seo";
 
 const AD_INTERVAL = 5;
 const PAGE_SIZE = 20;
 
 interface Filters {
   q: string;
-  wifiAvailable: boolean;
-  hasMushola: boolean;
+  facilities: string[];
   priceRange: string;
 }
 
@@ -46,10 +47,10 @@ export default function HomePage() {
   const [purposeId, setPurposeId] = useState<number | null>(null);
   const [filters, setFilters] = useState<Filters>({
     q: "",
-    wifiAvailable: false,
-    hasMushola: false,
+    facilities: [],
     priceRange: "",
   });
+  const [filterPanelOpen, setFilterPanelOpen] = useState(false);
   const [featuredCafes, setFeaturedCafes] = useState<any[]>([]);
   const [mobileQuery, setMobileQuery] = useState("");
   const [showAllModal, setShowAllModal] = useState(false);
@@ -92,8 +93,7 @@ export default function HomePage() {
         };
         if (purposeId) params.purposeId = purposeId;
         if (filters.q) params.q = filters.q;
-        if (filters.wifiAvailable) params.wifiAvailable = "true";
-        if (filters.hasMushola) params.hasMushola = "true";
+        if (filters.facilities.length > 0) params.facilities = filters.facilities;
         if (filters.priceRange) params.priceRange = filters.priceRange;
         const res = await cafesApi.search(params);
         const incoming = res.data.data ?? [];
@@ -147,7 +147,13 @@ export default function HomePage() {
 
   const parsedCoords = parseCoords(coordInput);
 
-  const handleSearch = (newFilters: Filters) => setFilters(newFilters);
+  const setQ = (q: string) => setFilters((prev) => ({ ...prev, q }));
+  const setFacilities = (facilities: string[]) =>
+    setFilters((prev) => ({ ...prev, facilities }));
+  const setPriceRange = (priceRange: string) =>
+    setFilters((prev) => ({ ...prev, priceRange }));
+  const activeFilterCount =
+    filters.facilities.length + (filters.priceRange ? 1 : 0);
 
   // Debounce mobile search input
   useEffect(() => {
@@ -196,6 +202,10 @@ export default function HomePage() {
 
   return (
     <>
+      <Seo
+        title="Find a cafe near you"
+        description="Browse cafes around you and filter by WiFi, parking, mushola, price, and purpose to find your match."
+      />
       {/* ─── MOBILE: full-screen map + floating search + draggable bottom sheet ─── */}
       {/* Map sits behind the sheet; bottom-16 reserves space for the tab bar. */}
       <div className="lg:hidden fixed inset-x-0 top-0 bottom-16 z-0">
@@ -278,8 +288,8 @@ export default function HomePage() {
         >
           {/* Sticky search — direct child of the sheet's scroller so position:sticky
               works (overflow-x on intermediate parents would break it). */}
-          <div className="sticky top-0 z-20 bg-white px-4 pt-1 pb-3">
-            <div className="relative">
+          <div className="sticky top-0 z-20 bg-white px-4 pt-1 pb-3 flex items-center gap-2">
+            <div className="relative flex-1">
               <input
                 type="text"
                 value={mobileQuery}
@@ -301,6 +311,23 @@ export default function HomePage() {
                 </button>
               )}
             </div>
+            <button
+              type="button"
+              onClick={() => setFilterPanelOpen(true)}
+              className={`relative shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-base shadow-sm border transition-colors ${
+                activeFilterCount > 0
+                  ? "bg-[#D48B3A] text-white border-[#D48B3A]"
+                  : "bg-[#F0EDE8] text-[#1C1C1A] border-transparent"
+              }`}
+              aria-label="Buka filter"
+            >
+              ⚙︎
+              {activeFilterCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-white text-[#D48B3A] text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center border border-[#D48B3A]">
+                  {activeFilterCount}
+                </span>
+              )}
+            </button>
           </div>
 
           <div className="px-4 pb-8">
@@ -481,7 +508,12 @@ export default function HomePage() {
         </div>
 
         <div className="lg:flex-1 lg:flex lg:flex-col gap-3 lg:overflow-hidden">
-          <SearchBar onSearch={handleSearch} />
+          <SearchBar
+            q={filters.q}
+            onQChange={setQ}
+            onOpenFilters={() => setFilterPanelOpen(true)}
+            activeFilterCount={activeFilterCount}
+          />
           <RadiusSlider radius={radius} onChange={setRadius} />
           <PurposeFilter selectedPurposeId={purposeId} onSelect={setPurposeId} />
 
@@ -593,6 +625,16 @@ export default function HomePage() {
           </div>
         </div>
       </div>
+
+      <FilterPanel
+        variant="modal"
+        open={filterPanelOpen}
+        onClose={() => setFilterPanelOpen(false)}
+        facilities={filters.facilities}
+        onFacilitiesChange={setFacilities}
+        priceRange={filters.priceRange}
+        onPriceRangeChange={setPriceRange}
+      />
 
       {/* "Lihat semua" full-screen modal — desktop only */}
       {showAllModal && (

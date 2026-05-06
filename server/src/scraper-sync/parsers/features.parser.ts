@@ -1,80 +1,67 @@
-/**
- * Maps Indonesian Google Maps feature strings to internal facility_key values.
- * Keys that are not recognized are skipped.
- */
-const FEATURE_MAP: Record<string, string> = {
-  'tempat duduk di area terbuka': 'outdoor_seating',
-  'antar tanpa bertemu': 'contactless_delivery',
-  'pesan antar': 'delivery',
-  'layanan di tempat': 'dine_in',
-  'bawa pulang': 'takeaway',
-  'makan di tempat': 'dine_in',
-  'kopi enak': 'great_coffee',
-  'makanan pencuci mulut enak': 'great_dessert',
-  'pilihan teh enak': 'great_tea',
-  'makan sendiri': 'solo_friendly',
-  'cocok untuk bekerja menggunakan laptop': 'laptop_friendly',
-  'cepat saji': 'fast_service',
-  'tempat duduk': 'seating',
-  'toilet': 'toilet',
-  'nyaman': 'cozy',
-  'santai': 'relaxed',
-  'tenang': 'quiet',
-  'trendi': 'trendy',
-  'berkelompok': 'group_friendly',
-  'mahasiswa': 'student_friendly',
-  'menerima reservasi': 'reservations',
-  'agak sulit menemukan tempat parkir': 'limited_parking',
-  'parkir di jalan berbayar': 'street_parking',
-  'anjing boleh dibawa masuk': 'pet_friendly',
-  'anjing boleh masuk': 'pet_friendly',
-  'area luar boleh dimasuki anjing': 'pet_friendly_outdoor',
-  'mushola': 'mushola',
-  'ruang sholat': 'mushola',
-  'tempat sholat': 'mushola',
-  'wifi': 'wifi',
-  'wi-fi': 'wifi',
-  'wi-fi gratis': 'wifi',
-  'stopkontak': 'power_outlets',
-  'colokan listrik': 'power_outlets',
-  'ac': 'air_conditioning',
-  'ber-ac': 'air_conditioning',
-  'area merokok': 'smoking_area',
-  'bebas rokok': 'non_smoking',
-};
+import { findFacilityByAlias } from '../../cafes/facility-catalog';
 
 export interface ParsedFacility {
   facilityKey: string;
   facilityValue?: string;
 }
 
+export interface DerivedFlags {
+  wifiAvailable: boolean;
+  hasMushola: boolean;
+  hasParking: boolean;
+}
+
+export interface ParsedFacilitiesResult {
+  facilities: ParsedFacility[];
+  derivedFlags: DerivedFlags;
+}
+
+const PAYMENT_FEATURE_REGEX =
+  /kartu debit|kartu kredit|pembayaran seluler|nfc|qris|tunai/i;
+
 /**
- * Parses an array of Indonesian feature strings into facility key-value pairs.
- * Skips payment-related features (handled separately via payment object).
- * Deduplicates — each facility_key appears at most once.
+ * Parses Indonesian Google Maps feature strings into facility key-value pairs.
+ * Resolves aliases via FACILITY_CATALOG (single source of truth).
+ *
+ * - Skips payment-related features (handled separately via parsePayment).
+ * - Deduplicates: each facility_key appears at most once.
+ * - Also returns derived booleans (wifiAvailable, hasMushola, hasParking)
+ *   for the flat columns on `cafes` — caller decides whether to OR-merge
+ *   with explicit DTO fields.
  */
-export function parseFeatures(features: string[]): ParsedFacility[] {
-  if (!features || features.length === 0) return [];
+export function parseFeatures(features: string[]): ParsedFacilitiesResult {
+  const derivedFlags: DerivedFlags = {
+    wifiAvailable: false,
+    hasMushola: false,
+    hasParking: false,
+  };
+
+  if (!features || features.length === 0) {
+    return { facilities: [], derivedFlags };
+  }
 
   const seen = new Set<string>();
-  const result: ParsedFacility[] = [];
+  const facilities: ParsedFacility[] = [];
 
   for (const rawFeature of features) {
     const normalized = rawFeature.trim().toLowerCase();
 
-    // Skip payment-related features (handled via payment object)
-    if (/kartu debit|kartu kredit|pembayaran seluler|nfc|qris|tunai/i.test(normalized)) {
+    if (PAYMENT_FEATURE_REGEX.test(normalized)) {
       continue;
     }
 
-    const facilityKey = FEATURE_MAP[normalized];
-    if (!facilityKey || seen.has(facilityKey)) continue;
+    const def = findFacilityByAlias(normalized);
+    if (!def || seen.has(def.key)) continue;
 
-    seen.add(facilityKey);
-    result.push({ facilityKey });
+    seen.add(def.key);
+    facilities.push({ facilityKey: def.key });
+
+    if (def.derivesFlag) {
+      derivedFlags[def.derivesFlag] = true;
+    }
   }
 
-  return result;
+  return { facilities, derivedFlags };
 }
 
 const PAYMENT_KEY_MAP: Record<string, string> = {
@@ -87,8 +74,8 @@ const PAYMENT_KEY_MAP: Record<string, string> = {
 };
 
 /**
- * Converts payment object into facility key-value pairs.
- * Only includes payment methods that are true.
+ * Converts the scraper `payment` object into facility key-value pairs.
+ * Only includes payment methods that are explicitly true.
  */
 export function parsePayment(
   payment: Record<string, unknown> | null | undefined,
@@ -96,6 +83,7 @@ export function parsePayment(
   if (!payment) return [];
   const result: ParsedFacility[] = [];
   for (const [method, enabled] of Object.entries(payment)) {
+    if (!enabled) continue;
     const key = PAYMENT_KEY_MAP[method];
     if (!key) continue;
     result.push({ facilityKey: key, facilityValue: String(enabled) });

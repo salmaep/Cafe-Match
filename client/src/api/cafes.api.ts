@@ -7,12 +7,27 @@ export interface SearchParams {
   radius?: number;
   purposeId?: number;
   q?: string;
-  wifiAvailable?: string;
-  hasMushola?: string;
+  facilities?: string[];
   priceRange?: string;
   page?: number;
   limit?: number;
   sort?: 'distance' | 'trending' | 'rating' | 'newest';
+}
+
+export interface FilterOption {
+  key: string;
+  label: string;
+  count: number;
+}
+
+export interface FilterGroup {
+  key: string;
+  label: string;
+  options: FilterOption[];
+}
+
+export interface FiltersResponse {
+  groups: FilterGroup[];
 }
 
 // Meilisearch returns documents with `_geo: { lat, lng }` (the geo field) instead
@@ -35,8 +50,15 @@ function normalizeHit(hit: MeiliCafeHit): Cafe {
 
 export const cafesApi = {
   search: async (params: SearchParams) => {
+    // Backend accepts ?facilities=key1,key2 (CSV). Drop the empty array so we
+    // don't send `?facilities=` and accidentally widen the result set.
+    const { facilities, ...rest } = params;
+    const queryParams: Record<string, unknown> = { ...rest };
+    if (facilities && facilities.length > 0) {
+      queryParams.facilities = facilities.join(',');
+    }
     const res = await apiClient.get<PaginatedResponse<MeiliCafeHit>>('/cafes', {
-      params,
+      params: queryParams,
     });
     return {
       ...res,
@@ -48,4 +70,6 @@ export const cafesApi = {
   },
 
   getById: (id: number) => apiClient.get<Cafe>(`/cafes/${id}`),
+
+  getFilters: () => apiClient.get<FiltersResponse>('/cafes/filters'),
 };

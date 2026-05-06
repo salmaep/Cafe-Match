@@ -18,7 +18,7 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <HelmetProvider>
       <APIProvider apiKey={GOOGLE_MAPS_API_KEY}>
-      <BrowserRouter>
+        <BrowserRouter>
           <AuthProvider>
             <PreferencesProvider>
               <ShortlistProvider>
@@ -27,7 +27,7 @@ createRoot(document.getElementById('root')!).render(
             </PreferencesProvider>
           </AuthProvider>
         </BrowserRouter>
+      </APIProvider>
     </HelmetProvider>
-    </APIProvider>
   </StrictMode>,
 )

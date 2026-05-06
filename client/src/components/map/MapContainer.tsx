@@ -261,7 +261,7 @@ export default function MapView({ center, cafes, radius, onMapClick }: Props) {
               )}
               <br />
               <a
-                href={cafeUrl(cafe)}
+                href={cafeUrl(activeCafe)}
                 className="text-blue-500 underline"
               >
                 View details

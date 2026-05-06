@@ -5,7 +5,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   name: 'CafeMatch',
   slug: 'cafematch',
   scheme: 'cafematch',
-  version: '1.0.0',
+  version: '0.1.0',
   orientation: 'portrait',
   icon: './assets/icon.png',
   userInterfaceStyle: 'light',
@@ -18,6 +18,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ios: {
     supportsTablet: true,
     googleServicesFile: process.env.GOOGLE_SERVICES_PLIST ?? './GoogleService-Info.plist',
+    config: {
+      googleMapsApiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY,
+    },
   },
   android: {
     adaptiveIcon: {
@@ -28,12 +31,18 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     predictiveBackGestureEnabled: false,
     package: 'com.anonymous.cafematch',
     googleServicesFile: process.env.GOOGLE_SERVICES_JSON ?? './google-services.json',
+    config: {
+      googleMaps: {
+        apiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY,
+      },
+    },
   },
   web: {
     favicon: './assets/favicon.png',
   },
   plugins: [
     '@react-native-firebase/app',
+    'expo-web-browser',
     [
       'expo-build-properties',
       {
@@ -52,6 +61,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ],
   extra: {
     apiBaseUrl: process.env.EXPO_PUBLIC_API_URL,
+    googleMapsApiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY,
+    googleMapsMapId: process.env.EXPO_PUBLIC_GOOGLE_MAPS_MAP_ID,
     eas: {
       projectId: '3a248a2a-407e-49bf-ae6e-16fa84499b98',
     },

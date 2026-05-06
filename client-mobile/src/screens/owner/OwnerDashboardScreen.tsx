@@ -19,21 +19,6 @@ import PromotionScreen from './PromotionScreen';
 
 const { width } = Dimensions.get('window');
 
-const MOCK_DASHBOARD: OwnerDashboard = {
-  hasCafe: true,
-  cafe: { id: 1, name: 'My Coffee House', bookmarksCount: 89, favoritesCount: 156 },
-  analytics: { totalViews: 1240, totalClicks: 387 },
-  activePromotion: {
-    id: 1,
-    type: 'featured_promo',
-    packageName: 'Featured Promo Basic',
-    expiresAt: '2026-05-15T00:00:00.000Z',
-    daysRemaining: 36,
-    status: 'active',
-  },
-  pendingCount: 0,
-};
-
 type TabKey = 'dashboard' | 'mycafe' | 'promotions';
 
 export default function OwnerDashboardScreen() {
@@ -41,6 +26,7 @@ export default function OwnerDashboardScreen() {
   const insets = useSafeAreaInsets();
   const [dashboard, setDashboard] = useState<OwnerDashboard | null>(null);
   const [loading, setLoading] = useState(true);
+  const [errored, setErrored] = useState(false);
   const [activeTab, setActiveTab] = useState<TabKey>('dashboard');
 
   useEffect(() => {
@@ -48,6 +34,8 @@ export default function OwnerDashboardScreen() {
   }, []);
 
   const loadDashboard = async () => {
+    setLoading(true);
+    setErrored(false);
     try {
       const data = await fetchOwnerDashboard();
       // Merge with safe defaults so nested fields can never be undefined
@@ -59,7 +47,8 @@ export default function OwnerDashboardScreen() {
         pendingCount: data?.pendingCount ?? 0,
       });
     } catch {
-      setDashboard(MOCK_DASHBOARD);
+      setDashboard(null);
+      setErrored(true);
     } finally {
       setLoading(false);
     }
@@ -114,6 +103,22 @@ export default function OwnerDashboardScreen() {
       {loading && activeTab === 'dashboard' ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.accent} />
+        </View>
+      ) : activeTab === 'dashboard' && (errored || !dashboard) ? (
+        <View style={styles.loadingContainer}>
+          <Text style={{ fontSize: 36, marginBottom: 12 }}>📊</Text>
+          <Text style={{ fontSize: 16, fontWeight: '700', color: colors.primary }}>
+            Dashboard tidak tersedia
+          </Text>
+          <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 6, textAlign: 'center', paddingHorizontal: 24 }}>
+            Server tidak dapat dijangkau. Coba lagi nanti.
+          </Text>
+          <TouchableOpacity
+            onPress={loadDashboard}
+            style={{ marginTop: 16, paddingHorizontal: 20, paddingVertical: 10, borderWidth: 1.5, borderColor: colors.accent, borderRadius: 8 }}
+          >
+            <Text style={{ color: colors.accent, fontWeight: '700' }}>Coba lagi</Text>
+          </TouchableOpacity>
         </View>
       ) : activeTab === 'dashboard' ? (
         <DashboardTab dashboard={dashboard!} onTabChange={setActiveTab} />

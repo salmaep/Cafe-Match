@@ -8,6 +8,7 @@ import {
   ScrollView,
   Dimensions,
   Animated,
+  ActivityIndicator,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -15,24 +16,20 @@ import { usePreferences } from '../context/PreferencesContext';
 import { colors, spacing, radius } from '../theme';
 import { Purpose, Facility, WizardPreferences } from '../types';
 import { useLocation } from '../context/LocationContext';
+import { usePurposes } from '../queries/purposes/use-purposes';
+import { useDestinations } from '../queries/destinations/use-destinations';
 
 const { width } = Dimensions.get('window');
 const TOTAL_STEPS = 4;
 
-const PURPOSES: { label: Purpose; emoji: string }[] = [
-  { label: 'Me Time', emoji: '🧘' },
-  { label: 'Date', emoji: '💑' },
-  { label: 'Family Time', emoji: '👨‍👩‍👧' },
-  { label: 'Group Study', emoji: '📚' },
-  { label: 'WFC', emoji: '💻' },
-];
-
-const DESTINATION_SUGGESTIONS: { label: string; sublabel: string; latitude: number; longitude: number }[] = [
-  { label: 'Dago', sublabel: 'Bandung', latitude: -6.8800, longitude: 107.6100 },
-  { label: 'Tebet', sublabel: 'Jakarta Selatan', latitude: -6.2241, longitude: 106.8446 },
-  { label: 'Bandung', sublabel: 'Kota Bandung', latitude: -6.9175, longitude: 107.6191 },
-  { label: 'Jakarta Selatan', sublabel: 'DKI Jakarta', latitude: -6.2615, longitude: 106.8106 },
-];
+// Emoji is presentation-only; mapped by slug from /purposes payload.
+const PURPOSE_EMOJI_BY_SLUG: Record<string, string> = {
+  'me-time': '🧘',
+  'date': '💑',
+  'family-time': '👨‍👩‍👧',
+  'group-study': '📚',
+  'wfc': '💻',
+};
 
 // Parse coord strings — supports paste from Google Maps, spreadsheets, plain text.
 // Examples that work:
@@ -69,6 +66,8 @@ export default function WizardScreen() {
   const navigation = useNavigation<StackNavigationProp<any>>();
   const { setPreferences, setWizardCompleted } = usePreferences();
   const { latitude: userLat, longitude: userLng } = useLocation();
+  const purposesQuery = usePurposes();
+  const destinationsQuery = useDestinations();
   const [step, setStep] = useState(0);
   const slideAnim = useRef(new Animated.Value(0)).current;
 
@@ -175,22 +174,39 @@ export default function WizardScreen() {
         <View style={styles.stepContainer}>
           <Text style={styles.stepTitle}>What's your vibe today?</Text>
           <Text style={styles.stepSubtitle}>Choose one that fits your mood</Text>
-          <View style={styles.optionsGrid}>
-            {PURPOSES.map((p) => (
-              <TouchableOpacity
-                key={p.label}
-                style={[styles.optionCard, purpose === p.label && styles.optionCardActive]}
-                onPress={() => setPurpose(p.label)}
-              >
-                <Text style={styles.optionEmoji}>{p.emoji}</Text>
-                <Text
-                  style={[styles.optionLabel, purpose === p.label && styles.optionLabelActive]}
-                >
-                  {p.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+          {purposesQuery.isLoading ? (
+            <View style={styles.loaderRow}>
+              <ActivityIndicator color={colors.accent} />
+            </View>
+          ) : purposesQuery.isError ? (
+            <Text style={styles.coordHint}>
+              ⚠️ Gagal memuat purposes dari server.{' '}
+              <Text style={{ color: colors.accent }} onPress={() => purposesQuery.refetch()}>
+                Coba lagi
+              </Text>
+            </Text>
+          ) : (
+            <View style={styles.optionsGrid}>
+              {(purposesQuery.data ?? []).map((p) => {
+                const label = p.name as Purpose;
+                const emoji = PURPOSE_EMOJI_BY_SLUG[p.slug] ?? '☕';
+                return (
+                  <TouchableOpacity
+                    key={p.id}
+                    style={[styles.optionCard, purpose === label && styles.optionCardActive]}
+                    onPress={() => setPurpose(label)}
+                  >
+                    <Text style={styles.optionEmoji}>{emoji}</Text>
+                    <Text
+                      style={[styles.optionLabel, purpose === label && styles.optionLabelActive]}
+                    >
+                      {label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
         </View>
 
         {/* Step 2: Location */}
@@ -247,25 +263,33 @@ export default function WizardScreen() {
                 </Text>
               )}
               <Text style={styles.suggestLabel}>Suggested Destinations</Text>
-              <View style={styles.suggestRow}>
-                {DESTINATION_SUGGESTIONS.map((s) => (
-                  <TouchableOpacity
-                    key={s.label}
-                    style={[
-                      styles.suggestChip,
-                      customAddress === s.label && styles.suggestChipActive,
-                    ]}
-                    onPress={() => {
-                      setCustomAddress(s.label);
-                      setCustomLat(s.latitude);
-                      setCustomLng(s.longitude);
-                    }}
-                  >
-                    <Text style={styles.suggestChipMain}>{s.label}</Text>
-                    <Text style={styles.suggestChipSub}>{s.sublabel}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
+              {destinationsQuery.isLoading ? (
+                <View style={styles.loaderRow}>
+                  <ActivityIndicator color={colors.accent} />
+                </View>
+              ) : (
+                <View style={styles.suggestRow}>
+                  {(destinationsQuery.data ?? []).map((s) => (
+                    <TouchableOpacity
+                      key={s.id}
+                      style={[
+                        styles.suggestChip,
+                        customAddress === s.label && styles.suggestChipActive,
+                      ]}
+                      onPress={() => {
+                        setCustomAddress(s.label);
+                        setCustomLat(s.latitude);
+                        setCustomLng(s.longitude);
+                      }}
+                    >
+                      <Text style={styles.suggestChipMain}>{s.label}</Text>
+                      {s.sublabel ? (
+                        <Text style={styles.suggestChipSub}>{s.sublabel}</Text>
+                      ) : null}
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
             </>
           )}
         </View>
@@ -519,6 +543,10 @@ const styles = StyleSheet.create({
   amenityChipActive: {
     borderColor: colors.accent,
     backgroundColor: '#FDF6EC',
+  },
+  loaderRow: {
+    paddingVertical: spacing.lg,
+    alignItems: 'center',
   },
   amenityIcon: { fontSize: 16, marginRight: spacing.xs },
   amenityLabel: { fontSize: 14, fontWeight: '600', color: colors.primary },

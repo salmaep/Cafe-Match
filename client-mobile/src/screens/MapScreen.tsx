@@ -2,7 +2,6 @@ import React, {
   useState,
   useRef,
   useEffect,
-  useCallback,
   useMemo,
 } from "react";
 import {
@@ -23,28 +22,24 @@ import MapView, { Marker, Circle } from "react-native-maps";
 import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import { ScrollView as GHScrollView } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useNavigation, useFocusEffect } from "@react-navigation/native";
+import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
+import { useQueryClient } from "@tanstack/react-query";
 import { usePreferences } from "../context/PreferencesContext";
 import { useLocation } from "../context/LocationContext";
 import { useShortlist } from "../context/ShortlistContext";
-import { fetchActiveCheckin, checkOutApi, fetchFriendsMap, throwEmojiApi } from "../services/api";
+import { checkOutApi, throwEmojiApi } from "../services/api";
 import { useSearchCafes } from "../queries/cafes/use-search-cafes";
 import { usePromotedCafes } from "../queries/cafes/use-promoted-cafes";
+import { useActiveCheckin, checkinKeys } from "../queries/checkins/use-active-checkin";
+import { useFriendsMap } from "../queries/friends/use-friends-map";
 import { hitsToCafes } from "../queries/cafes/api";
 import { Cafe } from "../types";
-import { parseSearchQuery, ParsedSearch } from "../utils/searchParser";
 import { colors, spacing, radius } from "../theme";
 import { RADIUS_OPTIONS } from "../constant/ui/radius-options";
-import { PURPOSE_SLUG_MAP } from "../constant/purpose";
+import { PURPOSE_ID_MAP, FACILITY_KEY_BY_LABEL } from "../constant/purpose";
 
 const { width, height } = Dimensions.get("window");
-
-// ─── DEV TOGGLE ──────────────────────────────────────────────────────────
-// Set to `true` to disable the radius filter entirely (fetches all cafes,
-// skips client-side distance filter). Revert to `false` for production.
-const DEV_DISABLE_RADIUS = true;
-// ─────────────────────────────────────────────────────────────────────────
 
 /** Format seconds as HH:MM:SS or MM:SS for short durations */
 function formatDuration(totalSec: number): string {
@@ -65,23 +60,22 @@ export default function MapScreen() {
   const mapRef = useRef<MapView>(null);
   const sheetRef = useRef<BottomSheet>(null);
 
-  const [allCafes, setAllCafes] = useState<Cafe[]>([]);
-  const [displayCafes, setDisplayCafes] = useState<Cafe[]>([]); // map pins (wider)
-  const [listCafes, setListCafes] = useState<Cafe[]>([]);       // drawer list (radius-filtered)
-  const [featuredCafes, setFeaturedCafes] = useState<Cafe[]>([]);
   const [selectedCafe, setSelectedCafe] = useState<Cafe | null>(null);
   const [radiusKm, setRadiusKm] = useState(preferences?.radius || 2);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchActive, setSearchActive] = useState(false);
-  const [parsedSearch, setParsedSearch] = useState<ParsedSearch | null>(null);
 
-  // Active check-in state
-  const [activeCheckin, setActiveCheckin] = useState<any>(null);
+  // Active check-in: server-driven via TanStack Query (refetch every 60s).
+  // See queries/checkins/use-active-checkin.ts.
+  const activeCheckinQuery = useActiveCheckin();
+  const activeCheckin = activeCheckinQuery.data ?? null;
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [checkinDurationSec, setCheckinDurationSec] = useState(0);
+  const qc = useQueryClient();
 
-  // Friends currently checked in (for map overlay)
-  const [friendsOnMap, setFriendsOnMap] = useState<any[]>([]);
+  // Friends currently checked in (for map overlay) — same pattern.
+  const friendsMapQuery = useFriendsMap();
+  const friendsOnMap = friendsMapQuery.data ?? [];
   const [emojiTargetFriend, setEmojiTargetFriend] = useState<any | null>(null);
 
   // Pin visibility toggles
@@ -172,108 +166,82 @@ export default function MapScreen() {
   const snapPoints = useMemo(() => ["12%", "50%", "92%"], []);
 
   // ─── Cafe data via TanStack Query + Meilisearch ─────────────────────────
-  // Map screen needs all cafes for pin rendering, so request a high limit (1000)
-  // instead of paginating. Search popup will refetch with `q` filled.
-  const effectiveRadiusKm = DEV_DISABLE_RADIUS ? 9999 : radiusKm;
-  const cafesQuery = useSearchCafes({
+  // Two parallel queries:
+  //   • mapPinsQuery: broad — only geo + radius (and search text if active),
+  //     so the map always shows the full overview of nearby cafes.
+  //   • listQuery: narrow — adds purpose + facility filters from the wizard,
+  //     so the drawer list reflects the user's preferences.
+  // Server (Meilisearch) does ALL filtering, sorting, and distance calc.
+  const radiusMeters = Math.min(radiusKm * 1000, 50_000_000);
+  const purposeId = preferences?.purpose
+    ? PURPOSE_ID_MAP[preferences.purpose]
+    : undefined;
+  const facilities = useMemo(
+    () =>
+      (preferences?.amenities ?? [])
+        .map((a) => FACILITY_KEY_BY_LABEL[a])
+        .filter(Boolean),
+    [preferences?.amenities],
+  );
+  const activeQ = searchActive && searchQuery.trim() ? searchQuery.trim() : undefined;
+
+  const mapPinsQuery = useSearchCafes({
     lat: center.latitude,
     lng: center.longitude,
-    radius: Math.min(effectiveRadiusKm * 1000, 50_000_000),
-    q: searchActive ? searchQuery : undefined,
+    radius: radiusMeters,
+    q: activeQ,
     limit: 1000,
   });
+
+  const listQuery = useSearchCafes({
+    lat: center.latitude,
+    lng: center.longitude,
+    radius: radiusMeters,
+    q: activeQ,
+    purposeId,
+    // Send facilities only if the user picked at least one — empty array
+    // would over-restrict (server treats empty list as no-match in some cases).
+    ...(facilities.length > 0 ? { facilities } : {}),
+    limit: 200,
+  });
+
   const promotedQuery = usePromotedCafes("featured_promo");
 
+  // Derived data — pure useMemo, no useState/useEffect bridging.
+  const displayCafes: Cafe[] = useMemo(
+    () =>
+      mapPinsQuery.data?.pages.flatMap((p) =>
+        hitsToCafes(p, center.latitude, center.longitude),
+      ) ?? [],
+    [mapPinsQuery.data, center.latitude, center.longitude],
+  );
+
+  const listCafes: Cafe[] = useMemo(
+    () =>
+      listQuery.data?.pages.flatMap((p) =>
+        hitsToCafes(p, center.latitude, center.longitude),
+      ) ?? [],
+    [listQuery.data, center.latitude, center.longitude],
+  );
+
+  const featuredCafes: Cafe[] = promotedQuery.data ?? [];
+
   const loading =
-    cafesQuery.isLoading ||
-    cafesQuery.isFetching ||
+    mapPinsQuery.isLoading ||
+    listQuery.isLoading ||
     promotedQuery.isLoading;
-
-  // Bridge TanStack Query data → existing local state so downstream filter
-  // logic (purpose/amenity matching, distance sort) works unchanged.
-  // Server (Meilisearch) handles geo + amenity filtering — no client-side mocks.
-  useEffect(() => {
-    if (!cafesQuery.data) return;
-    const cafes = cafesQuery.data.pages.flatMap((p) =>
-      hitsToCafes(p, center.latitude, center.longitude),
-    );
-    setAllCafes(cafes);
-  }, [cafesQuery.data, center.latitude, center.longitude]);
-
-  useEffect(() => {
-    if (cafesQuery.isError) {
-      console.error("[MapScreen] cafes query failed:", cafesQuery.error);
-      setAllCafes([]);
-    }
-  }, [cafesQuery.isError, cafesQuery.error]);
-
-  useEffect(() => {
-    if (!promotedQuery.data) return;
-    setFeaturedCafes(promotedQuery.data);
-  }, [promotedQuery.data]);
-
-  useEffect(() => {
-    if (promotedQuery.isError) {
-      setFeaturedCafes([]);
-    }
-  }, [promotedQuery.isError]);
-
-  // Fetch active check-in on mount + poll every 60s
-  const refreshActiveCheckin = useCallback(async () => {
-    try {
-      const active = await fetchActiveCheckin();
-      setActiveCheckin(active || null);
-    } catch {
-      setActiveCheckin(null);
-    }
-  }, []);
-
-  useEffect(() => {
-    refreshActiveCheckin();
-    const interval = setInterval(refreshActiveCheckin, 60000);
-    return () => clearInterval(interval);
-  }, [refreshActiveCheckin]);
-
-  // Also refresh whenever the map screen regains focus (e.g. after returning from CafeDetail)
-  useFocusEffect(
-    useCallback(() => {
-      refreshActiveCheckin();
-    }, [refreshActiveCheckin]),
-  );
-
-  // Fetch friends on map (polling every 30s while map is visible)
-  const refreshFriendsMap = useCallback(async () => {
-    try {
-      const list = await fetchFriendsMap();
-      setFriendsOnMap(Array.isArray(list) ? list : []);
-    } catch {
-      setFriendsOnMap([]);
-    }
-  }, []);
-
-  useEffect(() => {
-    refreshFriendsMap();
-    const interval = setInterval(refreshFriendsMap, 30000);
-    return () => clearInterval(interval);
-  }, [refreshFriendsMap]);
-
-  useFocusEffect(
-    useCallback(() => {
-      refreshFriendsMap();
-    }, [refreshFriendsMap]),
-  );
 
   const handleThrowEmoji = async (emoji: string) => {
     if (!emojiTargetFriend) return;
     try {
       await throwEmojiApi(emojiTargetFriend.id, emoji);
-      setEmojiTargetFriend(null);
-    } catch {
+    } finally {
       setEmojiTargetFriend(null);
     }
   };
 
-  // Real-time ticker: update elapsed seconds every 1s while checked in
+  // Real-time ticker: update elapsed seconds every 1s while checked in.
+  // Kept as setInterval — needs precise per-second updates for the live clock.
   useEffect(() => {
     if (!activeCheckin?.checkInAt) {
       setCheckinDurationSec(0);
@@ -281,7 +249,7 @@ export default function MapScreen() {
     }
     const update = () => {
       const ms = Date.now() - new Date(activeCheckin.checkInAt).getTime();
-      setCheckinDurationSec(Math.max(0, Math.floor(ms / 1000))); // now seconds
+      setCheckinDurationSec(Math.max(0, Math.floor(ms / 1000)));
     };
     update();
     const interval = setInterval(update, 1000);
@@ -293,95 +261,15 @@ export default function MapScreen() {
     setCheckoutLoading(true);
     try {
       await checkOutApi(activeCheckin.id);
-      setActiveCheckin(null);
+      // Optimistic clear; query will also refetch on next interval.
+      qc.setQueryData(checkinKeys.active, null);
       setCheckinDurationSec(0);
-    } catch (err: any) {
+    } catch {
       // Silent fail — user can retry
+    } finally {
+      setCheckoutLoading(false);
     }
-    setCheckoutLoading(false);
   };
-
-  // Apply filters — two parallel outputs:
-  //   displayCafes (map pins): ALWAYS shows ALL cafes, ignoring radius/wizard/search
-  //                            (the map is a wide overview). Only search overrides this
-  //                            so user sees matching pins highlighted.
-  //   listCafes (drawer list): applies wizard + search + radius filter
-  useEffect(() => {
-    // Map pins — always all cafes from the backend, ignoring filters.
-    // Exception: if the user submitted a search, we still filter pins so the map
-    // reflects the search (e.g. user searched "wifi" → only wifi cafes on map).
-    let pinsResult = [...allCafes];
-    if (searchActive && parsedSearch && parsedSearch.labels.length > 0) {
-      if (parsedSearch.purposes.length > 0) {
-        pinsResult = pinsResult.filter((c) => {
-          const byName = parsedSearch!.purposes.some((p) => c.purposes.includes(p));
-          const byScore = parsedSearch!.purposes.some((p) => {
-            const slug = PURPOSE_SLUG_MAP[p];
-            return slug && (c.purposeScores?.[slug] || 0) >= 60;
-          });
-          return byName || byScore;
-        });
-      }
-      if (parsedSearch.facilities.length > 0) {
-        pinsResult = pinsResult.filter((c) => {
-          const byFacility = parsedSearch!.facilities.some((f) => c.facilities.includes(f));
-          const byDetected = parsedSearch!.facilities.some((f) => {
-            const key = f.toLowerCase().replace(/[^a-z]/g, '_');
-            return c.detectedFacilities?.some((d) => d.includes(key) || key.includes(d));
-          });
-          return byFacility || byDetected;
-        });
-      }
-    }
-    setDisplayCafes(pinsResult);
-
-    // Drawer list — apply wizard + search + radius
-    let listResult = [...allCafes];
-    if (preferences?.purpose) {
-      const slug = PURPOSE_SLUG_MAP[preferences.purpose];
-      listResult = listResult.filter((c) => {
-        const byName = c.purposes.includes(preferences.purpose!);
-        const byScore = !!slug && (c.purposeScores?.[slug] || 0) >= 40;
-        return byName || byScore;
-      });
-    }
-    if (preferences?.amenities && preferences.amenities.length > 0) {
-      listResult = listResult.filter((c) => {
-        const byFacility = preferences.amenities!.some((a) => c.facilities.includes(a));
-        const byDetected = preferences.amenities!.some((a) => {
-          const key = a.toLowerCase().replace(/[^a-z]/g, '_');
-          return c.detectedFacilities?.some((d) => d === key || d.includes(key) || key.includes(d));
-        });
-        return byFacility || byDetected;
-      });
-    }
-    if (parsedSearch && parsedSearch.labels.length > 0) {
-      if (parsedSearch.purposes.length > 0) {
-        listResult = listResult.filter((c) => {
-          const byName = parsedSearch!.purposes.some((p) => c.purposes.includes(p));
-          const byScore = parsedSearch!.purposes.some((p) => {
-            const slug = PURPOSE_SLUG_MAP[p];
-            return slug && (c.purposeScores?.[slug] || 0) >= 60;
-          });
-          return byName || byScore;
-        });
-      }
-      if (parsedSearch.facilities.length > 0) {
-        listResult = listResult.filter((c) => {
-          const byFacility = parsedSearch!.facilities.some((f) => c.facilities.includes(f));
-          const byDetected = parsedSearch!.facilities.some((f) => {
-            const key = f.toLowerCase().replace(/[^a-z]/g, '_');
-            return c.detectedFacilities?.some((d) => d.includes(key) || key.includes(d));
-          });
-          return byFacility || byDetected;
-        });
-      }
-    }
-    listResult = listResult
-      .filter((c) => c.distance <= radiusKm)
-      .sort((a, b) => (a.distance || 999) - (b.distance || 999));
-    setListCafes(listResult);
-  }, [allCafes, preferences, parsedSearch, radiusKm, searchActive]);
 
   const handleSearch = () => {
     Keyboard.dismiss();
@@ -389,29 +277,20 @@ export default function MapScreen() {
       clearSearch();
       return;
     }
-    const parsed = parseSearchQuery(searchQuery);
-    setParsedSearch(parsed);
     setSearchActive(true);
-
-    // Build search result cafes from allCafes
-    let results = [...allCafes];
-    if (parsed.purposes.length > 0) {
-      results = results.filter((c) =>
-        parsed.purposes.some((p) => c.purposes.includes(p)),
-      );
-    }
-    if (parsed.facilities.length > 0) {
-      results = results.filter((c) =>
-        parsed.facilities.some((f) => c.facilities.includes(f)),
-      );
-    }
-    if (results.length === 0) results = allCafes.slice(0, 5);
-    showSearchPopup(results.slice(0, 8));
+    // Server returns the matched cafes; show top 8 in the popup once available.
+    // The popup is opened immediately; the swiper will render once listQuery resolves.
+    showSearchPopup([]);
   };
+
+  // When listQuery has results during an active search, populate popup.
+  useEffect(() => {
+    if (!searchPopupVisible || !searchActive) return;
+    setSearchResults(listCafes.slice(0, 8));
+  }, [listCafes, searchPopupVisible, searchActive]);
 
   const clearSearch = () => {
     setSearchQuery("");
-    setParsedSearch(null);
     setSearchActive(false);
   };
 
@@ -436,7 +315,7 @@ export default function MapScreen() {
     setPreferences(null);
     clearSearch();
     setRadiusKm(2);
-    cafesQuery.refetch();
+    // Both queries auto-refetch when their params (preferences/radius) change.
   };
 
   const hasAnyFilter =
@@ -518,15 +397,6 @@ export default function MapScreen() {
             </TouchableOpacity>
           )}
         </View>
-        {searchActive && parsedSearch && parsedSearch.labels.length > 0 && (
-          <View style={styles.parsedRow}>
-            {parsedSearch.labels.map((label) => (
-              <View key={label} style={styles.parsedChip}>
-                <Text style={styles.parsedChipText}>{label} ✓</Text>
-              </View>
-            ))}
-          </View>
-        )}
         {searchActive && displayCafes.length === 0 && !loading && (
           <View style={styles.noResultsBanner}>
             <Text style={styles.noResultsText}>
@@ -678,17 +548,6 @@ export default function MapScreen() {
               </Text>
             </View>
           </View>
-
-          {/* Parsed tags */}
-          {parsedSearch && parsedSearch.labels.length > 0 && (
-            <View style={styles.popupTagRow}>
-              {parsedSearch.labels.map((l) => (
-                <View key={l} style={styles.popupTag}>
-                  <Text style={styles.popupTagText}>{l} ✓</Text>
-                </View>
-              ))}
-            </View>
-          )}
 
           {/* Swipeable cards */}
           <View style={styles.searchSwiperContainer}>

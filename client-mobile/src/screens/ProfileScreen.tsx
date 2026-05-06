@@ -15,6 +15,7 @@ import { useShortlist } from '../context/ShortlistContext';
 import { usePreferences } from '../context/PreferencesContext';
 import CafeMatchLogo from '../components/CafeMatchLogo';
 import { colors, spacing, radius } from '../theme';
+import { APP_VERSION } from '../constant/version';
 
 export default function ProfileScreen() {
   const navigation = useNavigation<StackNavigationProp<any>>();
@@ -69,7 +70,9 @@ export default function ProfileScreen() {
     );
   }
 
-  const isOwner = user.role === 'owner';
+  // Owner sign-in temporarily hidden — set to true to restore Owner UI access.
+  const OWNER_UI_ENABLED = false;
+  const isOwner = OWNER_UI_ENABLED && user.role === 'owner';
 
   return (
     <ScrollView
@@ -161,6 +164,8 @@ export default function ProfileScreen() {
       <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
         <Text style={styles.logoutText}>Logout</Text>
       </TouchableOpacity>
+
+      <Text style={styles.versionText}>CafeMatch v{APP_VERSION}</Text>
     </ScrollView>
   );
 }
@@ -248,4 +253,11 @@ const styles = StyleSheet.create({
     borderColor: colors.error,
   },
   logoutText: { color: colors.error, fontWeight: '600', fontSize: 15 },
+  versionText: {
+    textAlign: 'center',
+    color: colors.textSecondary,
+    fontSize: 12,
+    fontWeight: '500',
+    marginTop: spacing.lg,
+  },
 });

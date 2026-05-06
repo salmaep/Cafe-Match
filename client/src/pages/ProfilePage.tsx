@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { notificationsApi } from '../api/notifications.api';
+import { APP_VERSION } from '../config/version';
 
 export default function ProfilePage() {
   const { user, logout, isLoading } = useAuth();
@@ -104,6 +105,10 @@ export default function ProfilePage() {
         >
           Logout
         </button>
+
+        <p className="mt-6 text-center text-xs text-[#8A8880]">
+          CafeMatch v{APP_VERSION}
+        </p>
       </div>
     </div>
   );

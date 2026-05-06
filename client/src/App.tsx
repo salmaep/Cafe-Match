@@ -21,6 +21,10 @@ import WizardPage from './pages/WizardPage';
 import DiscoverPage from './pages/DiscoverPage';
 import TrendingPage from './pages/TrendingPage';
 import AuthCallbackPage from './pages/AuthCallbackPage';
+import ProfilePage from './pages/ProfilePage';
+import FriendsPage from './pages/FriendsPage';
+import AchievementsPage from './pages/AchievementsPage';
+import NotificationsPage from './pages/NotificationsPage';
 
 function App() {
   return (
@@ -64,6 +68,10 @@ function App() {
           <Route path="/favorites" element={<FavoritesPage />} />
           <Route path="/discover" element={<DiscoverPage />} />
           <Route path="/trending" element={<TrendingPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/friends" element={<FriendsPage />} />
+          <Route path="/achievements" element={<AchievementsPage />} />
+          <Route path="/notifications" element={<NotificationsPage />} />
         </Route>
       </Routes>
     </div>

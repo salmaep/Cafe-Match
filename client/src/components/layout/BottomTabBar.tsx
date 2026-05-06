@@ -24,7 +24,7 @@ export default function BottomTabBar() {
       icon: '★',
       badge: shortlist.length || undefined,
     },
-    { to: user ? '/bookmarks' : '/login', label: 'Profile', icon: '👤' },
+    { to: user ? '/profile' : '/login', label: 'Profile', icon: '👤' },
   ];
 
   return (

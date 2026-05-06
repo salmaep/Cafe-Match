@@ -1,73 +1,14 @@
-import { useEffect, useState } from 'react';
-import { MapContainer as LeafletMap, TileLayer, Marker, Popup, Circle, useMap, useMapEvents } from 'react-leaflet';
-import L from 'leaflet';
+import { useEffect, useRef, useState } from 'react';
+import {
+  Map,
+  AdvancedMarker,
+  InfoWindow,
+  useMap,
+} from '@vis.gl/react-google-maps';
 import type { Cafe } from '../../types';
 import { formatDistance } from '../../utils/haversine';
-import 'leaflet/dist/leaflet.css';
 
-// User location marker — blue pulsing dot
-const userIcon = L.divIcon({
-  className: '',
-  html: `
-    <div style="position:relative;width:24px;height:24px;">
-      <div style="position:absolute;inset:0;border-radius:50%;background:rgba(59,130,246,0.25);animation:pulse 2s ease-out infinite;"></div>
-      <div style="position:absolute;top:4px;left:4px;width:16px;height:16px;border-radius:50%;background:#3b82f6;border:3px solid #fff;box-shadow:0 0 6px rgba(0,0,0,0.3);"></div>
-    </div>
-    <style>@keyframes pulse{0%{transform:scale(1);opacity:1}100%{transform:scale(2.5);opacity:0}}</style>
-  `,
-  iconSize: [24, 24],
-  iconAnchor: [12, 12],
-  popupAnchor: [0, -12],
-});
-
-// Cafe marker — amber/brown coffee pin
-const cafeIcon = L.divIcon({
-  className: '',
-  html: `
-    <svg width="28" height="38" viewBox="0 0 28 38" xmlns="http://www.w3.org/2000/svg">
-      <path d="M14 0C6.27 0 0 6.27 0 14c0 10.5 14 24 14 24s14-13.5 14-24C28 6.27 21.73 0 14 0z" fill="#d97706"/>
-      <circle cx="14" cy="13" r="7" fill="#fff"/>
-      <text x="14" y="17" text-anchor="middle" font-size="13" fill="#d97706">&#9749;</text>
-    </svg>
-  `,
-  iconSize: [28, 38],
-  iconAnchor: [14, 38],
-  popupAnchor: [0, -34],
-});
-
-// Promoted cafe marker (Type A: New Cafe Highlight) — "NEW!" badge pin, same size as regular
-const promotedCafeIcon = L.divIcon({
-  className: '',
-  html: `
-    <div style="position:relative;">
-      <div style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);z-index:10;
-        background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;font-size:8px;font-weight:800;
-        padding:1px 5px;border-radius:6px;letter-spacing:0.5px;white-space:nowrap;
-        box-shadow:0 2px 4px rgba(239,68,68,0.5);border:1.5px solid #fff;
-        animation:newBounce 2s ease-in-out infinite;">
-        NEW!
-      </div>
-      <svg width="28" height="38" viewBox="0 0 28 38" xmlns="http://www.w3.org/2000/svg"
-        style="filter:drop-shadow(0 2px 4px rgba(239,68,68,0.4));">
-        <defs>
-          <linearGradient id="newGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#f87171"/>
-            <stop offset="100%" stop-color="#dc2626"/>
-          </linearGradient>
-        </defs>
-        <path d="M14 0C6.27 0 0 6.27 0 14c0 10.5 14 24 14 24s14-13.5 14-24C28 6.27 21.73 0 14 0z" fill="url(#newGrad)"/>
-        <circle cx="14" cy="13" r="7" fill="#fff"/>
-        <text x="14" y="17" text-anchor="middle" font-size="13" font-weight="bold" fill="#dc2626">&#9749;</text>
-      </svg>
-      <style>
-        @keyframes newBounce{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-3px)}}
-      </style>
-    </div>
-  `,
-  iconSize: [28, 38],
-  iconAnchor: [14, 38],
-  popupAnchor: [0, -34],
-});
+const MAP_ID = import.meta.env.VITE_GOOGLE_MAPS_MAP_ID || undefined;
 
 interface Props {
   center: [number, number];
@@ -76,94 +17,255 @@ interface Props {
   onMapClick?: (lat: number, lng: number) => void;
 }
 
-function MapClickHandler({ onClick }: { onClick?: (lat: number, lng: number) => void }) {
-  useMapEvents({
-    click(e) {
-      onClick?.(e.latlng.lat, e.latlng.lng);
-    },
-  });
-  return null;
-}
-
+// ── Recenter when `center` prop changes ──────────────────────────────────────
 function RecenterMap({ center }: { center: [number, number] }) {
   const map = useMap();
   useEffect(() => {
-    map.setView(center, map.getZoom());
+    if (!map) return;
+    map.panTo({ lat: center[0], lng: center[1] });
   }, [center, map]);
   return null;
 }
 
+// ── Radius circle (no JSX component in @vis.gl, use imperative API) ──────────
+function RadiusCircle({
+  center,
+  radius,
+}: {
+  center: [number, number];
+  radius: number;
+}) {
+  const map = useMap();
+  const circleRef = useRef<google.maps.Circle | null>(null);
+
+  useEffect(() => {
+    if (!map || !window.google) return;
+
+    if (!circleRef.current) {
+      circleRef.current = new window.google.maps.Circle({
+        strokeColor: '#d97706',
+        strokeOpacity: 1,
+        strokeWeight: 2,
+        fillColor: '#fbbf24',
+        fillOpacity: 0.1,
+        map,
+        center: { lat: center[0], lng: center[1] },
+        radius,
+        clickable: false,
+      });
+    } else {
+      circleRef.current.setCenter({ lat: center[0], lng: center[1] });
+      circleRef.current.setRadius(radius);
+    }
+  }, [map, center, radius]);
+
+  useEffect(() => {
+    return () => {
+      circleRef.current?.setMap(null);
+      circleRef.current = null;
+    };
+  }, []);
+
+  return null;
+}
+
+// ── Marker visuals ───────────────────────────────────────────────────────────
+function UserPin() {
+  return (
+    <div style={{ position: 'relative', width: 24, height: 24 }}>
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          borderRadius: '50%',
+          background: 'rgba(59,130,246,0.25)',
+          animation: 'cm-pulse 2s ease-out infinite',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          top: 4,
+          left: 4,
+          width: 16,
+          height: 16,
+          borderRadius: '50%',
+          background: '#3b82f6',
+          border: '3px solid #fff',
+          boxShadow: '0 0 6px rgba(0,0,0,0.3)',
+        }}
+      />
+      <style>{`@keyframes cm-pulse{0%{transform:scale(1);opacity:1}100%{transform:scale(2.5);opacity:0}}`}</style>
+    </div>
+  );
+}
+
+function CafePin() {
+  return (
+    <svg width="28" height="38" viewBox="0 0 28 38" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M14 0C6.27 0 0 6.27 0 14c0 10.5 14 24 14 24s14-13.5 14-24C28 6.27 21.73 0 14 0z"
+        fill="#d97706"
+      />
+      <circle cx="14" cy="13" r="7" fill="#fff" />
+      <text x="14" y="17" textAnchor="middle" fontSize="13" fill="#d97706">
+        ☕
+      </text>
+    </svg>
+  );
+}
+
+function PromotedCafePin() {
+  return (
+    <div style={{ position: 'relative' }}>
+      <div
+        style={{
+          position: 'absolute',
+          top: -12,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 10,
+          background: 'linear-gradient(135deg,#ef4444,#dc2626)',
+          color: '#fff',
+          fontSize: 8,
+          fontWeight: 800,
+          padding: '1px 5px',
+          borderRadius: 6,
+          letterSpacing: 0.5,
+          whiteSpace: 'nowrap',
+          boxShadow: '0 2px 4px rgba(239,68,68,0.5)',
+          border: '1.5px solid #fff',
+          animation: 'cm-newbounce 2s ease-in-out infinite',
+        }}
+      >
+        NEW!
+      </div>
+      <svg
+        width="28"
+        height="38"
+        viewBox="0 0 28 38"
+        xmlns="http://www.w3.org/2000/svg"
+        style={{ filter: 'drop-shadow(0 2px 4px rgba(239,68,68,0.4))' }}
+      >
+        <defs>
+          <linearGradient id="cm-newGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#f87171" />
+            <stop offset="100%" stopColor="#dc2626" />
+          </linearGradient>
+        </defs>
+        <path
+          d="M14 0C6.27 0 0 6.27 0 14c0 10.5 14 24 14 24s14-13.5 14-24C28 6.27 21.73 0 14 0z"
+          fill="url(#cm-newGrad)"
+        />
+        <circle cx="14" cy="13" r="7" fill="#fff" />
+        <text x="14" y="17" textAnchor="middle" fontSize="13" fontWeight="bold" fill="#dc2626">
+          ☕
+        </text>
+      </svg>
+      <style>{`@keyframes cm-newbounce{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-3px)}}`}</style>
+    </div>
+  );
+}
+
+// ── Main map view ────────────────────────────────────────────────────────────
 export default function MapView({ center, cafes, radius, onMapClick }: Props) {
   const [showCafePins, setShowCafePins] = useState(true);
   const [showUserPin, setShowUserPin] = useState(true);
+  const [activeCafeId, setActiveCafeId] = useState<number | null>(null);
+  const [userPopupOpen, setUserPopupOpen] = useState(false);
+
+  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+  if (!apiKey) {
+    return (
+      <div className="flex h-full w-full items-center justify-center rounded-xl bg-amber-50 p-6 text-center text-sm text-amber-800">
+        Google Maps API key belum diset. Tambahkan{' '}
+        <code className="font-mono">VITE_GOOGLE_MAPS_API_KEY</code> di{' '}
+        <code className="font-mono">.env.development.local</code>.
+      </div>
+    );
+  }
+
+  const activeCafe = cafes.find((c) => c.id === activeCafeId) ?? null;
 
   return (
     <div className="relative h-full w-full">
-      <LeafletMap
-      center={center}
-      zoom={15}
-      className="h-full w-full rounded-xl"
-      style={{ minHeight: '400px' }}
-    >
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
-        url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-        subdomains="abcd"
-        maxZoom={20}
-      />
-      <RecenterMap center={center} />
-      <MapClickHandler onClick={onMapClick} />
-
-      {/* User location / search center */}
-      <Circle
-        center={center}
-        radius={radius}
-        pathOptions={{
-          color: '#d97706',
-          fillColor: '#fbbf24',
-          fillOpacity: 0.1,
-          weight: 2,
+      <Map
+        defaultCenter={{ lat: center[0], lng: center[1] }}
+        defaultZoom={15}
+        mapId={MAP_ID}
+        gestureHandling="greedy"
+        disableDefaultUI={false}
+        clickableIcons={false}
+        className="h-full w-full rounded-xl"
+        style={{ minHeight: '400px' }}
+        onClick={(ev) => {
+          if (!ev.detail.latLng) return;
+          onMapClick?.(ev.detail.latLng.lat, ev.detail.latLng.lng);
         }}
-      />
-      {showUserPin && (
-        <Marker position={center} icon={userIcon}>
-          <Popup>Your location</Popup>
-        </Marker>
-      )}
+      >
+        <RecenterMap center={center} />
+        <RadiusCircle center={center} radius={radius} />
 
-      {/* Cafe markers */}
-      {showCafePins && cafes.map((cafe) => (
-        <Marker
-          key={cafe.id}
-          position={[cafe.latitude, cafe.longitude]}
-          icon={cafe.hasActivePromotion && cafe.activePromotionType === 'new_cafe' ? promotedCafeIcon : cafeIcon}
-          zIndexOffset={cafe.hasActivePromotion ? 1000 : 0}
-        >
-          <Popup>
+        {showUserPin && (
+          <AdvancedMarker
+            position={{ lat: center[0], lng: center[1] }}
+            onClick={() => setUserPopupOpen(true)}
+          >
+            <UserPin />
+          </AdvancedMarker>
+        )}
+
+        {showUserPin && userPopupOpen && (
+          <InfoWindow
+            position={{ lat: center[0], lng: center[1] }}
+            onCloseClick={() => setUserPopupOpen(false)}
+          >
+            <div className="text-sm">Your location</div>
+          </InfoWindow>
+        )}
+
+        {showCafePins &&
+          cafes.map((cafe) => {
+            const isPromoted =
+              cafe.hasActivePromotion && cafe.activePromotionType === 'new_cafe';
+            return (
+              <AdvancedMarker
+                key={cafe.id}
+                position={{ lat: cafe.latitude, lng: cafe.longitude }}
+                zIndex={cafe.hasActivePromotion ? 1000 : undefined}
+                onClick={() => setActiveCafeId(cafe.id)}
+              >
+                {isPromoted ? <PromotedCafePin /> : <CafePin />}
+              </AdvancedMarker>
+            );
+          })}
+
+        {activeCafe && (
+          <InfoWindow
+            position={{ lat: activeCafe.latitude, lng: activeCafe.longitude }}
+            onCloseClick={() => setActiveCafeId(null)}
+            pixelOffset={[0, -34]}
+          >
             <div className="text-sm">
-              <strong>{cafe.name}</strong>
+              <strong>{activeCafe.name}</strong>
               <br />
-              {cafe.address}
-              {cafe.distanceMeters != null && (
+              {activeCafe.address}
+              {activeCafe.distanceMeters != null && (
                 <>
                   <br />
                   <span className="text-amber-600">
-                    {formatDistance(cafe.distanceMeters)}
+                    {formatDistance(activeCafe.distanceMeters)}
                   </span>
                 </>
               )}
               <br />
-              <a
-                href={`/cafe/${cafe.id}`}
-                className="text-blue-500 underline"
-              >
+              <a href={`/cafe/${activeCafe.id}`} className="text-blue-500 underline">
                 View details
               </a>
             </div>
-          </Popup>
-        </Marker>
-      ))}
-      </LeafletMap>
+          </InfoWindow>
+        )}
+      </Map>
 
       {/* Pin toggle buttons (top-right overlay) */}
       <div className="absolute top-3 right-3 z-[1000] flex flex-col gap-2">

@@ -106,6 +106,31 @@ export default function Navbar() {
                     </div>
                   </div>
                   <MenuLink
+                    to="/profile"
+                    icon="👤"
+                    label="Profile"
+                    onClick={() => setMenuOpen(false)}
+                  />
+                  <MenuLink
+                    to="/friends"
+                    icon="👥"
+                    label="Teman & Invite"
+                    onClick={() => setMenuOpen(false)}
+                  />
+                  <MenuLink
+                    to="/achievements"
+                    icon="🏆"
+                    label="Achievements"
+                    onClick={() => setMenuOpen(false)}
+                  />
+                  <MenuLink
+                    to="/notifications"
+                    icon="🔔"
+                    label="Notifikasi"
+                    onClick={() => setMenuOpen(false)}
+                  />
+                  <div className="h-px bg-[#F0EDE8] my-1" />
+                  <MenuLink
                     to="/bookmarks"
                     icon="🔖"
                     label="Bookmarks"

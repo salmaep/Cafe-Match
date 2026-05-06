@@ -73,6 +73,20 @@ export interface CafeSearchResult {
   meta: { page: number; limit: number; total: number };
 }
 
+// Minimal payload needed to render a marker on the map: position, label,
+// link, and the bits that drive the "promoted" pin variant.
+export interface CafePin {
+  id: number;
+  name: string;
+  slug: string | null;
+  address: string;
+  latitude: number;
+  longitude: number;
+  hasActivePromotion: boolean;
+  activePromotionType: string | null;
+  distanceMeters?: number;
+}
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function haversineMeters(
@@ -266,7 +280,7 @@ export class MeiliCafesService {
     //   facilities IN ["wifi", "mushola", ...]
     // matches a cafe that has ANY of the requested keys.
     const facilityKeys = new Set<string>(facilities ?? []);
-    if (wifiAvailable === 'true') facilityKeys.add('wifi');
+    if (wifiAvailable === 'true') facilityKeys.add('strong_wifi');
     if (hasMushola === 'true') facilityKeys.add('mushola');
     if (hasParking === 'true') facilityKeys.add('parking');
     if (facilityKeys.size > 0) {
@@ -336,6 +350,89 @@ export class MeiliCafesService {
         total: results.estimatedTotalHits ?? results.hits.length,
       },
     };
+  }
+
+  // ── Map pins (minimal fields, all matching results) ────────────────────────
+
+  /**
+   * Returns every cafe matching the same filters used by `searchCafes`, with
+   * only the fields needed to draw a map marker. Trusts Meili's index-wide
+   * `pagination.maxTotalHits` setting — one query, no paging loop.
+   */
+  async searchCafePins(dto: SearchCafesQuery): Promise<CafePin[]> {
+    const {
+      q = '',
+      lat,
+      lng,
+      radius = 2000,
+      wifiAvailable,
+      hasMushola,
+      hasParking,
+      facilities,
+      priceRange,
+      purposeId,
+    } = dto;
+
+    const filters: string[] = ['isActive = true'];
+    if (lat != null && lng != null) {
+      filters.push(`_geoRadius(${lat}, ${lng}, ${radius})`);
+    }
+    if (priceRange) filters.push(`priceRange = "${priceRange}"`);
+
+    const facilityKeys = new Set<string>(facilities ?? []);
+    if (wifiAvailable === 'true') facilityKeys.add('strong_wifi');
+    if (hasMushola === 'true') facilityKeys.add('mushola');
+    if (hasParking === 'true') facilityKeys.add('parking');
+    if (facilityKeys.size > 0) {
+      const escaped = Array.from(facilityKeys)
+        .map((k) => `"${k.replace(/"/g, '\\"')}"`)
+        .join(', ');
+      filters.push(`facilities IN [${escaped}]`);
+    }
+
+    if (purposeId) {
+      const slug = await this.resolvePurposeSlug(purposeId);
+      if (slug) filters.push(`purposes = "${slug}"`);
+    }
+
+    let results: SearchResponse<CafeDocument>;
+    try {
+      results = await this.meili.getIndex().search<CafeDocument>(q, {
+        filter: filters.join(' AND '),
+        limit: 1000,
+        attributesToRetrieve: [
+          'id',
+          'name',
+          'slug',
+          'address',
+          '_geo',
+          'hasActivePromotion',
+          'activePromotionType',
+        ],
+      });
+    } catch (err) {
+      this.logger.error('Meilisearch map-pin search failed', err);
+      throw new ServiceUnavailableException({ error: 'SEARCH_UNAVAILABLE' });
+    }
+
+    return results.hits.map((hit) => {
+      const pin: CafePin = {
+        id: hit.id,
+        name: hit.name,
+        slug: hit.slug ?? null,
+        address: hit.address,
+        latitude: Number(hit._geo?.lat ?? 0),
+        longitude: Number(hit._geo?.lng ?? 0),
+        hasActivePromotion: Boolean(hit.hasActivePromotion),
+        activePromotionType: hit.activePromotionType ?? null,
+      };
+      if (lat != null && lng != null && hit._geo) {
+        pin.distanceMeters = Math.round(
+          haversineMeters(lat, lng, hit._geo.lat, hit._geo.lng),
+        );
+      }
+      return pin;
+    });
   }
 
   // ── Facets ──────────────────────────────────────────────────────────────────

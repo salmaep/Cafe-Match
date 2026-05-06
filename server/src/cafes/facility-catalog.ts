@@ -10,6 +10,10 @@
  *
  * Adding a new facility: append to the relevant group; no migration needed.
  * Renaming a `key` IS a breaking change — backfill cafe_facilities first.
+ *
+ * Keys here MUST match what's actually stored in `cafe_facilities`
+ * (and referenced by `purpose_requirements`). If you rename a key, you must
+ * also update existing rows in those two tables and re-seed purposes.
  */
 
 export type DerivedFlag = 'wifiAvailable' | 'hasMushola' | 'hasParking';
@@ -33,7 +37,7 @@ export const FACILITY_CATALOG: FacilityGroup[] = [
     label: 'Fasilitas',
     items: [
       {
-        key: 'wifi',
+        key: 'strong_wifi',
         label: 'WiFi',
         aliases: ['wifi', 'wi-fi', 'wi-fi gratis'],
         derivesFlag: 'wifiAvailable',
@@ -56,93 +60,42 @@ export const FACILITY_CATALOG: FacilityGroup[] = [
         ],
         derivesFlag: 'hasParking',
       },
-      { key: 'toilet', label: 'Toilet', aliases: ['toilet'] },
       {
         key: 'power_outlets',
         label: 'Stop Kontak',
         aliases: ['stopkontak', 'colokan listrik'],
       },
       {
-        key: 'air_conditioning',
-        label: 'AC',
-        aliases: ['ac', 'ber-ac'],
-      },
-      {
         key: 'outdoor_seating',
         label: 'Outdoor',
         aliases: ['tempat duduk di area terbuka'],
       },
-      { key: 'seating', label: 'Tempat Duduk', aliases: ['tempat duduk'] },
-      {
-        key: 'private_dining',
-        label: 'Ruang Privat',
-        aliases: ['ruang makan pribadi'],
-      },
     ],
   },
   {
-    key: 'accessibility',
-    label: 'Aksesibilitas',
+    key: 'ambience',
+    label: 'Suasana',
     items: [
+      { key: 'cozy_seating', label: 'Nyaman', aliases: ['nyaman'] },
+      { key: 'quiet_atmosphere', label: 'Tenang', aliases: ['tenang'] },
       {
-        key: 'wheelchair_access',
-        label: 'Akses Kursi Roda',
-        aliases: [
-          'kursi khusus pengguna kursi roda',
-          'pintu masuk khusus pengguna kursi roda',
-          'tempat parkir khusus pengguna kursi roda',
-        ],
+        key: 'ambient_lighting',
+        label: 'Pencahayaan Romantis',
+        aliases: [],
       },
+      { key: 'intimate_seating', label: 'Intim', aliases: [] },
+      { key: 'noise_tolerant', label: 'Boleh Berisik', aliases: [] },
     ],
   },
   {
-    key: 'service',
-    label: 'Layanan',
+    key: 'space',
+    label: 'Ruang',
     items: [
-      {
-        key: 'dine_in',
-        label: 'Makan di Tempat',
-        aliases: ['makan di tempat', 'layanan di tempat'],
-      },
-      { key: 'takeaway', label: 'Take Away', aliases: ['bawa pulang'] },
-      { key: 'delivery', label: 'Pesan Antar', aliases: ['pesan antar'] },
-      {
-        key: 'contactless_delivery',
-        label: 'Antar Tanpa Bertemu',
-        aliases: ['antar tanpa bertemu'],
-      },
-      {
-        key: 'reservations',
-        label: 'Reservasi',
-        aliases: [
-          'menerima reservasi',
-          'disarankan reservasi dulu untuk sarapan siang',
-          'disarankan reservasi dulu untuk makan malam',
-        ],
-      },
-      {
-        key: 'table_service',
-        label: 'Table Service',
-        aliases: ['layanan pesan di meja'],
-      },
-      { key: 'fast_service', label: 'Cepat Saji', aliases: ['cepat saji'] },
-    ],
-  },
-  {
-    key: 'meal',
-    label: 'Menu',
-    items: [
-      { key: 'breakfast', label: 'Sarapan', aliases: ['sarapan'] },
-      { key: 'lunch', label: 'Makan Siang', aliases: ['makan siang'] },
-      { key: 'dinner', label: 'Makan Malam', aliases: ['makan malam'] },
-      { key: 'brunch', label: 'Brunch', aliases: ['brunch'] },
-      {
-        key: 'dessert',
-        label: 'Dessert',
-        aliases: ['hidangan penutup', 'makanan pencuci mulut enak'],
-      },
-      { key: 'coffee', label: 'Kopi', aliases: ['kopi', 'kopi enak'] },
-      { key: 'tea', label: 'Teh', aliases: ['pilihan teh enak'] },
+      { key: 'spacious', label: 'Luas', aliases: [] },
+      { key: 'large_tables', label: 'Meja Besar', aliases: [] },
+      { key: 'whiteboard', label: 'Whiteboard', aliases: [] },
+      { key: 'bookable_space', label: 'Bisa Booking', aliases: [] },
+      { key: 'smoking_area', label: 'Area Merokok', aliases: [] },
     ],
   },
   {
@@ -154,41 +107,6 @@ export const FACILITY_CATALOG: FacilityGroup[] = [
         label: 'Ramah Anak',
         aliases: ['cocok untuk anak-anak', 'kursi tinggi', 'menu anak'],
       },
-      {
-        key: 'laptop_friendly',
-        label: 'WFC (Kerja)',
-        aliases: ['cocok untuk bekerja menggunakan laptop'],
-      },
-      { key: 'solo_friendly', label: 'Solo', aliases: ['makan sendiri'] },
-      {
-        key: 'group_friendly',
-        label: 'Berkelompok',
-        aliases: ['berkelompok'],
-      },
-      {
-        key: 'student_friendly',
-        label: 'Mahasiswa',
-        aliases: ['mahasiswa'],
-      },
-      {
-        key: 'pet_friendly',
-        label: 'Ramah Hewan',
-        aliases: [
-          'anjing boleh dibawa masuk',
-          'anjing boleh masuk',
-          'area luar boleh dimasuki anjing',
-        ],
-      },
-    ],
-  },
-  {
-    key: 'ambience',
-    label: 'Suasana',
-    items: [
-      { key: 'cozy', label: 'Nyaman', aliases: ['nyaman'] },
-      { key: 'quiet', label: 'Tenang', aliases: ['tenang'] },
-      { key: 'relaxed', label: 'Santai', aliases: ['santai'] },
-      { key: 'trendy', label: 'Trendi', aliases: ['trendi'] },
     ],
   },
   {

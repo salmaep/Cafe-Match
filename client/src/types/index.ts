@@ -104,6 +104,13 @@ export interface Favorite {
   cafe: Cafe;
 }
 
+export interface ShortlistItem {
+  id: number;
+  cafeId: number;
+  createdAt: string;
+  cafe: Cafe;
+}
+
 export interface VoteTally {
   purposeId: number;
   count: number;

@@ -51,6 +51,23 @@ export class CafesService {
     });
   }
 
+  // Returns every matching cafe as a lightweight map pin (no pagination, only
+  // the fields a marker needs).
+  searchMap(dto: SearchCafesDto) {
+    return this.meiliCafes.searchCafePins({
+      q: dto.q,
+      lat: dto.lat,
+      lng: dto.lng,
+      radius: dto.radius,
+      wifiAvailable: dto.wifiAvailable,
+      hasMushola: dto.hasMushola,
+      hasParking: dto.hasParking,
+      facilities: dto.facilities,
+      priceRange: dto.priceRange,
+      purposeId: dto.purposeId,
+    });
+  }
+
   // ── Filter catalog (MySQL catalog + Meili counts) ──────────────────────────
 
   async getFilters() {

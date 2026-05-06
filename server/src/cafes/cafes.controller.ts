@@ -29,6 +29,15 @@ export class CafesController {
     return this.cafesService.search(dto);
   }
 
+  // Same filters as /cafes but un-paginated, capped server-side. Used by
+  // the map view so every matching cafe shows as a pin without the client
+  // having to walk the paginated list first.
+  @Public()
+  @Get('map')
+  searchMap(@Query() dto: SearchCafesDto) {
+    return this.cafesService.searchMap(dto);
+  }
+
   @Public()
   @Get('promoted')
   getPromoted(@Query('type') type?: string) {

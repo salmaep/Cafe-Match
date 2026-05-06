@@ -6,8 +6,9 @@ export interface FilterPanelProps {
   onFacilitiesChange: (next: string[]) => void;
   priceRange: string;
   onPriceRangeChange: (next: string) => void;
-  // 'inline' = always-visible sidebar (desktop). 'modal' = full-screen overlay (mobile).
-  variant: "inline" | "modal";
+  // 'sidebar' = always-visible left rail (desktop), all groups expanded.
+  // 'modal'   = full-screen overlay (mobile), groups collapsible.
+  variant: "sidebar" | "modal";
   // Only used when variant === 'modal'
   open?: boolean;
   onClose?: () => void;
@@ -39,6 +40,47 @@ const PRICE_OPTIONS = [
   { key: "$$$", label: "$$$" },
 ];
 
+interface ChipProps {
+  label: string;
+  active: boolean;
+  count?: number;
+  disabled?: boolean;
+  onClick: () => void;
+}
+
+function Chip({ label, active, count, disabled, onClick }: ChipProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={`group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all border whitespace-nowrap ${
+        active
+          ? "bg-[#D48B3A] text-white border-[#D48B3A] hover:bg-[#B97726] shadow-sm"
+          : disabled
+            ? "bg-white text-[#C9C5BD] border-[#F0EDE8] cursor-not-allowed"
+            : "bg-white text-[#1C1C1A] border-[#E8E4DD] hover:border-[#D48B3A] hover:text-[#D48B3A]"
+      }`}
+    >
+      {active && (
+        <span className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-white text-[#D48B3A] text-[9px] font-extrabold shrink-0">
+          ✓
+        </span>
+      )}
+      <span>{label}</span>
+      {typeof count === "number" && (
+        <span
+          className={`text-[10px] font-bold px-1 py-px rounded ${
+            active ? "bg-white/20 text-white" : "text-[#8A8880]"
+          }`}
+        >
+          {count}
+        </span>
+      )}
+    </button>
+  );
+}
+
 export default function FilterPanel({
   facilities,
   onFacilitiesChange,
@@ -50,6 +92,7 @@ export default function FilterPanel({
 }: FilterPanelProps) {
   const [groups, setGroups] = useState<FilterGroup[] | null>(catalogCache);
   const [loading, setLoading] = useState(!catalogCache);
+  // For modal: collapsible groups. For sidebar: always expanded.
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
     amenity: true,
   });
@@ -96,6 +139,7 @@ export default function FilterPanel({
   };
 
   const activeCount = facilities.length + (priceRange ? 1 : 0);
+  const isSidebar = variant === "sidebar";
 
   const body = (
     <div className="flex flex-col h-full">
@@ -131,30 +175,22 @@ export default function FilterPanel({
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
-        {/* Price range — single-select */}
+      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
+        {/* Price range — single-select chips */}
         <div className="px-4 py-3 border-b border-[#F0EDE8]">
           <div className="text-[11px] font-bold text-[#8A8880] uppercase tracking-wider mb-2">
             Harga
           </div>
-          <div className="flex gap-1.5">
+          <div className="flex flex-wrap gap-1.5">
             {PRICE_OPTIONS.map((p) => {
               const active = priceRange === p.key;
               return (
-                <button
+                <Chip
                   key={p.key}
-                  type="button"
-                  onClick={() =>
-                    onPriceRangeChange(active ? "" : p.key)
-                  }
-                  className={`flex-1 px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors border ${
-                    active
-                      ? "bg-[#1C1C1A] text-white border-[#1C1C1A]"
-                      : "bg-white text-[#1C1C1A] border-[#F0EDE8] hover:border-[#D48B3A]"
-                  }`}
-                >
-                  {p.label}
-                </button>
+                  label={p.label}
+                  active={active}
+                  onClick={() => onPriceRangeChange(active ? "" : p.key)}
+                />
               );
             })}
           </div>
@@ -174,63 +210,64 @@ export default function FilterPanel({
 
         {!loading &&
           groups?.map((group) => {
-            const isOpen = openGroups[group.key] ?? false;
+            const isOpen = isSidebar ? true : (openGroups[group.key] ?? false);
             const selectedInGroup = group.options.filter((o) =>
               facilitySet.has(o.key),
             ).length;
+
+            const header = isSidebar ? (
+              <div className="flex items-center justify-between px-4 pt-4 pb-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-bold text-[#8A8880] uppercase tracking-wider">
+                    {group.label}
+                  </span>
+                  {selectedInGroup > 0 && (
+                    <span className="text-[10px] font-bold text-white bg-[#D48B3A] rounded-full px-1.5 py-0.5">
+                      {selectedInGroup}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => toggleGroup(group.key)}
+                className="w-full flex items-center justify-between px-4 py-3 hover:bg-[#FAF9F6] text-left"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold text-[#1C1C1A]">
+                    {group.label}
+                  </span>
+                  {selectedInGroup > 0 && (
+                    <span className="text-[10px] font-bold text-white bg-[#D48B3A] rounded-full px-1.5 py-0.5">
+                      {selectedInGroup}
+                    </span>
+                  )}
+                </div>
+                <span
+                  className={`text-[#8A8880] text-xs transition-transform ${
+                    isOpen ? "rotate-180" : ""
+                  }`}
+                >
+                  ▼
+                </span>
+              </button>
+            );
+
             return (
               <div key={group.key} className="border-b border-[#F0EDE8]">
-                <button
-                  type="button"
-                  onClick={() => toggleGroup(group.key)}
-                  className="w-full flex items-center justify-between px-4 py-3 hover:bg-[#FAF9F6] text-left"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-[#1C1C1A]">
-                      {group.label}
-                    </span>
-                    {selectedInGroup > 0 && (
-                      <span className="text-[10px] font-bold text-white bg-[#D48B3A] rounded-full px-1.5 py-0.5">
-                        {selectedInGroup}
-                      </span>
-                    )}
-                  </div>
-                  <span
-                    className={`text-[#8A8880] text-xs transition-transform ${
-                      isOpen ? "rotate-180" : ""
-                    }`}
-                  >
-                    ▼
-                  </span>
-                </button>
+                {header}
                 {isOpen && (
-                  <div className="px-4 pb-3 pt-1 grid grid-cols-1 gap-1.5">
+                  <div className="px-4 pb-4 pt-1 flex flex-wrap gap-1.5">
                     {group.options.map((opt) => {
                       const checked = facilitySet.has(opt.key);
-                      const disabled = opt.count === 0 && !checked;
                       return (
-                        <label
+                        <Chip
                           key={opt.key}
-                          className={`flex items-center justify-between gap-2 px-2 py-1.5 rounded cursor-pointer transition-colors ${
-                            disabled
-                              ? "opacity-40 cursor-not-allowed"
-                              : "hover:bg-[#FAF9F6]"
-                          }`}
-                        >
-                          <span className="flex items-center gap-2.5 text-sm text-[#1C1C1A]">
-                            <input
-                              type="checkbox"
-                              checked={checked}
-                              disabled={disabled}
-                              onChange={() => toggleFacility(opt.key)}
-                              className="w-4 h-4 rounded border-[#D6CFC2] text-[#D48B3A] focus:ring-[#D48B3A]/40"
-                            />
-                            {opt.label}
-                          </span>
-                          <span className="text-[11px] text-[#8A8880]">
-                            {opt.count}
-                          </span>
-                        </label>
+                          label={opt.label}
+                          active={checked}
+                          onClick={() => toggleFacility(opt.key)}
+                        />
                       );
                     })}
                   </div>
@@ -254,9 +291,9 @@ export default function FilterPanel({
     </div>
   );
 
-  if (variant === "inline") {
+  if (isSidebar) {
     return (
-      <div className="bg-white rounded-xl border border-[#F0EDE8] overflow-hidden flex flex-col max-h-[60vh]">
+      <div className="bg-white rounded-xl border border-[#F0EDE8] overflow-hidden flex flex-col h-full">
         {body}
       </div>
     );
@@ -270,7 +307,7 @@ export default function FilterPanel({
         onClick={onClose}
         aria-hidden
       />
-      <div className="relative bg-white w-full lg:max-w-md lg:rounded-2xl rounded-t-2xl shadow-2xl max-h-[85vh] flex flex-col overflow-hidden animate-in slide-in-from-bottom">
+      <div className="relative bg-white w-full lg:max-w-md lg:rounded-2xl rounded-t-2xl shadow-2xl h-[85vh] flex flex-col overflow-hidden animate-in slide-in-from-bottom">
         {body}
       </div>
     </div>

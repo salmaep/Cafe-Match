@@ -49,6 +49,14 @@ export function toCafeDocument(raw: {
     .slice(0, 5)
     .map((p) => p.url);
 
+  // Synthesize facility keys from boolean columns so the filter facet counts
+  // match what users actually see in the list. A cafe with wifi_available=true
+  // but no cafe_facilities row would otherwise be invisible to facet counts.
+  const facilityKeySet = new Set<string>(facilities.map((f) => f.facilityKey));
+  if (Boolean(cafe.wifiAvailable ?? cafe.wifi_available)) facilityKeySet.add('strong_wifi');
+  if (Boolean(cafe.hasMushola ?? cafe.has_mushola)) facilityKeySet.add('mushola');
+  if (Boolean(cafe.hasParking ?? cafe.has_parking)) facilityKeySet.add('parking');
+
   const googleMapsUrl =
     cafe.googleMapsUrl ?? cafe.google_maps_url ??
     `https://maps.google.com/?q=${cafe.latitude},${cafe.longitude}`;
@@ -79,7 +87,7 @@ export function toCafeDocument(raw: {
     bookmarksCount: (cafe.bookmarksCount ?? cafe.bookmarks_count) ?? 0,
     favoritesCount: (cafe.favoritesCount ?? cafe.favorites_count) ?? 0,
     createdAt: cafe.createdAt ?? cafe.created_at ? new Date(cafe.createdAt ?? cafe.created_at).getTime() : Date.now(),
-    facilities: facilities.map((f) => f.facilityKey),
+    facilities: Array.from(facilityKeySet),
     facilityValues: facilities.map((f) => f.facilityValue).filter(Boolean) as string[],
     menuItems: menus.slice(0, 20).map((m) => m.itemName),
     purposes: purposeSlugs,

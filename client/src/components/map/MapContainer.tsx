@@ -5,15 +5,28 @@ import {
   InfoWindow,
   useMap,
 } from '@vis.gl/react-google-maps';
-import type { Cafe } from '../../types';
 import { formatDistance } from '../../utils/haversine';
 import { cafeUrl } from '../../utils/cafeUrl';
 
 const MAP_ID = import.meta.env.VITE_GOOGLE_MAPS_MAP_ID || undefined;
 
+// Minimal cafe shape needed to render markers + popup. Wider Cafe types
+// (with photos, menus, etc.) are still assignable.
+export interface MapCafe {
+  id: number;
+  name: string;
+  slug: string | null;
+  address: string;
+  latitude: number;
+  longitude: number;
+  hasActivePromotion: boolean;
+  activePromotionType?: string | null;
+  distanceMeters?: number;
+}
+
 interface Props {
   center: [number, number];
-  cafes: Cafe[];
+  cafes: MapCafe[];
   radius: number;
   onMapClick?: (lat: number, lng: number) => void;
 }
@@ -181,7 +194,7 @@ export default function MapView({ center, cafes, radius, onMapClick }: Props) {
       <div className="flex h-full w-full items-center justify-center rounded-xl bg-amber-50 p-6 text-center text-sm text-amber-800">
         Google Maps API key belum diset. Tambahkan{' '}
         <code className="font-mono">VITE_GOOGLE_MAPS_API_KEY</code> di{' '}
-        <code className="font-mono">.env.development.local</code>.
+        <code className="font-mono">.env</code>.
       </div>
     );
   }
@@ -197,6 +210,9 @@ export default function MapView({ center, cafes, radius, onMapClick }: Props) {
         gestureHandling="greedy"
         disableDefaultUI={false}
         clickableIcons={false}
+        streetViewControl={false}
+        fullscreenControl={false}
+        mapTypeControl={false}
         className="h-full w-full rounded-xl"
         style={{ minHeight: '400px' }}
         onClick={(ev) => {

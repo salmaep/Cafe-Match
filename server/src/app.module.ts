@@ -8,6 +8,7 @@ import { CafesModule } from './cafes/cafes.module';
 import { PurposesModule } from './purposes/purposes.module';
 import { BookmarksModule } from './bookmarks/bookmarks.module';
 import { FavoritesModule } from './favorites/favorites.module';
+import { ShortlistsModule } from './shortlists/shortlists.module';
 import { MenusModule } from './menus/menus.module';
 import { PhotosModule } from './photos/photos.module';
 import { VotesModule } from './votes/votes.module';
@@ -53,6 +54,7 @@ import { SeoModule } from './seo/seo.module';
     PurposesModule,
     BookmarksModule,
     FavoritesModule,
+    ShortlistsModule,
     MenusModule,
     PhotosModule,
     VotesModule,

@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
 import { Navigate } from "react-router-dom";
 import { useGeolocation, FALLBACK_LAT, FALLBACK_LNG } from "../hooks/useGeolocation";
-import { cafesApi, type SearchParams } from "../api/cafes.api";
+import { cafesApi, type SearchParams, type CafePin } from "../api/cafes.api";
 import { promotionsApi } from "../api/promotions.api";
 import { usePreferences } from "../context/PreferencesContext";
 import { parseCoords } from "../utils/parseCoords";
 import type { Cafe } from "../types";
 import MapView from "../components/map/MapContainer";
+import MapErrorBoundary from "../components/map/MapErrorBoundary";
 import CafeCard from "../components/cafe/CafeCard";
 import CafeListItem from "../components/cafe/CafeListItem";
 import FeaturedCafeCard from "../components/cafe/FeaturedCafeCard";
@@ -35,6 +36,7 @@ export default function HomePage() {
   const { wizardCompleted } = usePreferences();
   const geo = useGeolocation();
   const [cafes, setCafes] = useState<Cafe[]>([]);
+  const [mapCafes, setMapCafes] = useState<CafePin[]>([]);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -116,6 +118,33 @@ export default function HomePage() {
     setPage(1);
     fetchCafes(1);
   }, [center, radius, purposeId, filters, fetchCafes]);
+
+  // Fetch un-paginated batch from /cafes/map so every matching cafe shows
+  // as a pin without the user having to scroll the paginated list first.
+  useEffect(() => {
+    if (!center) return;
+    let cancelled = false;
+    const params: Omit<SearchParams, 'page' | 'limit'> = {
+      lat: center[0],
+      lng: center[1],
+      radius,
+    };
+    if (purposeId) params.purposeId = purposeId;
+    if (filters.q) params.q = filters.q;
+    if (filters.facilities.length > 0) params.facilities = filters.facilities;
+    if (filters.priceRange) params.priceRange = filters.priceRange;
+    cafesApi
+      .searchMap(params)
+      .then((res) => {
+        if (!cancelled) setMapCafes(res.data ?? []);
+      })
+      .catch(() => {
+        if (!cancelled) setMapCafes([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [center, radius, purposeId, filters]);
 
   const hasMore = cafes.length < total;
 
@@ -210,12 +239,14 @@ export default function HomePage() {
       {/* Map sits behind the sheet; bottom-16 reserves space for the tab bar. */}
       <div className="lg:hidden fixed inset-x-0 top-0 bottom-16 z-0">
         {center && (
-          <MapView
-            center={center}
-            cafes={cafes}
-            radius={radius}
-            onMapClick={handleMapClick}
-          />
+          <MapErrorBoundary>
+            <MapView
+              center={center}
+              cafes={mapCafes}
+              radius={radius}
+              onMapClick={handleMapClick}
+            />
+          </MapErrorBoundary>
         )}
       </div>
 
@@ -424,96 +455,34 @@ export default function HomePage() {
         </BottomSheet>
       </div>
 
-      {/* ─── DESKTOP: side-by-side fixed-height layout ────────────────── */}
+      {/* ─── DESKTOP: 3-column layout — filter sidebar | map | results ─── */}
       <div className="hidden lg:flex lg:flex-row lg:h-[calc(100vh-4rem)] lg:gap-4 lg:p-4 bg-[#FAF9F6]">
-        <div className="lg:h-full lg:w-2/3 relative">
-          {center && (
-            <MapView
-              center={center}
-              cafes={cafes}
-              radius={radius}
-              onMapClick={handleMapClick}
-            />
-          )}
-          {/* "Use my location" + coord-input — desktop overlay on map */}
-          <div className="absolute right-3 bottom-3 z-[1000] flex flex-col items-end gap-2">
-            {coordInputOpen && (
-              <div className="bg-white rounded-xl shadow-xl border border-[#F0EDE8] p-2.5 w-[280px]">
-                <p className="text-[11px] font-bold text-[#8A8880] uppercase tracking-wide mb-1.5">
-                  Masukkan koordinat
-                </p>
-                <input
-                  type="text"
-                  value={coordInput}
-                  onChange={(e) => setCoordInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') submitCoords();
-                  }}
-                  placeholder="-6.9175, 107.6191"
-                  autoFocus
-                  className="w-full bg-[#F0EDE8] rounded-lg px-3 py-2 text-sm text-[#1C1C1A] outline-none focus:ring-2 focus:ring-[#D48B3A] placeholder:text-[#8A8880]"
-                />
-                {coordInput.length > 0 && !parsedCoords && (
-                  <p className="text-[11px] text-[#B58A2C] mt-1.5">
-                    ⚠️ Format: "lat, lng" (contoh dari Google Maps)
-                  </p>
-                )}
-                {parsedCoords && (
-                  <p className="text-[11px] text-[#2F8F4E] mt-1.5">
-                    ✓ {parsedCoords.lat.toFixed(4)}, {parsedCoords.lng.toFixed(4)}
-                  </p>
-                )}
-                <button
-                  type="button"
-                  onClick={submitCoords}
-                  disabled={!parsedCoords}
-                  className="w-full mt-2 bg-[#1C1C1A] hover:bg-black text-white text-xs font-bold py-2 rounded-lg disabled:opacity-40 transition-colors"
-                >
-                  Pakai koordinat ini
-                </button>
-              </div>
-            )}
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setCoordInputOpen((v) => !v)}
-                title="Masukkan koordinat"
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-full shadow-lg border text-xs font-semibold active:scale-95 transition-all ${
-                  coordInputOpen
-                    ? 'bg-[#D48B3A] border-[#D48B3A] text-white'
-                    : 'bg-white border-[#F0EDE8] text-[#1C1C1A] hover:border-[#D48B3A] hover:text-[#D48B3A]'
-                }`}
-              >
-                <span>📌</span>
-                <span>Koordinat</span>
-              </button>
-              <button
-                type="button"
-                onClick={useMyLocation}
-                title="Gunakan lokasi saya"
-                disabled={geo.loading}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-white shadow-lg border border-[#F0EDE8] text-xs font-semibold hover:border-[#D48B3A] hover:text-[#D48B3A] active:scale-95 transition-all disabled:opacity-50"
-              >
-                {geo.loading ? (
-                  <div className="w-3.5 h-3.5 border-2 border-[#D48B3A] border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <span className={centerSource === 'gps' ? 'text-[#D48B3A]' : 'text-[#8A8880]'}>📍</span>
-                )}
-                <span className={centerSource === 'gps' ? 'text-[#D48B3A]' : 'text-[#1C1C1A]'}>
-                  Lokasi saya
-                </span>
-              </button>
-            </div>
-          </div>
+        {/* Filter sidebar — always visible, chip-based */}
+        <div className="lg:w-64 lg:shrink-0 lg:h-full">
+          <FilterPanel
+            variant="sidebar"
+            facilities={filters.facilities}
+            onFacilitiesChange={setFacilities}
+            priceRange={filters.priceRange}
+            onPriceRangeChange={setPriceRange}
+          />
         </div>
 
-        <div className="lg:flex-1 lg:flex lg:flex-col gap-3 lg:overflow-hidden">
-          <SearchBar
-            q={filters.q}
-            onQChange={setQ}
-            onOpenFilters={() => setFilterPanelOpen(true)}
-            activeFilterCount={activeFilterCount}
-          />
+        <div className="lg:h-full lg:flex-[2] relative">
+          {center && (
+            <MapErrorBoundary>
+              <MapView
+                center={center}
+                cafes={mapCafes}
+                radius={radius}
+                onMapClick={handleMapClick}
+              />
+            </MapErrorBoundary>
+          )}
+        </div>
+
+        <div className="lg:flex-1 lg:flex lg:flex-col gap-3 lg:overflow-hidden lg:min-w-0">
+          <SearchBar q={filters.q} onQChange={setQ} />
           <RadiusSlider radius={radius} onChange={setRadius} />
           <PurposeFilter selectedPurposeId={purposeId} onSelect={setPurposeId} />
 

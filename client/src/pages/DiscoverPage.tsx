@@ -61,8 +61,10 @@ export default function DiscoverPage() {
 
   const triggerSwipe = (dir: 'left' | 'right') => {
     if (dir === 'right' && current) {
-      addToShortlist(current);
-      setToast(`Added "${current.name}" to Shortlist!`);
+      const cafe = current;
+      addToShortlist(cafe).then((added) => {
+        if (added) setToast(`Added "${cafe.name}" to Shortlist!`);
+      });
     }
     setExitDir(dir);
     setDragging(false);
@@ -163,12 +165,14 @@ export default function DiscoverPage() {
                   cafe={current}
                   isSaved={isInShortlist(current.id)}
                   onSave={() => {
-                    if (isInShortlist(current.id)) {
-                      removeFromShortlist(current.id);
-                      setToast(`Removed "${current.name}" from Shortlist`);
+                    const cafe = current;
+                    if (isInShortlist(cafe.id)) {
+                      removeFromShortlist(cafe.id);
+                      setToast(`Removed "${cafe.name}" from Shortlist`);
                     } else {
-                      addToShortlist(current);
-                      setToast(`Added "${current.name}" to Shortlist!`);
+                      addToShortlist(cafe).then((added) => {
+                        if (added) setToast(`Added "${cafe.name}" to Shortlist!`);
+                      });
                     }
                   }}
                 />

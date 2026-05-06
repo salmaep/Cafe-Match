@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useAuth, type PendingTwoFa } from '../../context/AuthContext';
 import { usePreferences } from '../../context/PreferencesContext';
 import OtpStep from './OtpStep';
@@ -15,6 +15,11 @@ export default function LoginForm() {
   const { login, verify2fa } = useAuth();
   const { wizardCompleted } = usePreferences();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirect = searchParams.get('redirect');
+
+  const destinationAfterLogin = () =>
+    redirect && redirect.startsWith('/') ? redirect : wizardCompleted ? '/' : '/wizard';
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -29,7 +34,7 @@ export default function LoginForm() {
       if (twoFa) {
         setPending(twoFa);
       } else {
-        navigate(wizardCompleted ? '/' : '/wizard');
+        navigate(destinationAfterLogin());
       }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Login failed');
@@ -40,7 +45,7 @@ export default function LoginForm() {
 
   const handleVerify = async (otpId: string, code: string) => {
     await verify2fa(otpId, code);
-    navigate(wizardCompleted ? '/' : '/wizard');
+    navigate(destinationAfterLogin());
   };
 
   const socialUrl = (provider: 'google' | 'facebook') =>

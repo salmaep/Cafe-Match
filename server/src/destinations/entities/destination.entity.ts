@@ -8,7 +8,7 @@ export class Destination {
   @Column({ length: 100 })
   label: string;
 
-  @Column({ length: 100, nullable: true })
+  @Column({ type: 'varchar', length: 100, nullable: true })
   sublabel: string | null;
 
   @Column({ type: 'decimal', precision: 10, scale: 7 })

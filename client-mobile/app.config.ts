@@ -9,7 +9,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   orientation: 'portrait',
   icon: './assets/icon.png',
   userInterfaceStyle: 'light',
-  newArchEnabled: false,
+  newArchEnabled: true,
   splash: {
     image: './assets/splash-icon.png',
     resizeMode: 'contain',
@@ -17,6 +17,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   ios: {
     supportsTablet: true,
+    googleServicesFile: process.env.GOOGLE_SERVICES_PLIST ?? './GoogleService-Info.plist',
   },
   android: {
     adaptiveIcon: {
@@ -26,19 +27,29 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     edgeToEdgeEnabled: true,
     predictiveBackGestureEnabled: false,
     package: 'com.anonymous.cafematch',
+    googleServicesFile: process.env.GOOGLE_SERVICES_JSON ?? './google-services.json',
   },
   web: {
     favicon: './assets/favicon.png',
   },
-  plugins: ['expo-web-browser'],
-  // Ads plugin disabled — uncomment after configuring AdMob
-  // plugins: [
-  //   'expo-web-browser',
-  //   [
-  //     'react-native-google-mobile-ads',
-  //     { androidAppId: '...', iosAppId: '...' },
-  //   ],
-  // ],
+  plugins: [
+    '@react-native-firebase/app',
+    [
+      'expo-build-properties',
+      {
+        ios: { useFrameworks: 'static' },
+      },
+    ],
+    [
+      'react-native-google-mobile-ads',
+      {
+        androidAppId: 'ca-app-pub-3940256099942544~3347511713',
+        iosAppId: 'ca-app-pub-3940256099942544~1458002511',
+        userTrackingUsageDescription:
+          'This identifier will be used to deliver more relevant ads to you.',
+      },
+    ],
+  ],
   extra: {
     apiBaseUrl: process.env.EXPO_PUBLIC_API_URL,
     eas: {

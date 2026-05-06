@@ -26,6 +26,7 @@ import {
   haversineKm,
   checkInApi,
 } from "../services/api";
+import { logEvent } from "../utils/analytics";
 import { useCafeDetail } from "../queries/cafes/use-cafe-detail";
 import { useReviewSummary } from "../queries/reviews/use-review-summary";
 import { useLeaderboard } from "../queries/checkins/use-leaderboard";
@@ -219,7 +220,8 @@ export default function CafeDetailScreen() {
   useEffect(() => {
     if (!initialCafe?.id) return;
     trackAnalytics(initialCafe.id, "view");
-  }, [initialCafe?.id]);
+    logEvent("cafe_view", { cafe_id: initialCafe.id, cafe_name: initialCafe.name });
+  }, [initialCafe?.id, initialCafe?.name]);
 
   // When WriteReviewScreen navigates back with a new review, invalidate the
   // summary cache so it refetches with the latest count.

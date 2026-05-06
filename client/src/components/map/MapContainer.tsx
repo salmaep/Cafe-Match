@@ -7,6 +7,7 @@ import {
 } from '@vis.gl/react-google-maps';
 import type { Cafe } from '../../types';
 import { formatDistance } from '../../utils/haversine';
+import { cafeUrl } from '../../utils/cafeUrl';
 
 const MAP_ID = import.meta.env.VITE_GOOGLE_MAPS_MAP_ID || undefined;
 
@@ -259,7 +260,10 @@ export default function MapView({ center, cafes, radius, onMapClick }: Props) {
                 </>
               )}
               <br />
-              <a href={`/cafe/${activeCafe.id}`} className="text-blue-500 underline">
+              <a
+                href={cafeUrl(cafe)}
+                className="text-blue-500 underline"
+              >
                 View details
               </a>
             </div>

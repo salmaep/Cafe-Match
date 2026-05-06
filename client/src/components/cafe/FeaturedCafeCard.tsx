@@ -1,11 +1,13 @@
 import { Link } from 'react-router-dom';
 import { analyticsApi } from '../../api/analytics.api';
 import { placeholderImage } from '../../utils/cafeImage';
+import { cafeUrl } from '../../utils/cafeUrl';
 
 interface Props {
   cafe: {
     id: number;
     name: string;
+    slug?: string | null;
     address: string;
     latitude: number;
     longitude: number;
@@ -27,7 +29,7 @@ export default function FeaturedCafeCard({ cafe, promotion }: Props) {
 
   return (
     <Link
-      to={`/cafe/${cafe.id}`}
+      to={cafeUrl(cafe)}
       onClick={handleClick}
       className="flex flex-col h-full flex-shrink-0 w-64 bg-white rounded-xl shadow-sm border border-amber-100 overflow-hidden hover:shadow-md transition-shadow"
     >

@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { analyticsApi } from '../api/analytics.api';
 import { placeholderImage } from '../utils/cafeImage';
+import { cafeUrl } from '../utils/cafeUrl';
 import { useActivePromotions, pickPromotion } from '../hooks/useActivePromotions';
 import InFeedAd from './InFeedAd';
 
@@ -36,9 +37,11 @@ export default function SponsoredCafeSlot({ slotIndex, variant = 'card' }: Props
     analyticsApi.track(cafe.id, 'click', promo.id).catch(() => {});
   };
 
+  const href = cafeUrl(cafe);
+
   return variant === 'list' ? (
     <ListView
-      to={`/cafe/${cafe.id}`}
+      to={href}
       photo={photo}
       headline={headline}
       subline={subline}
@@ -47,7 +50,7 @@ export default function SponsoredCafeSlot({ slotIndex, variant = 'card' }: Props
     />
   ) : (
     <CardView
-      to={`/cafe/${cafe.id}`}
+      to={href}
       photo={photo}
       headline={headline}
       subline={subline}

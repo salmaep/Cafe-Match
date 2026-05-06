@@ -55,9 +55,9 @@ export interface SearchCafesQuery {
   wifiAvailable?: string;
   hasMushola?: string;
   hasParking?: string;
+  facilities?: string[];
   priceRange?: string;
   purposeId?: number;
-  semanticRatio?: number;
   page?: number;
   limit?: number;
   sort?: string;
@@ -247,9 +247,9 @@ export class MeiliCafesService {
       wifiAvailable,
       hasMushola,
       hasParking,
+      facilities,
       priceRange,
       purposeId,
-      semanticRatio,
       page = 1,
       limit = 50,
       sort: sortMode,
@@ -260,10 +260,21 @@ export class MeiliCafesService {
     if (lat != null && lng != null) {
       filters.push(`_geoRadius(${lat}, ${lng}, ${radius})`);
     }
-    if (wifiAvailable === 'true') filters.push('wifiAvailable = true');
-    if (hasMushola === 'true') filters.push('hasMushola = true');
-    if (hasParking === 'true') filters.push('hasParking = true');
     if (priceRange) filters.push(`priceRange = "${priceRange}"`);
+
+    // Merge legacy boolean params + facilities[] into a single OR-filter:
+    //   facilities IN ["wifi", "mushola", ...]
+    // matches a cafe that has ANY of the requested keys.
+    const facilityKeys = new Set<string>(facilities ?? []);
+    if (wifiAvailable === 'true') facilityKeys.add('wifi');
+    if (hasMushola === 'true') facilityKeys.add('mushola');
+    if (hasParking === 'true') facilityKeys.add('parking');
+    if (facilityKeys.size > 0) {
+      const escaped = Array.from(facilityKeys)
+        .map((k) => `"${k.replace(/"/g, '\\"')}"`)
+        .join(', ');
+      filters.push(`facilities IN [${escaped}]`);
+    }
 
     if (purposeId) {
       const slug = await this.resolvePurposeSlug(purposeId);
@@ -283,20 +294,14 @@ export class MeiliCafesService {
       sort.push(`_geoPoint(${lat}, ${lng}):asc`);
     }
 
-    const hybridEnabled =
-      this.config.get<string>('MEILI_HYBRID_ENABLED', 'false') === 'true';
-    const effectiveRatio =
-      semanticRatio ?? Number(this.config.get('MEILI_SEMANTIC_RATIO', '0.5'));
-    const useHybrid = hybridEnabled && effectiveRatio > 0;
-
+    // Full-text only — hybrid/semantic search disabled. Searchable attributes
+    // (name, description, address, city, district, facilities, menuItems, purposes)
+    // are configured in MeiliService.applySettingsToIndex.
     const searchParams: SearchParams = {
       filter: filters.join(' AND '),
       offset: (page - 1) * limit,
       limit,
       ...(sort.length ? { sort } : {}),
-      ...(useHybrid && q
-        ? { hybrid: { embedder: 'jina', semanticRatio: effectiveRatio } }
-        : {}),
     };
 
     let results: SearchResponse<CafeDocument>;
@@ -332,6 +337,38 @@ export class MeiliCafesService {
       },
     };
   }
+
+  // ── Facets ──────────────────────────────────────────────────────────────────
+
+  /**
+   * Returns distribution of `facilities` values across all active cafes.
+   * Used by GET /cafes/filters to show counts next to each filter option.
+   * Cached 60s — counts don't need real-time accuracy.
+   */
+  async getFacilityCounts(): Promise<Record<string, number>> {
+    const now = Date.now();
+    if (this.facilityCountsCache && now - this.facilityCountsCacheAt < 60_000) {
+      return this.facilityCountsCache;
+    }
+
+    try {
+      const result = await this.meili.getIndex().search('', {
+        facets: ['facilities'],
+        filter: 'isActive = true',
+        limit: 0,
+      });
+      const dist = (result.facetDistribution?.facilities as Record<string, number>) ?? {};
+      this.facilityCountsCache = dist;
+      this.facilityCountsCacheAt = now;
+      return dist;
+    } catch (err) {
+      this.logger.warn(`Facet distribution fetch failed: ${err}`);
+      return this.facilityCountsCache ?? {};
+    }
+  }
+
+  private facilityCountsCache: Record<string, number> | null = null;
+  private facilityCountsCacheAt = 0;
 
   // ── Private helpers ─────────────────────────────────────────────────────────
 

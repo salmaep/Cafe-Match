@@ -35,6 +35,15 @@ export class CafesController {
     return this.cafesService.findPromotedCafes(type);
   }
 
+  // Returns the facility catalog grouped by category with per-option counts.
+  // Drives the FilterPanel UI on the homepage. Counts are cached 60s.
+  // Must be declared BEFORE the @Get(':id') route below.
+  @Public()
+  @Get('filters')
+  getFilters() {
+    return this.cafesService.getFilters();
+  }
+
   @Public()
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {

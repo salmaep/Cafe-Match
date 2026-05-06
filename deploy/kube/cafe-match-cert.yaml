@@ -21,6 +21,16 @@ spec:
     - host: salma.imola.ai
       http:
         paths:
+          # /sitemap.xml is generated dynamically by NestJS (SeoController) — proxied
+          # to the API service so cafe URLs stay fresh without rebuilding the SPA.
+          # Exact pathType beats the catch-all Prefix below.
+          - path: /sitemap.xml
+            pathType: Exact
+            backend:
+              service:
+                name: cafe-match-api
+                port:
+                  number: 3084
           - path: /
             pathType: Prefix
             backend:

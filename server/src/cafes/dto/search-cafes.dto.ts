@@ -7,8 +7,9 @@ import {
   IsString,
   IsIn,
   IsBooleanString,
+  IsArray,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 
 export class SearchCafesDto {
   @IsOptional()
@@ -56,6 +57,18 @@ export class SearchCafesDto {
   @IsOptional()
   @IsIn(['$', '$$', '$$$'])
   priceRange?: string;
+
+  // Multi-value: accept ?facilities=wifi,mushola,payment_qris OR repeated ?facilities=...
+  // OR semantics applied at the search layer (cafe matches if it has ANY of these).
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (Array.isArray(value)) return value.filter(Boolean);
+    if (typeof value === 'string') return value.split(',').map((s) => s.trim()).filter(Boolean);
+    return undefined;
+  })
+  @IsArray()
+  @IsString({ each: true })
+  facilities?: string[];
 
   @IsOptional()
   @Type(() => Number)

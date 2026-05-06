@@ -11,6 +11,10 @@ export default defineConfig({
         target: 'http://localhost:3084',
         changeOrigin: true,
       },
+      '/sitemap.xml': {
+        target: 'http://localhost:3084',
+        changeOrigin: true,
+      },
     },
   },
   preview: {

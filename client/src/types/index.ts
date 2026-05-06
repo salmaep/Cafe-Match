@@ -8,7 +8,7 @@ export interface User {
 export interface Cafe {
   id: number;
   name: string;
-  slug: string;
+  slug: string | null;
   description: string | null;
   address: string;
   latitude: number;

@@ -11,6 +11,7 @@
 import { DataSource } from 'typeorm';
 import * as fs from 'fs';
 import * as path from 'path';
+import { buildCafeSlug } from '../../common/utils/slug.util';
 
 interface ScrapedCafe {
   name: string;
@@ -75,18 +76,6 @@ function parseHours(hours?: { day: string; hours: string }[]): Record<string, st
     out[key] = normalized;
   }
   return Object.keys(out).length > 0 ? out : null;
-}
-
-function generateSlug(name: string, placeId: string): string {
-  const base = name
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '')
-    .slice(0, 80);
-  const suffix = placeId.slice(-8).toLowerCase().replace(/[^a-z0-9]/g, '');
-  return `${base || 'cafe'}-${suffix}`;
 }
 
 // Map purpose_slug from analyzer → internal purpose_slug used in purposes table
@@ -181,7 +170,6 @@ export async function seedScrapedCafes(dataSource: DataSource): Promise<void> {
         continue;
       }
 
-      const slug = generateSlug(c.name, c.placeId);
       const isActive = !(c.temporarilyClosed || c.permanentlyClosed);
       const openingHours = parseHours(c.hours);
       const googleMapsUrl = c.url || `https://maps.google.com/?q=${c.coordinates.lat},${c.coordinates.lng}`;
@@ -193,7 +181,8 @@ export async function seedScrapedCafes(dataSource: DataSource): Promise<void> {
       const hasParking = detectedFacilities.includes('parking');
 
       // Insert cafe — note: `location` is a NOT NULL POINT column, so we compute it
-      // via ST_PointFromText using the lat/lng values.
+      // via ST_PointFromText using the lat/lng values. Slug is set in a follow-up
+      // UPDATE because it embeds the auto-generated id.
       const result: any = await dataSource.query(
         `INSERT INTO cafes (
           name, slug, description, address, latitude, longitude, location,
@@ -203,10 +192,9 @@ export async function seedScrapedCafes(dataSource: DataSource): Promise<void> {
           google_rating, total_google_reviews,
           has_active_promotion, active_promotion_type,
           promotion_content, new_cafe_content, is_active
-        ) VALUES (?, ?, ?, ?, ?, ?, ST_PointFromText(CONCAT('POINT(', ?, ' ', ?, ')'), 4326), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ) VALUES (?, NULL, ?, ?, ?, ?, ST_PointFromText(CONCAT('POINT(', ?, ' ', ?, ')'), 4326), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           c.name,
-          slug,
           null, // description — not available from scraping
           c.address,
           c.coordinates.lat,
@@ -233,6 +221,8 @@ export async function seedScrapedCafes(dataSource: DataSource): Promise<void> {
         ],
       );
       const cafeId = result.insertId;
+      const slug = buildCafeSlug(c.name, cafeId);
+      await dataSource.query(`UPDATE cafes SET slug = ? WHERE id = ?`, [slug, cafeId]);
 
       // Insert photos
       if (c.photos && c.photos.length > 0) {

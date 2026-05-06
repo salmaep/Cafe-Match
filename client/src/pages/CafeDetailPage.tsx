@@ -11,6 +11,8 @@ import { analyticsApi } from '../api/analytics.api';
 import { reviewsApi, type ReviewSummary } from '../api/reviews.api';
 import { useShortlist } from '../context/ShortlistContext';
 import { getCafeImage, placeholderImage } from '../utils/cafeImage';
+import { extractCafeIdFromSlug, cafeUrl } from '../utils/cafeUrl';
+import Seo from '../components/seo/Seo';
 import PhotoLightbox from '../components/cafe/PhotoLightbox';
 import PhotoSlider from '../components/cafe/PhotoSlider';
 import WriteReviewModal from '../components/cafe/WriteReviewModal';
@@ -71,11 +73,13 @@ const FACILITY_LABELS: Record<string, string> = {
 };
 
 export default function CafeDetailPage() {
-  const { id } = useParams();
+  const { slug } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   const geo = useGeolocation();
   const { addToShortlist, removeFromShortlist, isInShortlist } = useShortlist();
+
+  const cafeId = useMemo(() => extractCafeIdFromSlug(slug), [slug]);
 
   const [cafe, setCafe] = useState<Cafe | null>(null);
   const [loading, setLoading] = useState(true);
@@ -86,19 +90,35 @@ export default function CafeDetailPage() {
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
 
   useEffect(() => {
-    if (!id) return;
+    if (cafeId == null) {
+      setLoading(false);
+      setCafe(null);
+      return;
+    }
+    setLoading(true);
     cafesApi
-      .getById(Number(id))
+      .getById(cafeId)
       .then((res) => {
         setCafe(res.data);
-        analyticsApi.track(Number(id), 'view').catch(() => {});
+        analyticsApi.track(cafeId, 'view').catch(() => {});
       })
+      .catch(() => setCafe(null))
       .finally(() => setLoading(false));
     reviewsApi
-      .getSummary(Number(id))
+      .getSummary(cafeId)
       .then((res) => setReviewSummary(res.data ?? []))
       .catch(() => setReviewSummary([]));
-  }, [id]);
+  }, [cafeId]);
+
+  // Canonicalize URL: if user landed on /cafe/615 or /cafe/wrong-slug-615,
+  // rewrite to the canonical /cafe/<slugified-name>-615 once we know the cafe.
+  useEffect(() => {
+    if (!cafe || !slug) return;
+    const canonical = cafeUrl(cafe);
+    if (canonical !== `/cafe/${slug}`) {
+      navigate(canonical, { replace: true });
+    }
+  }, [cafe, slug, navigate]);
 
   const validPhotos = useMemo(
     () => (cafe?.photos ?? []).filter((p) => !p.url.includes('/gps-cs-s/')),
@@ -286,8 +306,46 @@ export default function CafeDetailPage() {
       .catch(() => {});
   };
 
+  const seoImage = validPhotos[0]?.url ?? placeholderImage(cafe.id);
+  const seoDescription =
+    cafe.description ??
+    `${cafe.name} — ${cafe.address}. ${cafe.wifiAvailable ? 'WiFi available. ' : ''}${
+      cafe.priceRange ? `Price range ${cafe.priceRange}.` : ''
+    }`.trim();
+  const jsonLd: Record<string, unknown> = {
+    '@context': 'https://schema.org',
+    '@type': 'CafeOrCoffeeShop',
+    name: cafe.name,
+    image: seoImage,
+    address: cafe.address,
+    geo: {
+      '@type': 'GeoCoordinates',
+      latitude: cafe.latitude,
+      longitude: cafe.longitude,
+    },
+    telephone: cafe.phone ?? undefined,
+    url: typeof window !== 'undefined' ? window.location.href : undefined,
+    priceRange: cafe.priceRange,
+    ...(cafe.googleRating != null && cafe.totalGoogleReviews
+      ? {
+          aggregateRating: {
+            '@type': 'AggregateRating',
+            ratingValue: cafe.googleRating,
+            reviewCount: cafe.totalGoogleReviews,
+          },
+        }
+      : {}),
+  };
+
   return (
     <div className="min-h-screen bg-[#FAF9F6] pb-24 lg:pb-12">
+      <Seo
+        title={cafe.name}
+        description={seoDescription}
+        image={seoImage}
+        type="website"
+        jsonLd={jsonLd}
+      />
       {/* Top breadcrumb / back — desktop only */}
       <div className="hidden lg:block max-w-6xl mx-auto px-6 pt-6">
         <button

@@ -5,6 +5,8 @@ import type { Cafe } from '../types';
 import { usePreferences } from '../context/PreferencesContext';
 import { useShortlist } from '../context/ShortlistContext';
 import SwipeCard from '../components/discover/SwipeCard';
+import { cafeUrl } from '../utils/cafeUrl';
+import Seo from '../components/seo/Seo';
 
 const SWIPE_THRESHOLD = 120;
 
@@ -91,7 +93,7 @@ export default function DiscoverPage() {
     else {
       // Small movement → treat as tap → open cafe detail
       if (Math.abs(dragX) < 8 && current) {
-        navigate(`/cafe/${current.id}`);
+        navigate(cafeUrl(current));
       }
       setDragX(0);
     }
@@ -137,6 +139,10 @@ export default function DiscoverPage() {
 
   return (
     <div className="h-screen md:h-[calc(100vh-64px)] bg-[#FAF9F6] flex flex-col relative overflow-hidden">
+      <Seo
+        title="Discover cafes"
+        description="Swipe through cafes that match your preferences and shortlist the ones you love."
+      />
       <div className="flex-1 flex items-start justify-center px-4 pt-[8vh] md:pt-[6vh] pb-3 select-none min-h-0">
         <div className="relative w-full max-w-sm">
           <div

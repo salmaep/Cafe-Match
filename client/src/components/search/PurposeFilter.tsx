@@ -1,14 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { Purpose } from '../../types';
 import { purposesApi } from '../../api/purposes.api';
-
-const ICONS: Record<string, string> = {
-  coffee: '\u2615',
-  heart: '\u2764\uFE0F',
-  users: '\uD83D\uDC68\u200D\uD83D\uDC69\u200D\uD83D\uDC67\u200D\uD83D\uDC66',
-  'book-open': '\uD83D\uDCDA',
-  laptop: '\uD83D\uDCBB',
-};
+import { getPurposeBySlug } from '../../constants/purposes';
 
 interface Props {
   selectedPurposeId: number | null;
@@ -34,19 +27,26 @@ export default function PurposeFilter({ selectedPurposeId, onSelect }: Props) {
       >
         All Cafes
       </button>
-      {purposes.map((p) => (
-        <button
-          key={p.id}
-          onClick={() => onSelect(p.id)}
-          className={`px-4 py-2 rounded-full text-sm whitespace-nowrap border transition-colors ${
-            selectedPurposeId === p.id
-              ? 'bg-amber-600 text-white border-amber-600'
-              : 'bg-white text-gray-600 border-gray-300 hover:border-amber-400'
-          }`}
-        >
-          {ICONS[p.icon || ''] || ''} {p.name}
-        </button>
-      ))}
+      {purposes.map((p) => {
+        // Source of truth = WIZARD_PURPOSES (label + emoji). Fall back to server values
+        // if the slug isn't in the wizard catalog (forward-compat for new server purposes).
+        const wizard = getPurposeBySlug(p.slug);
+        const label = wizard?.label ?? p.name;
+        const emoji = wizard?.emoji ?? '';
+        return (
+          <button
+            key={p.id}
+            onClick={() => onSelect(p.id)}
+            className={`px-4 py-2 rounded-full text-sm whitespace-nowrap border transition-colors ${
+              selectedPurposeId === p.id
+                ? 'bg-amber-600 text-white border-amber-600'
+                : 'bg-white text-gray-600 border-gray-300 hover:border-amber-400'
+            }`}
+          >
+            {emoji} {label}
+          </button>
+        );
+      })}
     </div>
   );
 }

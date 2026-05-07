@@ -38,8 +38,8 @@ export default function OtpStep({ pending: initial, onVerify, onCancel }: Props)
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
-    if (!/^\d{4,8}$/.test(code)) {
-      setError('Kode harus 4–8 digit angka.');
+    if (!/^\d{6}$/.test(code)) {
+      setError('Kode harus 6 digit angka.');
       return;
     }
     setSubmitting(true);
@@ -94,9 +94,9 @@ export default function OtpStep({ pending: initial, onVerify, onCancel }: Props)
         inputMode="numeric"
         pattern="[0-9]*"
         autoComplete="one-time-code"
-        maxLength={8}
+        maxLength={6}
         value={code}
-        onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+        onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
         placeholder="••••••"
         className="w-full px-4 py-3 bg-[#F0EDE8] rounded-xl text-center text-2xl tracking-[0.6em] font-bold text-[#1C1C1A] focus:bg-white focus:ring-2 focus:ring-[#D48B3A]/30 outline-none border-none transition-all"
       />
@@ -125,7 +125,7 @@ export default function OtpStep({ pending: initial, onVerify, onCancel }: Props)
 
       <button
         type="submit"
-        disabled={submitting || expired || code.length < 4}
+        disabled={submitting || expired || code.length !== 6}
         className="w-full py-3 bg-[#1C1C1A] text-white rounded-xl font-bold text-base hover:bg-black disabled:opacity-60 transition-colors"
       >
         {submitting ? 'Memverifikasi…' : 'Verifikasi'}

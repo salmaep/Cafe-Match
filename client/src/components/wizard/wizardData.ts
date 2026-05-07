@@ -1,12 +1,9 @@
-import type { PurposeLabel, Facility } from '../../types/wizard';
+import { WIZARD_PURPOSES } from '../../constants/purposes';
+import type { Facility } from '../../types/wizard';
 
-export const PURPOSES: { label: PurposeLabel; emoji: string }[] = [
-  { label: 'Me Time', emoji: '🧘' },
-  { label: 'Date', emoji: '💑' },
-  { label: 'Family Time', emoji: '👨‍👩‍👧' },
-  { label: 'Group Study', emoji: '📚' },
-  { label: 'WFC', emoji: '💻' },
-];
+// Re-export from single source of truth (constants/purposes.ts).
+// Kept as alias so wizard code keeps importing from wizardData for convenience.
+export const PURPOSES = WIZARD_PURPOSES;
 
 export const DESTINATION_SUGGESTIONS: {
   label: string;

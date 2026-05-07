@@ -27,7 +27,9 @@
     "migration:run:prod": "node ./node_modules/typeorm/cli.js migration:run -d dist/database/data-source.js",
     "migration:revert:prod": "node ./node_modules/typeorm/cli.js migration:revert -d dist/database/data-source.js",
     "meili:reindex": "ts-node --transpile-only --project tsconfig.migration.json src/meili/cli/reindex.ts",
-    "meili:resync-failed": "ts-node --transpile-only --project tsconfig.migration.json src/meili/cli/resync-failed.ts"
+    "meili:resync-failed": "ts-node --transpile-only --project tsconfig.migration.json src/meili/cli/resync-failed.ts",
+    "purposes:backfill": "ts-node --transpile-only --project tsconfig.migration.json src/purposes/cli/backfill-tags.ts",
+    "purposes:backfill:reindex": "ts-node --transpile-only --project tsconfig.migration.json src/purposes/cli/backfill-tags.ts -- --reindex"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

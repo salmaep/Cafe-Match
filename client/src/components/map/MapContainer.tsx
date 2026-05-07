@@ -59,6 +59,13 @@ function RadiusCircle({
       circleRef.current.setCenter({ lat: center[0], lng: center[1] });
       circleRef.current.setRadius(radius);
     }
+
+    // Auto-fit zoom so the radius circle fits the viewport with comfortable
+    // padding — otherwise large radii (e.g. 2km) appear oversized on laptop.
+    const bounds = circleRef.current?.getBounds();
+    if (bounds) {
+      map.fitBounds(bounds, 80);
+    }
   }, [map, center, radius]);
 
   useEffect(() => {

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { Facility, PurposeLabel, WizardPreferences } from '../../types/wizard';
+import type { WizardPreferences } from '../../types/wizard';
+import type { PurposeSlug } from '../../constants/purposes';
 import { usePreferences } from '../../context/PreferencesContext';
 import { useGeolocation } from '../../hooks/useGeolocation';
 import { parseCoords } from '../../utils/parseCoords';
@@ -24,13 +25,14 @@ export default function Wizard({ onComplete, onSkip }: Props = {}) {
   const { latitude: userLat, longitude: userLng } = useGeolocation();
 
   const [step, setStep] = useState(0);
-  const [purpose, setPurpose] = useState<PurposeLabel | undefined>();
+  const [purpose, setPurpose] = useState<PurposeSlug | undefined>();
   const [locationType, setLocationType] = useState<'current' | 'custom'>('current');
   const [customAddress, setCustomAddress] = useState('');
   const [customLat, setCustomLat] = useState<number | null>(null);
   const [customLng, setCustomLng] = useState<number | null>(null);
   const [radiusVal, setRadiusVal] = useState(1);
-  const [amenities, setAmenities] = useState<Facility[]>([]);
+  const [amenities, setAmenities] = useState<string[]>([]);
+  const [priceRange, setPriceRange] = useState<string>('');
 
   const handleNext = () => {
     if (step < TOTAL_STEPS - 1) setStep(step + 1);
@@ -59,6 +61,7 @@ export default function Wizard({ onComplete, onSkip }: Props = {}) {
       },
       radius: radiusVal,
       amenities: amenities.length > 0 ? amenities : undefined,
+      priceRange: priceRange || undefined,
     };
     setPreferences(prefs);
     setWizardCompleted(true);
@@ -66,9 +69,6 @@ export default function Wizard({ onComplete, onSkip }: Props = {}) {
     else navigate('/discover', { replace: true });
   };
 
-  const toggleAmenity = (a: Facility) => {
-    setAmenities((prev) => (prev.includes(a) ? prev.filter((x) => x !== a) : [...prev, a]));
-  };
 
   // Block "Next" on Step 2 (location) when user picked custom but coords are empty.
   const isNextDisabled =
@@ -77,7 +77,7 @@ export default function Wizard({ onComplete, onSkip }: Props = {}) {
     (customLat === null || customLng === null);
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#FAF9F6]">
+    <div className="flex flex-col bg-[#FAF9F6] min-h-screen md:min-h-[calc(100vh-4rem)]">
       <header className="flex items-center justify-between px-6 pt-10 pb-3 max-w-2xl w-full mx-auto">
         {step > 0 ? (
           <button
@@ -142,7 +142,14 @@ export default function Wizard({ onComplete, onSkip }: Props = {}) {
             />
           )}
           {step === 2 && <StepRadius value={radiusVal} onChange={setRadiusVal} />}
-          {step === 3 && <StepAmenities value={amenities} onToggle={toggleAmenity} />}
+          {step === 3 && (
+            <StepAmenities
+              facilities={amenities}
+              onFacilitiesChange={setAmenities}
+              priceRange={priceRange}
+              onPriceRangeChange={setPriceRange}
+            />
+          )}
         </div>
       </main>
 

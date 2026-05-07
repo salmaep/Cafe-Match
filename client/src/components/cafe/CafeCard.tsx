@@ -110,17 +110,19 @@ export default function CafeCard({ cafe }: Props) {
           </div>
         )}
 
-        <div className="flex items-center justify-between mt-2.5 text-[11px] text-gray-400">
-          <span>❤️ {cafe.favoritesCount}</span>
-          <span>🔖 {cafe.bookmarksCount}</span>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2.5 text-[11px] text-gray-400">
+          <span className="whitespace-nowrap">❤️ {cafe.favoritesCount}</span>
+          <span className="whitespace-nowrap">🔖 {cafe.bookmarksCount}</span>
           {open && !open.isOpen && open.opensAt && (
-            <span className="text-amber-600 font-medium">
+            <span className="text-amber-600 font-medium whitespace-nowrap ml-auto">
               Buka {open.nextOpenDay === 'today' ? '' : `${open.nextOpenDay} `}
               {open.opensAt}
             </span>
           )}
           {open && open.isOpen && open.closesAt && (
-            <span className="text-emerald-600 font-medium">Tutup {open.closesAt}</span>
+            <span className="text-emerald-600 font-medium whitespace-nowrap ml-auto">
+              Tutup {open.closesAt}
+            </span>
           )}
         </div>
 

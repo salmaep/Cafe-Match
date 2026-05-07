@@ -12,6 +12,7 @@ import Seo from '../components/seo/Seo';
 import FilterPanel from '../components/search/FilterPanel';
 import { getOpenStatus } from '../utils/openingHours';
 import { buildFacilityChips } from '../utils/facilities';
+import { getPurposeBySlug } from '../constants/purposes';
 
 const PAGE_SIZE = 24;
 const AD_INTERVAL = 10;
@@ -152,7 +153,7 @@ export default function TrendingPage() {
       <div className="max-w-[88rem] mx-auto px-4 sm:px-6 lg:px-8 pt-5 lg:flex lg:gap-6">
         {/* Desktop sidebar — sticky, contains both Purpose + FilterPanel */}
         <aside className="hidden lg:block lg:w-72 lg:shrink-0">
-          <div className="sticky top-4 max-h-[calc(100vh-2rem)] flex flex-col gap-3 overflow-y-auto pr-1">
+          <div className="sticky top-4 max-h-[calc(100vh-2rem)] overflow-y-auto overscroll-contain pr-1 space-y-3">
             <PurposeSidebar
               purposes={purposes}
               activeId={activePurposeId}
@@ -218,7 +219,7 @@ export default function TrendingPage() {
               </div>
             )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="flex flex-col gap-3">
               {(() => {
                 const nodes: React.ReactNode[] = [];
                 let adsShown = 0;
@@ -244,7 +245,7 @@ export default function TrendingPage() {
                     i !== rest.length - 1;
                   if (shouldAd) {
                     nodes.push(
-                      <div key={`ad-${i}`} className="sm:col-span-2 trending-fade-in">
+                      <div key={`ad-${i}`} className="trending-fade-in">
                         <HybridAdSlot slotIndex={adsShown} variant="list" size="compact" />
                       </div>,
                     );
@@ -777,6 +778,9 @@ function PurposeSidebar({
         </button>
         {purposes.map((p) => {
           const active = activeId === p.id;
+          const wizard = getPurposeBySlug(p.slug);
+          const label = wizard?.label ?? p.name;
+          const emoji = wizard?.emoji ?? '';
           return (
             <button
               key={p.id}
@@ -788,7 +792,7 @@ function PurposeSidebar({
                   : 'bg-white text-[#1C1C1A] border-[#E8E4DD] hover:border-[#D48B3A] hover:text-[#D48B3A]'
               }`}
             >
-              {p.name}
+              {emoji} {label}
             </button>
           );
         })}
@@ -851,6 +855,9 @@ function MobileFilterModal({
               </button>
               {purposes.map((p) => {
                 const active = activePurposeId === p.id;
+                const wizard = getPurposeBySlug(p.slug);
+                const label = wizard?.label ?? p.name;
+                const emoji = wizard?.emoji ?? '';
                 return (
                   <button
                     key={p.id}
@@ -862,7 +869,7 @@ function MobileFilterModal({
                         : 'bg-white text-[#1C1C1A] border-[#E8E4DD]'
                     }`}
                   >
-                    {p.name}
+                    {emoji} {label}
                   </button>
                 );
               })}

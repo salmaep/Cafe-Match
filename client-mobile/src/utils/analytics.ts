@@ -8,6 +8,8 @@
  * developer-on-Expo-Go workflows keep working.
  */
 
+import { NativeModules } from 'react-native';
+
 type AnalyticsModule = {
   default?: () => {
     logEvent: (name: string, params?: Record<string, unknown>) => Promise<void>;
@@ -21,8 +23,14 @@ let attempted = false;
 function getAnalytics() {
   if (attempted) return analyticsModule;
   attempted = true;
+  // Skip the require entirely if the native module isn't linked (e.g. Expo Go).
+  // This avoids the noisy "Native module RNFBAppModule not found" error that
+  // Firebase prints from inside its own initializer.
+  if (!NativeModules?.RNFBAppModule) {
+    analyticsModule = null;
+    return analyticsModule;
+  }
   try {
-    // Loaded lazily so a missing native module fails soft.
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     analyticsModule = require('@react-native-firebase/analytics') as AnalyticsModule;
   } catch {

@@ -95,11 +95,7 @@ jobs:
             echo "==> 6. Run database migrations"
             docker compose exec -T app npm run migration:run:prod
 
-            echo "==> 7. Apply k8s manifests"
-            kubectl apply -f /home/dios/kube-config/cafe-match.yaml
-            kubectl apply -f /home/dios/kube-config/cafe-match-cert.yaml
-
-            echo "==> 8. Smoke test"
+            echo "==> 7. Smoke test"
             curl -fsS http://localhost:3083 > /dev/null
             echo "  client (3083) OK"
             curl -fsS http://localhost:3084/api/v1/health > /dev/null

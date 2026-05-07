@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\Hype G12\\\\Desktop\\\\Cafe Match\\\\Cafe-Match\" -Force)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\Hype G12\\\\Desktop\\\\Cafe Match\\\\Cafe-Match\\\\server\\\\test\" -Recurse)",
+      "Bash(Format-Table Name)"
+    ]
+  }
+}

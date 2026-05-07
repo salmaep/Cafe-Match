@@ -3,7 +3,8 @@
     "allow": [
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\Hype G12\\\\Desktop\\\\Cafe Match\\\\Cafe-Match\" -Force)",
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\Hype G12\\\\Desktop\\\\Cafe Match\\\\Cafe-Match\\\\server\\\\test\" -Recurse)",
-      "Bash(Format-Table Name)"
+      "Bash(Format-Table Name)",
+      "Bash(Copy-Item \"c:\\\\Users\\\\Hype G12\\\\Desktop\\\\Cafe Match\\\\Cafe-Match\\\\deploy\\\\nginx\\\\client.conf\" \"c:\\\\Users\\\\Hype G12\\\\Desktop\\\\Cafe Match\\\\Cafe-Match\\\\client\\\\nginx.conf\")"
     ]
   }
 }

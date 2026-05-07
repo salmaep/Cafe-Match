@@ -1,6 +1,7 @@
 import { Outlet, useLocation } from 'react-router-dom';
 import Navbar from './Navbar';
 import BottomTabBar from './BottomTabBar';
+import ActiveCheckinBanner from '../checkin/ActiveCheckinBanner';
 
 // Routes that should be fullscreen on mobile (no top navbar, no bottom tab bar) —
 // matches mobile app behavior where these are dedicated immersive Stack screens
@@ -15,6 +16,8 @@ export default function UserLayout() {
 
   return (
     <>
+      {/* Active check-in banner — sticky top, shown across all user pages when checked in */}
+      <ActiveCheckinBanner />
       {/* Top navbar — hidden on mobile fullscreen routes, always shown on md+ */}
       <div className={fullscreenMobile ? 'hidden md:block' : ''}>
         <Navbar />

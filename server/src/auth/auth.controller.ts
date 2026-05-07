@@ -19,6 +19,8 @@ import {
   Resend2faDto,
   EnrollPhoneDto,
   EnrollPhoneVerifyDto,
+  SocialEnrollPhoneDto,
+  SocialVerifyPhoneDto,
 } from './dto/verify-2fa.dto';
 import { Public } from '../common/decorators/public.decorator';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -79,6 +81,24 @@ export class AuthController {
     );
   }
 
+  // ── Social phone enrollment (no JWT — keyed by enrollmentId) ───────────
+  @Public()
+  @Post('social/phone/enroll')
+  socialEnrollPhone(@Body() dto: SocialEnrollPhoneDto) {
+    return this.authService.socialEnrollPhone(dto.enrollmentId, dto.phone);
+  }
+
+  @Public()
+  @Post('social/phone/verify')
+  socialVerifyPhone(@Body() dto: SocialVerifyPhoneDto) {
+    return this.authService.socialVerifyPhone(
+      dto.enrollmentId,
+      dto.otpId,
+      dto.code,
+      dto.phone,
+    );
+  }
+
   // ── Social login ────────────────────────────────────────────────────────
   @Public()
   @Get('google')
@@ -124,6 +144,10 @@ export class AuthController {
       params.set('otpId', result.otpId);
       params.set('expiresAt', result.expiresAt);
       if (result.phoneHint) params.set('phoneHint', result.phoneHint);
+    } else if (result.phoneEnrollRequired) {
+      params.set('phoneEnrollRequired', '1');
+      params.set('enrollmentId', result.enrollmentId);
+      params.set('expiresAt', result.expiresAt);
     } else {
       params.set('token', result.accessToken);
     }

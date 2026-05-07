@@ -5,28 +5,16 @@ import {
   InfoWindow,
   useMap,
 } from '@vis.gl/react-google-maps';
+import type { Cafe } from '../../types';
 import { formatDistance } from '../../utils/haversine';
 import { cafeUrl } from '../../utils/cafeUrl';
+import { getCafeImage, placeholderImage } from '../../utils/cafeImage';
 
 const MAP_ID = import.meta.env.VITE_GOOGLE_MAPS_MAP_ID || undefined;
 
-// Minimal cafe shape needed to render markers + popup. Wider Cafe types
-// (with photos, menus, etc.) are still assignable.
-export interface MapCafe {
-  id: number;
-  name: string;
-  slug: string | null;
-  address: string;
-  latitude: number;
-  longitude: number;
-  hasActivePromotion: boolean;
-  activePromotionType?: string | null;
-  distanceMeters?: number;
-}
-
 interface Props {
   center: [number, number];
-  cafes: MapCafe[];
+  cafes: Cafe[];
   radius: number;
   onMapClick?: (lat: number, lng: number) => void;
 }
@@ -262,27 +250,75 @@ export default function MapView({ center, cafes, radius, onMapClick }: Props) {
             position={{ lat: activeCafe.latitude, lng: activeCafe.longitude }}
             onCloseClick={() => setActiveCafeId(null)}
             pixelOffset={[0, -34]}
+            headerDisabled
           >
-            <div className="text-sm">
-              <strong>{activeCafe.name}</strong>
-              <br />
-              {activeCafe.address}
-              {activeCafe.distanceMeters != null && (
-                <>
-                  <br />
-                  <span className="text-amber-600">
-                    {formatDistance(activeCafe.distanceMeters)}
-                  </span>
-                </>
-              )}
-              <br />
-              <a
-                href={cafeUrl(activeCafe)}
-                className="text-blue-500 underline"
-              >
-                View details
-              </a>
-            </div>
+            <a
+              href={cafeUrl(activeCafe)}
+              className="block w-[240px] no-underline text-inherit"
+            >
+              <img
+                src={getCafeImage(activeCafe)}
+                alt={activeCafe.name}
+                className="w-full h-32 object-cover rounded-t-md bg-[#F0EDE8]"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src = placeholderImage(
+                    activeCafe.id,
+                  );
+                }}
+              />
+              <div className="px-1 pt-2 pb-1">
+                <div className="font-bold text-[14px] text-[#1C1C1A] line-clamp-1">
+                  {activeCafe.name}
+                </div>
+                <div className="flex items-center gap-1.5 mt-0.5 text-[12px] text-[#8A8880]">
+                  {activeCafe.googleRating != null && (
+                    <>
+                      <span className="text-[#D48B3A] font-semibold">
+                        ★ {activeCafe.googleRating}
+                      </span>
+                      {activeCafe.totalGoogleReviews != null && (
+                        <span>({activeCafe.totalGoogleReviews})</span>
+                      )}
+                      <span>·</span>
+                    </>
+                  )}
+                  {activeCafe.priceRange && (
+                    <>
+                      <span>{activeCafe.priceRange}</span>
+                      <span>·</span>
+                    </>
+                  )}
+                  {activeCafe.distanceMeters != null && (
+                    <span className="text-[#D48B3A]">
+                      {formatDistance(activeCafe.distanceMeters)}
+                    </span>
+                  )}
+                </div>
+                <div className="text-[12px] text-[#5C5A52] mt-1 line-clamp-2">
+                  {activeCafe.address}
+                </div>
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {activeCafe.wifiAvailable && (
+                    <span className="bg-[#F0EDE8] text-[#8A8880] text-[10px] font-medium rounded-full px-1.5 py-0.5">
+                      📶 WiFi
+                    </span>
+                  )}
+                  {activeCafe.hasMushola && (
+                    <span className="bg-[#F0EDE8] text-[#8A8880] text-[10px] font-medium rounded-full px-1.5 py-0.5">
+                      🕌 Mushola
+                    </span>
+                  )}
+                  {activeCafe.hasParking && (
+                    <span className="bg-[#F0EDE8] text-[#8A8880] text-[10px] font-medium rounded-full px-1.5 py-0.5">
+                      🅿️ Parkir
+                    </span>
+                  )}
+                </div>
+                <div className="mt-2 text-[12px] font-bold text-[#D48B3A]">
+                  Lihat detail →
+                </div>
+              </div>
+            </a>
           </InfoWindow>
         )}
       </Map>

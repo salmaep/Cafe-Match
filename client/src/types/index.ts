@@ -11,6 +11,8 @@ export interface Cafe {
   slug: string | null;
   description: string | null;
   address: string;
+  city?: string | null;
+  district?: string | null;
   latitude: number;
   longitude: number;
   phone: string | null;
@@ -27,6 +29,8 @@ export interface Cafe {
   googleRating?: number | null;
   totalGoogleReviews?: number;
   ownerId?: number;
+  isActive?: boolean;
+  createdAt?: string | number;
   hasActivePromotion?: boolean;
   activePromotionType?: 'new_cafe' | 'featured_promo' | null;
   distanceMeters?: number;
@@ -34,6 +38,12 @@ export interface Cafe {
   facilities?: CafeFacility[];
   menus?: CafeMenu[];
   photos?: CafePhoto[];
+  primaryPhotoUrl?: string | null;
+  purposes?: Purpose[] | { id: number; slug: string; name: string }[];
+  topReviewText?: string | null;
+  topReviewAuthor?: string | null;
+  topReviewRating?: number | null;
+  topReviewAt?: number | null;
 }
 
 export interface CafeFacility {

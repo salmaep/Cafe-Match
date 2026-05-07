@@ -6,6 +6,7 @@ import { ReviewRating } from './entities/review-rating.entity';
 import { ReviewMedia } from './entities/review-media.entity';
 import { CreateReviewDto, UpdateReviewDto } from './dto/create-review.dto';
 import { AchievementsService } from '../achievements/achievements.service';
+import { MeiliCafesService } from '../meili/meili-cafes.service';
 
 @Injectable()
 export class ReviewsService {
@@ -18,7 +19,16 @@ export class ReviewsService {
     private readonly mediaRepo: Repository<ReviewMedia>,
     private readonly dataSource: DataSource,
     private readonly achievementsService: AchievementsService,
+    private readonly meiliCafes: MeiliCafesService,
   ) {}
+
+  private async resyncCafeIndex(cafeId: number): Promise<void> {
+    try {
+      await this.meiliCafes.indexCafe(cafeId);
+    } catch (err: any) {
+      console.warn('[reviews] meili reindex failed for cafe', cafeId, err?.message);
+    }
+  }
 
   /** Enforce: max 5 photos + 2 videos */
   private validateMedia(media?: { mediaType: string; url: string }[]) {
@@ -82,6 +92,8 @@ export class ReviewsService {
       console.warn('[reviews] cafe signal aggregation failed:', err?.message);
     }
 
+    await this.resyncCafeIndex(cafeId);
+
     return this.reviewRepo.findOne({
       where: { id: savedId },
       relations: ['user', 'ratings', 'media'],
@@ -124,6 +136,8 @@ export class ReviewsService {
       await this.aggregateCafeSignals(review.cafeId);
     } catch {}
 
+    await this.resyncCafeIndex(review.cafeId);
+
     return this.reviewRepo.findOne({
       where: { id: reviewId },
       relations: ['user', 'ratings', 'media'],
@@ -139,6 +153,7 @@ export class ReviewsService {
     try {
       await this.aggregateCafeSignals(cafeId);
     } catch {}
+    await this.resyncCafeIndex(cafeId);
   }
 
   async findByCafe(cafeId: number, page = 1, limit = 20) {

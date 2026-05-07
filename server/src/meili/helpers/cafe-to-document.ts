@@ -31,6 +31,10 @@ export interface CafeDocument {
   googleMapsUrl: string;
   openingHours: Record<string, any> | null;
   wifiSpeedMbps: number | null;
+  topReviewText: string | null;
+  topReviewAuthor: string | null;
+  topReviewRating: number | null;
+  topReviewAt: number | null;
 }
 
 export function toCafeDocument(raw: {
@@ -39,8 +43,14 @@ export function toCafeDocument(raw: {
   photos: { url: string; isPrimary: boolean; displayOrder: number }[];
   menus: { itemName: string }[];
   purposeSlugs: string[];
+  topReview?: {
+    text: string | null;
+    authorName: string | null;
+    overallScore: number | null;
+    createdAt: Date | string | number | null;
+  } | null;
 }): CafeDocument {
-  const { cafe, facilities, photos, menus, purposeSlugs } = raw;
+  const { cafe, facilities, photos, menus, purposeSlugs, topReview } = raw;
   const { city, district } = parseAddressParts(cafe.address || '');
 
   const primaryPhoto = photos.find((p) => p.isPrimary) ?? photos[0] ?? null;
@@ -95,5 +105,20 @@ export function toCafeDocument(raw: {
     photos: photoUrls,
     googleMapsUrl,
     openingHours: cafe.openingHours ?? cafe.opening_hours ?? null,
+    topReviewText: truncateSnippet(topReview?.text),
+    topReviewAuthor: topReview?.authorName ?? null,
+    topReviewRating: topReview?.overallScore ?? null,
+    topReviewAt: topReview?.createdAt
+      ? new Date(topReview.createdAt as any).getTime()
+      : null,
   };
+}
+
+const SNIPPET_MAX = 180;
+function truncateSnippet(text: string | null | undefined): string | null {
+  if (!text) return null;
+  const cleaned = text.replace(/\s+/g, ' ').trim();
+  if (!cleaned) return null;
+  if (cleaned.length <= SNIPPET_MAX) return cleaned;
+  return cleaned.slice(0, SNIPPET_MAX - 1).trimEnd() + '…';
 }

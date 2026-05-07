@@ -29,5 +29,15 @@ export const authApi = {
   verifyPhone: (data: { otpId: string; code: string; phone: string }) =>
     apiClient.post<{ ok: true }>('/auth/phone/verify', data),
 
+  socialEnrollPhone: (data: { enrollmentId: string; phone: string }) =>
+    apiClient.post<{ otpId: string; expiresAt: string }>('/auth/social/phone/enroll', data),
+
+  socialVerifyPhone: (data: {
+    enrollmentId: string;
+    otpId: string;
+    code: string;
+    phone: string;
+  }) => apiClient.post<AuthResponse>('/auth/social/phone/verify', data),
+
   getMe: () => apiClient.get<User>('/auth/me'),
 };

@@ -19,7 +19,7 @@ export default function LoginForm() {
   const redirect = searchParams.get('redirect');
 
   const destinationAfterLogin = () =>
-    redirect && redirect.startsWith('/') ? redirect : wizardCompleted ? '/' : '/wizard';
+    redirect && redirect.startsWith('/') ? redirect : wizardCompleted ? '/' : '/discover';
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();

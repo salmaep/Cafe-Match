@@ -21,6 +21,10 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     });
   }
 
+  authorizationParams(): Record<string, string> {
+    return { prompt: 'select_account' };
+  }
+
   async validate(
     _accessToken: string,
     _refreshToken: string,

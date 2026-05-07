@@ -17,6 +17,9 @@ export interface OtpRequestResult {
 export interface OtpVerifyResult {
   verified: boolean;
   status: 'verified' | 'pending' | 'expired' | 'failed';
+  code?: 'OK' | 'WRONG_CODE' | 'ATTEMPTS_EXCEEDED' | 'EXPIRED' | string;
+  message?: string;
+  remainingAttempts?: number;
 }
 
 export interface OtpStatusResult {
@@ -127,7 +130,20 @@ export class OtpClient {
       this.mapError(res.status, 'Gagal memverifikasi kode.');
     }
 
-    return (await res.json()) as OtpVerifyResult;
+    const raw = (await res.json()) as {
+      verified: boolean;
+      status: 'verified' | 'pending' | 'expired' | 'failed';
+      code?: string;
+      message?: string;
+      remaining_attempts?: number;
+    };
+    return {
+      verified: raw.verified,
+      status: raw.status,
+      code: raw.code,
+      message: raw.message,
+      remainingAttempts: raw.remaining_attempts,
+    };
   }
 
   async getStatus(otpId: string): Promise<OtpStatusResult> {

@@ -210,19 +210,66 @@ Browser:
 
 ## Update / redeploy
 
+### Otomatis (rekomendasi) — GitHub Actions
+Push ke `main` → workflow `.github/workflows/deploy.yml` otomatis SSH ke VPS, pull, rebuild, backup DB, run migration, smoke test. Lihat section "GitHub Actions Setup" di bawah.
+
+### Manual
 ```bash
 cd /opt/Cafe-Match
 git pull
 
 # Kalau ada perubahan di client/, rebuild client container
-docker compose --env-file server/.env build client
-docker compose --env-file server/.env up -d
+docker compose build client
+docker compose up -d
 
 # Kalau ada migration baru
-docker compose --env-file server/.env exec app npm run migration:run
+docker compose exec app npm run migration:run:prod
 ```
 
 K8s manifests TIDAK perlu re-apply kecuali isinya berubah.
+
+---
+
+## GitHub Actions Setup (one-time)
+
+### 1. VPS prerequisites
+- `/opt/Cafe-Match` adalah git clone repo, di branch `main`.
+- Symlink `.env -> server/.env` di root project: `ln -s server/.env /opt/Cafe-Match/.env`
+- `server/.env` sudah lengkap (lihat Step 2).
+- Folder `/home/dios/kube-config` ada.
+- User SSH (mis. `dios`) bisa jalankan `docker compose` & `kubectl` tanpa sudo.
+- Public key dari `VPS_SSH_KEY` ada di `~/.ssh/authorized_keys`.
+
+### 2. Daftarkan GitHub Secrets
+Repo → Settings → Secrets and variables → Actions → New repository secret.
+
+**SSH ke VPS:**
+| Secret | Nilai |
+|---|---|
+| `VPS_HOST` | IP/hostname VPS |
+| `VPS_USER` | user SSH (mis. `dios`) |
+| `VPS_SSH_KEY` | isi private key (`~/.ssh/id_ed25519`) |
+| `VPS_SSH_PORT` | (opsional) default 22 |
+
+**Client env (Vite build-time):**
+| Secret | Nilai |
+|---|---|
+| `VITE_API_URL` | `https://api.salma.imola.ai/api/v1` |
+| `VITE_GOOGLE_MAPS_API_KEY` | API key Maps |
+| `VITE_GOOGLE_MAPS_MAP_ID` | cloud map style ID (boleh kosong) |
+| `VITE_GA_MEASUREMENT_ID` | GA4 ID (boleh kosong) |
+| `VITE_ADSENSE_CLIENT` | (boleh kosong) |
+| `VITE_ADSENSE_INFEED_SLOT` | (boleh kosong) |
+
+### 3. Trigger pertama
+- GitHub repo → tab **Actions** → pilih workflow **Deploy to VPS** → **Run workflow** → branch `main`.
+- Monitor output. Step terakhir harus muncul `Deploy successful`.
+
+### 4. Trigger berikutnya
+Otomatis setiap push ke `main`. Atau manual lewat **Run workflow** button.
+
+### Backup
+Workflow simpan dump DB di `/opt/Cafe-Match/backups/db-YYYYMMDD-HHMMSS.sql.gz`, retensi 10 file terakhir.
 
 ---
 

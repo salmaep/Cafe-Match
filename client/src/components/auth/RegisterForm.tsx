@@ -118,14 +118,14 @@ export default function RegisterForm() {
           </Link>
         </div>
 
-        <Link
+        {/* <Link
           to="/"
           className="block text-center text-sm text-[#8A8880] mt-3 hover:text-[#1C1C1A] transition-colors"
         >
           Maybe later
-        </Link>
+        </Link> */}
 
-        <div className="flex items-center gap-3 mt-6 mb-3">
+        {/* <div className="flex items-center gap-3 mt-6 mb-3">
           <div className="flex-1 h-px bg-[#F0EDE8]" />
           <span className="text-xs text-[#8A8880]">or</span>
           <div className="flex-1 h-px bg-[#F0EDE8]" />
@@ -135,7 +135,7 @@ export default function RegisterForm() {
           className="block w-full text-center py-3 rounded-xl border-[1.5px] border-[#D48B3A]/60 bg-[#D48B3A]/[0.04] text-[#D48B3A] font-semibold text-sm hover:bg-[#D48B3A]/10 transition-colors"
         >
           ☕  Register as a cafe owner
-        </Link>
+        </Link> */}
       </div>
     </div>
   );

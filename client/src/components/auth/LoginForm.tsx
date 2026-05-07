@@ -134,12 +134,12 @@ export default function LoginForm() {
               </Link>
             </div>
 
-            <Link
+            {/* <Link
               to="/"
               className="block text-center text-sm text-[#8A8880] mt-3 hover:text-[#1C1C1A] transition-colors"
             >
               Maybe later
-            </Link>
+            </Link> */}
           </>
         )}
       </div>

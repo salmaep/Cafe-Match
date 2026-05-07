@@ -65,6 +65,7 @@ export default function Navbar() {
               label="Shortlist"
               badge={shortlist.length || undefined}
             />
+            {user && <NavItem to="/profile" label="Profile" />}
           </div>
 
           {/* Auth */}

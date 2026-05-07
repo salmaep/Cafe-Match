@@ -27,6 +27,7 @@ import FriendsPage from './pages/FriendsPage';
 import AchievementsPage from './pages/AchievementsPage';
 import NotificationsPage from './pages/NotificationsPage';
 import LeaderboardPage from './pages/LeaderboardPage';
+import RecapPage from './pages/RecapPage';
 
 function App() {
   useTrackPageView();
@@ -77,6 +78,7 @@ function App() {
           <Route path="/achievements" element={<AchievementsPage />} />
           <Route path="/notifications" element={<NotificationsPage />} />
           <Route path="/leaderboard" element={<LeaderboardPage />} />
+          <Route path="/recap/:year" element={<RecapPage />} />
         </Route>
       </Routes>
     </div>

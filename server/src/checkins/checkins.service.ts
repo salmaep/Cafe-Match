@@ -223,8 +223,18 @@ export class CheckinsService {
     });
   }
 
-  /** Global leaderboard across all cafes */
-  async globalLeaderboard() {
+  /**
+   * Global leaderboard across all cafes.
+   * @param period 'month' = last 30 days, 'all' = lifetime (default 'all')
+   */
+  async globalLeaderboard(period: 'month' | 'all' = 'all') {
+    // For 'month' filter to last 30 days of check-ins. The score formula stays
+    // the same so cross-period leaderboards remain comparable in shape.
+    const periodWhere =
+      period === 'month'
+        ? `AND c.check_in_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)`
+        : '';
+
     const rows: any[] = await this.dataSource.query(
       `SELECT u.id AS userId, u.name, u.avatar_url AS avatarUrl,
               COUNT(c.id) AS totalCheckins,
@@ -233,24 +243,30 @@ export class CheckinsService {
               (COUNT(c.id) * 2 + COUNT(DISTINCT c.cafe_id) * 5 + COALESCE(SUM(c.duration_minutes), 0) / 60) AS score
        FROM checkins c
        JOIN users u ON u.id = c.user_id
+       WHERE 1=1 ${periodWhere}
        GROUP BY u.id, u.name, u.avatar_url
+       HAVING COUNT(c.id) > 0
        ORDER BY score DESC
        LIMIT 20`,
     );
-    return rows.map((r, i) => ({
-      rank: i + 1,
-      userId: r.userId,
-      name: r.name,
-      avatarUrl: r.avatarUrl,
-      totalCheckins: parseInt(r.totalCheckins, 10),
-      uniqueCafes: parseInt(r.uniqueCafes, 10),
-      totalMinutes: parseInt(r.totalMinutes, 10),
-      totalDuration:
-        Math.floor(parseInt(r.totalMinutes, 10) / 60) > 0
-          ? `${Math.floor(parseInt(r.totalMinutes, 10) / 60)}h ${parseInt(r.totalMinutes, 10) % 60}m`
-          : `${parseInt(r.totalMinutes, 10)}m`,
-      score: Math.round(parseFloat(r.score) * 10) / 10,
-    }));
+    return rows.map((r, i) => {
+      const rank = i + 1;
+      const totalMinutes = parseInt(r.totalMinutes, 10);
+      const hours = Math.floor(totalMinutes / 60);
+      const mins = totalMinutes % 60;
+      return {
+        rank,
+        userId: r.userId,
+        name: r.name,
+        avatarUrl: r.avatarUrl,
+        totalCheckins: parseInt(r.totalCheckins, 10),
+        uniqueCafes: parseInt(r.uniqueCafes, 10),
+        totalMinutes,
+        totalDuration: hours > 0 ? `${hours}h ${mins}m` : `${mins}m`,
+        score: Math.round(parseFloat(r.score) * 10) / 10,
+        badge: RANK_BADGES[rank] || (rank <= 10 ? 'Pengunjung Tetap' : null),
+      };
+    });
   }
 
   async getStreak(userId: number) {

@@ -16,6 +16,7 @@ interface AuthContextType {
   verify2fa: (otpId: string, code: string) => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<void>;
   logout: () => void;
+  refresh: () => Promise<void>;
   isLoading: boolean;
 }
 
@@ -80,9 +81,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   };
 
+  const refresh = async () => {
+    if (!token) return;
+    try {
+      const res = await authApi.getMe();
+      setUser(res.data);
+    } catch {
+      // ignore — interceptor handles 401
+    }
+  };
+
   return (
     <AuthContext.Provider
-      value={{ user, token, login, loginWithToken, verify2fa, register, logout, isLoading }}
+      value={{ user, token, login, loginWithToken, verify2fa, register, logout, refresh, isLoading }}
     >
       {children}
     </AuthContext.Provider>

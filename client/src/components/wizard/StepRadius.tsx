@@ -12,6 +12,7 @@ interface Props {
 
 export default function StepRadius({ value, onChange }: Props) {
   const { latitude, longitude } = useGeolocation();
+  const hasRealCoords = latitude != null && longitude != null;
   const center: { lat: number; lng: number } = {
     lat: latitude ?? FALLBACK_LAT,
     lng: longitude ?? FALLBACK_LNG,
@@ -60,7 +61,7 @@ export default function StepRadius({ value, onChange }: Props) {
           clickableIcons={false}
           style={{ width: '100%', height: '100%' }}
         >
-          <InitialFit center={center} />
+          <RecenterAndFit center={center} hasRealCoords={hasRealCoords} />
           <RadiusCircle center={center} radiusMeters={value * 1000} />
           <AdvancedMarker position={center}>
             <CenterPin />
@@ -71,14 +72,28 @@ export default function StepRadius({ value, onChange }: Props) {
   );
 }
 
-// Fit to ~2km bounds ONCE when geolocation resolves — covers all radius options
-// (0.5 / 1 / 2 km). Does not refit on radius change so the user sees the circle
-// resize in place rather than the map jumping.
-function InitialFit({ center }: { center: { lat: number; lng: number } }) {
+/**
+ * Re-fit the map when the user's real coordinates arrive.
+ *
+ * Geolocation resolves async — on first render `center` is the fallback
+ * (Bandung). The map's `defaultCenter` only applies on mount, so without this
+ * effect the user's real location ends up off-screen once GPS resolves.
+ *
+ * Strategy: fit on every center change UNTIL we've fitted with real coords,
+ * then lock so radius changes don't move the map.
+ */
+function RecenterAndFit({
+  center,
+  hasRealCoords,
+}: {
+  center: { lat: number; lng: number };
+  hasRealCoords: boolean;
+}) {
   const map = useMap();
-  const fittedRef = useRef(false);
+  const lockedRef = useRef(false);
+
   useEffect(() => {
-    if (!map || !window.google || fittedRef.current) return;
+    if (!map || !window.google || lockedRef.current) return;
     if (center.lat === 0 && center.lng === 0) return;
     const circle = new window.google.maps.Circle({
       center,
@@ -87,9 +102,12 @@ function InitialFit({ center }: { center: { lat: number; lng: number } }) {
     const bounds = circle.getBounds();
     if (bounds) {
       map.fitBounds(bounds, 32);
-      fittedRef.current = true;
+      // Only lock once we've fitted to the user's REAL location. If we're
+      // still on fallback coords, allow another fit when real coords arrive.
+      if (hasRealCoords) lockedRef.current = true;
     }
-  }, [map, center.lat, center.lng]);
+  }, [map, center.lat, center.lng, hasRealCoords]);
+
   return null;
 }
 

@@ -45,7 +45,8 @@ export class CheckinsController {
 
   @Public()
   @Get('global-leaderboard')
-  globalLeaderboard() {
-    return this.checkinsService.globalLeaderboard();
+  globalLeaderboard(@Query('period') period?: string) {
+    const p = period === 'month' ? 'month' : 'all';
+    return this.checkinsService.globalLeaderboard(p);
   }
 }

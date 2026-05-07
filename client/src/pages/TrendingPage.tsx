@@ -12,6 +12,7 @@ import Seo from '../components/seo/Seo';
 import FilterPanel from '../components/search/FilterPanel';
 import { getOpenStatus } from '../utils/openingHours';
 import { buildFacilityChips } from '../utils/facilities';
+import { formatRating } from '../utils/rating';
 import { getPurposeBySlug } from '../constants/purposes';
 
 const PAGE_SIZE = 24;
@@ -391,10 +392,10 @@ function WinnerCard({ cafe, onClick }: { cafe: Cafe; onClick: () => void }) {
 
           {/* Top-right: floating glass stat pills */}
           <div className="absolute top-4 right-4 flex items-center gap-2">
-            {rating != null && (
+            {formatRating(rating) && (
               <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/95 backdrop-blur-sm shadow-md text-[#1C1C1A] text-[12px] font-extrabold tabular-nums">
                 <span className="text-amber-500">★</span>
-                {rating.toFixed(1)}
+                {formatRating(rating)}
                 {reviews != null && (
                   <span className="text-[#8A8880] font-medium ml-0.5">
                     ({reviews.toLocaleString()})
@@ -552,9 +553,9 @@ function RunnerUpCard({
             <span className="inline-flex items-center gap-1 font-extrabold text-[#EA580C] tabular-nums">
               ❤️ {(cafe.favoritesCount ?? 0).toLocaleString()}
             </span>
-            {rating != null && (
+            {formatRating(rating) && (
               <span className="inline-flex items-center gap-0.5 font-bold text-[#1C1C1A] tabular-nums">
-                ⭐ {rating.toFixed(1)}
+                ⭐ {formatRating(rating)}
                 {reviews != null && (
                   <span className="font-medium text-[#8A8880] ml-0.5">
                     ({reviews.toLocaleString()})
@@ -668,10 +669,10 @@ function ListRow({
         <h3 className="font-bold text-[#1C1C1A] text-[15px] truncate">{cafe.name}</h3>
 
         <div className="flex items-center gap-1.5 mt-0.5 text-[12px] text-[#8A8880]">
-          {rating != null && (
+          {formatRating(rating) && (
             <>
               <span className="text-amber-500">★</span>
-              <span className="font-semibold text-[#1C1C1A]">{rating.toFixed(1)}</span>
+              <span className="font-semibold text-[#1C1C1A]">{formatRating(rating)}</span>
               {reviews != null && <span>({reviews.toLocaleString()})</span>}
               <span className="text-[#D9D6CE]">·</span>
             </>

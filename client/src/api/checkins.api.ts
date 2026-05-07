@@ -26,6 +26,21 @@ export interface LeaderboardEntry {
   totalDuration?: number;
 }
 
+export interface GlobalLeaderboardEntry {
+  rank: number;
+  userId: number;
+  name: string;
+  avatarUrl?: string | null;
+  totalCheckins: number;
+  uniqueCafes: number;
+  totalMinutes: number;
+  totalDuration: string;
+  score: number;
+  badge?: string | null;
+}
+
+export type LeaderboardPeriod = 'month' | 'all';
+
 export interface StreakInfo {
   current: number;
   longest: number;
@@ -52,5 +67,8 @@ export const checkinsApi = {
 
   streak: () => apiClient.get<StreakInfo>('/checkins/streak'),
 
-  globalLeaderboard: () => apiClient.get<LeaderboardEntry[]>('/checkins/global-leaderboard'),
+  globalLeaderboard: (period: LeaderboardPeriod = 'all') =>
+    apiClient.get<GlobalLeaderboardEntry[]>(
+      `/checkins/global-leaderboard?period=${period}`,
+    ),
 };

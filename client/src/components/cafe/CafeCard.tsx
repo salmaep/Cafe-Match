@@ -5,6 +5,7 @@ import { getCafeImage, placeholderImage } from '../../utils/cafeImage';
 import { cafeUrl } from '../../utils/cafeUrl';
 import { getOpenStatus } from '../../utils/openingHours';
 import { buildFacilityChips } from '../../utils/facilities';
+import { formatRating } from '../../utils/rating';
 
 interface Props {
   cafe: Cafe;
@@ -72,11 +73,11 @@ export default function CafeCard({ cafe }: Props) {
           )}
         </div>
 
-        {cafe.googleRating != null && (
+        {formatRating(cafe.googleRating) && (
           <div className="flex items-center gap-1 mt-2 text-xs">
             <span className="text-amber-500">★</span>
             <span className="font-semibold text-gray-800">
-              {cafe.googleRating.toFixed(1)}
+              {formatRating(cafe.googleRating)}
             </span>
             {cafe.totalGoogleReviews != null && (
               <span className="text-gray-400">

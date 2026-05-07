@@ -1,6 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import * as bcrypt from 'bcrypt';
 import { User } from './entities/user.entity';
 
 @Injectable()
@@ -9,6 +15,52 @@ export class UsersService {
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
   ) {}
+
+  /** Update profile fields (name, avatar). Returns sanitized user. */
+  async updateProfile(
+    id: number,
+    patch: { name?: string; avatarUrl?: string },
+  ): Promise<User> {
+    const user = await this.findById(id);
+    if (!user) throw new NotFoundException('User tidak ditemukan');
+
+    if (patch.avatarUrl !== undefined) {
+      // Allow either http(s) URL, data: URL, or empty string (clear avatar)
+      const v = patch.avatarUrl.trim();
+      if (
+        v &&
+        !v.startsWith('http://') &&
+        !v.startsWith('https://') &&
+        !v.startsWith('data:image/')
+      ) {
+        throw new BadRequestException(
+          'URL avatar tidak valid (harus http(s) atau data:image/...).',
+        );
+      }
+      user.avatarUrl = v || null;
+    }
+    if (patch.name !== undefined) user.name = patch.name;
+
+    return this.usersRepository.save(user);
+  }
+
+  async changePassword(
+    id: number,
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<void> {
+    const user = await this.findById(id);
+    if (!user) throw new NotFoundException('User tidak ditemukan');
+    if (!user.passwordHash) {
+      throw new BadRequestException(
+        'Akun ini tidak memiliki password (login via Google/Facebook).',
+      );
+    }
+    const ok = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!ok) throw new UnauthorizedException('Password lama salah.');
+    user.passwordHash = await bcrypt.hash(newPassword, 10);
+    await this.usersRepository.save(user);
+  }
 
   async findByEmail(email: string): Promise<User | null> {
     return this.usersRepository.findOne({ where: { email } });

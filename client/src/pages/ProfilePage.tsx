@@ -3,12 +3,14 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { notificationsApi } from '../api/notifications.api';
 import { APP_VERSION } from '../config/version';
+import EditProfileModal from '../components/profile/EditProfileModal';
 
 export default function ProfilePage() {
   const { user, logout, isLoading } = useAuth();
   const navigate = useNavigate();
   const [unread, setUnread] = useState(0);
   const [copied, setCopied] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -108,11 +110,38 @@ export default function ProfilePage() {
         />
 
         <div className="relative max-w-2xl mx-auto flex items-center gap-4">
-          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#D48B3A] to-[#B45309] flex items-center justify-center text-white text-2xl font-extrabold shadow-xl ring-2 ring-white/10">
-            {initials}
-          </div>
+          <button
+            type="button"
+            onClick={() => setEditOpen(true)}
+            className="relative w-20 h-20 rounded-2xl bg-gradient-to-br from-[#D48B3A] to-[#B45309] flex items-center justify-center text-white text-2xl font-extrabold shadow-xl ring-2 ring-white/10 overflow-hidden hover:ring-white/30 transition-all"
+            title="Edit foto"
+          >
+            {(user as any).avatarUrl ? (
+              <img
+                src={(user as any).avatarUrl}
+                alt={user.name}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              initials
+            )}
+            <span className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-[#1C1C1A] text-white text-[10px] flex items-center justify-center shadow border-2 border-white">
+              📷
+            </span>
+          </button>
           <div className="min-w-0 flex-1">
-            <h1 className="text-2xl font-extrabold text-white truncate">{user.name}</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-extrabold text-white truncate">{user.name}</h1>
+              <button
+                type="button"
+                onClick={() => setEditOpen(true)}
+                className="shrink-0 w-7 h-7 rounded-full bg-white/15 backdrop-blur-sm hover:bg-white/25 text-white flex items-center justify-center transition-colors"
+                title="Edit profil"
+                aria-label="Edit profil"
+              >
+                ✏️
+              </button>
+            </div>
             <p className="text-sm text-white/70 truncate">{user.email}</p>
             {friendCode && (
               <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/15 backdrop-blur-sm text-white text-[11px] font-bold ring-1 ring-white/20">
@@ -190,10 +219,11 @@ export default function ProfilePage() {
           </div>
         )}
 
-        {/* Quick actions grid — Friends, Achievements, Notifications, Recap */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+        {/* Quick actions grid — Friends, Achievements, Notifications, Leaderboard, Recap */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
           <QuickAction to="/friends" icon="👥" label="Teman" tone="amber" />
-          <QuickAction to="/achievements" icon="🏆" label="Achievement" tone="orange" />
+          <QuickAction to="/leaderboard" icon="🏆" label="Leaderboard" tone="orange" />
+          <QuickAction to="/achievements" icon="🎖️" label="Achievement" tone="orange" />
           <QuickAction
             to="/notifications"
             icon="🔔"
@@ -218,7 +248,18 @@ export default function ProfilePage() {
 
         {/* Account section */}
         <Section title="Akun">
-          <MenuItem to="/discover" icon="🪄" label="Ulangi Wizard" subtitle="Atur ulang preferensi" />
+          <button
+            type="button"
+            onClick={() => setEditOpen(true)}
+            className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-[#FAF9F6] border-b border-[#F0EDE8] transition-colors text-left"
+          >
+            <span className="text-xl w-8 text-center">⚙️</span>
+            <div className="flex-1 min-w-0">
+              <div className="font-semibold text-[#1C1C1A]">Edit Profil</div>
+              <div className="text-[11px] text-[#A8A59C]">Nama, foto, password</div>
+            </div>
+            <span className="text-[#8A8880]">›</span>
+          </button>
           <button
             type="button"
             onClick={handleLogout}
@@ -236,6 +277,8 @@ export default function ProfilePage() {
           CafeMatch v{APP_VERSION}
         </p>
       </div>
+
+      <EditProfileModal open={editOpen} onClose={() => setEditOpen(false)} />
     </div>
   );
 }

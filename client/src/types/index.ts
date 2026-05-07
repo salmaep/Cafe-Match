@@ -3,6 +3,10 @@ export interface User {
   email: string;
   name: string;
   role: string;
+  friendCode?: string;
+  avatarUrl?: string | null;
+  twoFaEnabled?: boolean;
+  phoneVerified?: boolean;
 }
 
 export interface Cafe {

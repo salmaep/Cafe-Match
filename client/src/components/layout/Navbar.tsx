@@ -77,8 +77,16 @@ export default function Navbar() {
                 aria-expanded={menuOpen}
                 className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full hover:bg-[#F0EDE8] transition-colors"
               >
-                <span className="w-8 h-8 rounded-full bg-[#D48B3A] text-white text-xs font-bold flex items-center justify-center">
-                  {initials}
+                <span className="w-8 h-8 rounded-full bg-[#D48B3A] text-white text-xs font-bold flex items-center justify-center overflow-hidden">
+                  {(user as any).avatarUrl ? (
+                    <img
+                      src={(user as any).avatarUrl}
+                      alt={user.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    initials
+                  )}
                 </span>
                 <span className="text-sm font-semibold text-[#1C1C1A] max-w-[140px] truncate">
                   {user.name}
@@ -109,43 +117,6 @@ export default function Navbar() {
                     to="/profile"
                     icon="👤"
                     label="Profile"
-                    onClick={() => setMenuOpen(false)}
-                  />
-                  <MenuLink
-                    to="/friends"
-                    icon="👥"
-                    label="Teman & Invite"
-                    onClick={() => setMenuOpen(false)}
-                  />
-                  <MenuLink
-                    to="/achievements"
-                    icon="🏆"
-                    label="Achievements"
-                    onClick={() => setMenuOpen(false)}
-                  />
-                  <MenuLink
-                    to="/notifications"
-                    icon="🔔"
-                    label="Notifikasi"
-                    onClick={() => setMenuOpen(false)}
-                  />
-                  <div className="h-px bg-[#F0EDE8] my-1" />
-                  <MenuLink
-                    to="/bookmarks"
-                    icon="🔖"
-                    label="Bookmarks"
-                    onClick={() => setMenuOpen(false)}
-                  />
-                  <MenuLink
-                    to="/favorites"
-                    icon="❤️"
-                    label="Favorites"
-                    onClick={() => setMenuOpen(false)}
-                  />
-                  <MenuLink
-                    to="/shortlist"
-                    icon="⭐"
-                    label="Shortlist"
                     onClick={() => setMenuOpen(false)}
                   />
                   <div className="h-px bg-[#F0EDE8] my-1" />

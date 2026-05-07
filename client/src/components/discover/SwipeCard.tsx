@@ -4,6 +4,7 @@ import { getCafeImage, placeholderImage } from '../../utils/cafeImage';
 import { cafeUrl } from '../../utils/cafeUrl';
 import { getOpenStatus } from '../../utils/openingHours';
 import { buildFacilityChips } from '../../utils/facilities';
+import { formatRating } from '../../utils/rating';
 
 interface Props {
   cafe: Cafe;
@@ -67,10 +68,10 @@ export default function SwipeCard({ cafe, isSaved, onSave }: Props) {
             {open.isOpen && open.closesAt && ` · ${open.closesAt}`}
           </span>
         )}
-        {cafe.googleRating != null && (
+        {formatRating(cafe.googleRating) && (
           <span className="bg-white/95 text-[#1C1C1A] text-[11px] font-bold rounded-full px-2.5 py-1 flex items-center gap-1">
             <span className="text-amber-500">★</span>
-            {cafe.googleRating.toFixed(1)}
+            {formatRating(cafe.googleRating)}
             {cafe.totalGoogleReviews != null && (
               <span className="font-medium text-[#8A8880]">
                 ({cafe.totalGoogleReviews.toLocaleString()})

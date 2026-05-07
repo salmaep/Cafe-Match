@@ -18,6 +18,7 @@ import PhotoSlider from '../components/cafe/PhotoSlider';
 import WriteReviewModal from '../components/cafe/WriteReviewModal';
 import { getOpenStatus, formatHoursTable } from '../utils/openingHours';
 import { buildFacilityChips } from '../utils/facilities';
+import { formatRating } from '../utils/rating';
 import CheckInButton from '../components/checkin/CheckInButton';
 import CafeLeaderboard from '../components/checkin/CafeLeaderboard';
 
@@ -353,11 +354,11 @@ export default function CafeDetailPage() {
 
             {(cafe.googleRating != null || cafe.priceRange) && (
               <div className="flex items-center gap-2 mt-2 text-sm">
-                {cafe.googleRating != null && (
+                {formatRating(cafe.googleRating) && (
                   <span className="inline-flex items-center gap-1">
                     <span className="text-amber-500">★</span>
                     <span className="font-bold text-[#1C1C1A]">
-                      {cafe.googleRating.toFixed(1)}
+                      {formatRating(cafe.googleRating)}
                     </span>
                     {cafe.totalGoogleReviews != null && (
                       <span className="text-[#8A8880]">

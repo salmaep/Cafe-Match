@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s --max-time 3 -o /dev/null -w \"Backend HTTP %{http_code} in %{time_total}s\\\\n\" http://localhost:3085/api/v1/cafes)",
+      "Bash(curl -s --max-time 3 -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3085/api/v1/cafes)",
+      "Bash(python -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\('items:', len\\(d\\)\\); print\\('keys:', list\\(d[0].keys\\(\\)\\) if d else 'empty'\\)\")",
+      "Bash(jq --version)",
+      "Bash(node server/scripts/sync-cafes.mjs)",
+      "Bash(node -e \"const d=require\\('C:/Users/maman/Downloads/cafe/cafe/Antapani_Kidul.json'\\); const x=d[90]; console.log\\('name:', x.name\\); console.log\\('rating:', JSON.stringify\\(x.rating\\), 'type:', typeof x.rating\\); console.log\\('totalReviews:', JSON.stringify\\(x.totalReviews\\)\\);\")",
+      "Bash(grep -E \"\\\\.\\(ts|tsx\\)$\")",
+      "Bash(xargs -I {} basename {})"
+    ]
+  }
+}

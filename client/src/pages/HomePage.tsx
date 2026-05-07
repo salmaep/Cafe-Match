@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Navigate } from "react-router-dom";
 import { useGeolocation, FALLBACK_LAT, FALLBACK_LNG } from "../hooks/useGeolocation";
-import { cafesApi, type SearchParams, type CafePin } from "../api/cafes.api";
+import { cafesApi, type SearchParams } from "../api/cafes.api";
 import { promotionsApi } from "../api/promotions.api";
 import { usePreferences } from "../context/PreferencesContext";
 import { parseCoords } from "../utils/parseCoords";
@@ -36,7 +36,7 @@ export default function HomePage() {
   const { wizardCompleted } = usePreferences();
   const geo = useGeolocation();
   const [cafes, setCafes] = useState<Cafe[]>([]);
-  const [mapCafes, setMapCafes] = useState<CafePin[]>([]);
+  const [mapCafes, setMapCafes] = useState<Cafe[]>([]);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -119,24 +119,27 @@ export default function HomePage() {
     fetchCafes(1);
   }, [center, radius, purposeId, filters, fetchCafes]);
 
-  // Fetch un-paginated batch from /cafes/map so every matching cafe shows
-  // as a pin without the user having to scroll the paginated list first.
+  // Fetch full cafe data with limit=1000 for the map so every matching cafe
+  // shows as a pin AND its InfoWindow can render photos / rating / etc. on
+  // click — same payload the cafe list uses, just un-paginated.
   useEffect(() => {
     if (!center) return;
     let cancelled = false;
-    const params: Omit<SearchParams, 'page' | 'limit'> = {
+    const params: SearchParams = {
       lat: center[0],
       lng: center[1],
       radius,
+      page: 1,
+      limit: 1000,
     };
     if (purposeId) params.purposeId = purposeId;
     if (filters.q) params.q = filters.q;
     if (filters.facilities.length > 0) params.facilities = filters.facilities;
     if (filters.priceRange) params.priceRange = filters.priceRange;
     cafesApi
-      .searchMap(params)
+      .search(params)
       .then((res) => {
-        if (!cancelled) setMapCafes(res.data ?? []);
+        if (!cancelled) setMapCafes(res.data.data ?? []);
       })
       .catch(() => {
         if (!cancelled) setMapCafes([]);
@@ -227,7 +230,7 @@ export default function HomePage() {
     );
   }
 
-  if (!wizardCompleted) return <Navigate to="/wizard" replace />;
+  if (!wizardCompleted) return <Navigate to="/discover" replace />;
 
   return (
     <>

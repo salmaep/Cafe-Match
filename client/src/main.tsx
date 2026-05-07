@@ -6,6 +6,7 @@ import { HelmetProvider } from 'react-helmet-async'
 import { AuthProvider } from './context/AuthContext'
 import { PreferencesProvider } from './context/PreferencesContext'
 import { ShortlistProvider } from './context/ShortlistContext'
+import { ActiveCheckinProvider } from './context/ActiveCheckinContext'
 import { initGA } from './utils/analytics'
 import './index.css'
 import App from './App.tsx'
@@ -22,7 +23,9 @@ createRoot(document.getElementById('root')!).render(
           <AuthProvider>
             <PreferencesProvider>
               <ShortlistProvider>
-                <App />
+                <ActiveCheckinProvider>
+                  <App />
+                </ActiveCheckinProvider>
               </ShortlistProvider>
             </PreferencesProvider>
           </AuthProvider>

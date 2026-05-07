@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth, type PendingTwoFa } from '../context/AuthContext';
 import { usePreferences } from '../context/PreferencesContext';
 import OtpStep from '../components/auth/OtpStep';
+import PhoneEnrollStep from '../components/auth/PhoneEnrollStep';
 
 export default function AuthCallbackPage() {
   const [params] = useSearchParams();
@@ -10,14 +11,16 @@ export default function AuthCallbackPage() {
   const { loginWithToken, verify2fa } = useAuth();
   const { wizardCompleted } = usePreferences();
   const [pending, setPending] = useState<PendingTwoFa | null>(null);
+  const [enrollmentId, setEnrollmentId] = useState<string | null>(null);
   const [error, setError] = useState('');
 
   useEffect(() => {
     const token = params.get('token');
     const twoFa = params.get('twoFaRequired');
+    const enrollFlag = params.get('phoneEnrollRequired');
     if (token) {
       loginWithToken(token)
-        .then(() => navigate(wizardCompleted ? '/' : '/wizard', { replace: true }))
+        .then(() => navigate(wizardCompleted ? '/' : '/discover', { replace: true }))
         .catch(() => setError('Sesi login gagal. Silakan coba lagi.'));
     } else if (twoFa === '1') {
       const otpId = params.get('otpId') || '';
@@ -28,6 +31,13 @@ export default function AuthCallbackPage() {
         return;
       }
       setPending({ otpId, expiresAt, phoneHint });
+    } else if (enrollFlag === '1') {
+      const id = params.get('enrollmentId') || '';
+      if (!id) {
+        setError('Sesi enrollment tidak valid.');
+        return;
+      }
+      setEnrollmentId(id);
     } else {
       setError('Tidak ada data login.');
     }
@@ -36,13 +46,19 @@ export default function AuthCallbackPage() {
 
   const handleVerify = async (otpId: string, code: string) => {
     await verify2fa(otpId, code);
-    navigate(wizardCompleted ? '/' : '/wizard', { replace: true });
+    navigate(wizardCompleted ? '/' : '/discover', { replace: true });
   };
 
   return (
     <div className="min-h-screen bg-[#FAF9F6] flex items-center justify-center px-4">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-6 md:p-8">
-        {pending ? (
+        {enrollmentId ? (
+          <PhoneEnrollStep
+            enrollmentId={enrollmentId}
+            onDone={() => navigate(wizardCompleted ? '/' : '/discover', { replace: true })}
+            onCancel={() => navigate('/login', { replace: true })}
+          />
+        ) : pending ? (
           <OtpStep
             pending={pending}
             onVerify={handleVerify}

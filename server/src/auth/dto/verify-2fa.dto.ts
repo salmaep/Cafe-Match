@@ -35,3 +35,31 @@ export class EnrollPhoneVerifyDto {
   @Matches(/^\d{8,15}$/)
   phone: string;
 }
+
+export class SocialEnrollPhoneDto {
+  @IsString()
+  @Length(36, 36)
+  enrollmentId: string;
+
+  @IsString()
+  @Matches(/^\d{8,15}$/, { message: 'Nomor HP harus 8–15 digit, tanpa "+".' })
+  phone: string;
+}
+
+export class SocialVerifyPhoneDto {
+  @IsString()
+  @Length(36, 36)
+  enrollmentId: string;
+
+  @IsString()
+  @Length(36, 36)
+  otpId: string;
+
+  @IsString()
+  @Matches(/^\d{4,8}$/)
+  code: string;
+
+  @IsString()
+  @Matches(/^\d{8,15}$/)
+  phone: string;
+}

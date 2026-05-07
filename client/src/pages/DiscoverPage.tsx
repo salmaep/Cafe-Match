@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { cafesApi } from '../api/cafes.api';
 import type { Cafe } from '../types';
 import { usePreferences } from '../context/PreferencesContext';
@@ -7,13 +7,18 @@ import { useShortlist } from '../context/ShortlistContext';
 import SwipeCard from '../components/discover/SwipeCard';
 import { cafeUrl } from '../utils/cafeUrl';
 import Seo from '../components/seo/Seo';
+import Wizard from '../components/wizard/Wizard';
 
 const SWIPE_THRESHOLD = 120;
 
 export default function DiscoverPage() {
   const navigate = useNavigate();
-  const { preferences, wizardCompleted } = usePreferences();
+  const { preferences } = usePreferences();
   const { addToShortlist, removeFromShortlist, isInShortlist, shortlist } = useShortlist();
+
+  // Wizard always shows first when entering Discover. Each visit re-mounts this
+  // component and resets `showWizard` to true.
+  const [showWizard, setShowWizard] = useState(true);
 
   const [cafes, setCafes] = useState<Cafe[]>([]);
   const [index, setIndex] = useState(0);
@@ -27,7 +32,7 @@ export default function DiscoverPage() {
   const pointerIdRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (!wizardCompleted) return;
+    if (showWizard) return;
     const lat = preferences?.location?.latitude ?? -6.9175;
     const lng = preferences?.location?.longitude ?? 107.6191;
     // DEV: fetch all cafes regardless of wizard radius (mirrors mobile DEV_DISABLE_RADIUS)
@@ -38,7 +43,7 @@ export default function DiscoverPage() {
       .then((res) => setCafes(res.data?.data ?? []))
       .catch(() => setCafes([]))
       .finally(() => setLoading(false));
-  }, [preferences, wizardCompleted]);
+  }, [preferences, showWizard]);
 
   // Auto-hide toast after 2.5s (mirrors mobile Toast component)
   useEffect(() => {
@@ -52,12 +57,20 @@ export default function DiscoverPage() {
 
   // Auto-redirect to home after all cafes swiped (mirrors mobile 1.2s delay)
   useEffect(() => {
-    if (!allDone) return;
+    if (showWizard || !allDone) return;
     const t = setTimeout(() => navigate('/', { replace: true }), 1200);
     return () => clearTimeout(t);
-  }, [allDone, navigate]);
+  }, [allDone, navigate, showWizard]);
 
-  if (!wizardCompleted) return <Navigate to="/wizard" replace />;
+  // Wizard always shown first on every visit to Discover.
+  if (showWizard) {
+    return (
+      <Wizard
+        onComplete={() => setShowWizard(false)}
+        onSkip={() => setShowWizard(false)}
+      />
+    );
+  }
 
   const triggerSwipe = (dir: 'left' | 'right') => {
     if (dir === 'right' && current) {

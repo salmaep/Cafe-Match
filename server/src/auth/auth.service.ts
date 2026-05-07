@@ -9,6 +9,7 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
+import { randomUUID } from 'crypto';
 import { UsersService } from '../users/users.service';
 import { RegisterDto } from './dto/register.dto';
 import { RegisterOwnerDto } from './dto/register-owner.dto';
@@ -22,6 +23,13 @@ export class AuthService {
   // In-memory map: otpId -> userId. OTP itself is verified by Engine OTP service;
   // we just bind it to a pending user so we can issue JWT after success.
   private readonly pendingTwoFa = new Map<string, { userId: number; expiresAt: number }>();
+  // Pending social-login phone enrollment: enrollmentId -> userId. Used when
+  // a Google/FB user has no phone yet — they must enroll a phone + verify OTP
+  // before a JWT is issued.
+  private readonly pendingSocialEnroll = new Map<
+    string,
+    { userId: number; expiresAt: number }
+  >();
 
   constructor(
     private readonly usersService: UsersService,
@@ -237,8 +245,9 @@ export class AuthService {
     avatarUrl?: string;
   }) {
     const user = await this.usersService.findOrCreateSocial(args);
-    // 2FA also applies to social login
-    if (user.twoFaEnabled && user.phone && user.phoneVerified) {
+
+    // User already has a verified phone → send OTP to existing number.
+    if (user.phone && user.phoneVerified) {
       const otp = await this.otpClient.requestOtp(this.validatePhone(user.phone));
       this.pendingTwoFa.set(otp.otpId, {
         userId: user.id,
@@ -251,6 +260,66 @@ export class AuthService {
         phoneHint: user.phone.slice(0, 4) + '***' + user.phone.slice(-2),
       };
     }
+
+    // No phone yet → require enrollment. Issue a short-lived enrollmentId
+    // (15 min) that lets the client call /auth/social/phone/enroll without
+    // a JWT.
+    const enrollmentId = randomUUID();
+    const expiresAt = Date.now() + 15 * 60_000;
+    this.pendingSocialEnroll.set(enrollmentId, { userId: user.id, expiresAt });
+    return {
+      phoneEnrollRequired: true,
+      enrollmentId,
+      expiresAt: new Date(expiresAt).toISOString(),
+    };
+  }
+
+  async socialEnrollPhone(enrollmentId: string, phoneRaw: string) {
+    const pending = this.pendingSocialEnroll.get(enrollmentId);
+    if (!pending || pending.expiresAt < Date.now()) {
+      this.pendingSocialEnroll.delete(enrollmentId);
+      throw new UnauthorizedException('Sesi enrollment habis. Silakan login ulang.');
+    }
+    const phone = this.validatePhone(phoneRaw);
+    const otp = await this.otpClient.requestOtp(phone);
+    this.pendingTwoFa.set(otp.otpId, {
+      userId: pending.userId,
+      expiresAt: new Date(otp.expiresAt).getTime(),
+    });
+    return { otpId: otp.otpId, expiresAt: otp.expiresAt };
+  }
+
+  async socialVerifyPhone(
+    enrollmentId: string,
+    otpId: string,
+    code: string,
+    phoneRaw: string,
+  ) {
+    const enroll = this.pendingSocialEnroll.get(enrollmentId);
+    if (!enroll || enroll.expiresAt < Date.now()) {
+      this.pendingSocialEnroll.delete(enrollmentId);
+      throw new UnauthorizedException('Sesi enrollment habis. Silakan login ulang.');
+    }
+    const pending = this.pendingTwoFa.get(otpId);
+    if (!pending || pending.userId !== enroll.userId) {
+      throw new UnauthorizedException('Sesi verifikasi tidak valid.');
+    }
+    const result = await this.otpClient.verifyOtp(otpId, code);
+    if (!result.verified) {
+      if (result.status === 'failed' || result.status === 'expired') {
+        this.pendingTwoFa.delete(otpId);
+      }
+      throw new UnauthorizedException('Kode tidak valid.');
+    }
+    this.pendingTwoFa.delete(otpId);
+    this.pendingSocialEnroll.delete(enrollmentId);
+    await this.usersService.update(enroll.userId, {
+      phone: this.validatePhone(phoneRaw),
+      phoneVerified: true,
+      twoFaEnabled: true,
+    });
+    const user = await this.usersService.findById(enroll.userId);
+    if (!user) throw new NotFoundException('User tidak ditemukan.');
     return this.signJwt(user);
   }
 }

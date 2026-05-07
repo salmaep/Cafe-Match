@@ -39,6 +39,14 @@ interface PurposeTagRow {
   purposeSlug: string;
 }
 
+interface TopReviewRow {
+  cafeId: number;
+  text: string | null;
+  authorName: string | null;
+  overallScore: number | null;
+  createdAt: string | Date | null;
+}
+
 interface SyncFailureRow {
   id: number;
   cafe_id: number;
@@ -71,20 +79,6 @@ export type CafeHit = CafeDocument & {
 export interface CafeSearchResult {
   data: CafeHit[];
   meta: { page: number; limit: number; total: number };
-}
-
-// Minimal payload needed to render a marker on the map: position, label,
-// link, and the bits that drive the "promoted" pin variant.
-export interface CafePin {
-  id: number;
-  name: string;
-  slug: string | null;
-  address: string;
-  latitude: number;
-  longitude: number;
-  hasActivePromotion: boolean;
-  activePromotionType: string | null;
-  distanceMeters?: number;
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -352,89 +346,6 @@ export class MeiliCafesService {
     };
   }
 
-  // ── Map pins (minimal fields, all matching results) ────────────────────────
-
-  /**
-   * Returns every cafe matching the same filters used by `searchCafes`, with
-   * only the fields needed to draw a map marker. Trusts Meili's index-wide
-   * `pagination.maxTotalHits` setting — one query, no paging loop.
-   */
-  async searchCafePins(dto: SearchCafesQuery): Promise<CafePin[]> {
-    const {
-      q = '',
-      lat,
-      lng,
-      radius = 2000,
-      wifiAvailable,
-      hasMushola,
-      hasParking,
-      facilities,
-      priceRange,
-      purposeId,
-    } = dto;
-
-    const filters: string[] = ['isActive = true'];
-    if (lat != null && lng != null) {
-      filters.push(`_geoRadius(${lat}, ${lng}, ${radius})`);
-    }
-    if (priceRange) filters.push(`priceRange = "${priceRange}"`);
-
-    const facilityKeys = new Set<string>(facilities ?? []);
-    if (wifiAvailable === 'true') facilityKeys.add('strong_wifi');
-    if (hasMushola === 'true') facilityKeys.add('mushola');
-    if (hasParking === 'true') facilityKeys.add('parking');
-    if (facilityKeys.size > 0) {
-      const escaped = Array.from(facilityKeys)
-        .map((k) => `"${k.replace(/"/g, '\\"')}"`)
-        .join(', ');
-      filters.push(`facilities IN [${escaped}]`);
-    }
-
-    if (purposeId) {
-      const slug = await this.resolvePurposeSlug(purposeId);
-      if (slug) filters.push(`purposes = "${slug}"`);
-    }
-
-    let results: SearchResponse<CafeDocument>;
-    try {
-      results = await this.meili.getIndex().search<CafeDocument>(q, {
-        filter: filters.join(' AND '),
-        limit: 1000,
-        attributesToRetrieve: [
-          'id',
-          'name',
-          'slug',
-          'address',
-          '_geo',
-          'hasActivePromotion',
-          'activePromotionType',
-        ],
-      });
-    } catch (err) {
-      this.logger.error('Meilisearch map-pin search failed', err);
-      throw new ServiceUnavailableException({ error: 'SEARCH_UNAVAILABLE' });
-    }
-
-    return results.hits.map((hit) => {
-      const pin: CafePin = {
-        id: hit.id,
-        name: hit.name,
-        slug: hit.slug ?? null,
-        address: hit.address,
-        latitude: Number(hit._geo?.lat ?? 0),
-        longitude: Number(hit._geo?.lng ?? 0),
-        hasActivePromotion: Boolean(hit.hasActivePromotion),
-        activePromotionType: hit.activePromotionType ?? null,
-      };
-      if (lat != null && lng != null && hit._geo) {
-        pin.distanceMeters = Math.round(
-          haversineMeters(lat, lng, hit._geo.lat, hit._geo.lng),
-        );
-      }
-      return pin;
-    });
-  }
-
   // ── Facets ──────────────────────────────────────────────────────────────────
 
   /**
@@ -489,7 +400,7 @@ export class MeiliCafesService {
 
     const placeholders = cafeIds.map(() => '?').join(',');
 
-    const [cafes, facilities, photos, menus] = await Promise.all([
+    const [cafes, facilities, photos, menus, topReviews] = await Promise.all([
       this.q<CafeRow>(
         `SELECT * FROM cafes WHERE id IN (${placeholders}) AND deleted_at IS NULL`,
         cafeIds,
@@ -510,6 +421,26 @@ export class MeiliCafesService {
          FROM cafe_menus WHERE cafe_id IN (${placeholders}) AND deleted_at IS NULL`,
         cafeIds,
       ),
+      // Latest non-empty review per cafe (with author + overall rating).
+      // MySQL 8 window function — picks newest review with non-blank text.
+      this.q<TopReviewRow>(
+        `SELECT t.cafe_id AS cafeId, t.text, t.created_at AS createdAt,
+                u.name AS authorName,
+                (SELECT rr.score FROM review_ratings rr
+                  WHERE rr.review_id = t.id AND rr.category = 'overall' LIMIT 1) AS overallScore
+         FROM (
+           SELECT r.id, r.cafe_id, r.user_id, r.text, r.created_at,
+                  ROW_NUMBER() OVER (PARTITION BY r.cafe_id ORDER BY r.created_at DESC) AS rn
+           FROM reviews r
+           WHERE r.cafe_id IN (${placeholders})
+             AND r.deleted_at IS NULL
+             AND r.text IS NOT NULL
+             AND TRIM(r.text) <> ''
+         ) t
+         LEFT JOIN users u ON u.id = t.user_id
+         WHERE t.rn = 1`,
+        cafeIds,
+      ).catch(() => [] as TopReviewRow[]),
     ]);
 
     let tagRows: PurposeTagRow[] = [];
@@ -527,6 +458,8 @@ export class MeiliCafesService {
     const photoMap = groupBy(photos, 'cafeId');
     const menuMap = groupBy(menus, 'cafeId');
     const tagMap = groupBy(tagRows, 'cafeId');
+    const topReviewMap: Record<number, TopReviewRow> = {};
+    for (const r of topReviews) topReviewMap[r.cafeId] = r;
 
     return cafes.map((cafe) =>
       toCafeDocument({
@@ -535,6 +468,17 @@ export class MeiliCafesService {
         photos: (photoMap[cafe.id] ?? []).slice(0, 10),
         menus: (menuMap[cafe.id] ?? []).slice(0, 20),
         purposeSlugs: (tagMap[cafe.id] ?? []).map((t) => t.purposeSlug),
+        topReview: topReviewMap[cafe.id]
+          ? {
+              text: topReviewMap[cafe.id].text,
+              authorName: topReviewMap[cafe.id].authorName,
+              overallScore:
+                topReviewMap[cafe.id].overallScore != null
+                  ? Number(topReviewMap[cafe.id].overallScore)
+                  : null,
+              createdAt: topReviewMap[cafe.id].createdAt,
+            }
+          : null,
       }),
     );
   }

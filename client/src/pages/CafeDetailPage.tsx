@@ -16,29 +16,10 @@ import Seo from '../components/seo/Seo';
 import PhotoLightbox from '../components/cafe/PhotoLightbox';
 import PhotoSlider from '../components/cafe/PhotoSlider';
 import WriteReviewModal from '../components/cafe/WriteReviewModal';
-
-const FACILITY_ICONS: Record<string, string> = {
-  wifi: '📶',
-  power_outlet: '🔌',
-  mushola: '🕌',
-  parking: '🅿️',
-  kid_friendly: '👶',
-  quiet_atmosphere: '🤫',
-  large_tables: '🪑',
-  outdoor_area: '🌿',
-  cozy_seating: '🛋️',
-  ambient_lighting: '💡',
-  intimate_seating: '💕',
-  family_friendly: '👨‍👩‍👧',
-  spacious: '🏛️',
-  whiteboard: '📋',
-  bookable_space: '📅',
-  smoking_area: '🚬',
-  noise_tolerant: '🔊',
-  power_outlets: '🔌',
-  outdoor_seating: '🌿',
-  strong_wifi: '📶',
-};
+import { getOpenStatus, formatHoursTable } from '../utils/openingHours';
+import { buildFacilityChips } from '../utils/facilities';
+import CheckInButton from '../components/checkin/CheckInButton';
+import CafeLeaderboard from '../components/checkin/CafeLeaderboard';
 
 const REVIEW_CATEGORY_LABELS: Record<string, string> = {
   overall: '⭐ Rating',
@@ -53,24 +34,6 @@ function prettyReviewCategory(k: string) {
   if (REVIEW_CATEGORY_LABELS[k]) return REVIEW_CATEGORY_LABELS[k];
   return k.replace(/^(mood_|facility_)/, '').replace(/[_-]/g, ' ');
 }
-
-const FACILITY_LABELS: Record<string, string> = {
-  quiet_atmosphere: 'Quiet',
-  cozy_seating: 'Cozy Seating',
-  ambient_lighting: 'Ambient Lighting',
-  intimate_seating: 'Intimate Seating',
-  kid_friendly: 'Kid Friendly',
-  spacious: 'Spacious',
-  noise_tolerant: 'Noise Tolerant',
-  large_tables: 'Large Tables',
-  whiteboard: 'Whiteboard',
-  bookable_space: 'Bookable Space',
-  strong_wifi: 'Strong WiFi',
-  power_outlets: 'Power Outlets',
-  outdoor_seating: 'Outdoor Seating',
-  parking: 'Parking',
-  smoking_area: 'Smoking Area',
-};
 
 export default function CafeDetailPage() {
   const { slug } = useParams();
@@ -206,20 +169,7 @@ export default function CafeDetailPage() {
 
   const inShortlist = isInShortlist(cafe.id);
 
-  const facilityChips: { icon: string; label: string }[] = [];
-  if (cafe.wifiAvailable) {
-    facilityChips.push({
-      icon: '📶',
-      label: `WiFi${cafe.wifiSpeedMbps ? ` (${cafe.wifiSpeedMbps}Mbps)` : ''}`,
-    });
-  }
-  if (cafe.hasMushola) facilityChips.push({ icon: '🕌', label: 'Mushola' });
-  for (const f of cafe.facilities || []) {
-    facilityChips.push({
-      icon: FACILITY_ICONS[f.facilityKey] || '✓',
-      label: FACILITY_LABELS[f.facilityKey] || f.facilityKey,
-    });
-  }
+  const facilityChips = buildFacilityChips(cafe);
 
   const starSummary = reviewSummary.filter(
     (s) => !s.category.startsWith('mood_') && !s.category.startsWith('facility_'),
@@ -400,17 +350,95 @@ export default function CafeDetailPage() {
             <h1 className="text-2xl lg:text-4xl font-bold text-[#1C1C1A] tracking-tight">
               {cafe.name}
             </h1>
+
+            {(cafe.googleRating != null || cafe.priceRange) && (
+              <div className="flex items-center gap-2 mt-2 text-sm">
+                {cafe.googleRating != null && (
+                  <span className="inline-flex items-center gap-1">
+                    <span className="text-amber-500">★</span>
+                    <span className="font-bold text-[#1C1C1A]">
+                      {cafe.googleRating.toFixed(1)}
+                    </span>
+                    {cafe.totalGoogleReviews != null && (
+                      <span className="text-[#8A8880]">
+                        ({cafe.totalGoogleReviews.toLocaleString()} reviews)
+                      </span>
+                    )}
+                  </span>
+                )}
+                {cafe.googleRating != null && cafe.priceRange && (
+                  <span className="text-[#E0DCD3]">·</span>
+                )}
+                {cafe.priceRange && (
+                  <span className="font-semibold text-[#5C5A52]">{cafe.priceRange}</span>
+                )}
+              </div>
+            )}
+
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-sm text-[#8A8880]">
-              {distance != null && <span>{formatDistance(distance)} from you</span>}
-              {distance != null && cafe.matchScore != null && (
-                <span className="text-[#E0DCD3]">·</span>
+              {(() => {
+                const open = getOpenStatus(cafe.openingHours);
+                if (!open) return null;
+                return (
+                  <span
+                    className={`font-semibold ${
+                      open.isOpen ? 'text-emerald-600' : 'text-red-500'
+                    }`}
+                  >
+                    {open.isOpen
+                      ? `● Buka${open.closesAt ? ` · tutup ${open.closesAt}` : ''}`
+                      : `● Tutup${
+                          open.opensAt
+                            ? ` · buka ${
+                                open.nextOpenDay === 'today' ? '' : `${open.nextOpenDay} `
+                              }${open.opensAt}`
+                            : ''
+                        }`}
+                  </span>
+                );
+              })()}
+              {(cafe.district || cafe.city) && (
+                <>
+                  <span className="text-[#E0DCD3]">·</span>
+                  <span>
+                    {[cafe.district, cafe.city].filter(Boolean).join(', ')}
+                  </span>
+                </>
+              )}
+              {distance != null && (
+                <>
+                  <span className="text-[#E0DCD3]">·</span>
+                  <span>{formatDistance(distance)} from you</span>
+                </>
               )}
               {cafe.matchScore != null && (
-                <span className="font-semibold text-[#D48B3A]">
-                  {cafe.matchScore}% match
-                </span>
+                <>
+                  <span className="text-[#E0DCD3]">·</span>
+                  <span className="font-semibold text-[#D48B3A]">
+                    {cafe.matchScore}% match
+                  </span>
+                </>
               )}
             </div>
+
+            {cafe.hasActivePromotion && (
+              <div className="mt-4 flex items-center gap-3 bg-[#FDF6EC] border border-[#D48B3A] rounded-2xl p-3 lg:p-4">
+                <span className="text-2xl">🎉</span>
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs font-semibold text-[#D48B3A] uppercase tracking-wider">
+                    {cafe.activePromotionType === 'new_cafe'
+                      ? 'Cafe Baru'
+                      : 'Promo Aktif'}
+                  </div>
+                  <div className="text-sm text-[#5C5A52] mt-0.5">
+                    {cafe.activePromotionType === 'new_cafe'
+                      ? 'Cafe baru bergabung — yuk jadi yang pertama berkunjung!'
+                      : 'Cafe ini sedang ada promo. Cek di tempat untuk detail.'}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {cafe.description && (
               <p className="text-[15px] lg:text-base text-[#5C5A52] mt-4 leading-relaxed">
                 {cafe.description}
@@ -440,6 +468,78 @@ export default function CafeDetailPage() {
               Open in Maps →
             </span>
           </a>
+
+          {cafe.phone && (
+            <a
+              href={`tel:${cafe.phone}`}
+              className="flex flex-wrap items-center gap-3 mt-3 bg-white border border-[#F0EDE8] rounded-2xl p-4 lg:p-5 hover:border-[#D48B3A] hover:bg-[#FDF6EC] transition-all group"
+            >
+              <span className="w-10 h-10 lg:w-11 lg:h-11 rounded-full bg-[#F0EDE8] group-hover:bg-white flex items-center justify-center text-lg shrink-0">
+                📞
+              </span>
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-semibold text-[#8A8880] uppercase tracking-wider">
+                  Phone
+                </div>
+                <div className="text-sm lg:text-[15px] text-[#1C1C1A] mt-0.5 break-words">
+                  {cafe.phone}
+                </div>
+              </div>
+              <span className="text-sm text-[#D48B3A] font-semibold shrink-0">
+                Telepon →
+              </span>
+            </a>
+          )}
+
+          {/* Check-In CTA — prominent, between Phone and Opening Hours */}
+          <div className="mt-4">
+            <CheckInButton cafe={cafe} />
+          </div>
+
+          {cafe.openingHours && Object.keys(cafe.openingHours).length > 0 && (
+            <Section title="Jam Buka">
+              <div className="bg-white border border-[#F0EDE8] rounded-2xl overflow-hidden">
+                {(() => {
+                  const today = new Date().getDay();
+                  const todayKey = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][
+                    today
+                  ];
+                  return formatHoursTable(cafe.openingHours, 'id').map((row, i) => {
+                    const isToday =
+                      row.day ===
+                      { mon: 'Sen', tue: 'Sel', wed: 'Rab', thu: 'Kam', fri: 'Jum', sat: 'Sab', sun: 'Min' }[
+                        todayKey as 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'
+                      ];
+                    const closed = row.hours === 'Tutup';
+                    return (
+                      <div
+                        key={row.day}
+                        className={`flex items-center justify-between px-4 lg:px-5 py-2.5 text-sm ${
+                          i > 0 ? 'border-t border-[#F0EDE8]' : ''
+                        } ${isToday ? 'bg-[#FDF6EC]' : ''}`}
+                      >
+                        <span
+                          className={`font-semibold ${
+                            isToday ? 'text-[#D48B3A]' : 'text-[#5C5A52]'
+                          }`}
+                        >
+                          {row.day}
+                          {isToday && <span className="ml-2 text-xs">(Hari ini)</span>}
+                        </span>
+                        <span
+                          className={`tabular-nums ${
+                            closed ? 'text-red-500' : 'text-[#1C1C1A]'
+                          }`}
+                        >
+                          {row.hours}
+                        </span>
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+            </Section>
+          )}
 
           {/* Stats — mobile/tablet only (desktop shows them in the sidebar) */}
           <div className="lg:hidden flex items-center justify-around bg-white border border-[#F0EDE8] rounded-2xl py-4 mt-6">
@@ -519,6 +619,11 @@ export default function CafeDetailPage() {
                 Jadi yang pertama review!
               </button>
             )}
+          </Section>
+
+          {/* Leaderboard — top check-in users at this cafe */}
+          <Section title="🏆 Top Check-in">
+            <CafeLeaderboard cafeId={cafe.id} />
           </Section>
 
           {/* Atmosphere — read-only mood chips aggregated from reviews + scraping */}

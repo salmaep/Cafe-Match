@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import Seo from './components/seo/Seo';
 import { useTrackPageView } from './utils/analytics';
 import UserLayout from './components/layout/UserLayout';
@@ -19,7 +19,6 @@ import PromotionPage from './pages/owner/PromotionPage';
 import PaymentPage from './pages/owner/PaymentPage';
 import PaymentSuccessPage from './pages/owner/PaymentSuccessPage';
 import PaymentFailedPage from './pages/owner/PaymentFailedPage';
-import WizardPage from './pages/WizardPage';
 import DiscoverPage from './pages/DiscoverPage';
 import TrendingPage from './pages/TrendingPage';
 import AuthCallbackPage from './pages/AuthCallbackPage';
@@ -34,8 +33,8 @@ function App() {
     <div className="min-h-screen bg-gray-50">
       <Seo />
       <Routes>
-        {/* Onboarding wizard — standalone, no top navbar */}
-        <Route path="/wizard" element={<WizardPage />} />
+        {/* Wizard now renders inside /discover — keep alias for backward compat */}
+        <Route path="/wizard" element={<Navigate to="/discover" replace />} />
 
         {/* Social OAuth callback — standalone */}
         <Route path="/auth/callback" element={<AuthCallbackPage />} />

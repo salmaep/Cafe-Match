@@ -10,7 +10,15 @@ import StepLocation from './StepLocation';
 import StepRadius from './StepRadius';
 import StepAmenities from './StepAmenities';
 
-export default function Wizard() {
+interface Props {
+  // Optional callback fired after wizard finishes. When provided, Wizard does
+  // not navigate — caller is responsible for transitioning. When omitted,
+  // falls back to navigate('/discover') for backwards compat.
+  onComplete?: () => void;
+  onSkip?: () => void;
+}
+
+export default function Wizard({ onComplete, onSkip }: Props = {}) {
   const navigate = useNavigate();
   const { setPreferences, setWizardCompleted } = usePreferences();
   const { latitude: userLat, longitude: userLng } = useGeolocation();
@@ -35,7 +43,8 @@ export default function Wizard() {
   const handleSkip = () => {
     setPreferences(null);
     setWizardCompleted(true);
-    navigate('/', { replace: true });
+    if (onSkip) onSkip();
+    else navigate('/', { replace: true });
   };
 
   const handleFinish = () => {
@@ -53,7 +62,8 @@ export default function Wizard() {
     };
     setPreferences(prefs);
     setWizardCompleted(true);
-    navigate('/discover', { replace: true });
+    if (onComplete) onComplete();
+    else navigate('/discover', { replace: true });
   };
 
   const toggleAmenity = (a: Facility) => {

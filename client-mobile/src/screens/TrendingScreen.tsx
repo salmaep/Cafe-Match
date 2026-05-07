@@ -3,12 +3,12 @@ import {
   View,
   Text,
   FlatList,
-  Image,
   TouchableOpacity,
   ActivityIndicator,
   ScrollView,
   StyleSheet,
 } from 'react-native';
+import CafePhoto from '../components/CafePhoto';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -16,6 +16,7 @@ import { useLocation } from '../context/LocationContext';
 import { fetchGlobalLeaderboard } from '../services/api';
 import { useSearchCafes } from '../queries/cafes/use-search-cafes';
 import { hitsToCafes } from '../queries/cafes/api';
+import { usePurposeId } from '../queries/purposes/use-purpose-id';
 import { Cafe, Purpose } from '../types';
 import { colors, spacing, radius } from '../theme';
 import NativeAdCard from '../components/NativeAdCard';
@@ -32,15 +33,6 @@ const PURPOSE_FILTERS: Array<'All' | Purpose> = [
   'Group Study',
   'WFC',
 ];
-
-// ─── Purpose → backend purpose id mapping ───
-const PURPOSE_ID_MAP: Partial<Record<Purpose, number>> = {
-  'Me Time': 1,
-  'Date': 2,
-  'Family Time': 3,
-  'Group Study': 4,
-  'WFC': 5,
-};
 
 // ─── Rank badge colors ───
 const RANK_COLORS: Record<number, string> = {
@@ -62,8 +54,7 @@ export default function TrendingScreen() {
   // Trending cafes state
   const [activeFilter, setActiveFilter] = useState<'All' | Purpose>('All');
 
-  const purposeId =
-    activeFilter !== 'All' ? PURPOSE_ID_MAP[activeFilter] : undefined;
+  const purposeId = usePurposeId(activeFilter !== 'All' ? activeFilter : null);
 
   const cafesQuery = useSearchCafes({
     lat: latitude ?? undefined,
@@ -111,10 +102,6 @@ export default function TrendingScreen() {
     const rankColor = RANK_COLORS[rank] || colors.surface;
     const rankTextColor = rank <= 3 ? colors.primary : colors.textSecondary;
 
-    const photoUri =
-      item.photos && item.photos.length > 0
-        ? item.photos[0]
-        : 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800';
 
     const topPurpose =
       item.purposes && item.purposes.length > 0 ? item.purposes[0] : null;
@@ -138,7 +125,7 @@ export default function TrendingScreen() {
         </View>
 
         {/* Photo */}
-        <Image source={{ uri: photoUri }} style={styles.cardPhoto} />
+        <CafePhoto photos={item.photos} name={item.name} style={styles.cardPhoto} />
 
         {/* Info */}
         <View style={styles.cardInfo}>

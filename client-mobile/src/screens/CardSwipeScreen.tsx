@@ -27,10 +27,6 @@ import Toast from '../components/Toast';
 const { width, height } = Dimensions.get('window');
 const CARD_W = width * 0.85;
 
-// DEV TOGGLE: fetch all cafes regardless of wizard radius setting.
-// Revert to `false` for production.
-const DEV_DISABLE_RADIUS = true;
-
 export default function CardSwipeScreen() {
   const navigation = useNavigation<StackNavigationProp<any>>();
   const insets = useSafeAreaInsets();
@@ -57,7 +53,7 @@ export default function CardSwipeScreen() {
   // ─── Cafe data via TanStack Query + Meilisearch ─────────────────────────
   const lat = preferences?.location?.latitude ?? latitude;
   const lng = preferences?.location?.longitude ?? longitude;
-  const radKm = DEV_DISABLE_RADIUS ? 9999 : (preferences?.radius ?? 2);
+  const radKm = preferences?.radius ?? 2;
 
   const cafesQuery = useSearchCafes({
     lat: lat ?? undefined,

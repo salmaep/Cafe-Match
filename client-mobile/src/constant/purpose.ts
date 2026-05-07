@@ -1,22 +1,18 @@
-import { Purpose } from '../types';
-
-// Purpose name → backend slug (used for client-side scoring lookups in cafe.purposeScores).
+// Purpose name → backend slug (used for client-side scoring lookups in cafe.purposeScores
+// and to resolve numeric IDs via `usePurposeId(label)`).
 export const PURPOSE_SLUG_MAP: Record<string, string> = {
   'Me Time': 'me-time',
   Date: 'date',
   'Family Time': 'family',
   'Group Study': 'group-work',
   WFC: 'wfc',
-};
-
-// Purpose name → backend numeric ID (used as `purposeId` query param to /cafes search).
-// IDs are seed data and stable; if backend reseed changes them, update here.
-export const PURPOSE_ID_MAP: Record<Purpose, number> = {
-  'Me Time': 1,
-  Date: 2,
-  'Family Time': 3,
-  'Group Study': 4,
-  WFC: 5,
+  Meeting: 'meeting',
+  Brainstorm: 'brainstorm',
+  'Catch Up': 'catch-up',
+  Reading: 'reading',
+  'Quick Coffee': 'quick-coffee',
+  Celebration: 'celebration',
+  'Photo Spot': 'photo-spot',
 };
 
 // Facility label → backend key slug (for `facilities[]` query param to /cafes search).

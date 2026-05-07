@@ -17,6 +17,7 @@ import {
   ActivityIndicator,
   Animated,
 } from "react-native";
+import CafePhoto from "../components/CafePhoto";
 import Swiper from "react-native-deck-swiper";
 import MapView, { Marker, Circle } from "react-native-maps";
 import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
@@ -37,7 +38,8 @@ import { hitsToCafes } from "../queries/cafes/api";
 import { Cafe } from "../types";
 import { colors, spacing, radius } from "../theme";
 import { RADIUS_OPTIONS } from "../constant/ui/radius-options";
-import { PURPOSE_ID_MAP, FACILITY_KEY_BY_LABEL } from "../constant/purpose";
+import { FACILITY_KEY_BY_LABEL } from "../constant/purpose";
+import { usePurposeId } from "../queries/purposes/use-purpose-id";
 
 const { width, height } = Dimensions.get("window");
 
@@ -173,9 +175,7 @@ export default function MapScreen() {
   //     so the drawer list reflects the user's preferences.
   // Server (Meilisearch) does ALL filtering, sorting, and distance calc.
   const radiusMeters = Math.min(radiusKm * 1000, 50_000_000);
-  const purposeId = preferences?.purpose
-    ? PURPOSE_ID_MAP[preferences.purpose]
-    : undefined;
+  const purposeId = usePurposeId(preferences?.purpose);
   const facilities = useMemo(
     () =>
       (preferences?.amenities ?? [])
@@ -335,8 +335,9 @@ export default function MapScreen() {
         activeOpacity={0.85}
         onPress={() => navigation.navigate("CafeDetail", { cafe: item })}
       >
-        <Image
-          source={{ uri: item.photos?.[0] || "" }}
+        <CafePhoto
+          photos={item.photos}
+          name={item.name}
           style={styles.cafeCardPhoto}
         />
         <View style={styles.cafeCardInfo}>
@@ -614,8 +615,9 @@ export default function MapScreen() {
                     style={styles.searchSwipeCard}
                     onPress={() => navigation.navigate("CafeDetail", { cafe })}
                   >
-                    <Image
-                      source={{ uri: cafe.photos?.[0] || "" }}
+                    <CafePhoto
+                      photos={cafe.photos}
+                      name={cafe.name}
                       style={styles.searchSwipeImage}
                     />
                     <View style={styles.searchSwipeInfo}>
@@ -765,8 +767,9 @@ export default function MapScreen() {
                   navigation.navigate("CafeDetail", { cafe: selectedCafe })
                 }
               >
-                <Image
-                  source={{ uri: selectedCafe.photos?.[0] || "" }}
+                <CafePhoto
+                  photos={selectedCafe.photos}
+                  name={selectedCafe.name}
                   style={styles.selectedPhoto}
                 />
                 <View style={styles.selectedInfo}>

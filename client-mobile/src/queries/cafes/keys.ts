@@ -10,4 +10,5 @@ export const cafeKeys = {
     [...cafeKeys.all, 'promoted', type ?? 'all'] as const,
   bookmarks: () => ['bookmarks'] as const,
   favorites: () => ['favorites'] as const,
+  filters: () => [...cafeKeys.all, 'filters'] as const,
 };

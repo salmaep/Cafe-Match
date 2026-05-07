@@ -14,22 +14,33 @@ import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { usePreferences } from '../context/PreferencesContext';
 import { colors, spacing, radius } from '../theme';
-import { Purpose, Facility, WizardPreferences } from '../types';
+import { Purpose, WizardPreferences } from '../types';
 import { useLocation } from '../context/LocationContext';
-import { usePurposes } from '../queries/purposes/use-purposes';
 import { useDestinations } from '../queries/destinations/use-destinations';
+import { useCafeFilters, flattenFilterOptions } from '../queries/cafes/use-cafe-filters';
+import { getFacilityIcon } from '../constant/ui/facility-icons';
 
 const { width } = Dimensions.get('window');
 const TOTAL_STEPS = 4;
 
-// Emoji is presentation-only; mapped by slug from /purposes payload.
-const PURPOSE_EMOJI_BY_SLUG: Record<string, string> = {
-  'me-time': '🧘',
-  'date': '💑',
-  'family-time': '👨‍👩‍👧',
-  'group-study': '📚',
-  'wfc': '💻',
-};
+// Local purpose list — mirrors web client's WIZARD_PURPOSES. Using a local
+// constant (not fetched from API) ensures the wizard always shows options
+// regardless of server availability. The slug is used downstream by
+// usePurposeId() to resolve the numeric purposeId for cafe filtering.
+const WIZARD_PURPOSES: { label: Purpose; emoji: string; tagline: string }[] = [
+  { label: 'Me Time',      emoji: '🧘',  tagline: 'Tenang & nyaman sendiri' },
+  { label: 'Date',         emoji: '💑',  tagline: 'Romantis berdua' },
+  { label: 'Family Time',  emoji: '👨‍👩‍👧', tagline: 'Cocok bawa keluarga' },
+  { label: 'Group Study',  emoji: '📚',  tagline: 'Belajar bareng teman' },
+  { label: 'WFC',          emoji: '💻',  tagline: 'WiFi & power outlet siap' },
+  { label: 'Meeting',      emoji: '🤝',  tagline: 'Diskusi serius / klien' },
+  { label: 'Brainstorm',   emoji: '💡',  tagline: 'Spasi luas, bebas ngobrol' },
+  { label: 'Catch Up',     emoji: '☕',  tagline: 'Reuni dengan teman lama' },
+  { label: 'Reading',      emoji: '📖',  tagline: 'Sudut tenang baca buku' },
+  { label: 'Quick Coffee', emoji: '⚡',  tagline: 'Mampir sebentar saja' },
+  { label: 'Celebration',  emoji: '🎉',  tagline: 'Ulang tahun / spesial' },
+  { label: 'Photo Spot',   emoji: '📸',  tagline: 'Estetik untuk konten' },
+];
 
 // Parse coord strings — supports paste from Google Maps, spreadsheets, plain text.
 // Examples that work:
@@ -51,7 +62,9 @@ function parseCoords(input: string): { lat: number; lng: number } | null {
   return { lat, lng };
 }
 
-const AMENITIES: { label: Facility; icon: string }[] = [
+// Fallback list shown only if `/cafes/filters` is unreachable. The server is
+// authoritative; this is a safety net so the wizard never blocks the user.
+const AMENITIES_FALLBACK: { label: string; icon: string }[] = [
   { label: 'WiFi', icon: '📶' },
   { label: 'Power Outlet', icon: '🔌' },
   { label: 'Mushola', icon: '🕌' },
@@ -66,8 +79,16 @@ export default function WizardScreen() {
   const navigation = useNavigation<StackNavigationProp<any>>();
   const { setPreferences, setWizardCompleted } = usePreferences();
   const { latitude: userLat, longitude: userLng } = useLocation();
-  const purposesQuery = usePurposes();
   const destinationsQuery = useDestinations();
+  const filtersQuery = useCafeFilters();
+  const amenityOptions = React.useMemo(() => {
+    const fromServer = flattenFilterOptions(filtersQuery.data);
+    if (fromServer.length === 0) return AMENITIES_FALLBACK;
+    return fromServer.map((opt) => ({
+      label: opt.label,
+      icon: getFacilityIcon(opt.label),
+    }));
+  }, [filtersQuery.data]);
   const [step, setStep] = useState(0);
   const slideAnim = useRef(new Animated.Value(0)).current;
 
@@ -77,7 +98,7 @@ export default function WizardScreen() {
   const [customLat, setCustomLat] = useState<number | null>(null);
   const [customLng, setCustomLng] = useState<number | null>(null);
   const [radiusVal, setRadiusVal] = useState(1);
-  const [amenities, setAmenities] = useState<Facility[]>([]);
+  const [amenities, setAmenities] = useState<string[]>([]);
 
   const radiusOptions = [0.5, 1, 2];
 
@@ -126,7 +147,7 @@ export default function WizardScreen() {
     navigation.replace('CardSwipe');
   };
 
-  const toggleAmenity = (a: Facility) => {
+  const toggleAmenity = (a: string) => {
     setAmenities((prev) =>
       prev.includes(a) ? prev.filter((x) => x !== a) : [...prev, a]
     );
@@ -174,39 +195,32 @@ export default function WizardScreen() {
         <View style={styles.stepContainer}>
           <Text style={styles.stepTitle}>What's your vibe today?</Text>
           <Text style={styles.stepSubtitle}>Choose one that fits your mood</Text>
-          {purposesQuery.isLoading ? (
-            <View style={styles.loaderRow}>
-              <ActivityIndicator color={colors.accent} />
-            </View>
-          ) : purposesQuery.isError ? (
-            <Text style={styles.coordHint}>
-              ⚠️ Gagal memuat purposes dari server.{' '}
-              <Text style={{ color: colors.accent }} onPress={() => purposesQuery.refetch()}>
-                Coba lagi
-              </Text>
-            </Text>
-          ) : (
-            <View style={styles.optionsGrid}>
-              {(purposesQuery.data ?? []).map((p) => {
-                const label = p.name as Purpose;
-                const emoji = PURPOSE_EMOJI_BY_SLUG[p.slug] ?? '☕';
-                return (
-                  <TouchableOpacity
-                    key={p.id}
-                    style={[styles.optionCard, purpose === label && styles.optionCardActive]}
-                    onPress={() => setPurpose(label)}
-                  >
-                    <Text style={styles.optionEmoji}>{emoji}</Text>
-                    <Text
-                      style={[styles.optionLabel, purpose === label && styles.optionLabelActive]}
-                    >
-                      {label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          )}
+          <ScrollView
+            contentContainerStyle={styles.optionsGrid}
+            showsVerticalScrollIndicator={false}
+            style={{ flex: 1 }}
+          >
+            {WIZARD_PURPOSES.map((p) => (
+              <TouchableOpacity
+                key={p.label}
+                style={[styles.optionCard, purpose === p.label && styles.optionCardActive]}
+                onPress={() => setPurpose(p.label)}
+              >
+                <Text style={styles.optionEmoji}>{p.emoji}</Text>
+                <Text
+                  style={[styles.optionLabel, purpose === p.label && styles.optionLabelActive]}
+                >
+                  {p.label}
+                </Text>
+                <Text
+                  style={[styles.optionTagline, purpose === p.label && styles.optionTaglineActive]}
+                  numberOfLines={2}
+                >
+                  {p.tagline}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
         </View>
 
         {/* Step 2: Location */}
@@ -326,24 +340,28 @@ export default function WizardScreen() {
         <View style={styles.stepContainer}>
           <Text style={styles.stepTitle}>Anything specific you need?</Text>
           <Text style={styles.stepSubtitle}>Select all that apply</Text>
-          <ScrollView contentContainerStyle={styles.amenitiesGrid} showsVerticalScrollIndicator={false}>
-            {AMENITIES.map((a) => (
-              <TouchableOpacity
-                key={a.label}
-                style={[styles.amenityChip, amenities.includes(a.label) && styles.amenityChipActive]}
-                onPress={() => toggleAmenity(a.label)}
-              >
-                <Text style={styles.amenityIcon}>{a.icon}</Text>
-                <Text
-                  style={[
-                    styles.amenityLabel,
-                    amenities.includes(a.label) && styles.amenityLabelActive,
-                  ]}
+          <ScrollView contentContainerStyle={styles.amenitiesGrid} showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
+            {filtersQuery.isLoading && amenityOptions.length === 0 ? (
+              <ActivityIndicator color={colors.accent} />
+            ) : (
+              amenityOptions.map((a) => (
+                <TouchableOpacity
+                  key={a.label}
+                  style={[styles.amenityChip, amenities.includes(a.label) && styles.amenityChipActive]}
+                  onPress={() => toggleAmenity(a.label)}
                 >
-                  {a.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
+                  <Text style={styles.amenityIcon}>{a.icon}</Text>
+                  <Text
+                    style={[
+                      styles.amenityLabel,
+                      amenities.includes(a.label) && styles.amenityLabelActive,
+                    ]}
+                  >
+                    {a.label}
+                  </Text>
+                </TouchableOpacity>
+              ))
+            )}
           </ScrollView>
         </View>
       </Animated.View>
@@ -390,6 +408,7 @@ const styles = StyleSheet.create({
     width,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.xl,
+    overflow: 'hidden',
   },
   stepTitle: {
     fontSize: 26,
@@ -424,6 +443,8 @@ const styles = StyleSheet.create({
   optionEmoji: { fontSize: 28, marginBottom: spacing.xs },
   optionLabel: { fontSize: 14, fontWeight: '600', color: colors.primary },
   optionLabelActive: { color: colors.accent },
+  optionTagline: { fontSize: 10, color: colors.textSecondary, textAlign: 'center', marginTop: 2 },
+  optionTaglineActive: { color: colors.accent },
   locationOptions: { gap: spacing.sm },
   locationCard: {
     flexDirection: 'row',

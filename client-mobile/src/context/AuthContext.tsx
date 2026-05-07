@@ -1,14 +1,35 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { User } from '../types';
-import { loginApi, registerApi, fetchMe } from '../services/api';
+import {
+  loginApi,
+  registerApi,
+  fetchMe,
+  isTwoFaChallenge,
+  verify2faApi,
+  resend2faApi,
+  TwoFaChallenge,
+} from '../services/api';
+
+interface LoginOutcome {
+  success: boolean;
+  error?: string;
+  twoFaChallenge?: TwoFaChallenge;
+}
+
+interface RegisterOutcome {
+  success: boolean;
+  error?: string;
+}
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  register: (name: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  login: (email: string, password: string) => Promise<LoginOutcome>;
+  register: (name: string, email: string, password: string) => Promise<RegisterOutcome>;
   loginWithToken: (token: string) => Promise<{ success: boolean; error?: string }>;
+  verify2fa: (otpId: string, code: string) => Promise<{ success: boolean; error?: string }>;
+  resend2fa: (otpId: string) => Promise<{ success: boolean; otpId?: string; expiresAt?: string; error?: string }>;
   logout: () => Promise<void>;
 }
 
@@ -18,6 +39,8 @@ const AuthContext = createContext<AuthContextType>({
   login: async () => ({ success: false }),
   register: async () => ({ success: false }),
   loginWithToken: async () => ({ success: false }),
+  verify2fa: async () => ({ success: false }),
+  resend2fa: async () => ({ success: false }),
   logout: async () => {},
 });
 
@@ -49,12 +72,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })();
   }, []);
 
-  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+  const persistAuth = async (token: string, profile: User) => {
+    await AsyncStorage.setItem('jwt_token', token);
+    await AsyncStorage.setItem('user', JSON.stringify(profile));
+    setUser(profile);
+  };
+
+  const login = async (email: string, password: string): Promise<LoginOutcome> => {
     try {
       const response = await loginApi(email, password);
-      await AsyncStorage.setItem('jwt_token', response.accessToken);
-      await AsyncStorage.setItem('user', JSON.stringify(response.user));
-      setUser(response.user);
+      if (isTwoFaChallenge(response)) {
+        return { success: false, twoFaChallenge: response };
+      }
+      await persistAuth(response.accessToken, response.user);
       return { success: true };
     } catch (err: any) {
       const message =
@@ -66,11 +96,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const register = async (name: string, email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+  const register = async (name: string, email: string, password: string): Promise<RegisterOutcome> => {
     try {
       await registerApi(name, email, password);
-      // Auto-login after register
-      return await login(email, password);
+      return { success: true };
     } catch (err: any) {
       const message =
         err?.response?.data?.message ||
@@ -94,6 +123,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const verify2fa = async (otpId: string, code: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const response = await verify2faApi(otpId, code);
+      await persistAuth(response.accessToken, response.user);
+      return { success: true };
+    } catch (err: any) {
+      const message =
+        err?.response?.data?.message ||
+        (err?.response ? 'Kode OTP tidak valid.' : 'Cannot reach server.');
+      return { success: false, error: message };
+    }
+  };
+
+  const resend2fa = async (otpId: string) => {
+    try {
+      const response = await resend2faApi(otpId);
+      return { success: true, otpId: response.otpId, expiresAt: response.expiresAt };
+    } catch (err: any) {
+      const message =
+        err?.response?.data?.message || 'Gagal mengirim ulang OTP.';
+      return { success: false, error: message };
+    }
+  };
+
   const logout = async () => {
     setUser(null);
     // Wipe auth + any user-specific cached data
@@ -107,7 +160,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, register, loginWithToken, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        isLoading,
+        login,
+        register,
+        loginWithToken,
+        verify2fa,
+        resend2fa,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

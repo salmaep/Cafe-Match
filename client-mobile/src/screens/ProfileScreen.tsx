@@ -70,10 +70,6 @@ export default function ProfileScreen() {
     );
   }
 
-  // Owner sign-in temporarily hidden — set to true to restore Owner UI access.
-  const OWNER_UI_ENABLED = false;
-  const isOwner = OWNER_UI_ENABLED && user.role === 'owner';
-
   return (
     <ScrollView
       style={styles.container}
@@ -86,26 +82,9 @@ export default function ProfileScreen() {
         </View>
         <Text style={styles.userName}>{user.name}</Text>
         <Text style={styles.userEmail}>{user.email}</Text>
-        {isOwner && (
-          <View style={styles.roleBadge}>
-            <Text style={styles.roleBadgeText}>Cafe Owner</Text>
-          </View>
-        )}
       </View>
 
       <View style={styles.menuList}>
-        {/* Fix 7: Owner Dashboard button */}
-        {isOwner && (
-          <TouchableOpacity
-            style={[styles.menuItem, styles.ownerMenuItem]}
-            onPress={() => navigation.navigate('OwnerDashboard')}
-          >
-            <Text style={styles.menuIcon}>📊</Text>
-            <Text style={[styles.menuLabel, { color: colors.accent }]}>Owner Dashboard</Text>
-            <Text style={styles.menuArrow}>→</Text>
-          </TouchableOpacity>
-        )}
-
         <TouchableOpacity
           style={styles.menuItem}
           onPress={() => navigation.navigate('Favorites')}
@@ -215,14 +194,6 @@ const styles = StyleSheet.create({
   avatarText: { fontSize: 28, fontWeight: '700', color: colors.white },
   userName: { fontSize: 20, fontWeight: '700', color: colors.primary },
   userEmail: { fontSize: 14, color: colors.textSecondary, marginTop: 2 },
-  roleBadge: {
-    backgroundColor: colors.accent + '20',
-    borderRadius: radius.full,
-    paddingHorizontal: spacing.sm + 4,
-    paddingVertical: 3,
-    marginTop: spacing.xs,
-  },
-  roleBadgeText: { fontSize: 12, fontWeight: '600', color: colors.accent },
   menuList: {
     paddingHorizontal: spacing.lg,
     marginTop: spacing.md,
@@ -234,11 +205,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     padding: spacing.md,
     marginBottom: spacing.sm,
-  },
-  ownerMenuItem: {
-    borderWidth: 1.5,
-    borderColor: colors.accent,
-    backgroundColor: colors.accent + '08',
   },
   menuIcon: { fontSize: 20, marginRight: spacing.md },
   menuLabel: { flex: 1, fontSize: 16, fontWeight: '500', color: colors.primary },

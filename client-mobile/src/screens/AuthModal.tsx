@@ -218,9 +218,9 @@ export default function AuthModal() {
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.closeBtn} onPress={() => navigation.goBack()}>
+        {/* <TouchableOpacity style={styles.closeBtn} onPress={() => navigation.goBack()}>
           <Text style={styles.closeText}>Maybe later</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
     </KeyboardAvoidingView>
   );

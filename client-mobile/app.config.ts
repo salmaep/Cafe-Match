@@ -41,7 +41,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     favicon: './assets/favicon.png',
   },
   plugins: [
-    '@react-native-firebase/app',
+    // '@react-native-firebase/app', // disabled in Expo Go — re-enable when using dev build
     'expo-web-browser',
     [
       'expo-build-properties',

@@ -1,5 +1,22 @@
 @import "tailwindcss";
 
+@layer base {
+  /* Tailwind v4 doesn't auto-apply cursor-pointer on interactive elements.
+     Restore the expected behavior so all buttons / role=button / labels feel
+     clickable. Disabled state stays not-allowed. */
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']),
+  summary,
+  label[for] {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  [role='button'][aria-disabled='true'] {
+    cursor: not-allowed;
+  }
+}
+
 @layer utilities {
   .scrollbar-hide {
     -ms-overflow-style: none;

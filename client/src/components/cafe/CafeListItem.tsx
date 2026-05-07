@@ -6,6 +6,7 @@ import { cafeUrl } from '../../utils/cafeUrl';
 import { getOpenStatus } from '../../utils/openingHours';
 import { buildFacilityChips } from '../../utils/facilities';
 import { formatRating } from '../../utils/rating';
+import { cleanAddress } from '../../utils/address';
 
 interface Props {
   cafe: Cafe;
@@ -15,7 +16,7 @@ const VISIBLE_CHIPS = 4;
 
 export default function CafeListItem({ cafe }: Props) {
   const open = getOpenStatus(cafe.openingHours);
-  const locality = cafe.district || cafe.city;
+  const locality = cleanAddress(cafe.district || cafe.city || '');
   const allChips = buildFacilityChips(cafe);
   const visibleChips = allChips.slice(0, VISIBLE_CHIPS);
   const overflow = allChips.length - visibleChips.length;

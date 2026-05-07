@@ -19,6 +19,7 @@ import WriteReviewModal from '../components/cafe/WriteReviewModal';
 import { getOpenStatus, formatHoursTable } from '../utils/openingHours';
 import { buildFacilityChips } from '../utils/facilities';
 import { formatRating } from '../utils/rating';
+import { cleanAddress } from '../utils/address';
 import CheckInButton from '../components/checkin/CheckInButton';
 import CafeLeaderboard from '../components/checkin/CafeLeaderboard';
 
@@ -398,14 +399,18 @@ export default function CafeDetailPage() {
                   </span>
                 );
               })()}
-              {(cafe.district || cafe.city) && (
-                <>
-                  <span className="text-[#E0DCD3]">·</span>
-                  <span>
-                    {[cafe.district, cafe.city].filter(Boolean).join(', ')}
-                  </span>
-                </>
-              )}
+              {(() => {
+                const parts = [cafe.district, cafe.city]
+                  .map((p) => cleanAddress(p || ''))
+                  .filter(Boolean);
+                if (parts.length === 0) return null;
+                return (
+                  <>
+                    <span className="text-[#E0DCD3]">·</span>
+                    <span>{parts.join(', ')}</span>
+                  </>
+                );
+              })()}
               {distance != null && (
                 <>
                   <span className="text-[#E0DCD3]">·</span>
@@ -462,7 +467,7 @@ export default function CafeDetailPage() {
                 Location
               </div>
               <div className="text-sm lg:text-[15px] text-[#1C1C1A] mt-0.5 break-words">
-                {cafe.address}
+                {cleanAddress(cafe.address)}
               </div>
             </div>
             <span className="text-sm text-[#D48B3A] font-semibold shrink-0">

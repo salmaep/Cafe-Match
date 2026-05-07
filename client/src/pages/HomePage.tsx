@@ -55,7 +55,12 @@ export default function HomePage() {
   });
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
   // Desktop/tablet drawer: overlays the map. Closed by default — user toggles via the floating button.
-  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
+  // Default open on large monitors (≥1536px / Tailwind 2xl) — user can still close.
+  // On smaller screens stays closed by default to keep map space.
+  const [filterDrawerOpen, setFilterDrawerOpen] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(min-width: 1536px)').matches;
+  });
   const [featuredCafes, setFeaturedCafes] = useState<any[]>([]);
   const [mobileQuery, setMobileQuery] = useState("");
   const [showAllModal, setShowAllModal] = useState(false);
@@ -534,7 +539,7 @@ export default function HomePage() {
           )}
         </div>
 
-        <div className="md:flex-1 lg:flex-[2] md:flex md:flex-col gap-3 md:overflow-hidden md:min-w-0">
+        <div className="md:flex-1 lg:flex-[2] 2xl:flex-none 2xl:w-[580px] md:flex md:flex-col gap-3 md:overflow-hidden md:min-w-0">
           <SearchBar q={filters.q} onQChange={setQ} />
           <RadiusSlider radius={radius} onChange={setRadius} />
           <PurposeFilter selectedPurposeId={purposeId} onSelect={setPurposeId} />

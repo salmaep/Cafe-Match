@@ -5,6 +5,7 @@ import { cafeUrl } from '../../utils/cafeUrl';
 import { getOpenStatus } from '../../utils/openingHours';
 import { buildFacilityChips } from '../../utils/facilities';
 import { formatRating } from '../../utils/rating';
+import { cleanAddress } from '../../utils/address';
 
 interface Props {
   cafe: Cafe;
@@ -22,7 +23,7 @@ export default function SwipeCard({ cafe, isSaved, onSave }: Props) {
       ? (cafe.distanceMeters / 1000).toFixed(1)
       : null;
   const open = getOpenStatus(cafe.openingHours);
-  const locality = cafe.district || cafe.city;
+  const locality = cleanAddress(cafe.district || cafe.city || '');
 
   const allChips = buildFacilityChips(cafe);
   const visibleChips = allChips.slice(0, VISIBLE_CHIPS);

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { cafesApi, type FilterGroup } from "../../api/cafes.api";
+import { FACILITY_ICONS } from "../../utils/facilities";
 
 export interface FilterPanelProps {
   facilities: string[];
@@ -12,6 +13,12 @@ export interface FilterPanelProps {
   // Only used when variant === 'modal'
   open?: boolean;
   onClose?: () => void;
+  // Optional: hide internal "Filter" header (useful when embedded in wizard
+  // or other contexts that already have their own title).
+  hideHeader?: boolean;
+  // Optional: hide price section (e.g. wizard amenities step where price
+  // is configured elsewhere).
+  hidePrice?: boolean;
 }
 
 // Module-level cache so the catalog is fetched once across mounts/remounts.
@@ -45,10 +52,11 @@ interface ChipProps {
   active: boolean;
   count?: number;
   disabled?: boolean;
+  icon?: string;
   onClick: () => void;
 }
 
-function Chip({ label, active, count, disabled, onClick }: ChipProps) {
+function Chip({ label, active, count, disabled, icon, onClick }: ChipProps) {
   return (
     <button
       type="button"
@@ -62,11 +70,13 @@ function Chip({ label, active, count, disabled, onClick }: ChipProps) {
             : "bg-white text-[#1C1C1A] border-[#E8E4DD] hover:border-[#D48B3A] hover:text-[#D48B3A]"
       }`}
     >
-      {active && (
+      {active ? (
         <span className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-white text-[#D48B3A] text-[9px] font-extrabold shrink-0">
           ✓
         </span>
-      )}
+      ) : icon ? (
+        <span className="text-sm leading-none shrink-0">{icon}</span>
+      ) : null}
       <span>{label}</span>
       {typeof count === "number" && (
         <span
@@ -89,6 +99,8 @@ export default function FilterPanel({
   variant,
   open,
   onClose,
+  hideHeader,
+  hidePrice,
 }: FilterPanelProps) {
   const [groups, setGroups] = useState<FilterGroup[] | null>(catalogCache);
   const [loading, setLoading] = useState(!catalogCache);
@@ -141,60 +153,67 @@ export default function FilterPanel({
   const activeCount = facilities.length + (priceRange ? 1 : 0);
   const isSidebar = variant === "sidebar";
 
-  const body = (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-[#F0EDE8] bg-white">
-        <div>
-          <h3 className="text-sm font-bold text-[#1C1C1A]">Filter</h3>
-          {activeCount > 0 && (
-            <p className="text-[11px] text-[#8A8880] mt-0.5">
-              {activeCount} filter aktif
-            </p>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          {activeCount > 0 && (
-            <button
-              type="button"
-              onClick={reset}
-              className="text-xs text-[#D48B3A] hover:underline font-semibold"
-            >
-              Reset
-            </button>
-          )}
-          {variant === "modal" && (
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Tutup"
-              className="w-8 h-8 rounded-full hover:bg-[#F0EDE8] text-[#8A8880] flex items-center justify-center"
-            >
-              ✕
-            </button>
-          )}
-        </div>
-      </div>
+  // Sidebar takes natural content height (parent container handles scroll
+  // via overflow-y-auto + max-h). Modal is fixed-height with internal scroll.
+  const isModal = variant === "modal";
 
-      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
-        {/* Price range — single-select chips */}
-        <div className="px-4 py-3 border-b border-[#F0EDE8]">
-          <div className="text-[11px] font-bold text-[#8A8880] uppercase tracking-wider mb-2">
-            Harga
+  const body = (
+    <div className={isModal ? "flex flex-col h-full" : "flex flex-col"}>
+      {!hideHeader && (
+        <div className="flex items-center justify-between px-4 py-3 border-b border-[#F0EDE8] bg-white">
+          <div>
+            <h3 className="text-sm font-bold text-[#1C1C1A]">Filter</h3>
+            {activeCount > 0 && (
+              <p className="text-[11px] text-[#8A8880] mt-0.5">
+                {activeCount} filter aktif
+              </p>
+            )}
           </div>
-          <div className="flex flex-wrap gap-1.5">
-            {PRICE_OPTIONS.map((p) => {
-              const active = priceRange === p.key;
-              return (
-                <Chip
-                  key={p.key}
-                  label={p.label}
-                  active={active}
-                  onClick={() => onPriceRangeChange(active ? "" : p.key)}
-                />
-              );
-            })}
+          <div className="flex items-center gap-2">
+            {activeCount > 0 && (
+              <button
+                type="button"
+                onClick={reset}
+                className="text-xs text-[#D48B3A] hover:underline font-semibold"
+              >
+                Reset
+              </button>
+            )}
+            {isModal && (
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label="Tutup"
+                className="w-8 h-8 rounded-full hover:bg-[#F0EDE8] text-[#8A8880] flex items-center justify-center"
+              >
+                ✕
+              </button>
+            )}
           </div>
         </div>
+      )}
+
+      <div className={isModal ? "flex-1 min-h-0 overflow-y-auto overscroll-contain" : ""}>
+        {!hidePrice && (
+          <div className="px-4 py-3 border-b border-[#F0EDE8]">
+            <div className="text-[11px] font-bold text-[#8A8880] uppercase tracking-wider mb-2">
+              Harga
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {PRICE_OPTIONS.map((p) => {
+                const active = priceRange === p.key;
+                return (
+                  <Chip
+                    key={p.key}
+                    label={p.label}
+                    active={active}
+                    onClick={() => onPriceRangeChange(active ? "" : p.key)}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {loading && (
           <div className="px-4 py-6 text-sm text-[#8A8880] text-center">
@@ -265,6 +284,7 @@ export default function FilterPanel({
                         <Chip
                           key={opt.key}
                           label={opt.label}
+                          icon={FACILITY_ICONS[opt.key]}
                           active={checked}
                           onClick={() => toggleFacility(opt.key)}
                         />
@@ -293,7 +313,7 @@ export default function FilterPanel({
 
   if (isSidebar) {
     return (
-      <div className="bg-white rounded-xl border border-[#F0EDE8] overflow-hidden flex flex-col h-full">
+      <div className="bg-white rounded-xl border border-[#F0EDE8] overflow-hidden">
         {body}
       </div>
     );

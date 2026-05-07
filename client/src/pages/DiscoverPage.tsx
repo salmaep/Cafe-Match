@@ -13,7 +13,7 @@ const SWIPE_THRESHOLD = 120;
 
 export default function DiscoverPage() {
   const navigate = useNavigate();
-  const { preferences } = usePreferences();
+  const { preferences, getPurposeId } = usePreferences();
   const { addToShortlist, removeFromShortlist, isInShortlist, shortlist } = useShortlist();
 
   // Wizard always shows first when entering Discover. Each visit re-mounts this
@@ -38,12 +38,20 @@ export default function DiscoverPage() {
     // DEV: fetch all cafes regardless of wizard radius (mirrors mobile DEV_DISABLE_RADIUS)
     const radius = 9999 * 1000;
 
+    // Apply wizard preferences to backend filters: vibe (purpose), facilities, price.
+    const purposeId = getPurposeId(preferences?.purpose) ?? undefined;
+    const facilities =
+      preferences?.amenities && preferences.amenities.length > 0
+        ? preferences.amenities
+        : undefined;
+    const priceRange = preferences?.priceRange || undefined;
+
     cafesApi
-      .search({ lat, lng, radius, limit: 10 })
+      .search({ lat, lng, radius, limit: 10, purposeId, facilities, priceRange })
       .then((res) => setCafes(res.data?.data ?? []))
       .catch(() => setCafes([]))
       .finally(() => setLoading(false));
-  }, [preferences, showWizard]);
+  }, [preferences, showWizard, getPurposeId]);
 
   // Auto-hide toast after 2.5s (mirrors mobile Toast component)
   useEffect(() => {
@@ -158,8 +166,8 @@ export default function DiscoverPage() {
         title="Discover cafes"
         description="Swipe through cafes that match your preferences and shortlist the ones you love."
       />
-      <div className="flex-1 flex items-start justify-center px-4 pt-[8vh] md:pt-[6vh] pb-3 select-none min-h-0">
-        <div className="relative w-full max-w-sm">
+      <div className="flex-1 flex items-start justify-center px-4 pt-[8vh] md:pt-6 lg:pt-8 pb-3 select-none min-h-0">
+        <div className="relative w-full max-w-sm md:max-w-md lg:max-w-lg">
           <div
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}

@@ -21,6 +21,7 @@ import InfiniteScrollSentinel from "../components/InfiniteScrollSentinel";
 import Seo from "../components/seo/Seo";
 
 const AD_INTERVAL = 5;
+const MAX_ADS = 2;
 const PAGE_SIZE = 20;
 
 interface Filters {
@@ -53,6 +54,8 @@ export default function HomePage() {
     priceRange: "",
   });
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
+  // Desktop/tablet drawer: overlays the map. Closed by default — user toggles via the floating button.
+  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
   const [featuredCafes, setFeaturedCafes] = useState<any[]>([]);
   const [mobileQuery, setMobileQuery] = useState("");
   const [showAllModal, setShowAllModal] = useState(false);
@@ -240,7 +243,7 @@ export default function HomePage() {
       />
       {/* ─── MOBILE: full-screen map + floating search + draggable bottom sheet ─── */}
       {/* Map sits behind the sheet; bottom-16 reserves space for the tab bar. */}
-      <div className="lg:hidden fixed inset-x-0 top-0 bottom-16 z-0">
+      <div className="md:hidden fixed inset-x-0 top-0 bottom-16 z-0">
         {center && (
           <MapErrorBoundary>
             <MapView
@@ -255,7 +258,7 @@ export default function HomePage() {
 
       {/* "Use my location" + coord-input floating buttons — mobile only.
           Sits above the bottom sheet bar. */}
-      <div className="lg:hidden fixed right-3 bottom-[calc(55vh+12px)] z-20 flex flex-col items-end gap-2">
+      <div className="md:hidden fixed right-3 bottom-[calc(55vh+12px)] z-20 flex flex-col items-end gap-2">
         <button
           type="button"
           onClick={useMyLocation}
@@ -314,7 +317,7 @@ export default function HomePage() {
         )}
       </div>
 
-      <div className="lg:hidden">
+      <div className="md:hidden">
         <BottomSheet
           snapPoints={[0.14, 0.55, 0.92]}
           initialSnap={1}
@@ -427,10 +430,13 @@ export default function HomePage() {
             {/* List — compact horizontal rows (matches Android MapScreen list) */}
             <div className="space-y-2">
               {cafes.flatMap((cafe, i) => {
-                const showAd = (i + 1) % AD_INTERVAL === 0 && i !== cafes.length - 1;
+                const slotIdx = Math.floor(i / AD_INTERVAL);
+                const showAd =
+                  (i + 1) % AD_INTERVAL === 0 &&
+                  i !== cafes.length - 1 &&
+                  slotIdx < MAX_ADS;
                 const nodes = [<CafeListItem key={cafe.id} cafe={cafe} />];
                 if (showAd) {
-                  const slotIdx = Math.floor(i / AD_INTERVAL);
                   nodes.push(<HybridAdSlot key={`ad-${i}`} slotIndex={slotIdx} variant="list" />);
                 }
                 return nodes;
@@ -458,20 +464,9 @@ export default function HomePage() {
         </BottomSheet>
       </div>
 
-      {/* ─── DESKTOP: 3-column layout — filter sidebar | map | results ─── */}
-      <div className="hidden lg:flex lg:flex-row lg:h-[calc(100vh-4rem)] lg:gap-4 lg:p-4 bg-[#FAF9F6]">
-        {/* Filter sidebar — always visible, chip-based */}
-        <div className="lg:w-64 lg:shrink-0 lg:h-full">
-          <FilterPanel
-            variant="sidebar"
-            facilities={filters.facilities}
-            onFacilitiesChange={setFacilities}
-            priceRange={filters.priceRange}
-            onPriceRangeChange={setPriceRange}
-          />
-        </div>
-
-        <div className="lg:h-full lg:flex-[2] relative">
+      {/* ─── TABLET/DESKTOP (md+): map (full-left) + results · filter is a left-side overlay drawer ─── */}
+      <div className="hidden md:flex md:flex-row md:h-[calc(100vh-4rem)] md:gap-3 md:p-3 lg:gap-4 lg:p-4 bg-[#FAF9F6]">
+        <div className="md:h-full md:flex-[2] lg:flex-[3] relative">
           {center && (
             <MapErrorBoundary>
               <MapView
@@ -482,9 +477,64 @@ export default function HomePage() {
               />
             </MapErrorBoundary>
           )}
+
+          {/* Filter drawer overlay — slides over the map. Toggleable on md+ via the floating button. */}
+          <aside
+            className={`absolute left-0 top-0 bottom-0 w-72 z-[5] overflow-y-auto overscroll-contain transition-transform duration-300 ease-out ${
+              filterDrawerOpen ? "translate-x-0" : "-translate-x-full"
+            }`}
+            aria-hidden={!filterDrawerOpen}
+          >
+            <div className="relative">
+              <FilterPanel
+                variant="sidebar"
+                facilities={filters.facilities}
+                onFacilitiesChange={setFacilities}
+                priceRange={filters.priceRange}
+                onPriceRangeChange={setPriceRange}
+              />
+              <button
+                type="button"
+                onClick={() => setFilterDrawerOpen(false)}
+                className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/95 shadow border border-[#F0EDE8] flex items-center justify-center text-[#8A8880] hover:text-[#1C1C1A]"
+                aria-label="Tutup filter"
+              >
+                ✕
+              </button>
+            </div>
+          </aside>
+
+          {/* Floating filter toggle — surfaces the drawer when closed */}
+          {!filterDrawerOpen && (
+            <button
+              type="button"
+              onClick={() => setFilterDrawerOpen(true)}
+              className={`absolute top-3 left-3 z-[5] inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-white shadow-lg border text-sm font-semibold transition-colors ${
+                activeFilterCount > 0
+                  ? "border-[#D48B3A] text-[#D48B3A]"
+                  : "border-[#F0EDE8] text-[#1C1C1A] hover:border-[#D48B3A]"
+              }`}
+              aria-label="Buka filter"
+            >
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+                />
+              </svg>
+              Filter
+              {activeFilterCount > 0 && (
+                <span className="bg-[#D48B3A] text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                  {activeFilterCount}
+                </span>
+              )}
+            </button>
+          )}
         </div>
 
-        <div className="lg:flex-1 lg:flex lg:flex-col gap-3 lg:overflow-hidden lg:min-w-0">
+        <div className="md:flex-1 lg:flex-[2] md:flex md:flex-col gap-3 md:overflow-hidden md:min-w-0">
           <SearchBar q={filters.q} onQChange={setQ} />
           <RadiusSlider radius={radius} onChange={setRadius} />
           <PurposeFilter selectedPurposeId={purposeId} onSelect={setPurposeId} />
@@ -564,10 +614,13 @@ export default function HomePage() {
             {viewMode === 'grid' ? (
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
                 {cafes.flatMap((cafe, i) => {
-                  const showAd = (i + 1) % AD_INTERVAL === 0 && i !== cafes.length - 1;
+                  const slotIdx = Math.floor(i / AD_INTERVAL);
+                  const showAd =
+                    (i + 1) % AD_INTERVAL === 0 &&
+                    i !== cafes.length - 1 &&
+                    slotIdx < MAX_ADS;
                   const nodes = [<CafeCard key={cafe.id} cafe={cafe} />];
                   if (showAd) {
-                    const slotIdx = Math.floor(i / AD_INTERVAL);
                     nodes.push(<HybridAdSlot key={`ad-${i}`} slotIndex={slotIdx} variant="card" />);
                   }
                   return nodes;
@@ -576,10 +629,13 @@ export default function HomePage() {
             ) : (
               <div className="space-y-2">
                 {cafes.flatMap((cafe, i) => {
-                  const showAd = (i + 1) % AD_INTERVAL === 0 && i !== cafes.length - 1;
+                  const slotIdx = Math.floor(i / AD_INTERVAL);
+                  const showAd =
+                    (i + 1) % AD_INTERVAL === 0 &&
+                    i !== cafes.length - 1 &&
+                    slotIdx < MAX_ADS;
                   const nodes = [<CafeListItem key={cafe.id} cafe={cafe} />];
                   if (showAd) {
-                    const slotIdx = Math.floor(i / AD_INTERVAL);
                     nodes.push(<HybridAdSlot key={`ad-${i}`} slotIndex={slotIdx} variant="list" />);
                   }
                   return nodes;
@@ -637,10 +693,13 @@ export default function HomePage() {
             <div className="flex-1 overflow-y-auto p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
                 {cafes.flatMap((cafe, i) => {
-                  const showAd = (i + 1) % AD_INTERVAL === 0 && i !== cafes.length - 1;
+                  const slotIdx = Math.floor(i / AD_INTERVAL);
+                  const showAd =
+                    (i + 1) % AD_INTERVAL === 0 &&
+                    i !== cafes.length - 1 &&
+                    slotIdx < MAX_ADS;
                   const nodes = [<CafeCard key={cafe.id} cafe={cafe} />];
                   if (showAd) {
-                    const slotIdx = Math.floor(i / AD_INTERVAL);
                     nodes.push(<HybridAdSlot key={`ad-${i}`} slotIndex={slotIdx} variant="card" />);
                   }
                   return nodes;

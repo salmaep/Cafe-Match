@@ -58,31 +58,17 @@ jobs:
             set -e
             cd /opt/Cafe-Match
 
-            # Load env (needed for mysqldump credentials)
-            set -a
-            . ./server/.env
-            set +a
-
             echo "==> 1. Pull latest from main"
             git fetch origin main
             git reset --hard origin/main
 
-            echo "==> 2. Backup database"
-            BACKUP_DIR=/opt/Cafe-Match/backups
-            mkdir -p "$BACKUP_DIR"
-            STAMP=$(date +%Y%m%d-%H%M%S)
-            docker compose exec -T mysql mysqldump \
-              -u"$DB_USERNAME" -p"$DB_PASSWORD" "$DB_DATABASE" \
-              | gzip > "$BACKUP_DIR/db-$STAMP.sql.gz"
-            ls -tp "$BACKUP_DIR"/db-*.sql.gz | tail -n +11 | xargs -r rm
-
-            echo "==> 3. Build client + app (no-cache so VITE_* env are baked fresh)"
+            echo "==> 2. Build client + app (no-cache so VITE_* env are baked fresh)"
             docker compose build --no-cache client app
 
-            echo "==> 4. Recreate containers"
+            echo "==> 3. Recreate containers"
             docker compose up -d --force-recreate client app
 
-            echo "==> 5. Wait for app to be ready"
+            echo "==> 4. Wait for app to be ready"
             for i in $(seq 1 30); do
               if curl -fsS http://localhost:3084/api/v1/health > /dev/null; then
                 echo "App is ready"
@@ -92,10 +78,10 @@ jobs:
               sleep 2
             done
 
-            echo "==> 6. Run database migrations"
+            echo "==> 5. Run database migrations"
             docker compose exec -T app npm run migration:run:prod
 
-            echo "==> 7. Smoke test"
+            echo "==> 6. Smoke test"
             curl -fsS http://localhost:3083 > /dev/null
             echo "  client (3083) OK"
             curl -fsS http://localhost:3084/api/v1/health > /dev/null

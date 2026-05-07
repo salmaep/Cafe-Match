@@ -23,9 +23,9 @@ export default function CafeCard({ cafe }: Props) {
   return (
     <Link
       to={cafeUrl(cafe)}
-      className="block bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow"
+      className="flex flex-col h-full bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow"
     >
-      <div className="relative">
+      <div className="relative shrink-0">
         <img
           src={getCafeImage(cafe)}
           alt={cafe.name}
@@ -57,14 +57,17 @@ export default function CafeCard({ cafe }: Props) {
           </span>
         )}
       </div>
-      <div className="p-5">
+      <div className="p-5 flex-1 flex flex-col">
+        {/* Top: title + locality + address (fixed height per row via line-clamp/min-h) */}
         <div className="flex justify-between items-start gap-2">
           <div className="flex-1 min-w-0">
             <h3 className="text-base font-bold text-gray-800 truncate">{cafe.name}</h3>
-            {locality && (
-              <p className="text-[12px] text-gray-400 truncate mt-0.5">{locality}</p>
-            )}
-            <p className="text-[13px] text-gray-500 truncate mt-1">{cafe.address}</p>
+            <p className="text-[12px] text-gray-400 truncate mt-0.5">
+              {locality || ' '}
+            </p>
+            <p className="text-[13px] text-gray-500 truncate mt-1">
+              {cafe.address || ' '}
+            </p>
           </div>
           {cafe.distanceMeters != null && (
             <span className="text-xs text-amber-600 font-medium bg-amber-50 px-2 py-1 rounded-full whitespace-nowrap shrink-0">
@@ -73,79 +76,92 @@ export default function CafeCard({ cafe }: Props) {
           )}
         </div>
 
-        {formatRating(cafe.googleRating) && (
-          <div className="flex items-center gap-1 mt-2 text-xs">
-            <span className="text-amber-500">★</span>
-            <span className="font-semibold text-gray-800">
-              {formatRating(cafe.googleRating)}
-            </span>
-            {cafe.totalGoogleReviews != null && (
-              <span className="text-gray-400">
-                ({cafe.totalGoogleReviews.toLocaleString()})
+        {/* Rating row — reserves height even when no rating to keep cards uniform */}
+        <div className="flex items-center gap-1 mt-2 text-xs min-h-[18px]">
+          {formatRating(cafe.googleRating) && (
+            <>
+              <span className="text-amber-500">★</span>
+              <span className="font-semibold text-gray-800">
+                {formatRating(cafe.googleRating)}
               </span>
-            )}
-            {cafe.priceRange && (
-              <>
-                <span className="text-gray-300 mx-1">·</span>
-                <span className="text-gray-500">{cafe.priceRange}</span>
-              </>
-            )}
-          </div>
-        )}
-
-        {visibleChips.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mt-2.5 text-[11px]">
-            {visibleChips.map((c) => (
-              <span
-                key={c.key}
-                className="bg-[#F0EDE8] text-[#5C5A52] rounded-full px-2 py-px font-medium"
-              >
-                {c.icon} {c.label}
-              </span>
-            ))}
-            {overflow > 0 && (
-              <span className="bg-white border border-[#E0DCD3] text-[#8A8880] rounded-full px-2 py-px font-medium">
-                +{overflow}
-              </span>
-            )}
-          </div>
-        )}
-
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2.5 text-[11px] text-gray-400">
-          <span className="whitespace-nowrap">❤️ {cafe.favoritesCount}</span>
-          <span className="whitespace-nowrap">🔖 {cafe.bookmarksCount}</span>
-          {open && !open.isOpen && open.opensAt && (
-            <span className="text-amber-600 font-medium whitespace-nowrap ml-auto">
-              Buka {open.nextOpenDay === 'today' ? '' : `${open.nextOpenDay} `}
-              {open.opensAt}
-            </span>
+              {cafe.totalGoogleReviews != null && (
+                <span className="text-gray-400">
+                  ({cafe.totalGoogleReviews.toLocaleString()})
+                </span>
+              )}
+              {cafe.priceRange && (
+                <>
+                  <span className="text-gray-300 mx-1">·</span>
+                  <span className="text-gray-500">{cafe.priceRange}</span>
+                </>
+              )}
+            </>
           )}
-          {open && open.isOpen && open.closesAt && (
-            <span className="text-emerald-600 font-medium whitespace-nowrap ml-auto">
-              Tutup {open.closesAt}
+        </div>
+
+        {/* Chips — clamp to one line so card heights stay aligned */}
+        <div className="flex flex-wrap gap-1.5 mt-2.5 text-[11px] min-h-[22px] overflow-hidden max-h-[22px]">
+          {visibleChips.map((c) => (
+            <span
+              key={c.key}
+              className="bg-[#F0EDE8] text-[#5C5A52] rounded-full px-2 py-px font-medium whitespace-nowrap"
+            >
+              {c.icon} {c.label}
+            </span>
+          ))}
+          {overflow > 0 && (
+            <span className="bg-white border border-[#E0DCD3] text-[#8A8880] rounded-full px-2 py-px font-medium">
+              +{overflow}
             </span>
           )}
         </div>
 
-        {cafe.topReviewText && (
-          <div className="mt-3 pt-3 border-t border-[#F0EDE8]">
-            <p className="text-[12px] text-[#5C5A52] leading-snug line-clamp-2 italic">
-              "{cafe.topReviewText}"
-            </p>
-            {(cafe.topReviewAuthor || cafe.topReviewRating != null) && (
-              <p className="text-[11px] text-[#A8A59C] mt-1 flex items-center gap-1.5">
-                {cafe.topReviewRating != null && (
-                  <span className="font-semibold text-amber-500">
-                    ★ {cafe.topReviewRating}
-                  </span>
+        {/* Spacer pushes stats + review snippet to the bottom of the card */}
+        <div className="mt-auto">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-3 text-[11px] text-gray-400">
+            <span className="whitespace-nowrap">❤️ {cafe.favoritesCount}</span>
+            <span className="whitespace-nowrap">🔖 {cafe.bookmarksCount}</span>
+            {open && !open.isOpen && open.opensAt && (
+              <span className="text-amber-600 font-medium whitespace-nowrap ml-auto">
+                Buka {open.nextOpenDay === 'today' ? '' : `${open.nextOpenDay} `}
+                {open.opensAt}
+              </span>
+            )}
+            {open && open.isOpen && open.closesAt && (
+              <span className="text-emerald-600 font-medium whitespace-nowrap ml-auto">
+                Tutup {open.closesAt}
+              </span>
+            )}
+          </div>
+
+          {/* Review snippet — fixed height block (clamped to 2 lines) so cards
+              with/without reviews stay the same total height. */}
+          <div className="mt-3 pt-3 border-t border-[#F0EDE8] min-h-[54px]">
+            {cafe.topReviewText ? (
+              <>
+                <p className="text-[12px] text-[#5C5A52] leading-snug line-clamp-2 italic">
+                  "{cafe.topReviewText}"
+                </p>
+                {(cafe.topReviewAuthor || cafe.topReviewRating != null) && (
+                  <p className="text-[11px] text-[#A8A59C] mt-1 flex items-center gap-1.5">
+                    {cafe.topReviewRating != null && (
+                      <span className="font-semibold text-amber-500">
+                        ★ {cafe.topReviewRating}
+                      </span>
+                    )}
+                    {cafe.topReviewAuthor && (
+                      <span className="truncate">— {cafe.topReviewAuthor}</span>
+                    )}
+                  </p>
                 )}
-                {cafe.topReviewAuthor && (
-                  <span className="truncate">— {cafe.topReviewAuthor}</span>
-                )}
+              </>
+            ) : (
+              <p className="text-[11px] text-[#C9C5BD] italic">
+                Belum ada ulasan — jadi yang pertama!
               </p>
             )}
           </div>
-        )}
+        </div>
       </div>
     </Link>
   );

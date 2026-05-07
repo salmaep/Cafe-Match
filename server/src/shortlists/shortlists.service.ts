@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { Shortlist } from './entities/shortlist.entity';
+import { parseAddressParts } from '../meili/helpers/address-parser';
 
 @Injectable()
 export class ShortlistsService {
@@ -50,15 +51,30 @@ export class ShortlistsService {
   }
 
   async findByUser(userId: number) {
-    return this.shortlistsRepository.find({
+    const items = await this.shortlistsRepository.find({
       where: { userId },
-      relations: ['cafe'],
+      relations: ['cafe', 'cafe.facilities', 'cafe.photos'],
       order: { createdAt: 'DESC' },
     });
+    // Enrich each cafe with derived locality (district/city) so the client
+    // CafeCard can render the same info it shows in Explore (which gets these
+    // from the Meili document via address-parser).
+    return items.map((it) => ({
+      ...it,
+      cafe: it.cafe ? enrichCafe(it.cafe) : it.cafe,
+    }));
   }
 
   async clear(userId: number) {
     await this.shortlistsRepository.delete({ userId });
     return { cleared: true };
   }
+}
+
+function enrichCafe<T extends { address?: string | null }>(cafe: T): T & {
+  city: string | null;
+  district: string | null;
+} {
+  const { city, district } = parseAddressParts(cafe.address || '');
+  return { ...cafe, city, district };
 }

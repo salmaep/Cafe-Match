@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, MoreThanOrEqual } from 'typeorm';
 import { Favorite } from './entities/favorite.entity';
 import { Cafe } from '../cafes/entities/cafe.entity';
+import { parseAddressParts } from '../meili/helpers/address-parser';
 
 /**
  * Parse `since` query param like "7d", "24h", "30m" into a Date cutoff.
@@ -53,12 +54,24 @@ export class FavoritesService {
 
   async findByUser(userId: number, since?: string) {
     const cutoff = parseSinceCutoff(since);
-    return this.favoritesRepository.find({
+    const items = await this.favoritesRepository.find({
       where: cutoff
         ? { userId, createdAt: MoreThanOrEqual(cutoff) }
         : { userId },
-      relations: ['cafe'],
+      relations: ['cafe', 'cafe.facilities', 'cafe.photos'],
       order: { createdAt: 'DESC' },
     });
+    return items.map((it) => ({
+      ...it,
+      cafe: it.cafe ? enrichCafe(it.cafe) : it.cafe,
+    }));
   }
+}
+
+function enrichCafe<T extends { address?: string | null }>(cafe: T): T & {
+  city: string | null;
+  district: string | null;
+} {
+  const { city, district } = parseAddressParts(cafe.address || '');
+  return { ...cafe, city, district };
 }

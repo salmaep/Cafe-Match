@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { Bookmark } from './entities/bookmark.entity';
 import { Cafe } from '../cafes/entities/cafe.entity';
+import { parseAddressParts } from '../meili/helpers/address-parser';
 
 @Injectable()
 export class BookmarksService {
@@ -31,11 +32,15 @@ export class BookmarksService {
   }
 
   async findByUser(userId: number) {
-    return this.bookmarksRepository.find({
+    const items = await this.bookmarksRepository.find({
       where: { userId },
-      relations: ['cafe'],
+      relations: ['cafe', 'cafe.facilities', 'cafe.photos'],
       order: { createdAt: 'DESC' },
     });
+    return items.map((it) => ({
+      ...it,
+      cafe: it.cafe ? enrichCafe(it.cafe) : it.cafe,
+    }));
   }
 
   async isBookmarked(userId: number, cafeId: number): Promise<boolean> {
@@ -44,4 +49,12 @@ export class BookmarksService {
     });
     return count > 0;
   }
+}
+
+function enrichCafe<T extends { address?: string | null }>(cafe: T): T & {
+  city: string | null;
+  district: string | null;
+} {
+  const { city, district } = parseAddressParts(cafe.address || '');
+  return { ...cafe, city, district };
 }

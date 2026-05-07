@@ -31,6 +31,7 @@ export default function CafeCard({ cafe }: Props) {
         <img
           src={getCafeImage(cafe)}
           alt={cafe.name}
+          referrerPolicy="no-referrer"
           className="w-full h-44 object-cover"
           onError={(e) => {
             (e.currentTarget as HTMLImageElement).src = placeholderImage(cafe.id);

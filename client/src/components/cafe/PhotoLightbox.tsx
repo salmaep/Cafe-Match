@@ -74,6 +74,7 @@ export default function PhotoLightbox({ photos, index, onClose, onChange }: Prop
       <img
         src={current.url}
         alt={current.caption || 'Photo'}
+        referrerPolicy="no-referrer"
         className="max-w-[92vw] max-h-[88vh] object-contain rounded-lg shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       />

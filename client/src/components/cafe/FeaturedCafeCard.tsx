@@ -36,6 +36,7 @@ export default function FeaturedCafeCard({ cafe, promotion }: Props) {
       <img
         src={imgSrc}
         alt={cafe.name}
+        referrerPolicy="no-referrer"
         className="w-full h-32 object-cover bg-[#F0EDE8]"
         onError={(e) => {
           const el = e.currentTarget as HTMLImageElement;

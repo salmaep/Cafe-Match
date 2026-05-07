@@ -40,6 +40,7 @@ export default function SwipeCard({ cafe, isSaved, onSave }: Props) {
       <img
         src={photo}
         alt={cafe.name}
+        referrerPolicy="no-referrer"
         className="absolute inset-0 w-full h-full object-cover"
         onError={(e) => {
           (e.currentTarget as HTMLImageElement).src = placeholderImage(cafe.id);

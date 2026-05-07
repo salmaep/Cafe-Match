@@ -133,7 +133,7 @@ export default function RecapPage() {
 
       {/* Top bar */}
       <div className="sticky top-0 z-10 bg-white border-b border-[#F0EDE8]">
-        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
           <button
             type="button"
             onClick={() => navigate('/profile')}
@@ -154,7 +154,7 @@ export default function RecapPage() {
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 pt-5 space-y-4">
+      <div className="max-w-3xl mx-auto px-4 pt-5 space-y-4">
         {/* Hero card — title */}
         <div className="bg-white rounded-2xl border border-[#F0EDE8] p-6 text-center">
           <div className="text-[10px] font-bold tracking-[0.18em] uppercase text-[#8A8880] mb-2">
@@ -165,8 +165,8 @@ export default function RecapPage() {
           </h1>
         </div>
 
-        {/* Big numbers — 2×2 grid */}
-        <div className="grid grid-cols-2 gap-3">
+        {/* Big numbers — 2×2 mobile, 4-col desktop */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <BigStat icon="☕" value={recap.totalCheckins.toLocaleString()} label="Check-in" />
           <BigStat icon="📍" value={recap.totalCafesVisited.toLocaleString()} label="Cafe unik" />
           <BigStat icon="⏱️" value={`${recap.totalDurationHours}j`} label="Total nongkrong" />
@@ -188,6 +188,7 @@ export default function RecapPage() {
                   <img
                     src={c.photo || placeholderImage(c.cafeId)}
                     alt={c.name}
+                    referrerPolicy="no-referrer"
                     className="w-12 h-12 rounded-lg object-cover bg-[#F0EDE8] shrink-0"
                     onError={(e) => {
                       (e.currentTarget as HTMLImageElement).src = placeholderImage(c.cafeId);
@@ -208,13 +209,22 @@ export default function RecapPage() {
           </Section>
         )}
 
-        {/* Vibe + day */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {/* Vibe + day + avg session — 3-col on desktop, all small info cards together */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           <InfoCard icon="🎯" label="Vibe favorit" value={recap.topPurpose} />
           <InfoCard
             icon="📅"
             label="Hari favorit"
             value={DAY_TRANSLATE[recap.favoriteDay] || recap.favoriteDay}
+          />
+          <InfoCard
+            icon="⌛"
+            label="Rata-rata sesi"
+            value={
+              recap.averageSessionMinutes >= 60
+                ? `${Math.floor(recap.averageSessionMinutes / 60)}j ${recap.averageSessionMinutes % 60}m`
+                : `${recap.averageSessionMinutes} menit`
+            }
           />
         </div>
 
@@ -226,17 +236,6 @@ export default function RecapPage() {
             <SocialStat value={recap.achievementsUnlocked} label="Achievement" />
           </div>
         </Section>
-
-        {/* Avg session */}
-        <InfoCard
-          icon="⌛"
-          label="Rata-rata sesi nongkrong"
-          value={
-            recap.averageSessionMinutes >= 60
-              ? `${Math.floor(recap.averageSessionMinutes / 60)}j ${recap.averageSessionMinutes % 60}m`
-              : `${recap.averageSessionMinutes} menit`
-          }
-        />
 
         {/* Share CTA — minimal */}
         <button

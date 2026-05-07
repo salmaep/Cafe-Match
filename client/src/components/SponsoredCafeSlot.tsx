@@ -91,7 +91,7 @@ function CardView({
         <span className="absolute top-1.5 left-1.5 z-10 inline-flex items-center gap-0.5 text-[9px] font-extrabold tracking-wider uppercase bg-amber-400 text-stone-900 px-1.5 py-0.5 rounded shadow">
           ⚡ Sponsored
         </span>
-        <img src={photo} alt={cafeName} className="w-full h-24 object-cover bg-[#F0EDE8]" />
+        <img src={photo} alt={cafeName} referrerPolicy="no-referrer" className="w-full h-24 object-cover bg-[#F0EDE8]" />
         <div className="p-2.5">
           <h3 className="text-[13px] font-bold text-gray-900 truncate">{headline}</h3>
           <p className="text-[11px] text-gray-600 line-clamp-1 mt-0.5">{subline}</p>
@@ -114,7 +114,7 @@ function CardView({
       <span className="absolute top-2.5 left-2.5 z-10 inline-flex items-center gap-1 text-[11px] font-extrabold tracking-wider uppercase bg-amber-400 text-stone-900 px-2.5 py-1 rounded-md shadow">
         ⚡ Sponsored
       </span>
-      <img src={photo} alt={cafeName} className="w-full h-44 object-cover bg-[#F0EDE8]" />
+      <img src={photo} alt={cafeName} referrerPolicy="no-referrer" className="w-full h-44 object-cover bg-[#F0EDE8]" />
       <div className="p-5">
         <h3 className="text-base font-bold text-gray-900 truncate">{headline}</h3>
         <p className="text-[13px] text-gray-600 line-clamp-2 mt-1">{subline}</p>
@@ -159,6 +159,7 @@ function ListView({
         <img
           src={photo}
           alt={cafeName}
+          referrerPolicy="no-referrer"
           className="w-[64px] h-[64px] rounded-lg object-cover bg-[#F0EDE8] shrink-0"
           loading="lazy"
         />
@@ -187,6 +188,7 @@ function ListView({
       <img
         src={photo}
         alt={cafeName}
+        referrerPolicy="no-referrer"
         className="w-[110px] h-[110px] rounded-xl object-cover bg-[#F0EDE8] shrink-0"
         loading="lazy"
       />

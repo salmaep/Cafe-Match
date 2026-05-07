@@ -266,6 +266,7 @@ export default function MapView({ center, cafes, radius, onMapClick }: Props) {
               <img
                 src={getCafeImage(activeCafe)}
                 alt={activeCafe.name}
+                referrerPolicy="no-referrer"
                 className="w-full h-32 object-cover rounded-t-md bg-[#F0EDE8]"
                 onError={(e) => {
                   (e.currentTarget as HTMLImageElement).src = placeholderImage(

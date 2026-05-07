@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { cafesApi } from '../api/cafes.api';
 import { bookmarksApi } from '../api/bookmarks.api';
@@ -10,7 +10,7 @@ import { haversineDistance, formatDistance } from '../utils/haversine';
 import { analyticsApi } from '../api/analytics.api';
 import { reviewsApi, type ReviewSummary } from '../api/reviews.api';
 import { useShortlist } from '../context/ShortlistContext';
-import { getCafeImage, placeholderImage } from '../utils/cafeImage';
+import { placeholderImage } from '../utils/cafeImage';
 import { extractCafeIdFromSlug, cafeUrl } from '../utils/cafeUrl';
 import Seo from '../components/seo/Seo';
 import PhotoLightbox from '../components/cafe/PhotoLightbox';
@@ -85,9 +85,37 @@ export default function CafeDetailPage() {
     }
   }, [cafe, slug, navigate]);
 
+  // IDs of photos that failed to load — drop them from the mosaic so we only
+  // render images that actually work. Reset whenever the cafe changes so a
+  // navigation to a different cafe starts fresh.
+  const [failedPhotoIds, setFailedPhotoIds] = useState<Set<number>>(new Set());
+  useEffect(() => {
+    setFailedPhotoIds(new Set());
+  }, [cafe?.id]);
+
+  const handlePhotoError = useCallback((id: number) => {
+    setFailedPhotoIds((prev) => {
+      if (prev.has(id)) return prev;
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
+  }, []);
+
   const validPhotos = useMemo(
-    () => (cafe?.photos ?? []).filter((p) => !p.url.includes('/gps-cs-s/')),
-    [cafe?.photos],
+    () =>
+      (cafe?.photos ?? []).filter((p) => {
+        const url = p?.url;
+        if (typeof url !== 'string' || url.length === 0) return false;
+        // Drop Unsplash stock photos — those are placeholder fallbacks the
+        // scraper sometimes inserted, not real cafe photos.
+        if (url.includes('images.unsplash.com')) return false;
+        // Drop photos we already saw fail at runtime — better to reshape the
+        // mosaic with fewer real photos than to fill broken slots with dummy.
+        if (failedPhotoIds.has(p.id)) return false;
+        return true;
+      }),
+    [cafe?.photos, failedPhotoIds],
   );
 
   const distance =
@@ -160,10 +188,14 @@ export default function CafeDetailPage() {
     {},
   );
 
+  // When NO real photo loads successfully, fall back to a single deterministic
+  // Unsplash placeholder. Using getCafeImage(cafe) here would just hand back
+  // another (broken) Google URL because that's the only data we have, leaving
+  // the user with a broken image icon.
   const heroPhotos =
     validPhotos.length > 0
       ? validPhotos
-      : [{ id: -1, url: getCafeImage(cafe), caption: null }];
+      : [{ id: -1, url: placeholderImage(cafe.id), caption: null }];
 
   const mapsUrl =
     cafe.googleMapsUrl ||
@@ -337,9 +369,9 @@ export default function CafeDetailPage() {
         <HeroMosaic
           photos={heroPhotos}
           cafeName={cafe.name}
-          cafeId={cafe.id}
           onOpen={(i) => validPhotos.length > 0 && setLightboxIndex(i)}
           totalCount={validPhotos.length}
+          onPhotoError={handlePhotoError}
         />
       </div>
 
@@ -666,12 +698,11 @@ export default function CafeDetailPage() {
                     <img
                       src={photo.url}
                       alt={photo.caption || cafe.name}
+                      referrerPolicy="no-referrer"
                       className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                       loading="lazy"
                       onError={(e) => {
-                        (e.currentTarget as HTMLImageElement).src = placeholderImage(
-                          cafe.id + i,
-                        );
+                        (e.currentTarget as HTMLImageElement).src = placeholderImage(cafe.id);
                       }}
                     />
                   </button>
@@ -913,38 +944,72 @@ function SidebarStat({
 function HeroMosaic({
   photos,
   cafeName,
-  cafeId,
   onOpen,
   totalCount,
+  onPhotoError,
 }: {
   photos: { id: number; url: string; caption?: string | null }[];
   cafeName: string;
-  cafeId: number;
   onOpen: (i: number) => void;
   totalCount: number;
+  onPhotoError?: (id: number) => void;
 }) {
+  // Track which tiles have finished loading so we can show a skeleton shimmer
+  // on the rest. Avoids the "random photo flicker" that happened when slow /
+  // expired URLs blanked out before onError swapped to a placeholder.
+  const [loaded, setLoaded] = useState<Set<number>>(new Set());
+  const markLoaded = (i: number) =>
+    setLoaded((prev) => {
+      if (prev.has(i)) return prev;
+      const next = new Set(prev);
+      next.add(i);
+      return next;
+    });
+
   const tile = (
     p: { id: number; url: string; caption?: string | null },
     index: number,
     extra?: string,
-  ) => (
-    <button
-      key={p.id}
-      type="button"
-      onClick={() => onOpen(index)}
-      className={`relative overflow-hidden bg-[#F0EDE8] group ${extra ?? ''}`}
-    >
-      <img
-        src={p.url}
-        alt={p.caption || cafeName}
-        className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-        loading={index === 0 ? 'eager' : 'lazy'}
-        onError={(e) => {
-          (e.currentTarget as HTMLImageElement).src = placeholderImage(cafeId + index);
-        }}
-      />
-    </button>
-  );
+  ) => {
+    const isLoaded = loaded.has(index);
+    return (
+      <button
+        key={p.id}
+        type="button"
+        onClick={() => onOpen(index)}
+        className={`relative overflow-hidden bg-[#F0EDE8] group ${extra ?? ''}`}
+      >
+        {/* Skeleton shimmer — visible until the image fires onLoad */}
+        {!isLoaded && (
+          <div
+            aria-hidden
+            className="absolute inset-0 bg-gradient-to-r from-[#F0EDE8] via-[#E8E4DD] to-[#F0EDE8] bg-[length:200%_100%] animate-[shimmer_1.4s_linear_infinite]"
+          />
+        )}
+        <img
+          src={p.url}
+          alt={p.caption || cafeName}
+          // no-referrer lets Google CDN photos through Chrome's ORB (Opaque
+          // Response Blocking) which otherwise rejects gps-cs-s/grass-cs URLs
+          // when the Referer points to a different domain.
+          referrerPolicy="no-referrer"
+          className={`absolute inset-0 w-full h-full object-cover transition-all duration-500 group-hover:scale-[1.03] ${
+            isLoaded ? 'opacity-100' : 'opacity-0'
+          }`}
+          loading={index === 0 ? 'eager' : 'lazy'}
+          onLoad={() => markLoaded(index)}
+          onError={() => {
+            // Don't inject a placeholder per slot — let the parent know so it
+            // can drop this photo and reshape the mosaic with only the working
+            // ones. Synthetic placeholder photos (id < 0) can't be reported up
+            // (there's nothing to drop), so just leave it as the bg colour.
+            if (p.id >= 0) onPhotoError?.(p.id);
+            markLoaded(index);
+          }}
+        />
+      </button>
+    );
+  };
 
   const showAllBtn = totalCount > 1 && (
     <button

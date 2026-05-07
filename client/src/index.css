@@ -26,3 +26,13 @@
     display: none;
   }
 }
+
+/* Skeleton loading shimmer — used by image tiles while photos load */
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}

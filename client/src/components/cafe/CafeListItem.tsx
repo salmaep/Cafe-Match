@@ -29,6 +29,7 @@ export default function CafeListItem({ cafe }: Props) {
       <img
         src={getCafeImage(cafe)}
         alt={cafe.name}
+        referrerPolicy="no-referrer"
         className="w-[110px] h-[110px] rounded-xl object-cover bg-[#F0EDE8] shrink-0"
         loading="lazy"
         onError={(e) => {

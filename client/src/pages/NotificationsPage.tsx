@@ -53,7 +53,14 @@ export default function NotificationsPage() {
     notificationsApi
       .list(p)
       .then((res) => {
-        const data = res.data ?? [];
+        // Server returns { data, meta }. Defensively also handle a bare array
+        // in case an older endpoint shape sneaks through.
+        const payload = res.data as any;
+        const data: Notification[] = Array.isArray(payload)
+          ? payload
+          : Array.isArray(payload?.data)
+            ? payload.data
+            : [];
         setItems((prev) => (p === 1 ? data : [...prev, ...data]));
         setHasMore(data.length >= PAGE_SIZE);
       })

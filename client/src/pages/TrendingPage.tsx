@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { cafesApi } from '../api/cafes.api';
 import { purposesApi } from '../api/purposes.api';
@@ -366,6 +366,7 @@ function WinnerCard({ cafe, onClick }: { cafe: Cafe; onClick: () => void }) {
           <img
             src={photo}
             alt={cafe.name}
+            referrerPolicy="no-referrer"
             className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-700 ease-out"
             onError={(e) => {
               (e.currentTarget as HTMLImageElement).src = placeholderImage(cafe.id);
@@ -510,6 +511,7 @@ function RunnerUpCard({
           <img
             src={photo}
             alt={cafe.name}
+            referrerPolicy="no-referrer"
             className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-300"
             onError={(e) => {
               (e.currentTarget as HTMLImageElement).src = placeholderImage(cafe.id);

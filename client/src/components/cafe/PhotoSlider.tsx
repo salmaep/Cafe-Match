@@ -60,11 +60,12 @@ export default function PhotoSlider({
             <img
               src={photo.url}
               alt={photo.caption || cafeName}
+              referrerPolicy="no-referrer"
               className="absolute inset-0 w-full h-full object-cover select-none"
               draggable={false}
               loading={i === index ? 'eager' : 'lazy'}
               onError={(e) => {
-                (e.currentTarget as HTMLImageElement).src = placeholderImage(cafeId + i);
+                (e.currentTarget as HTMLImageElement).src = placeholderImage(cafeId);
               }}
             />
           </div>

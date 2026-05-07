@@ -16,10 +16,6 @@ import ProfileScreen from '../screens/ProfileScreen';
 import FavoritesScreen from '../screens/FavoritesScreen';
 import BookmarksScreen from '../screens/BookmarksScreen';
 import TrendingScreen from '../screens/TrendingScreen';
-import OwnerDashboardScreen from '../screens/owner/OwnerDashboardScreen';
-import OwnerLoginScreen from '../screens/owner/OwnerLoginScreen';
-import OwnerRegisterScreen from '../screens/owner/OwnerRegisterScreen';
-import PromotionDetailScreen from '../screens/owner/PromotionDetailScreen';
 import ReviewsScreen from '../screens/ReviewsScreen';
 import WriteReviewScreen from '../screens/WriteReviewScreen';
 import LeaderboardScreen from '../screens/LeaderboardScreen';
@@ -30,7 +26,6 @@ import RecapScreen from '../screens/RecapScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
-const OwnerStack = createStackNavigator();
 
 function TabIcon({ label, focused }: { label: string; focused: boolean }) {
   const icons: Record<string, string> = {
@@ -78,15 +73,6 @@ function MainTabs() {
   );
 }
 
-// Owner navigation — single screen hosts its own tab bar
-function OwnerNavigator() {
-  return (
-    <OwnerStack.Navigator screenOptions={{ headerShown: false }}>
-      <OwnerStack.Screen name="OwnerHome" component={OwnerDashboardScreen} />
-    </OwnerStack.Navigator>
-  );
-}
-
 export default function AppNavigator() {
   return (
     <Stack.Navigator
@@ -118,20 +104,6 @@ export default function AppNavigator() {
           gestureEnabled: true,
           presentation: 'transparentModal',
         }}
-      />
-      {/* Owner auth */}
-      <Stack.Screen name="OwnerLogin" component={OwnerLoginScreen} />
-      <Stack.Screen name="OwnerRegister" component={OwnerRegisterScreen} />
-      {/* Owner portal */}
-      <Stack.Screen
-        name="OwnerDashboard"
-        component={OwnerNavigator}
-        options={{ ...TransitionPresets.SlideFromRightIOS }}
-      />
-      <Stack.Screen
-        name="PromotionDetail"
-        component={PromotionDetailScreen}
-        options={{ ...TransitionPresets.SlideFromRightIOS }}
       />
       {/* Social feature screens */}
       <Stack.Screen name="Reviews" component={ReviewsScreen} />

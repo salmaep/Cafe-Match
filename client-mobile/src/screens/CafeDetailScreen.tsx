@@ -28,6 +28,7 @@ import {
 } from "../services/api";
 import { logEvent } from "../utils/analytics";
 import { useCafeDetail } from "../queries/cafes/use-cafe-detail";
+import VoteSection from "../components/cafe/VoteSection";
 import { useReviewSummary } from "../queries/reviews/use-review-summary";
 import { useLeaderboard } from "../queries/checkins/use-leaderboard";
 import { useQueryClient } from "@tanstack/react-query";
@@ -542,6 +543,9 @@ export default function CafeDetailScreen() {
               </Text>
             </TouchableOpacity>
           )}
+
+          {/* Vote section (cafe is best for…) */}
+          <VoteSection cafeId={Number(cafe.id)} />
 
           {/* Leaderboard Top 3 */}
           {leaderboard.length > 0 && (

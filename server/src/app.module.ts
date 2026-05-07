@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { APP_GUARD } from '@nestjs/core';
+import { LoggerModule } from 'nestjs-pino';
+import type { IncomingMessage, ServerResponse } from 'http';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { CafesModule } from './cafes/cafes.module';
@@ -35,6 +37,88 @@ import { DestinationsModule } from './destinations/destinations.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    LoggerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => {
+        const isProd = config.get('NODE_ENV') === 'production';
+        return {
+          pinoHttp: {
+            level: config.get('LOG_LEVEL') ?? (isProd ? 'info' : 'debug'),
+            transport: isProd
+              ? undefined
+              : {
+                  target: 'pino-pretty',
+                  options: {
+                    colorize: true,
+                    translateTime: 'SYS:HH:MM:ss.l',
+                    ignore: 'pid,hostname,req.headers,res.headers',
+                    singleLine: true,
+                  },
+                },
+            redact: {
+              paths: [
+                'req.headers.authorization',
+                'req.headers.cookie',
+                'req.body.password',
+                'req.body.currentPassword',
+                'req.body.newPassword',
+                'req.body.passwordHash',
+                'req.body.code',
+                'req.body.otp',
+                'req.body.token',
+                'req.body.accessToken',
+                'req.body.refreshToken',
+                'res.headers["set-cookie"]',
+              ],
+              censor: '[Redacted]',
+            },
+            customLogLevel: (
+              _req: IncomingMessage,
+              res: ServerResponse,
+              err?: Error,
+            ) => {
+              if (err || res.statusCode >= 500) return 'error';
+              if (res.statusCode >= 400) return 'warn';
+              return 'info';
+            },
+            customSuccessMessage: (
+              req: IncomingMessage,
+              res: ServerResponse,
+              responseTime: number,
+            ) =>
+              `${req.method} ${req.url} ${res.statusCode} (${responseTime}ms)`,
+            customErrorMessage: (
+              req: IncomingMessage,
+              res: ServerResponse,
+              err: Error,
+            ) =>
+              `${req.method} ${req.url} ${res.statusCode} (${err.message})`,
+            autoLogging: {
+              ignore: (req: IncomingMessage) => {
+                const url = req.url ?? '';
+                return (
+                  url.startsWith('/api/v1/health') ||
+                  url === '/health' ||
+                  url === '/sitemap.xml' ||
+                  url === '/robots.txt'
+                );
+              },
+            },
+            serializers: {
+              req: (req: { method: string; url: string; id?: string }) => ({
+                method: req.method,
+                url: req.url,
+                id: req.id,
+              }),
+              res: (res: { statusCode: number }) => ({
+                statusCode: res.statusCode,
+              }),
+            },
+          },
+        };
+      },
+    }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

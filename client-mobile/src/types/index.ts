@@ -51,7 +51,10 @@ export interface Cafe {
   detectedFacilities?: string[];
 }
 
-export type Purpose = 'Me Time' | 'Date' | 'Family Time' | 'Group Study' | 'WFC';
+export type Purpose =
+  | 'Me Time' | 'Date' | 'Family Time' | 'Group Study' | 'WFC'
+  | 'Meeting' | 'Brainstorm' | 'Catch Up' | 'Reading' | 'Quick Coffee'
+  | 'Celebration' | 'Photo Spot';
 
 export type Facility =
   | 'WiFi'
@@ -84,7 +87,10 @@ export interface WizardPreferences {
     label?: string;
   };
   radius?: number; // in km
-  amenities?: Facility[];
+  // String labels (e.g., "WiFi", "Power Outlet"). Sourced from `/cafes/filters`
+  // — not constrained to the legacy Facility union so server can add facilities
+  // without a client release.
+  amenities?: string[];
 }
 
 export interface User {

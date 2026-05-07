@@ -45,11 +45,20 @@ export async function fetchDestinations(): Promise<BackendDestination[]> {
 
 // ─── Auth ───
 
-export async function loginApi(
-  email: string,
-  password: string,
-): Promise<AuthResponse> {
-  const { data } = await api.post("/auth/login", { email, password });
+export interface TwoFaChallenge {
+  twoFaRequired: true;
+  otpId: string;
+  expiresAt: string;
+  phoneHint?: string;
+}
+
+export type LoginResult = AuthResponse | TwoFaChallenge;
+
+export function isTwoFaChallenge(r: LoginResult): r is TwoFaChallenge {
+  return (r as TwoFaChallenge).twoFaRequired === true;
+}
+
+function mapAuthResponse(data: any): AuthResponse {
   return {
     accessToken: data.accessToken,
     user: {
@@ -61,6 +70,35 @@ export async function loginApi(
       avatarUrl: data.user.avatarUrl,
     },
   };
+}
+
+export async function loginApi(
+  email: string,
+  password: string,
+): Promise<LoginResult> {
+  const { data } = await api.post("/auth/login", { email, password });
+  if (data?.twoFaRequired) {
+    return {
+      twoFaRequired: true,
+      otpId: data.otpId,
+      expiresAt: data.expiresAt,
+      phoneHint: data.phoneHint,
+    };
+  }
+  return mapAuthResponse(data);
+}
+
+export async function verify2faApi(
+  otpId: string,
+  code: string,
+): Promise<AuthResponse> {
+  const { data } = await api.post("/auth/2fa/verify", { otpId, code });
+  return mapAuthResponse(data);
+}
+
+export async function resend2faApi(otpId: string): Promise<{ otpId: string; expiresAt: string }> {
+  const { data } = await api.post("/auth/2fa/resend", { otpId });
+  return { otpId: data.otpId, expiresAt: data.expiresAt };
 }
 
 export async function registerApi(

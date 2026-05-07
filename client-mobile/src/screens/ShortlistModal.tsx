@@ -4,9 +4,9 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Image,
   FlatList,
 } from 'react-native';
+import CafePhoto from '../components/CafePhoto';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useShortlist } from '../context/ShortlistContext';
@@ -46,7 +46,7 @@ export default function ShortlistModal() {
           contentContainerStyle={styles.list}
           renderItem={({ item }) => (
             <TouchableOpacity style={styles.item} onPress={() => openDetail(item)}>
-              <Image source={{ uri: item.photos[0] }} style={styles.itemImage} />
+              <CafePhoto photos={item.photos} name={item.name} style={styles.itemImage} />
               <View style={styles.itemInfo}>
                 <Text style={styles.itemName} numberOfLines={1}>{item.name}</Text>
                 <Text style={styles.itemDistance}>{item.distance} km away</Text>

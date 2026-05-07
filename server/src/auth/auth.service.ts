@@ -176,7 +176,9 @@ export class AuthService {
     const pending = this.pendingTwoFa.get(otpId);
     if (!pending || pending.expiresAt < Date.now()) {
       this.pendingTwoFa.delete(otpId);
-      throw new UnauthorizedException('Sesi verifikasi sudah habis. Silakan login ulang.');
+      // 400 (not 401) so the FE doesn't auto-redirect to /login — user should
+      // see the inline message and request a fresh OTP.
+      throw new BadRequestException('Sesi verifikasi sudah habis. Silakan minta kode baru.');
     }
 
     const result = await this.otpClient.verifyOtp(otpId, code);
@@ -184,7 +186,7 @@ export class AuthService {
       if (result.status === 'failed' || result.status === 'expired') {
         this.pendingTwoFa.delete(otpId);
       }
-      throw new UnauthorizedException('Kode tidak valid.');
+      throw new BadRequestException(result.message || 'Kode OTP salah.');
     }
 
     this.pendingTwoFa.delete(otpId);
@@ -223,10 +225,15 @@ export class AuthService {
   async enrollPhoneVerify(userId: number, otpId: string, code: string, phoneRaw: string) {
     const pending = this.pendingTwoFa.get(otpId);
     if (!pending || pending.userId !== userId) {
-      throw new UnauthorizedException('Sesi verifikasi tidak valid.');
+      throw new BadRequestException('Sesi verifikasi tidak valid.');
     }
     const result = await this.otpClient.verifyOtp(otpId, code);
-    if (!result.verified) throw new UnauthorizedException('Kode tidak valid.');
+    if (!result.verified) {
+      if (result.status === 'failed' || result.status === 'expired') {
+        this.pendingTwoFa.delete(otpId);
+      }
+      throw new BadRequestException(result.message || 'Kode OTP salah.');
+    }
     this.pendingTwoFa.delete(otpId);
     await this.usersService.update(userId, {
       phone: this.validatePhone(phoneRaw),
@@ -278,7 +285,7 @@ export class AuthService {
     const pending = this.pendingSocialEnroll.get(enrollmentId);
     if (!pending || pending.expiresAt < Date.now()) {
       this.pendingSocialEnroll.delete(enrollmentId);
-      throw new UnauthorizedException('Sesi enrollment habis. Silakan login ulang.');
+      throw new BadRequestException('Sesi enrollment habis. Silakan login ulang.');
     }
     const phone = this.validatePhone(phoneRaw);
     const otp = await this.otpClient.requestOtp(phone);
@@ -298,18 +305,18 @@ export class AuthService {
     const enroll = this.pendingSocialEnroll.get(enrollmentId);
     if (!enroll || enroll.expiresAt < Date.now()) {
       this.pendingSocialEnroll.delete(enrollmentId);
-      throw new UnauthorizedException('Sesi enrollment habis. Silakan login ulang.');
+      throw new BadRequestException('Sesi enrollment habis. Silakan login ulang.');
     }
     const pending = this.pendingTwoFa.get(otpId);
     if (!pending || pending.userId !== enroll.userId) {
-      throw new UnauthorizedException('Sesi verifikasi tidak valid.');
+      throw new BadRequestException('Sesi verifikasi tidak valid.');
     }
     const result = await this.otpClient.verifyOtp(otpId, code);
     if (!result.verified) {
       if (result.status === 'failed' || result.status === 'expired') {
         this.pendingTwoFa.delete(otpId);
       }
-      throw new UnauthorizedException('Kode tidak valid.');
+      throw new BadRequestException(result.message || 'Kode OTP salah.');
     }
     this.pendingTwoFa.delete(otpId);
     this.pendingSocialEnroll.delete(enrollmentId);

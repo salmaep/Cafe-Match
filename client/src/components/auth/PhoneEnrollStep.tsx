@@ -113,12 +113,6 @@ export default function PhoneEnrollStep({ enrollmentId, onDone, onCancel }: Prop
         Bisa mulai dengan <span className="font-semibold">+62</span>,{' '}
         <span className="font-semibold">62</span>, atau{' '}
         <span className="font-semibold">08</span>
-        {normalized && normalized !== phone.replace(/\D/g, '') && (
-          <>
-            {' '}— akan dikirim sebagai{' '}
-            <span className="font-semibold text-[#1C1C1A]">{normalized}</span>
-          </>
-        )}
       </p>
 
       <button

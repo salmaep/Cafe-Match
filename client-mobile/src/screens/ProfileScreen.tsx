@@ -133,6 +133,14 @@ export default function ProfileScreen() {
           <Text style={styles.menuLabel}>Recap {new Date().getFullYear()}</Text>
           <Text style={styles.menuArrow}>→</Text>
         </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => navigation.navigate('GlobalLeaderboard')}
+        >
+          <Text style={styles.menuIcon}>🏆</Text>
+          <Text style={styles.menuLabel}>Leaderboard</Text>
+          <Text style={styles.menuArrow}>→</Text>
+        </TouchableOpacity>
         <TouchableOpacity style={styles.menuItem}>
           <Text style={styles.menuIcon}>⚙️</Text>
           <Text style={styles.menuLabel}>Settings</Text>

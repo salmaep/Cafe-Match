@@ -53,8 +53,18 @@ export class CafesService {
 
   // ── Filter catalog (MySQL catalog + Meili counts) ──────────────────────────
 
-  async getFilters() {
+  async getFilters(isOptions = false) {
     const counts = await this.meiliCafes.getFacilityCounts();
+    if (isOptions) {
+      return FACILITY_CATALOG.flatMap((group) =>
+        group.items.map((item) => ({
+          key: item.key,
+          label: item.label,
+          icon: item.icon ?? 'Circle',
+          count: counts[item.key] ?? 0,
+        })),
+      );
+    }
     return {
       groups: FACILITY_CATALOG.map((group) => ({
         key: group.key,

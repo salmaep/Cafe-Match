@@ -174,8 +174,25 @@ export interface LeaderboardEntry {
   name: string;
   avatarUrl?: string;
   checkinCount: number;
+  totalDuration?: number;
+  score?: number;
   badge: string | null;
 }
+
+export interface GlobalLeaderboardEntry {
+  rank: number;
+  userId: number;
+  name: string;
+  avatarUrl?: string;
+  totalCheckins: number;
+  uniqueCafes: number;
+  totalMinutes?: number;
+  totalDuration: string;
+  score: number;
+  badge: string | null;
+}
+
+export type LeaderboardPeriod = 'month' | 'all';
 
 export interface StreakInfo {
   current: number;

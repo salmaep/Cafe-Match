@@ -23,6 +23,8 @@ export interface FacilityDef {
   label: string;
   aliases: string[];
   derivesFlag?: DerivedFlag;
+  /** Lucide icon name for UI display (e.g. "Wifi", "Zap"). */
+  icon?: string;
 }
 
 export interface FacilityGroup {
@@ -36,89 +38,52 @@ export const FACILITY_CATALOG: FacilityGroup[] = [
     key: 'amenity',
     label: 'Fasilitas',
     items: [
-      {
-        key: 'strong_wifi',
-        label: 'WiFi',
-        aliases: ['wifi', 'wi-fi', 'wi-fi gratis'],
-        derivesFlag: 'wifiAvailable',
-      },
-      {
-        key: 'mushola',
-        label: 'Mushola',
-        aliases: ['mushola', 'ruang sholat', 'tempat sholat'],
-        derivesFlag: 'hasMushola',
-      },
-      {
-        key: 'parking',
-        label: 'Parkir',
-        aliases: [
-          'banyak tempat parkir',
-          'tempat parkir gratis',
-          'tempat parkir berbayar',
-          'parkir di jalan berbayar',
-          'tempat parkir',
-        ],
-        derivesFlag: 'hasParking',
-      },
-      {
-        key: 'power_outlets',
-        label: 'Stop Kontak',
-        aliases: ['stopkontak', 'colokan listrik'],
-      },
-      {
-        key: 'outdoor_seating',
-        label: 'Outdoor',
-        aliases: ['tempat duduk di area terbuka'],
-      },
+      { key: 'strong_wifi', label: 'WiFi', aliases: ['wifi', 'wi-fi', 'wi-fi gratis'], derivesFlag: 'wifiAvailable', icon: 'Wifi' },
+      { key: 'mushola', label: 'Mushola', aliases: ['mushola', 'ruang sholat', 'tempat sholat'], derivesFlag: 'hasMushola', icon: 'Building2' },
+      { key: 'parking', label: 'Parkir', aliases: ['banyak tempat parkir', 'tempat parkir gratis', 'tempat parkir berbayar', 'parkir di jalan berbayar', 'tempat parkir'], derivesFlag: 'hasParking', icon: 'SquareParking' },
+      { key: 'power_outlets', label: 'Stop Kontak', aliases: ['stopkontak', 'colokan listrik'], icon: 'Zap' },
+      { key: 'outdoor_seating', label: 'Outdoor', aliases: ['tempat duduk di area terbuka'], icon: 'Trees' },
     ],
   },
   {
     key: 'ambience',
     label: 'Suasana',
     items: [
-      { key: 'cozy_seating', label: 'Nyaman', aliases: ['nyaman'] },
-      { key: 'quiet_atmosphere', label: 'Tenang', aliases: ['tenang'] },
-      {
-        key: 'ambient_lighting',
-        label: 'Pencahayaan Romantis',
-        aliases: [],
-      },
-      { key: 'intimate_seating', label: 'Intim', aliases: [] },
-      { key: 'noise_tolerant', label: 'Boleh Berisik', aliases: [] },
+      { key: 'cozy_seating', label: 'Nyaman', aliases: ['nyaman'], icon: 'Armchair' },
+      { key: 'quiet_atmosphere', label: 'Tenang', aliases: ['tenang'], icon: 'VolumeX' },
+      { key: 'ambient_lighting', label: 'Pencahayaan Romantis', aliases: [], icon: 'Lamp' },
+      { key: 'intimate_seating', label: 'Intim', aliases: [], icon: 'Heart' },
+      { key: 'noise_tolerant', label: 'Boleh Berisik', aliases: [], icon: 'Volume2' },
     ],
   },
   {
     key: 'space',
     label: 'Ruang',
     items: [
-      { key: 'spacious', label: 'Luas', aliases: [] },
-      { key: 'large_tables', label: 'Meja Besar', aliases: [] },
-      { key: 'whiteboard', label: 'Whiteboard', aliases: [] },
-      { key: 'bookable_space', label: 'Bisa Booking', aliases: [] },
-      { key: 'smoking_area', label: 'Area Merokok', aliases: [] },
+      { key: 'spacious', label: 'Luas', aliases: [], icon: 'Maximize2' },
+      { key: 'large_tables', label: 'Meja Besar', aliases: [], icon: 'Table2' },
+      { key: 'whiteboard', label: 'Whiteboard', aliases: [], icon: 'PresentationIcon' },
+      { key: 'bookable_space', label: 'Bisa Booking', aliases: [], icon: 'CalendarCheck' },
+      { key: 'smoking_area', label: 'Area Merokok', aliases: [], icon: 'Wind' },
     ],
   },
   {
     key: 'audience',
     label: 'Cocok Untuk',
     items: [
-      {
-        key: 'kid_friendly',
-        label: 'Ramah Anak',
-        aliases: ['cocok untuk anak-anak', 'kursi tinggi', 'menu anak'],
-      },
+      { key: 'kid_friendly', label: 'Ramah Anak', aliases: ['cocok untuk anak-anak', 'kursi tinggi', 'menu anak'], icon: 'Baby' },
     ],
   },
   {
     key: 'payment',
     label: 'Pembayaran',
     items: [
-      { key: 'payment_cash', label: 'Tunai', aliases: [] },
-      { key: 'payment_debit', label: 'Kartu Debit', aliases: [] },
-      { key: 'payment_credit', label: 'Kartu Kredit', aliases: [] },
-      { key: 'payment_qris', label: 'QRIS', aliases: [] },
-      { key: 'payment_nfc', label: 'NFC', aliases: [] },
-      { key: 'payment_ewallet', label: 'E-Wallet', aliases: [] },
+      { key: 'payment_cash', label: 'Tunai', aliases: [], icon: 'Banknote' },
+      { key: 'payment_debit', label: 'Kartu Debit', aliases: [], icon: 'CreditCard' },
+      { key: 'payment_credit', label: 'Kartu Kredit', aliases: [], icon: 'CreditCard' },
+      { key: 'payment_qris', label: 'QRIS', aliases: [], icon: 'QrCode' },
+      { key: 'payment_nfc', label: 'NFC', aliases: [], icon: 'Smartphone' },
+      { key: 'payment_ewallet', label: 'E-Wallet', aliases: [], icon: 'Wallet' },
     ],
   },
 ];

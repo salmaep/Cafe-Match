@@ -23,6 +23,7 @@ import FriendsScreen from '../screens/FriendsScreen';
 import AchievementsScreen from '../screens/AchievementsScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
 import RecapScreen from '../screens/RecapScreen';
+import GlobalLeaderboardScreen from '../screens/GlobalLeaderboardScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -109,6 +110,7 @@ export default function AppNavigator() {
       <Stack.Screen name="Reviews" component={ReviewsScreen} />
       <Stack.Screen name="WriteReview" component={WriteReviewScreen} />
       <Stack.Screen name="Leaderboard" component={LeaderboardScreen} />
+      <Stack.Screen name="GlobalLeaderboard" component={GlobalLeaderboardScreen} />
       <Stack.Screen name="Friends" component={FriendsScreen} />
       <Stack.Screen name="Achievements" component={AchievementsScreen} />
       <Stack.Screen name="Notifications" component={NotificationsScreen} />

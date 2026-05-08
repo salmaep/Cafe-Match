@@ -291,8 +291,8 @@ export async function fetchStreak() {
   return data as { current: number; longest: number; active: boolean };
 }
 
-export async function fetchGlobalLeaderboard() {
-  const { data } = await api.get("/checkins/global-leaderboard");
+export async function fetchGlobalLeaderboard(period: 'month' | 'all' = 'month') {
+  const { data } = await api.get("/checkins/global-leaderboard", { params: { period } });
   return data;
 }
 

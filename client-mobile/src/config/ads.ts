@@ -7,12 +7,12 @@ const FORCE_TEST_ADS = false;
 
 const USE_TEST_ADS = __DEV__ || FORCE_TEST_ADS;
 
-// Real AdMob unit IDs — fill in before shipping to prod.
-// Keep platform-specific because AdMob unit IDs are per-platform.
+// Real AdMob unit IDs (per-platform). iOS unit must be created separately
+// in AdMob — placeholder for now.
 const PROD_UNIT_IDS = {
   native: Platform.select({
     ios: 'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX',
-    android: 'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX',
+    android: 'ca-app-pub-1232702196287166/8803909083',
     default: '',
   }) as string,
 };

@@ -3,6 +3,7 @@ import React, {
   useRef,
   useEffect,
   useMemo,
+  useCallback,
 } from "react";
 import {
   View,
@@ -23,6 +24,7 @@ import MobileFilterModal from "../components/cafe/MobileFilterModal";
 import { usePurposes } from "../queries/purposes/use-purposes";
 import Swiper from "react-native-deck-swiper";
 import MapView, { Marker, Circle } from "react-native-maps";
+import Svg, { Path, Circle as SvgCircle, Defs, LinearGradient, Stop } from "react-native-svg";
 import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import { ScrollView as GHScrollView } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -40,7 +42,9 @@ import { useFriendsMap } from "../queries/friends/use-friends-map";
 import { hitsToCafes } from "../queries/cafes/api";
 import { Cafe } from "../types";
 import { colors, spacing, radius } from "../theme";
-import { RADIUS_OPTIONS } from "../constant/ui/radius-options";
+import RadiusPickerModal from "../components/cafe/RadiusPickerModal";
+import NativeAdCard from "../components/NativeAdCard";
+import { interleaveAds } from "../utils/adInterleave";
 
 const { width, height } = Dimensions.get("window");
 
@@ -62,6 +66,7 @@ export default function MapScreen() {
   const { addToShortlist, isInShortlist } = useShortlist();
   const mapRef = useRef<MapView>(null);
   const sheetRef = useRef<BottomSheet>(null);
+  const [radiusModalOpen, setRadiusModalOpen] = useState(false);
 
   const [selectedCafe, setSelectedCafe] = useState<Cafe | null>(null);
   const [radiusKm, setRadiusKm] = useState(preferences?.radius || 2);
@@ -254,6 +259,32 @@ export default function MapScreen() {
     listQuery.isLoading ||
     promotedQuery.isLoading;
 
+  // Lazy-load handler — memoized so the ScrollView doesn't reattach the
+  // listener every render. Triggers when ~one viewport from the bottom so
+  // the next page is queued before the user actually hits the end.
+  const handleSheetScroll = useCallback(
+    ({ nativeEvent }: { nativeEvent: any }) => {
+      const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
+      const distanceFromBottom =
+        contentSize.height - (layoutMeasurement.height + contentOffset.y);
+      if (
+        distanceFromBottom < 600 &&
+        listQuery.hasNextPage &&
+        !listQuery.isFetchingNextPage
+      ) {
+        listQuery.fetchNextPage();
+      }
+    },
+    [listQuery.hasNextPage, listQuery.isFetchingNextPage, listQuery.fetchNextPage],
+  );
+
+  // Pre-compute the interleaved list once per data change so the render
+  // path doesn't re-build the array (and re-mount ad slots) on every render.
+  const sheetListItems = useMemo(
+    () => interleaveAds(listCafes, { maxAds: 2 }),
+    [listCafes],
+  );
+
   const handleThrowEmoji = async (emoji: string) => {
     if (!emojiTargetFriend) return;
     try {
@@ -429,70 +460,56 @@ export default function MapScreen() {
         )}
       </View>
 
-      {/* Map — fills full screen behind drawer */}
+      {/* Map — fills full screen behind drawer.
+          `region` is intentionally NOT pinned to radius (was causing the map
+          to zoom out instead of letting the circle grow). We seed via
+          `initialRegion` once with a delta sized for the LARGEST radius
+          option so all radius values fit, then let the user pan/zoom freely. */}
       <MapView
         ref={mapRef}
         style={StyleSheet.absoluteFill}
         initialRegion={{
           ...center,
-          latitudeDelta: radiusKm * 0.02,
-          longitudeDelta: radiusKm * 0.02,
-        }}
-        region={{
-          ...center,
-          latitudeDelta: radiusKm * 0.02,
-          longitudeDelta: radiusKm * 0.02,
+          // Sized for max radius (10km × 2 × 1.35 padding ÷ 111.32 km/deg)
+          latitudeDelta: 0.24,
+          longitudeDelta: 0.24,
         }}
         showsUserLocation
       >
         <Circle
           center={center}
           radius={radiusKm * 1000}
-          strokeColor="rgba(212, 139, 58, 0.4)"
-          fillColor="rgba(212, 139, 58, 0.08)"
-          strokeWidth={1.5}
+          strokeColor="#D48B3A"
+          strokeWidth={2}
+          fillColor="rgba(251, 191, 36, 0.18)"
         />
-        {/* Cafe pins (togglable) */}
+        {/* Search-center pin — current-position dot (matches wizard step).
+            `showsUserLocation` blue dot may not equal the search center if a
+            custom destination is picked, so this gives the unmistakable origin. */}
+        <Marker
+          coordinate={center}
+          anchor={{ x: 0.5, y: 0.5 }}
+          centerOffset={{ x: 0, y: 0 }}
+          tracksViewChanges={false}
+        >
+          <View style={styles.searchCenterPinRing}>
+            <View style={styles.searchCenterPinDot} />
+          </View>
+        </Marker>
+        {/* Cafe pins (togglable). Single round amber chip with white ring +
+            ☕ glyph centered. */}
         {showCafePins && displayCafes.map((cafe) => {
           const friendCount = friendsByCafe.get(Number(cafe.id))?.length || 0;
-          return isNewCafePromo(cafe) ? (
-            <Marker
+          const isPromoted = isNewCafePromo(cafe);
+          return (
+            <CafeMarker
               key={cafe.id}
-              coordinate={{ latitude: cafe.latitude, longitude: cafe.longitude }}
+              cafe={cafe}
+              friendCount={friendCount}
+              isPromoted={isPromoted}
+              bounceAnim={bounceAnim}
               onPress={() => onMarkerPress(cafe)}
-              anchor={{ x: 0.5, y: 1 }}
-            >
-              <View style={styles.newPinContainer}>
-                <Animated.View
-                  style={[styles.newPinLabel, { transform: [{ translateY: bounceAnim }] }]}
-                >
-                  <Text style={styles.newPinLabelText}>NEW!</Text>
-                </Animated.View>
-                <View style={styles.newPinDot} />
-                {friendCount > 0 && (
-                  <View style={styles.friendCountBadge}>
-                    <Text style={styles.friendCountText}>{friendCount}👤</Text>
-                  </View>
-                )}
-              </View>
-            </Marker>
-          ) : (
-            <Marker
-              key={cafe.id}
-              coordinate={{ latitude: cafe.latitude, longitude: cafe.longitude }}
-              onPress={() => onMarkerPress(cafe)}
-              anchor={friendCount > 0 ? { x: 0.5, y: 1 } : undefined}
-              pinColor={friendCount > 0 ? colors.accent : colors.primary}
-            >
-              {friendCount > 0 && (
-                <View style={styles.cafePinWithFriends}>
-                  <View style={styles.friendCountBadge}>
-                    <Text style={styles.friendCountText}>{friendCount}👤</Text>
-                  </View>
-                  <View style={styles.cafePinDot} />
-                </View>
-              )}
-            </Marker>
+            />
           );
         })}
 
@@ -522,19 +539,30 @@ export default function MapScreen() {
         )}
       </MapView>
 
-      {/* Pin toggle buttons (top right of map) */}
-      <View style={[styles.pinToggles, { top: insets.top + 80 + (activeCheckin ? 60 : 0), right: spacing.md }]}>
+      {/* Pin layer toggles — match web MapContainer (top-right, two
+          separate round buttons stacked vertically, amber when active /
+          white when inactive). Always visible (web doesn't auto-hide). */}
+      <View
+        style={[
+          styles.pinToggles,
+          { top: insets.top + 80 + (activeCheckin ? 60 : 0), right: spacing.md },
+        ]}
+      >
         <TouchableOpacity
-          style={[styles.pinToggle, showCafePins && styles.pinToggleActive]}
+          style={[styles.pinToggleBtn, showCafePins && styles.pinToggleBtnActive]}
           onPress={() => setShowCafePins((v) => !v)}
         >
-          <Text style={styles.pinToggleEmoji}>☕</Text>
+          <Text style={[styles.pinToggleEmoji, showCafePins && styles.pinToggleEmojiActive]}>
+            ☕
+          </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.pinToggle, showFriendPins && styles.pinToggleActive]}
+          style={[styles.pinToggleBtn, showFriendPins && styles.pinToggleBtnActive]}
           onPress={() => setShowFriendPins((v) => !v)}
         >
-          <Text style={styles.pinToggleEmoji}>👥</Text>
+          <Text style={[styles.pinToggleEmoji, showFriendPins && styles.pinToggleEmojiActive]}>
+            👥
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -778,18 +806,10 @@ export default function MapScreen() {
           ]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
-          onScroll={({ nativeEvent }) => {
-            const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
-            const distanceFromBottom =
-              contentSize.height - (layoutMeasurement.height + contentOffset.y);
-            if (
-              distanceFromBottom < 320 &&
-              listQuery.hasNextPage &&
-              !listQuery.isFetchingNextPage
-            ) {
-              listQuery.fetchNextPage();
-            }
-          }}
+          onScroll={handleSheetScroll}
+          // 16ms ≈ 60fps — without this RN throttles to ~250ms which makes
+          // pagination feel laggy and the loading spinner appear too late.
+          scrollEventThrottle={16}
         >
           {/* Highlighted card for selected pin */}
           {selectedCafe && (
@@ -924,29 +944,42 @@ export default function MapScreen() {
 
           {/* Radius + Filter controls */}
           <View style={styles.controlsSection}>
-            {/* Radius pills */}
+            {/* Radius — 3 quick pills + ⋯ More button → modal (matches wizard) */}
             <View style={styles.radiusRow}>
               <Text style={styles.controlLabel}>Radius</Text>
-              <View style={styles.radiusControl}>
-                {RADIUS_OPTIONS.map((r) => (
+              <View style={styles.radiusPillsWrap}>
+                {[0.5, 1, 2].map((r) => (
                   <TouchableOpacity
                     key={r}
                     style={[
-                      styles.radiusSeg,
-                      radiusKm === r && styles.radiusSegActive,
+                      styles.radiusPill,
+                      radiusKm === r && styles.radiusPillActive,
                     ]}
                     onPress={() => setRadiusKm(r)}
                   >
                     <Text
                       style={[
-                        styles.radiusSegText,
-                        radiusKm === r && styles.radiusSegTextActive,
+                        styles.radiusPillText,
+                        radiusKm === r && styles.radiusPillTextActive,
                       ]}
                     >
                       {r} km
                     </Text>
                   </TouchableOpacity>
                 ))}
+                {![0.5, 1, 2].includes(radiusKm) && (
+                  <View style={[styles.radiusPill, styles.radiusPillActive]}>
+                    <Text style={[styles.radiusPillText, styles.radiusPillTextActive]}>
+                      {radiusKm} km
+                    </Text>
+                  </View>
+                )}
+                <TouchableOpacity
+                  style={styles.radiusMoreBtn}
+                  onPress={() => setRadiusModalOpen(true)}
+                >
+                  <Text style={styles.radiusMoreBtnText}>⋯</Text>
+                </TouchableOpacity>
               </View>
             </View>
 
@@ -1013,12 +1046,19 @@ export default function MapScreen() {
               </View>
             ) : (
               <>
-                {listCafes.map((cafe) => (
-                  <React.Fragment key={cafe.id}>
-                    {renderCafeCard({ item: cafe })}
-                    <View style={styles.cardSep} />
-                  </React.Fragment>
-                ))}
+                {sheetListItems.map((entry) =>
+                  entry.kind === 'ad' ? (
+                    <React.Fragment key={entry.key}>
+                      <NativeAdCard />
+                      <View style={styles.cardSep} />
+                    </React.Fragment>
+                  ) : (
+                    <React.Fragment key={entry.data.id}>
+                      {renderCafeCard({ item: entry.data })}
+                      <View style={styles.cardSep} />
+                    </React.Fragment>
+                  ),
+                )}
                 {listQuery.isFetchingNextPage && (
                   <View style={{ paddingVertical: spacing.md, alignItems: 'center' }}>
                     <ActivityIndicator color={colors.accent} />
@@ -1046,7 +1086,137 @@ export default function MapScreen() {
         priceRange={filterPriceRange}
         onPriceRangeChange={setFilterPriceRange}
       />
+
+      <RadiusPickerModal
+        visible={radiusModalOpen}
+        initial={radiusKm}
+        onClose={() => setRadiusModalOpen(false)}
+        onApply={(v) => {
+          setRadiusKm(v);
+          setRadiusModalOpen(false);
+        }}
+      />
     </View>
+  );
+}
+
+// Marker wrapper that flips `tracksViewChanges` true → false after first
+// layout. Without this, custom-View markers on Android are sometimes captured
+// to bitmap BEFORE their child Views finish layout, leaving the pin blank.
+// Keeping `tracksViewChanges={true}` permanently kills perf with 200+ pins;
+// flipping to false after one tick gives correct pixels + cheap rendering.
+const CafeMarker = React.memo(function CafeMarker({
+  cafe,
+  friendCount,
+  isPromoted,
+  bounceAnim,
+  onPress,
+}: {
+  cafe: Cafe;
+  friendCount: number;
+  isPromoted: boolean;
+  bounceAnim: Animated.Value;
+  onPress: () => void;
+}) {
+  const [tracking, setTracking] = useState(true);
+  useEffect(() => {
+    const t = setTimeout(() => setTracking(false), 600);
+    return () => clearTimeout(t);
+  }, []);
+  return (
+    <Marker
+      coordinate={{ latitude: cafe.latitude, longitude: cafe.longitude }}
+      onPress={onPress}
+      // Anchor at bottom-center because the SVG teardrop's point is at y=38.
+      anchor={{ x: 0.5, y: 1 }}
+      tracksViewChanges={tracking}
+      zIndex={isPromoted ? 1000 : undefined}
+    >
+      <View
+        style={[
+          styles.cafePinContainer,
+          // Slight transparency on regular pins thins out dense clusters.
+          // Promoted stay full opacity so the NEW! variant pops.
+          !isPromoted && styles.cafePinRegularOpacity,
+        ]}
+      >
+        {isPromoted && (
+          <Animated.View
+            style={[
+              styles.cafePinNewBadge,
+              { transform: [{ translateY: bounceAnim }] },
+            ]}
+          >
+            <Text style={styles.cafePinNewBadgeText}>NEW!</Text>
+          </Animated.View>
+        )}
+        {friendCount > 0 && (
+          <View style={styles.cafePinFriendBadge}>
+            <Text style={styles.cafePinFriendBadgeText}>
+              {friendCount}👤
+            </Text>
+          </View>
+        )}
+        <View
+          style={
+            isPromoted ? styles.cafePinSvgWrapPromoted : styles.cafePinSvgWrap
+          }
+        >
+          <CafePinSvg promoted={isPromoted} />
+          {/* ☕ overlay — react-native-svg's <Text> doesn't render emoji
+              glyphs reliably across platforms, so we layer a plain RN Text
+              positioned over the white circle inside the SVG. */}
+          <Text
+            style={[
+              isPromoted
+                ? styles.cafePinIconOverlayPromoted
+                : styles.cafePinIconOverlay,
+              { color: isPromoted ? '#DC2626' : '#D97706' },
+            ]}
+          >
+            ☕
+          </Text>
+        </View>
+      </View>
+    </Marker>
+  );
+});
+
+// Compact teardrop pin (~64% of original) so dense areas don't read as
+// trypophobia clusters. Promoted variant stays slightly larger + brighter to
+// remain visually distinct. ViewBox is preserved so path coords stay valid —
+// only the rendered width/height shrinks.
+const PIN_W = 18;
+const PIN_H = 24;
+const PROMOTED_PIN_W = 22;
+const PROMOTED_PIN_H = 30;
+
+function CafePinSvg({ promoted }: { promoted: boolean }) {
+  if (promoted) {
+    return (
+      <Svg width={PROMOTED_PIN_W} height={PROMOTED_PIN_H} viewBox="0 0 28 38">
+        <Defs>
+          <LinearGradient id="cmNewGrad" x1="0" y1="0" x2="0" y2="1">
+            <Stop offset="0" stopColor="#F87171" />
+            <Stop offset="1" stopColor="#DC2626" />
+          </LinearGradient>
+        </Defs>
+        <Path
+          d="M14 0C6.27 0 0 6.27 0 14c0 10.5 14 24 14 24s14-13.5 14-24C28 6.27 21.73 0 14 0z"
+          fill="url(#cmNewGrad)"
+        />
+        <SvgCircle cx={14} cy={13} r={7} fill="#FFFFFF" />
+      </Svg>
+    );
+  }
+  return (
+    <Svg width={PIN_W} height={PIN_H} viewBox="0 0 28 38">
+      <Path
+        d="M14 0C6.27 0 0 6.27 0 14c0 10.5 14 24 14 24s14-13.5 14-24C28 6.27 21.73 0 14 0z"
+        fill="#D97706"
+      />
+      <SvgCircle cx={14} cy={13} r={7} fill="#FFFFFF" />
+    </Svg>
   );
 }
 
@@ -1286,26 +1456,41 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     width: 44,
   },
-  radiusControl: {
-    flexDirection: "row",
+  radiusPillsWrap: {
+    flex: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: 6,
+  },
+  radiusPill: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
     backgroundColor: colors.surface,
-    borderRadius: radius.full,
-    padding: 3,
+    borderWidth: 2,
+    borderColor: 'transparent',
   },
-  radiusSeg: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs + 2,
-    borderRadius: radius.full,
-    minWidth: 60,
-    alignItems: "center",
+  radiusPillActive: {
+    borderColor: colors.accent,
+    backgroundColor: '#FDF6EC',
   },
-  radiusSegActive: { backgroundColor: colors.primary },
-  radiusSegText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: colors.textSecondary,
+  radiusPillText: { fontSize: 12, fontWeight: '700', color: colors.primary },
+  radiusPillTextActive: { color: colors.accent },
+  radiusMoreBtn: {
+    width: 34,
+    height: 30,
+    borderRadius: 999,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  radiusSegTextActive: { color: colors.white },
+  radiusMoreBtnText: {
+    fontSize: 16,
+    fontWeight: '900',
+    color: colors.primary,
+    lineHeight: 16,
+  },
   filterScroll: {
     gap: spacing.xs,
     alignItems: "center",
@@ -1753,25 +1938,58 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  // Pin toggle buttons (map overlay top-right)
+  // Pin toggle buttons (map overlay top-right).
+  // zIndex/elevation kept low so the bottom sheet (cafe list) sits ON TOP
+  // when expanded — toggles are a map-only affordance and shouldn't bleed
+  // through the main content modal.
+  // Web parity: two separate round buttons (44×44), amber when active,
+  // white when inactive, stacked vertically. NO explicit zIndex — JSX order
+  // alone is what makes BottomSheet (rendered LAST) cover them when the
+  // sheet expands over the toggle area.
   pinToggles: {
     position: 'absolute',
-    zIndex: 25,
+    flexDirection: 'column',
     gap: 8,
   },
-  pinToggle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  pinToggleBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: colors.white,
-    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: colors.white,
     alignItems: 'center',
-    elevation: 4,
+    justifyContent: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.18,
+    shadowRadius: 3,
+  },
+  pinToggleBtnActive: {
+    backgroundColor: '#D48B3A',
+    borderColor: '#D48B3A',
+  },
+  pinToggleEmojiActive: {
+    color: colors.white,
+  },
+
+  // Search-center pin (current-position dot + outer pulse ring).
+  searchCenterPinRing: {
+    width: 32, height: 32, borderRadius: 16,
+    backgroundColor: 'rgba(212, 139, 58, 0.22)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  searchCenterPinDot: {
+    width: 16, height: 16, borderRadius: 8,
+    backgroundColor: colors.accent,
+    borderWidth: 3, borderColor: colors.white,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.35,
     shadowRadius: 4,
-    opacity: 0.5,
+    elevation: 4,
   },
   pinToggleActive: {
     opacity: 1,
@@ -1827,34 +2045,85 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
 
-  // Animated NEW! map pin
-  newPinContainer: {
+  // Cafe map pin — SVG teardrop matching web MapContainer.CafePin exactly:
+  // outer amber/red teardrop path + inner white circle (cx=14, cy=13, r=7).
+  // The ☕ glyph is layered as a plain RN Text over the SVG because
+  // react-native-svg's <Text> doesn't render emoji reliably.
+  cafePinContainer: {
     alignItems: "center",
   },
-  newPinLabel: {
-    backgroundColor: colors.newCafePin,
-    borderRadius: radius.sm,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
+  // Regular pin (smaller) — soft opacity so dense areas don't read as a
+  // visual cluster of dots.
+  cafePinRegularOpacity: {
+    opacity: 0.92,
+  },
+  cafePinSvgWrap: {
+    width: 18,
+    height: 24,
+    position: "relative",
+  },
+  cafePinSvgWrapPromoted: {
+    width: 22,
+    height: 30,
+    position: "relative",
+  },
+  // Coffee glyph overlay positioned over the white inner circle of the SVG.
+  // SVG viewBox is 28×38 with circle at (14, 13, r=7). When the SVG is
+  // rendered at 18×24 (scale ≈ 0.643), the circle is at (~9, ~8.4).
+  // For a 9pt glyph (line-height 11), top ≈ 4 - 5 = ~3, left ≈ 9 - 4.5 = ~4.5.
+  cafePinIconOverlay: {
+    position: "absolute",
+    top: 2,
+    left: 4,
+    width: 10,
+    height: 10,
+    fontSize: 8,
+    lineHeight: 10,
+    textAlign: "center",
+  },
+  // Promoted pin renders at 22×30 (scale ≈ 0.786). Circle center ≈ (11, 10.2).
+  cafePinIconOverlayPromoted: {
+    position: "absolute",
+    top: 3,
+    left: 5,
+    width: 12,
+    height: 12,
+    fontSize: 10,
+    lineHeight: 12,
+    textAlign: "center",
+  },
+  cafePinNewBadge: {
+    backgroundColor: "#EF4444",
+    borderRadius: 6,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
     marginBottom: 3,
-    elevation: 4,
-    shadowColor: colors.newCafePin,
+    borderWidth: 1.5,
+    borderColor: "#FFFFFF",
+    shadowColor: "#EF4444",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.5,
     shadowRadius: 3,
+    elevation: 4,
   },
-  newPinLabelText: {
-    color: colors.white,
-    fontSize: 11,
-    fontWeight: "800",
+  cafePinNewBadgeText: {
+    color: "#FFFFFF",
+    fontSize: 9,
+    fontWeight: "900",
     letterSpacing: 0.5,
   },
-  newPinDot: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: colors.newCafePin,
-    borderWidth: 2,
-    borderColor: colors.white,
+  cafePinFriendBadge: {
+    backgroundColor: colors.accent,
+    borderRadius: 999,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    marginBottom: 3,
+    borderWidth: 1.5,
+    borderColor: "#FFFFFF",
+  },
+  cafePinFriendBadgeText: {
+    color: "#FFFFFF",
+    fontSize: 9,
+    fontWeight: "900",
   },
 });

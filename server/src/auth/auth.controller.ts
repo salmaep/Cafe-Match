@@ -130,6 +130,27 @@ export class AuthController {
     return this.redirectToFrontend(req, res, result);
   }
 
+  // ── Native social login (mobile app) ────────────────────────────────────
+  // Mobile uses expo-auth-session to perform OAuth directly with the
+  // provider (no server-side OAuth proxy). The app sends the resulting
+  // id_token (Google) or access_token (Facebook) here for verification +
+  // session creation. Returns JSON instead of a redirect.
+  @Public()
+  @Post('google/idtoken')
+  async googleIdToken(@Body() body: { idToken: string }) {
+    const profile = await this.authService.verifyGoogleIdToken(body.idToken);
+    return this.authService.socialLogin(profile);
+  }
+
+  @Public()
+  @Post('facebook/token')
+  async facebookToken(@Body() body: { accessToken: string }) {
+    const profile = await this.authService.verifyFacebookAccessToken(
+      body.accessToken,
+    );
+    return this.authService.socialLogin(profile);
+  }
+
   private redirectToFrontend(req: any, res: Response, result: any) {
     // Mobile clients pass ?mobile_redirect=cafematch://auth/callback in the
     // initial /auth/google call; passport carries it via req.query on callback.

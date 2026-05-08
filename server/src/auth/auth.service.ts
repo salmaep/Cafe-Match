@@ -10,6 +10,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { randomUUID } from 'crypto';
+import { OAuth2Client } from 'google-auth-library';
 import { UsersService } from '../users/users.service';
 import { RegisterDto } from './dto/register.dto';
 import { RegisterOwnerDto } from './dto/register-owner.dto';
@@ -241,6 +242,103 @@ export class AuthService {
       twoFaEnabled: true,
     });
     return { ok: true };
+  }
+
+  // ── Native social-login token verification ─────────────────────────────
+  // The mobile app obtains tokens directly from Google/Facebook via
+  // expo-auth-session (no server-side OAuth dance), then POSTs them here
+  // for verification. Both methods return the same shape socialLogin expects.
+
+  /**
+   * Verify a Google ID token (JWT) signed by Google. Accepts any clientId
+   * registered for this Google project (web/iOS/Android), so the same code
+   * works for Expo Go (web client) and native dev builds (platform clients).
+   */
+  async verifyGoogleIdToken(idToken: string): Promise<{
+    provider: 'google';
+    providerId: string;
+    email: string;
+    name: string;
+    avatarUrl?: string;
+  }> {
+    if (!idToken) throw new UnauthorizedException('idToken required');
+
+    const audiences = [
+      process.env.GOOGLE_CLIENT_ID,
+      process.env.GOOGLE_CLIENT_ID_IOS,
+      process.env.GOOGLE_CLIENT_ID_ANDROID,
+      process.env.GOOGLE_CLIENT_ID_WEB,
+    ].filter(Boolean) as string[];
+    if (audiences.length === 0) {
+      throw new UnauthorizedException('Server missing GOOGLE_CLIENT_ID');
+    }
+
+    const client = new OAuth2Client();
+    let payload: any;
+    try {
+      const ticket = await client.verifyIdToken({ idToken, audience: audiences });
+      payload = ticket.getPayload();
+    } catch {
+      throw new UnauthorizedException('Invalid Google ID token');
+    }
+    if (!payload?.sub || !payload.email) {
+      throw new UnauthorizedException('Google token missing sub/email');
+    }
+    return {
+      provider: 'google',
+      providerId: payload.sub,
+      email: payload.email,
+      name: payload.name || payload.email.split('@')[0],
+      avatarUrl: payload.picture,
+    };
+  }
+
+  /**
+   * Verify a Facebook user-access-token by hitting Graph API. Confirms the
+   * token is valid AND issued for THIS app, then fetches basic profile.
+   */
+  async verifyFacebookAccessToken(accessToken: string): Promise<{
+    provider: 'facebook';
+    providerId: string;
+    email: string;
+    name: string;
+    avatarUrl?: string;
+  }> {
+    if (!accessToken) throw new UnauthorizedException('accessToken required');
+
+    const appId = process.env.FB_APP_ID;
+    const appSecret = process.env.FB_APP_SECRET;
+    if (!appId || !appSecret) {
+      throw new UnauthorizedException('Server missing FB_APP_ID/FB_APP_SECRET');
+    }
+
+    // 1) debug_token confirms validity + audience
+    const debugUrl =
+      `https://graph.facebook.com/debug_token` +
+      `?input_token=${encodeURIComponent(accessToken)}` +
+      `&access_token=${encodeURIComponent(`${appId}|${appSecret}`)}`;
+    const debugRes = await fetch(debugUrl);
+    const debug = (await debugRes.json()) as any;
+    if (!debug?.data?.is_valid || debug.data.app_id !== appId) {
+      throw new UnauthorizedException('Invalid Facebook token');
+    }
+
+    // 2) Fetch profile
+    const meUrl =
+      `https://graph.facebook.com/me` +
+      `?fields=id,name,email,picture.type(large)` +
+      `&access_token=${encodeURIComponent(accessToken)}`;
+    const meRes = await fetch(meUrl);
+    const me = (await meRes.json()) as any;
+    if (!me?.id) throw new UnauthorizedException('Facebook profile fetch failed');
+
+    return {
+      provider: 'facebook',
+      providerId: me.id,
+      email: me.email || `${me.id}@facebook.local`,
+      name: me.name || `FB-${me.id}`,
+      avatarUrl: me.picture?.data?.url,
+    };
   }
 
   // ── Social login ──────────────────────────────────────────────────────────

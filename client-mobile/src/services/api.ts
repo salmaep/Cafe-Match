@@ -162,6 +162,34 @@ export async function socialVerifyPhoneApi(
   return mapAuthResponse(data);
 }
 
+// ─── Native social auth (mobile-only — token verified server-side) ───
+// Mobile gets the token directly from Google/FB via expo-auth-session, then
+// hands it to the server for verification + JWT issuance. The server may
+// still respond with twoFaRequired / phoneEnrollRequired (same shape as
+// the legacy redirect flow).
+
+export async function googleIdTokenLoginApi(idToken: string): Promise<LoginResult | PhoneEnrollChallenge> {
+  const { data } = await api.post("/auth/google/idtoken", { idToken });
+  if (data?.twoFaRequired) {
+    return { twoFaRequired: true, otpId: data.otpId, expiresAt: data.expiresAt, phoneHint: data.phoneHint };
+  }
+  if (data?.phoneEnrollRequired) {
+    return { phoneEnrollRequired: true, enrollmentId: data.enrollmentId, expiresAt: data.expiresAt };
+  }
+  return mapAuthResponse(data);
+}
+
+export async function facebookTokenLoginApi(accessToken: string): Promise<LoginResult | PhoneEnrollChallenge> {
+  const { data } = await api.post("/auth/facebook/token", { accessToken });
+  if (data?.twoFaRequired) {
+    return { twoFaRequired: true, otpId: data.otpId, expiresAt: data.expiresAt, phoneHint: data.phoneHint };
+  }
+  if (data?.phoneEnrollRequired) {
+    return { phoneEnrollRequired: true, enrollmentId: data.enrollmentId, expiresAt: data.expiresAt };
+  }
+  return mapAuthResponse(data);
+}
+
 export async function registerApi(
   name: string,
   email: string,

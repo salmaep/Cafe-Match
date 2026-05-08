@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -53,33 +53,50 @@ export default function TrendingScreen() {
   const activeFilterCount =
     facilityKeys.length + (priceRange ? 1 : 0) + (purposeId != null ? 1 : 0);
 
+  // Mirror web TrendingPage exactly so the two surfaces show the same set of
+  // cafes. radius=50_000m (50km), limit=24 per page, sort=trending.
   const cafesQuery = useSearchCafes({
     lat: latitude ?? undefined,
     lng: longitude ?? undefined,
-    radius: 5000,
+    radius: 50_000,
     purposeId: purposeId ?? undefined,
     priceRange: (priceRange as any) || undefined,
     facilities: facilityKeys.length > 0 ? facilityKeys : undefined,
-    limit: 20,
+    limit: 24,
+    sort: 'trending',
   });
 
   // Server (Meilisearch) handles search/filter/sort — purposeId is sent as query param.
-  const cafes: Cafe[] = cafesQuery.data
-    ? cafesQuery.data.pages.flatMap((p) =>
-        hitsToCafes(p, latitude ?? undefined, longitude ?? undefined),
-      )
-    : [];
-
-  // Top 3 render as a podium header; ranks 4+ go through ad interleaving.
-  const podiumCafes = cafes.slice(0, 3);
-  const restCafes = cafes.slice(3);
-  const listItems: ListItem[] = interleaveAds(
-    restCafes.map((cafe, i) => ({ cafe, rank: i + 4 })),
+  // Memoized so paginated fetches don't rebuild downstream slice/interleave arrays
+  // and re-key FlatList rows (which would interrupt scroll on every page append).
+  const cafes: Cafe[] = useMemo(
+    () =>
+      cafesQuery.data
+        ? cafesQuery.data.pages.flatMap((p) =>
+            hitsToCafes(p, latitude ?? undefined, longitude ?? undefined),
+          )
+        : [],
+    [cafesQuery.data, latitude, longitude],
   );
 
-  const loading = cafesQuery.isLoading || cafesQuery.isFetching;
+  // Top 3 render as a podium header; ranks 4+ go through ad interleaving.
+  const podiumCafes = useMemo(() => cafes.slice(0, 3), [cafes]);
+  const restCafes = useMemo(() => cafes.slice(3), [cafes]);
+  const listItems: ListItem[] = useMemo(
+    () =>
+      interleaveAds(
+        restCafes.map((cafe, i) => ({ cafe, rank: i + 4 })),
+        { maxAds: 2 },
+      ),
+    [restCafes],
+  );
 
-  const renderItem = ({ item }: { item: ListItem }) => {
+  // Only true on the FIRST load (no pages yet). `isFetching` would also flip
+  // true during pagination — using it here would unmount the FlatList every
+  // page append and lose the user's scroll position.
+  const initialLoading = cafesQuery.isLoading;
+
+  const renderItem = useCallback(({ item }: { item: ListItem }) => {
     if (item.kind === 'ad') return <NativeAdCard />;
     const cafe = item.data.cafe;
     const rank = item.data.rank;
@@ -94,7 +111,18 @@ export default function TrendingScreen() {
         </View>
       </View>
     );
-  };
+  }, []);
+
+  const keyExtractor = useCallback(
+    (item: ListItem) => (item.kind === 'ad' ? item.key : item.data.cafe.id),
+    [],
+  );
+
+  const onEndReached = useCallback(() => {
+    if (cafesQuery.hasNextPage && !cafesQuery.isFetchingNextPage) {
+      cafesQuery.fetchNextPage();
+    }
+  }, [cafesQuery.hasNextPage, cafesQuery.isFetchingNextPage, cafesQuery.fetchNextPage]);
 
   // ─── Podium for top 3 — mirrors web TrendingPage WinnerCard + RunnerUpCard
   const renderPodium = () => {
@@ -237,16 +265,14 @@ export default function TrendingScreen() {
           </View>
 
           {/* Content */}
-          {loading ? (
+          {initialLoading ? (
             <View style={styles.centered}>
               <ActivityIndicator size="large" color={colors.accent} />
             </View>
           ) : (
             <FlatList
               data={listItems}
-              keyExtractor={(item) =>
-                item.kind === 'ad' ? item.key : item.data.cafe.id
-              }
+              keyExtractor={keyExtractor}
               renderItem={renderItem}
               ListHeaderComponent={renderPodium}
               ListEmptyComponent={cafes.length === 0 ? renderEmpty : null}
@@ -255,12 +281,13 @@ export default function TrendingScreen() {
               }
               showsVerticalScrollIndicator={false}
               ItemSeparatorComponent={() => <View style={styles.separator} />}
-              onEndReached={() => {
-                if (cafesQuery.hasNextPage && !cafesQuery.isFetchingNextPage) {
-                  cafesQuery.fetchNextPage();
-                }
-              }}
+              onEndReached={onEndReached}
               onEndReachedThreshold={0.5}
+              // Perf tuning for long lists with mixed item heights.
+              initialNumToRender={8}
+              maxToRenderPerBatch={6}
+              windowSize={8}
+              removeClippedSubviews={true}
               ListFooterComponent={
                 cafesQuery.isFetchingNextPage ? (
                   <View style={{ paddingVertical: spacing.lg, alignItems: 'center' }}>

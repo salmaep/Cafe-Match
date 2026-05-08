@@ -20,6 +20,7 @@ function paramsForServer(p: SearchCafesParams) {
     facilities: p.facilities && p.facilities.length > 0 ? p.facilities : undefined,
     page: p.page ?? 1,
     limit: p.limit ?? 50,
+    sort: p.sort,
   };
 }
 

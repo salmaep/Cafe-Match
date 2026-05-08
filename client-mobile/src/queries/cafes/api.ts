@@ -17,6 +17,7 @@ function paramsForServer(p: SearchCafesParams) {
     hasParking: p.hasParking === true ? 'true' : undefined,
     priceRange: p.priceRange,
     purposeId: p.purposeId,
+    facilities: p.facilities && p.facilities.length > 0 ? p.facilities : undefined,
     page: p.page ?? 1,
     limit: p.limit ?? 50,
   };

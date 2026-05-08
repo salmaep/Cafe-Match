@@ -30,6 +30,7 @@ interface AuthContextType {
   loginWithToken: (token: string) => Promise<{ success: boolean; error?: string }>;
   verify2fa: (otpId: string, code: string) => Promise<{ success: boolean; error?: string }>;
   resend2fa: (otpId: string) => Promise<{ success: boolean; otpId?: string; expiresAt?: string; error?: string }>;
+  refresh: () => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -41,6 +42,7 @@ const AuthContext = createContext<AuthContextType>({
   loginWithToken: async () => ({ success: false }),
   verify2fa: async () => ({ success: false }),
   resend2fa: async () => ({ success: false }),
+  refresh: async () => {},
   logout: async () => {},
 });
 
@@ -147,6 +149,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const refresh = async () => {
+    try {
+      const me = await fetchMe();
+      await AsyncStorage.setItem('user', JSON.stringify(me));
+      setUser(me);
+    } catch {
+      // ignore — keep stale user rather than logging out on transient errors
+    }
+  };
+
   const logout = async () => {
     setUser(null);
     // Wipe auth + any user-specific cached data
@@ -169,6 +181,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loginWithToken,
         verify2fa,
         resend2fa,
+        refresh,
         logout,
       }}
     >

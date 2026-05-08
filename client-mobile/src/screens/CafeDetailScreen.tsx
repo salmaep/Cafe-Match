@@ -35,7 +35,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { reviewKeys } from "../queries/reviews/keys";
 import { Cafe } from "../types";
 import { colors, spacing, radius } from "../theme";
-import { getFacilityIcon } from "../constant/ui/facility-icons";
+import { buildFacilityChips } from "../utils/facilities";
 import {
   prettyReviewCategory,
   isMoodCategory,
@@ -157,47 +157,9 @@ export default function CafeDetailScreen() {
       .map((v) => ({ label: v.label, count: v.count }));
   }, [reviewSummary, cafe]);
 
-  // Merge facility signals from multiple sources, dedup by key.
-  // Scraped entries count as +1 so count always >= 1 for display.
-  const reviewFacilityChips = React.useMemo(() => {
-    const facLabel: Record<string, string> = {
-      wifi: '📶 WiFi',
-      power_outlet: '🔌 Power Outlet',
-      mushola: '🕌 Mushola',
-      parking: '🅿️ Parking',
-      kid_friendly: '👶 Kid-Friendly',
-      quiet_atmosphere: '🤫 Quiet',
-      large_tables: '🪑 Large Tables',
-      outdoor_area: '🌿 Outdoor',
-    };
-    const combined = new Map<string, { key: string; label: string; count: number }>();
-    const bump = (key: string, delta: number) => {
-      const label = facLabel[key];
-      if (!label) return;
-      const existing = combined.get(key);
-      if (existing) existing.count += delta;
-      else combined.set(key, { key, label, count: delta });
-    };
-
-    // 1. Scraped detected facilities — each +1
-    const detected: string[] = (cafe as any)?.detectedFacilities || [];
-    for (const k of detected) bump(k, 1);
-
-    // 2. Review votes (facility_*)
-    for (const s of reviewSummary.filter((x) => isFacilityCategory(x.category))) {
-      const key = s.category.replace(/^facility_/, '');
-      bump(key, s.count);
-    }
-
-    return Array.from(combined.values())
-      .sort((a, b) => b.count - a.count)
-      .map((v) => ({
-        key: v.key,
-        label: v.label,
-        count: v.count,
-        scraped: false,
-      }));
-  }, [reviewSummary, cafe]);
+  // Single facility chip list — same logic as web (buildFacilityChips reads
+  // cafe.facilitiesRich + bool columns + dedupes). Mirrors the cafe list cards.
+  const facilityChips = React.useMemo(() => buildFacilityChips(cafe), [cafe]);
 
   // Star-only review summary (excludes mood_/facility_)
   const starSummary = React.useMemo(
@@ -413,50 +375,18 @@ export default function CafeDetailScreen() {
           {/* Legacy cafe.purposes row removed — now merged into moodChips above */}
 
           <Text style={styles.sectionTitle}>Facilities</Text>
-          <View style={styles.facilitiesRow}>
-            {(cafe.facilities ?? []).map((f) => (
-              <View key={`cafe-${f}`} style={styles.facilityChip}>
-                <Text style={styles.facilityIcon}>{getFacilityIcon(f)}</Text>
-                <Text style={styles.facilityLabel}>{f}</Text>
-              </View>
-            ))}
-            {cafe.wifiAvailable && cafe.wifiSpeedMbps ? (
-              <View style={styles.facilityChip}>
-                <Text style={styles.facilityIcon}>⚡</Text>
-                <Text style={styles.facilityLabel}>
-                  {cafe.wifiSpeedMbps} Mbps
-                </Text>
-              </View>
-            ) : null}
-            {/* Review-contributed facilities (not already shown in cafe.facilities) */}
-            {reviewFacilityChips
-              .filter((fc) => {
-                const existing = (cafe.facilities ?? []).map((f: any) =>
-                  typeof f === "string"
-                    ? f.toLowerCase().replace(/\s/g, "_")
-                    : "",
-                );
-                return !existing.some(
-                  (e) => e.includes(fc.key) || fc.key.includes(e),
-                );
-              })
-              .map((fc) => (
-                <View
-                  key={`rev-${fc.key}`}
-                  style={[styles.facilityChip, styles.facilityChipFromReview]}
-                >
-                  <Text style={styles.facilityIcon}>
-                    {getFacilityIcon(fc.label)}
-                  </Text>
-                  <Text style={styles.facilityLabel}>
-                    {fc.label.replace(/^[^\s]+\s/, "")}
-                  </Text>
-                  {fc.count > 0 && (
-                    <Text style={styles.facilityBadge}>· {fc.count}</Text>
-                  )}
+          {facilityChips.length > 0 ? (
+            <View style={styles.facilitiesRow}>
+              {facilityChips.map((f) => (
+                <View key={f.key} style={styles.facilityChip}>
+                  <Text style={styles.facilityIcon}>{f.icon}</Text>
+                  <Text style={styles.facilityLabel}>{f.label}</Text>
                 </View>
               ))}
-          </View>
+            </View>
+          ) : (
+            <Text style={styles.noFacilities}>No facilities listed</Text>
+          )}
 
           <View style={styles.statsRow}>
             <View style={styles.stat}>
@@ -581,21 +511,46 @@ export default function CafeDetailScreen() {
           {(cafe.menu?.length ?? 0) > 0 && (
             <>
               <Text style={styles.sectionTitle}>Menu</Text>
-              {(cafe.menu ?? []).map((category) => (
-                <View key={category.category} style={styles.menuCategory}>
-                  <Text style={styles.menuCategoryTitle}>
-                    {category.category}
-                  </Text>
-                  {(category.items ?? []).map((item) => (
-                    <View key={item.name} style={styles.menuItem}>
-                      <Text style={styles.menuItemName}>{item.name}</Text>
-                      <Text style={styles.menuItemPrice}>
-                        {formatPrice(item.price)}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
-              ))}
+              <View style={styles.menuCard}>
+                {(cafe.menu ?? []).map((category, ci) => (
+                  <View
+                    key={category.category}
+                    style={[
+                      styles.menuCategory,
+                      ci > 0 && styles.menuCategorySpaced,
+                    ]}
+                  >
+                    <Text style={styles.menuCategoryTitle}>
+                      {category.category}
+                    </Text>
+                    {(category.items ?? []).map((item, ii) => (
+                      <View
+                        key={`${category.category}-${item.name}-${ii}`}
+                        style={[
+                          styles.menuItem,
+                          ii === (category.items ?? []).length - 1 &&
+                            styles.menuItemLast,
+                        ]}
+                      >
+                        <View style={styles.menuItemBody}>
+                          <Text style={styles.menuItemName}>{item.name}</Text>
+                          {!!item.description && (
+                            <Text
+                              style={styles.menuItemDesc}
+                              numberOfLines={2}
+                            >
+                              {item.description}
+                            </Text>
+                          )}
+                        </View>
+                        <Text style={styles.menuItemPrice}>
+                          {formatPrice(item.price)}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                ))}
+              </View>
             </>
           )}
 
@@ -851,19 +806,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm + 4,
     paddingVertical: spacing.xs + 2,
   },
-  facilityChipFromReview: {
-    backgroundColor: colors.accent + "15",
-    borderWidth: 1,
-    borderColor: colors.accent + "40",
-  },
-  facilityBadge: {
-    fontSize: 11,
-    color: colors.accent,
-    fontWeight: "700",
-    marginLeft: 4,
-  },
   facilityIcon: { fontSize: 14, marginRight: spacing.xs },
   facilityLabel: { fontSize: 13, color: colors.primary, fontWeight: "500" },
+  noFacilities: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    fontStyle: "italic",
+  },
 
   // Mood chips from review aggregation (under address)
   moodRow: {
@@ -911,24 +860,48 @@ const styles = StyleSheet.create({
     height: 32,
     backgroundColor: colors.textSecondary + "30",
   },
-  menuCategory: { marginBottom: spacing.md },
+  menuCard: {
+    backgroundColor: colors.white,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#F0EDE8",
+    padding: spacing.md,
+  },
+  menuCategory: {},
+  menuCategorySpaced: {
+    marginTop: spacing.lg,
+  },
   menuCategoryTitle: {
-    fontSize: 15,
-    fontWeight: "600",
+    fontSize: 11,
+    fontWeight: "800",
     color: colors.textSecondary,
-    marginBottom: spacing.xs,
+    marginBottom: 6,
     textTransform: "uppercase",
-    letterSpacing: 0.5,
+    letterSpacing: 1.2,
   },
   menuItem: {
     flexDirection: "row",
+    alignItems: "flex-start",
     justifyContent: "space-between",
-    paddingVertical: spacing.sm,
+    gap: 12,
+    paddingVertical: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.surface,
+    borderBottomColor: "#F0EDE8",
   },
+  menuItemLast: { borderBottomWidth: 0 },
+  menuItemBody: { flex: 1, minWidth: 0 },
   menuItemName: { fontSize: 15, color: colors.primary },
-  menuItemPrice: { fontSize: 15, color: colors.accent, fontWeight: "600" },
+  menuItemDesc: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginTop: 2,
+    lineHeight: 16,
+  },
+  menuItemPrice: {
+    fontSize: 15,
+    color: colors.accent,
+    fontWeight: "700",
+  },
   bottomBar: {
     position: "absolute",
     bottom: 0,

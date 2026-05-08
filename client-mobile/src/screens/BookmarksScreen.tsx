@@ -3,11 +3,12 @@ import {
   View,
   Text,
   FlatList,
-  Image,
   TouchableOpacity,
   ActivityIndicator,
   StyleSheet,
+  RefreshControl,
 } from 'react-native';
+import CafeListItem from '../components/cafe/CafeListItem';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -107,57 +108,21 @@ export default function BookmarksScreen() {
 
   // ─── Render Item ───
   const renderItem = ({ item }: { item: Cafe }) => {
-    const photoUri =
-      item.photos && item.photos.length > 0
-        ? item.photos[0]
-        : 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800';
-    const topPurposes = item.purposes ? item.purposes.slice(0, 2) : [];
-    const distanceLabel =
-      item.distance != null
-        ? item.distance < 1
-          ? `${Math.round(item.distance * 1000)} m away`
-          : `${item.distance.toFixed(1)} km away`
-        : '';
     const isRemoving = removingId === item.id;
-
     return (
-      <TouchableOpacity
-        style={styles.card}
-        activeOpacity={0.85}
-        onPress={() => navigation.navigate('CafeDetail', { cafe: item })}
-      >
-        {/* Photo */}
-        <Image source={{ uri: photoUri }} style={styles.cardPhoto} />
-
-        {/* Info */}
-        <View style={styles.cardInfo}>
-          <Text style={styles.cardName} numberOfLines={1}>
-            {item.name}
-          </Text>
-          {distanceLabel ? (
-            <Text style={styles.cardDistance}>{distanceLabel}</Text>
-          ) : null}
-          {topPurposes.length > 0 && (
-            <View style={styles.pillRow}>
-              {topPurposes.map(p => (
-                <View key={p} style={styles.pill}>
-                  <Text style={styles.pillText}>{p}</Text>
-                </View>
-              ))}
-            </View>
-          )}
-        </View>
-
-        {/* Unbookmark Button */}
-        <TouchableOpacity
-          style={styles.unbookmarkBtn}
-          onPress={() => handleUnbookmark(item)}
-          disabled={isRemoving}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <Text style={styles.bookmarkIcon}>{isRemoving ? '📑' : '🔖'}</Text>
-        </TouchableOpacity>
-      </TouchableOpacity>
+      <CafeListItem
+        cafe={item}
+        rightAccessory={
+          <TouchableOpacity
+            onPress={() => handleUnbookmark(item)}
+            disabled={isRemoving}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            style={{ alignItems: 'flex-end' }}
+          >
+            <Text style={styles.bookmarkIcon}>{isRemoving ? '📑' : '🔖'}</Text>
+          </TouchableOpacity>
+        }
+      />
     );
   };
 
@@ -196,6 +161,14 @@ export default function BookmarksScreen() {
         contentContainerStyle={cafes.length === 0 ? styles.listEmptyContent : styles.listContent}
         showsVerticalScrollIndicator={false}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={loading}
+            onRefresh={loadBookmarks}
+            tintColor={colors.accent}
+            colors={[colors.accent]}
+          />
+        }
       />
     </View>
   );

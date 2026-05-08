@@ -25,11 +25,25 @@ export function mapBackendCafe(
   userLat?: number,
   userLng?: number,
 ): Cafe {
-  const photos: string[] = raw.photos?.length
-    ? raw.photos
-        .sort((a: any, b: any) => a.displayOrder - b.displayOrder)
+  // Photos arrive in two shapes: rich `{url, displayOrder}[]` from DB or plain
+  // `string[]` from Meili. Normalize to string[]; preserve order if rich.
+  let photos: string[] = [];
+  if (Array.isArray(raw.photos) && raw.photos.length > 0) {
+    if (typeof raw.photos[0] === 'string') {
+      photos = raw.photos as string[];
+    } else {
+      photos = [...raw.photos]
+        .sort((a: any, b: any) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0))
         .map((p: any) => p.url)
-    : ['https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800'];
+        .filter(Boolean);
+    }
+  }
+  if (photos.length === 0 && raw.primaryPhotoUrl) {
+    photos = [raw.primaryPhotoUrl];
+  }
+  if (photos.length === 0) {
+    photos = ['https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800'];
+  }
 
   const rawFacilityLabels: string[] =
     raw.facilities
@@ -104,37 +118,62 @@ export function mapBackendCafe(
     }
   }
 
+  // Keep raw facilities (rich shape with key + value) for buildFacilityChips.
+  const facilitiesRich = Array.isArray(raw.facilities)
+    ? raw.facilities
+        .map((f: any) => {
+          if (typeof f === 'string') return { facilityKey: f, facilityValue: null };
+          if (f?.facilityKey) return { facilityKey: f.facilityKey, facilityValue: f.facilityValue ?? null };
+          return null;
+        })
+        .filter(Boolean)
+    : [];
+
   return {
     id: String(raw.id),
     name: raw.name,
     slug: raw.slug,
     description: raw.description,
     photos,
+    primaryPhotoUrl: raw.primaryPhotoUrl ?? null,
     distance,
+    distanceMeters: raw.distanceMeters ?? (distance != null ? Math.round(distance * 1000) : undefined),
     address: raw.address || '',
+    city: raw.city ?? null,
+    district: raw.district ?? null,
+    phone: raw.phone ?? null,
     latitude: Number(raw.latitude),
     longitude: Number(raw.longitude),
     purposes: raw.purposes || [],
     facilities: facilities as any[],
+    facilitiesRich,
+    facilityValues: raw.facilityValues,
     menu,
     matchScore: raw.matchScore,
     favoritesCount: raw.favoritesCount || 0,
     bookmarksCount: raw.bookmarksCount || 0,
     wifiAvailable: raw.wifiAvailable,
-    wifiSpeedMbps: raw.wifiSpeedMbps,
+    wifiSpeedMbps: raw.wifiSpeedMbps ?? null,
     hasMushola: raw.hasMushola,
+    hasParking: raw.hasParking,
+    openingHours: raw.openingHours ?? null,
     priceRange: raw.priceRange,
     promotionType,
     promoTitle,
     promoDescription,
     promoPhoto,
     hasActivePromotion: raw.hasActivePromotion,
-    activePromotionType: raw.activePromotionType,
+    activePromotionType: raw.activePromotionType ?? null,
     googleRating: raw.googleRating ?? null,
     totalGoogleReviews: raw.totalGoogleReviews ?? null,
     googleMapsUrl: raw.googleMapsUrl ?? null,
+    googlePlaceId: raw.googlePlaceId ?? null,
     website: raw.website ?? null,
     purposeScores: raw.purposeScores || {},
     detectedFacilities: raw.detectedFacilities || [],
+    topReviewText: raw.topReviewText ?? null,
+    topReviewAuthor: raw.topReviewAuthor ?? null,
+    topReviewRating: raw.topReviewRating ?? null,
+    topReviewAt: raw.topReviewAt ?? null,
   } as any;
 }

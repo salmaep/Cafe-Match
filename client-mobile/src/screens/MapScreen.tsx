@@ -18,6 +18,9 @@ import {
   Animated,
 } from "react-native";
 import CafePhoto from "../components/CafePhoto";
+import CafeListItem from "../components/cafe/CafeListItem";
+import MobileFilterModal from "../components/cafe/MobileFilterModal";
+import { usePurposes } from "../queries/purposes/use-purposes";
 import Swiper from "react-native-deck-swiper";
 import MapView, { Marker, Circle } from "react-native-maps";
 import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
@@ -38,8 +41,6 @@ import { hitsToCafes } from "../queries/cafes/api";
 import { Cafe } from "../types";
 import { colors, spacing, radius } from "../theme";
 import { RADIUS_OPTIONS } from "../constant/ui/radius-options";
-import { FACILITY_KEY_BY_LABEL } from "../constant/purpose";
-import { usePurposeId } from "../queries/purposes/use-purpose-id";
 
 const { width, height } = Dimensions.get("window");
 
@@ -56,7 +57,7 @@ function formatDuration(totalSec: number): string {
 export default function MapScreen() {
   const navigation = useNavigation<StackNavigationProp<any>>();
   const insets = useSafeAreaInsets();
-  const { preferences, setPreferences } = usePreferences();
+  const { preferences } = usePreferences();
   const { latitude: userLat, longitude: userLng } = useLocation();
   const { addToShortlist, isInShortlist } = useShortlist();
   const mapRef = useRef<MapView>(null);
@@ -66,6 +67,31 @@ export default function MapScreen() {
   const [radiusKm, setRadiusKm] = useState(preferences?.radius || 2);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchActive, setSearchActive] = useState(false);
+
+  // ─── Local filter state — initialized from wizard preferences, freely editable
+  // via the filter modal afterward. Mirrors web HomePage filter UX.
+  const purposesQuery = usePurposes();
+  const purposeList = purposesQuery.data ?? [];
+  const initialPurposeId = preferences?.purpose
+    ? purposeList.find(
+        (p) =>
+          p.name === preferences.purpose ||
+          p.slug.replace(/-/g, ' ') === preferences.purpose?.toLowerCase(),
+      )?.id ?? null
+    : null;
+  const [filterPurposeId, setFilterPurposeId] = useState<number | null>(initialPurposeId);
+  const [filterFacilityKeys, setFilterFacilityKeys] = useState<string[]>(
+    preferences?.amenities ?? [],
+  );
+  const [filterPriceRange, setFilterPriceRange] = useState<string>(
+    preferences?.priceRange ?? '',
+  );
+  const [filterModalOpen, setFilterModalOpen] = useState(false);
+
+  const activeFilterCount =
+    filterFacilityKeys.length +
+    (filterPriceRange ? 1 : 0) +
+    (filterPurposeId != null ? 1 : 0);
 
   // Active check-in: server-driven via TanStack Query (refetch every 60s).
   // See queries/checkins/use-active-checkin.ts.
@@ -175,14 +201,10 @@ export default function MapScreen() {
   //     so the drawer list reflects the user's preferences.
   // Server (Meilisearch) does ALL filtering, sorting, and distance calc.
   const radiusMeters = Math.min(radiusKm * 1000, 50_000_000);
-  const purposeId = usePurposeId(preferences?.purpose);
-  const facilities = useMemo(
-    () =>
-      (preferences?.amenities ?? [])
-        .map((a) => FACILITY_KEY_BY_LABEL[a])
-        .filter(Boolean),
-    [preferences?.amenities],
-  );
+  // Local filter state takes precedence over wizard preferences.
+  const purposeId = filterPurposeId ?? undefined;
+  const facilities = filterFacilityKeys;
+  const priceRange = filterPriceRange;
   const activeQ = searchActive && searchQuery.trim() ? searchQuery.trim() : undefined;
 
   const mapPinsQuery = useSearchCafes({
@@ -202,7 +224,8 @@ export default function MapScreen() {
     // Send facilities only if the user picked at least one — empty array
     // would over-restrict (server treats empty list as no-match in some cases).
     ...(facilities.length > 0 ? { facilities } : {}),
-    limit: 200,
+    priceRange: (priceRange as any) || undefined,
+    limit: 20,
   });
 
   const promotedQuery = usePromotedCafes("featured_promo");
@@ -294,28 +317,38 @@ export default function MapScreen() {
     setSearchActive(false);
   };
 
-  const activeFilters: string[] = [];
-  if (preferences?.purpose) activeFilters.push(preferences.purpose);
-  if (preferences?.amenities)
-    preferences.amenities.forEach((a) => activeFilters.push(a));
-
-  const removeFilter = (filter: string) => {
-    if (!preferences) return;
-    const updated = { ...preferences };
-    if (filter === updated.purpose) updated.purpose = undefined;
-    else {
-      updated.amenities = updated.amenities?.filter((a) => a !== filter);
-      if (!updated.amenities?.length) updated.amenities = undefined;
-    }
-    if (!updated.purpose && !updated.amenities?.length) setPreferences(null);
-    else setPreferences(updated);
-  };
+  // Active filter chips list driven by local filter state (modal-managed).
+  const activeFilters: { key: string; label: string; remove: () => void }[] = [];
+  if (filterPurposeId != null) {
+    const p = purposeList.find((x) => x.id === filterPurposeId);
+    activeFilters.push({
+      key: `purpose-${filterPurposeId}`,
+      label: p ? `${p.icon ?? ''} ${p.name}`.trim() : 'Purpose',
+      remove: () => setFilterPurposeId(null),
+    });
+  }
+  filterFacilityKeys.forEach((k) => {
+    activeFilters.push({
+      key: `fac-${k}`,
+      label: k.replace(/_/g, ' '),
+      remove: () =>
+        setFilterFacilityKeys((prev) => prev.filter((x) => x !== k)),
+    });
+  });
+  if (filterPriceRange) {
+    activeFilters.push({
+      key: 'price',
+      label: filterPriceRange,
+      remove: () => setFilterPriceRange(''),
+    });
+  }
 
   const resetFilters = () => {
-    setPreferences(null);
+    setFilterPurposeId(null);
+    setFilterFacilityKeys([]);
+    setFilterPriceRange('');
     clearSearch();
     setRadiusKm(2);
-    // Both queries auto-refetch when their params (preferences/radius) change.
   };
 
   const hasAnyFilter =
@@ -327,76 +360,65 @@ export default function MapScreen() {
     sheetRef.current?.snapToIndex(1);
   };
 
-  const renderCafeCard = ({ item }: { item: Cafe }) => {
-    const isSelected = selectedCafe?.id === item.id;
-    return (
-      <TouchableOpacity
-        style={[styles.cafeCard, isSelected && styles.cafeCardSelected]}
-        activeOpacity={0.85}
-        onPress={() => navigation.navigate("CafeDetail", { cafe: item })}
-      >
-        <CafePhoto
-          photos={item.photos}
-          name={item.name}
-          style={styles.cafeCardPhoto}
-        />
-        <View style={styles.cafeCardInfo}>
-          <View style={styles.cafeCardTopRow}>
-            <Text style={styles.cafeCardName} numberOfLines={1}>
-              {item.name}
-            </Text>
-            {item.promotionType === "A" && (
-              <View style={styles.newBadge}>
-                <Text style={styles.newBadgeText}>New</Text>
-              </View>
-            )}
-            {item.promotionType === "B" && (
-              <View style={styles.featuredBadge}>
-                <Text style={styles.featuredBadgeText}>Featured</Text>
-              </View>
-            )}
-          </View>
-          <Text style={styles.cafeCardDist}>{item.distance} km away</Text>
-          <View style={styles.cafeCardTags}>
-            {(item.purposes ?? []).slice(0, 2).map((p) => (
-              <View key={p} style={styles.tag}>
-                <Text style={styles.tagText}>{p}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-        <View style={styles.cafeCardRight}>
-          <Text style={styles.cafeCardFavCount}>❤️ {item.favoritesCount}</Text>
-          <Text style={styles.cafeCardArrow}>›</Text>
-        </View>
-      </TouchableOpacity>
-    );
-  };
+  const renderCafeCard = ({ item }: { item: Cafe }) => (
+    <View
+      style={
+        selectedCafe?.id === item.id
+          ? { borderRadius: 16, borderWidth: 2, borderColor: colors.accent }
+          : undefined
+      }
+    >
+      <CafeListItem cafe={item} />
+    </View>
+  );
 
   return (
     <View style={styles.container}>
-      {/* Search bar — always above map */}
+      {/* Search bar + filter button — always above map */}
       <View style={[styles.searchContainer, { top: insets.top + 8 }]}>
-        <View style={styles.searchBar}>
-          <Text style={styles.searchIcon}>🔍</Text>
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search cafes, e.g. wifi mushola quiet..."
-            placeholderTextColor={colors.textSecondary}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            onSubmitEditing={handleSearch}
-            returnKeyType="search"
-          />
-          {searchActive && (
-            <TouchableOpacity
-              onPress={clearSearch}
-              style={styles.clearBtn}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        <View style={styles.searchRow}>
+          <View style={styles.searchBar}>
+            <Text style={styles.searchIcon}>🔍</Text>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Cari kafe, alamat, atau fasilitas…"
+              placeholderTextColor={colors.textSecondary}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              onSubmitEditing={handleSearch}
+              returnKeyType="search"
+            />
+            {searchActive && (
+              <TouchableOpacity
+                onPress={clearSearch}
+                style={styles.clearBtn}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Text style={styles.clearIcon}>×</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+          <TouchableOpacity
+            onPress={() => setFilterModalOpen(true)}
+            style={[
+              styles.filterFab,
+              activeFilterCount > 0 && styles.filterFabActive,
+            ]}
+          >
+            <Text
+              style={[
+                styles.filterFabIcon,
+                activeFilterCount > 0 && styles.filterFabIconActive,
+              ]}
             >
-              <Text style={styles.clearIcon}>×</Text>
-            </TouchableOpacity>
-          )}
+              ⚙︎
+            </Text>
+            {activeFilterCount > 0 && (
+              <View style={styles.filterFabBadge}>
+                <Text style={styles.filterFabBadgeText}>{activeFilterCount}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
         </View>
         {searchActive && displayCafes.length === 0 && !loading && (
           <View style={styles.noResultsBanner}>
@@ -756,6 +778,18 @@ export default function MapScreen() {
           ]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
+          onScroll={({ nativeEvent }) => {
+            const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
+            const distanceFromBottom =
+              contentSize.height - (layoutMeasurement.height + contentOffset.y);
+            if (
+              distanceFromBottom < 320 &&
+              listQuery.hasNextPage &&
+              !listQuery.isFetchingNextPage
+            ) {
+              listQuery.fetchNextPage();
+            }
+          }}
         >
           {/* Highlighted card for selected pin */}
           {selectedCafe && (
@@ -802,47 +836,44 @@ export default function MapScreen() {
           {featuredCafes.length > 0 && !searchActive && (
             <View style={styles.featuredSection}>
               <Text style={styles.featuredTitle}>Featured Today ✨</Text>
-              <View style={styles.featuredListWrap}>
-                <GHScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  nestedScrollEnabled
-                  directionalLockEnabled
-                  decelerationRate="fast"
-                  contentContainerStyle={styles.featuredScroll}
-                  style={styles.featuredScrollInner}
-                >
-                  {featuredCafes.map((cafe) => {
-                    const isNewCafe = isNewCafePromo(cafe);
-                    const promoImage =
-                      cafe.promotionContent?.promoPhoto ||
-                      cafe.newCafeContent?.promoPhoto ||
-                      cafe.promoPhoto ||
-                      cafe.photos?.[0] ||
-                      "";
-                    const title =
-                      cafe.promotionContent?.title ||
-                      (isNewCafe
-                        ? cafe.newCafeContent?.promoOffer ||
-                          `${cafe.name} is now open!`
-                        : cafe.promoTitle || cafe.name);
-                    const description =
-                      cafe.promotionContent?.description ||
-                      cafe.newCafeContent?.highlightText ||
-                      cafe.promoDescription ||
-                      "";
-                    const validHours = cafe.promotionContent?.validHours;
-                    const validDays = cafe.promotionContent?.validDays;
+              <GHScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                nestedScrollEnabled
+                directionalLockEnabled
+                decelerationRate="fast"
+                contentContainerStyle={styles.featuredScroll}
+              >
+                {featuredCafes.map((cafe) => {
+                  const isNewCafe = isNewCafePromo(cafe);
+                  const promoImage =
+                    cafe.promotionContent?.promoPhoto ||
+                    cafe.newCafeContent?.promoPhoto ||
+                    cafe.promoPhoto ||
+                    cafe.photos?.[0] ||
+                    "";
+                  const promoTitle =
+                    cafe.promotionContent?.title ||
+                    (isNewCafe
+                      ? cafe.newCafeContent?.promoOffer
+                      : cafe.promoTitle) ||
+                    null;
+                  const description =
+                    cafe.promotionContent?.description ||
+                    cafe.newCafeContent?.highlightText ||
+                    cafe.promoDescription ||
+                    "";
 
-                    return (
-                      <TouchableOpacity
-                        key={cafe.id}
-                        activeOpacity={0.85}
-                        style={styles.featuredCard}
-                        onPress={() =>
-                          navigation.navigate("CafeDetail", { cafe })
-                        }
-                      >
+                  return (
+                    <TouchableOpacity
+                      key={cafe.id}
+                      activeOpacity={0.85}
+                      style={styles.featuredCard}
+                      onPress={() =>
+                        navigation.navigate("CafeDetail", { cafe })
+                      }
+                    >
+                      <View style={styles.featuredImageWrap}>
                         <Image
                           source={{ uri: promoImage }}
                           style={styles.featuredImage}
@@ -854,42 +885,40 @@ export default function MapScreen() {
                             </Text>
                           </View>
                         )}
-                        <View style={styles.featuredInfo}>
+                      </View>
+                      <View style={styles.featuredInfo}>
+                        <Text style={styles.featuredCafeName} numberOfLines={1}>
+                          {cafe.name}
+                        </Text>
+                        {!!promoTitle && (
                           <Text
                             style={styles.featuredPromoTitle}
                             numberOfLines={1}
                           >
-                            {title}
+                            {promoTitle}
                           </Text>
-                          {description ? (
-                            <Text
-                              style={styles.featuredPromoDesc}
-                              numberOfLines={2}
-                            >
-                              {description}
-                            </Text>
-                          ) : null}
-                          {validHours ? (
-                            <View style={styles.validHoursChip}>
-                              <Text style={styles.validHoursIcon}>🕗</Text>
-                              <Text style={styles.validHoursText}>
-                                {validHours}
-                                {validDays ? ` · ${validDays}` : ""}
-                              </Text>
-                            </View>
-                          ) : null}
+                        )}
+                        {!!description && (
                           <Text
-                            style={styles.featuredCafeName}
+                            style={styles.featuredPromoDesc}
+                            numberOfLines={2}
+                          >
+                            {description}
+                          </Text>
+                        )}
+                        {!!cafe.address && (
+                          <Text
+                            style={styles.featuredAddress}
                             numberOfLines={1}
                           >
-                            📍 {cafe.name}
+                            📍 {cafe.address}
                           </Text>
-                        </View>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </GHScrollView>
-              </View>
+                        )}
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </GHScrollView>
             </View>
           )}
 
@@ -930,11 +959,11 @@ export default function MapScreen() {
               >
                 {activeFilters.map((f) => (
                   <TouchableOpacity
-                    key={f}
+                    key={f.key}
                     style={styles.filterPill}
-                    onPress={() => removeFilter(f)}
+                    onPress={f.remove}
                   >
-                    <Text style={styles.filterPillText}>{f}</Text>
+                    <Text style={styles.filterPillText}>{f.label}</Text>
                     <Text style={styles.filterPillX}> ×</Text>
                   </TouchableOpacity>
                 ))}
@@ -983,16 +1012,40 @@ export default function MapScreen() {
                 </TouchableOpacity>
               </View>
             ) : (
-              listCafes.map((cafe) => (
-                <React.Fragment key={cafe.id}>
-                  {renderCafeCard({ item: cafe })}
-                  <View style={styles.cardSep} />
-                </React.Fragment>
-              ))
+              <>
+                {listCafes.map((cafe) => (
+                  <React.Fragment key={cafe.id}>
+                    {renderCafeCard({ item: cafe })}
+                    <View style={styles.cardSep} />
+                  </React.Fragment>
+                ))}
+                {listQuery.isFetchingNextPage && (
+                  <View style={{ paddingVertical: spacing.md, alignItems: 'center' }}>
+                    <ActivityIndicator color={colors.accent} />
+                  </View>
+                )}
+                {!listQuery.hasNextPage && listCafes.length > 0 && (
+                  <Text style={styles.listEndHint}>
+                    Itu semua dalam {radiusKm} km ✓
+                  </Text>
+                )}
+              </>
             )}
           </View>
         </BottomSheetScrollView>
       </BottomSheet>
+
+      <MobileFilterModal
+        visible={filterModalOpen}
+        onClose={() => setFilterModalOpen(false)}
+        purposes={purposeList}
+        activePurposeId={filterPurposeId}
+        onPurposeSelect={setFilterPurposeId}
+        facilities={filterFacilityKeys}
+        onFacilitiesChange={setFilterFacilityKeys}
+        priceRange={filterPriceRange}
+        onPriceRangeChange={setFilterPriceRange}
+      />
     </View>
   );
 }
@@ -1007,7 +1060,13 @@ const styles = StyleSheet.create({
     right: spacing.md,
     zIndex: 20,
   },
+  searchRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
   searchBar: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: colors.white,
@@ -1018,6 +1077,32 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.12,
     shadowRadius: 8,
+  },
+  filterFab: {
+    width: 44, height: 44, borderRadius: 22,
+    backgroundColor: colors.white,
+    alignItems: "center", justifyContent: "center",
+    elevation: 6,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    position: "relative",
+  },
+  filterFabActive: { backgroundColor: colors.accent },
+  filterFabIcon: { fontSize: 18, color: colors.primary, fontWeight: "700" },
+  filterFabIconActive: { color: colors.white },
+  filterFabBadge: {
+    position: "absolute",
+    top: -3, right: -3,
+    minWidth: 18, height: 18, borderRadius: 9,
+    paddingHorizontal: 4,
+    backgroundColor: colors.white,
+    borderWidth: 1, borderColor: colors.accent,
+    alignItems: "center", justifyContent: "center",
+  },
+  filterFabBadgeText: {
+    color: colors.accent, fontSize: 10, fontWeight: "900",
   },
   searchIcon: { fontSize: 16, marginRight: spacing.sm },
   searchInput: {
@@ -1114,44 +1199,44 @@ const styles = StyleSheet.create({
   dismissPin: { alignSelf: "flex-end", marginTop: 6 },
   dismissPinText: { fontSize: 12, color: colors.textSecondary },
 
-  // Featured
-  featuredSection: { marginBottom: 8 },
+  // Featured — mirrors web FeaturedCafeCard (w-64 card, h-32 image, p-3 content).
+  featuredSection: { marginBottom: spacing.sm },
   featuredTitle: {
     fontSize: 15,
     fontWeight: '700',
     color: colors.primary,
     marginBottom: spacing.sm,
   },
-  featuredListWrap: {
-    // Explicit height matching 200px card so nested scroll has fixed bounds
-    height: 200,
-  },
-  featuredScrollInner: {
-    flexGrow: 0,
-  },
   featuredScroll: {
     paddingRight: spacing.md,
+    gap: 12,
   },
   featuredCard: {
-    width: 240,
-    height: 200,
-    marginRight: 12,
+    width: 256,
     backgroundColor: colors.white,
-    borderRadius: radius.md,
+    borderRadius: 12,
     overflow: 'hidden',
-    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#FDE3B8',
+    elevation: 1,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
   },
-  featuredImage: { width: '100%', height: 110, resizeMode: 'cover' },
+  featuredImageWrap: { position: 'relative' },
+  featuredImage: {
+    width: '100%',
+    height: 128,
+    resizeMode: 'cover',
+    backgroundColor: '#F0EDE8',
+  },
   featuredNewBadgeAbs: {
     position: 'absolute',
-    top: 6,
-    left: 6,
+    top: 8,
+    left: 8,
     backgroundColor: colors.newCafePin,
-    borderRadius: radius.sm,
+    borderRadius: 6,
     paddingHorizontal: 7,
     paddingVertical: 2,
   },
@@ -1162,37 +1247,29 @@ const styles = StyleSheet.create({
     letterSpacing: 0.4,
   },
   featuredInfo: {
-    paddingHorizontal: 10,
-    paddingTop: 8,
-    paddingBottom: 0,
-    height: 90,
+    padding: 12,
+    gap: 2,
   },
-  featuredPromoTitle: { fontSize: 14, fontWeight: '800', color: colors.accent },
+  featuredCafeName: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.primary,
+  },
+  featuredPromoTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#B45309',
+  },
   featuredPromoDesc: {
     fontSize: 12,
     color: colors.textSecondary,
+    lineHeight: 16,
     marginTop: 2,
-    lineHeight: 15,
   },
-  validHoursChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderRadius: radius.full,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    alignSelf: 'flex-start',
-    marginTop: 4,
-    gap: 3,
-  },
-  validHoursIcon: { fontSize: 10 },
-  validHoursText: { fontSize: 11, fontWeight: '600', color: colors.primary },
-  featuredCafeName: {
+  featuredAddress: {
     fontSize: 11,
-    color: colors.textSecondary,
-    fontWeight: '600',
+    color: '#A8A59C',
     marginTop: 4,
-    marginBottom: 8,
   },
 
   // Controls
@@ -1274,6 +1351,13 @@ const styles = StyleSheet.create({
   emptyReset: { marginTop: spacing.md },
   emptyResetText: { fontSize: 14, color: colors.accent, fontWeight: "600" },
   cardSep: { height: spacing.sm },
+  listEndHint: {
+    textAlign: 'center',
+    fontSize: 12,
+    color: colors.textSecondary,
+    paddingVertical: spacing.lg,
+    fontStyle: 'italic',
+  },
 
   // Cafe list cards
   cafeCard: {

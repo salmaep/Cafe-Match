@@ -15,6 +15,8 @@ export interface SearchCafesParams {
   hasParking?: boolean;
   priceRange?: '$' | '$$' | '$$$';
   purposeId?: number;
+  /** Server-side facility keys (mirrors web cafes.api.ts). */
+  facilities?: string[];
   page?: number;
   limit?: number;
 }
@@ -50,6 +52,11 @@ export interface CafeDocument {
   googleMapsUrl: string;
   openingHours: Record<string, any> | null;
   wifiSpeedMbps: number | null;
+  // Top review snippet (server-prepared via meili-cafes service)
+  topReviewText?: string | null;
+  topReviewAuthor?: string | null;
+  topReviewRating?: number | null;
+  topReviewAt?: number | null;
 }
 
 export type CafeHit = CafeDocument & {

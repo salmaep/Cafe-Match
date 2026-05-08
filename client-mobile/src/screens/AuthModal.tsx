@@ -15,6 +15,7 @@ import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 import { useAuth } from '../context/AuthContext';
 import { colors, spacing, radius } from '../theme';
+import { socialEnrollPhoneApi, socialVerifyPhoneApi } from '../services/api';
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3084/api/v1';
 
@@ -23,6 +24,14 @@ WebBrowser.maybeCompleteAuthSession();
 interface OtpChallenge {
   otpId: string;
   phoneHint?: string;
+  expiresAt?: string;
+  mode?: 'login' | 'social-enroll';
+  enrollmentId?: string;
+  phone?: string;
+}
+
+interface EnrollChallenge {
+  enrollmentId: string;
   expiresAt?: string;
 }
 
@@ -60,6 +69,12 @@ export default function AuthModal() {
   const [otpNow, setOtpNow] = useState(Date.now());
   const lastSentAt = useRef(Date.now());
   const [resending, setResending] = useState(false);
+
+  // ─── Social phone enrollment (OAuth users without phone) ────────────────
+  const [enrollChallenge, setEnrollChallenge] = useState<EnrollChallenge | null>(null);
+  const [enrollPhone, setEnrollPhone] = useState('');
+  const [enrollLoading, setEnrollLoading] = useState(false);
+  const [enrollError, setEnrollError] = useState('');
 
   // Live clock for OTP countdown / resend cooldown
   useEffect(() => {
@@ -157,13 +172,65 @@ export default function AuthModal() {
       return;
     }
     setOtpLoading(true);
-    const result = await verify2fa(otpChallenge.otpId, otpCode.trim());
-    setOtpLoading(false);
-    if (result.success) {
-      setOtpChallenge(null);
-      navigation.goBack();
-    } else {
-      setOtpError(result.error || 'Verifikasi gagal.');
+    try {
+      if (otpChallenge.mode === 'social-enroll' && otpChallenge.enrollmentId && otpChallenge.phone) {
+        const auth = await socialVerifyPhoneApi(
+          otpChallenge.enrollmentId,
+          otpChallenge.otpId,
+          otpCode.trim(),
+          otpChallenge.phone,
+        );
+        const r = await loginWithToken(auth.accessToken);
+        if (r.success) {
+          setOtpChallenge(null);
+          setEnrollChallenge(null);
+          navigation.goBack();
+        } else {
+          setOtpError(r.error || 'Verifikasi gagal.');
+        }
+      } else {
+        const result = await verify2fa(otpChallenge.otpId, otpCode.trim());
+        if (result.success) {
+          setOtpChallenge(null);
+          navigation.goBack();
+        } else {
+          setOtpError(result.error || 'Verifikasi gagal.');
+        }
+      }
+    } catch (err: any) {
+      setOtpError(err?.response?.data?.message || err?.message || 'Verifikasi gagal.');
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  // ─── Submit phone for social enrollment → request OTP ───────────────────
+  const handleSubmitEnrollPhone = async () => {
+    if (!enrollChallenge) return;
+    setEnrollError('');
+    const phone = enrollPhone.trim();
+    if (!/^[0-9+\-\s]{8,20}$/.test(phone)) {
+      setEnrollError('Nomor telepon tidak valid.');
+      return;
+    }
+    setEnrollLoading(true);
+    try {
+      const { otpId, expiresAt } = await socialEnrollPhoneApi(enrollChallenge.enrollmentId, phone);
+      setOtpChallenge({
+        otpId,
+        expiresAt,
+        phoneHint: phone,
+        mode: 'social-enroll',
+        enrollmentId: enrollChallenge.enrollmentId,
+        phone,
+      });
+      setOtpCode('');
+      lastSentAt.current = Date.now();
+      setOtpNow(Date.now());
+    } catch (err: any) {
+      setEnrollError(err?.response?.data?.message || err?.message || 'Tidak dapat mengirim OTP.');
+    } finally {
+      setEnrollLoading(false);
     }
   };
 
@@ -172,19 +239,35 @@ export default function AuthModal() {
     if (!otpChallenge || cooldownLeft > 0 || resending) return;
     setOtpError('');
     setResending(true);
-    const result = await resend2fa(otpChallenge.otpId);
-    setResending(false);
-    if (result.success && result.otpId) {
-      setOtpChallenge({
-        ...otpChallenge,
-        otpId: result.otpId,
-        expiresAt: result.expiresAt ?? otpChallenge.expiresAt,
-      });
-      setOtpCode('');
-      lastSentAt.current = Date.now();
-      setOtpNow(Date.now());
-    } else {
-      setOtpError(result.error || 'Tidak dapat mengirim ulang kode.');
+    try {
+      if (otpChallenge.mode === 'social-enroll' && otpChallenge.enrollmentId && otpChallenge.phone) {
+        const { otpId, expiresAt } = await socialEnrollPhoneApi(
+          otpChallenge.enrollmentId,
+          otpChallenge.phone,
+        );
+        setOtpChallenge({ ...otpChallenge, otpId, expiresAt });
+        setOtpCode('');
+        lastSentAt.current = Date.now();
+        setOtpNow(Date.now());
+      } else {
+        const result = await resend2fa(otpChallenge.otpId);
+        if (result.success && result.otpId) {
+          setOtpChallenge({
+            ...otpChallenge,
+            otpId: result.otpId,
+            expiresAt: result.expiresAt ?? otpChallenge.expiresAt,
+          });
+          setOtpCode('');
+          lastSentAt.current = Date.now();
+          setOtpNow(Date.now());
+        } else {
+          setOtpError(result.error || 'Tidak dapat mengirim ulang kode.');
+        }
+      }
+    } catch (err: any) {
+      setOtpError(err?.response?.data?.message || err?.message || 'Tidak dapat mengirim ulang kode.');
+    } finally {
+      setResending(false);
     }
   };
 
@@ -209,9 +292,26 @@ export default function AuthModal() {
       const otpId = url.searchParams.get('otpId');
       const phoneHint = url.searchParams.get('phoneHint') ?? undefined;
       const expiresAt = url.searchParams.get('expiresAt') ?? undefined;
+      const phoneEnrollRequired = url.searchParams.get('phoneEnrollRequired');
+      const enrollmentId = url.searchParams.get('enrollmentId');
+      const errorParam = url.searchParams.get('error');
+
+      if (errorParam) {
+        setErrorMsg(decodeURIComponent(errorParam));
+        setSocialLoading(null);
+        return;
+      }
+
+      if (phoneEnrollRequired === '1' && enrollmentId) {
+        setEnrollChallenge({ enrollmentId, expiresAt });
+        setEnrollPhone('');
+        setEnrollError('');
+        setSocialLoading(null);
+        return;
+      }
 
       if (twoFaRequired === '1' && otpId) {
-        setOtpChallenge({ otpId, phoneHint, expiresAt });
+        setOtpChallenge({ otpId, phoneHint, expiresAt, mode: 'login' });
         setOtpCode('');
         lastSentAt.current = Date.now();
         setOtpNow(Date.now());
@@ -237,6 +337,77 @@ export default function AuthModal() {
       setErrorMsg(err?.message || `Login dengan ${provider} gagal.`);
     }
   };
+
+  // ─── Phone Enrollment Screen (social users without phone) ────────────────
+  if (enrollChallenge && !otpChallenge) {
+    return (
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <TouchableOpacity
+          style={styles.backdrop}
+          activeOpacity={1}
+          onPress={() => navigation.goBack()}
+        />
+        <View style={styles.sheet}>
+          <View style={styles.handleBar} />
+
+          <View style={styles.otpIcon}>
+            <Text style={styles.otpIconText}>📱</Text>
+          </View>
+          <Text style={styles.title}>Tambahkan Nomor WhatsApp</Text>
+          <Text style={styles.subtitle}>
+            Untuk mengamankan akun Anda, kami perlu memverifikasi nomor WhatsApp
+            sekali saja.
+          </Text>
+
+          {!!enrollError && (
+            <View style={styles.errorBanner}>
+              <Text style={styles.errorBannerText}>{enrollError}</Text>
+            </View>
+          )}
+
+          <TextInput
+            style={styles.input}
+            placeholder="08xxxxxxxxxx"
+            placeholderTextColor={colors.textSecondary}
+            value={enrollPhone}
+            onChangeText={(t) => { setEnrollPhone(t); setEnrollError(''); }}
+            keyboardType="phone-pad"
+            autoFocus
+            maxLength={20}
+          />
+
+          <TouchableOpacity
+            style={[
+              styles.submitBtn,
+              (enrollLoading || enrollPhone.trim().length < 8) && styles.submitBtnDisabled,
+            ]}
+            onPress={handleSubmitEnrollPhone}
+            disabled={enrollLoading || enrollPhone.trim().length < 8}
+          >
+            {enrollLoading ? (
+              <ActivityIndicator color={colors.white} />
+            ) : (
+              <Text style={styles.submitText}>Kirim Kode WhatsApp</Text>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.cancelBtn}
+            onPress={() => {
+              setEnrollChallenge(null);
+              setEnrollPhone('');
+              setEnrollError('');
+            }}
+          >
+            <Text style={styles.cancelText}>Batal — kembali ke login</Text>
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+    );
+  }
 
   // ─── OTP Screen ───────────────────────────────────────────────────────────
   if (otpChallenge) {

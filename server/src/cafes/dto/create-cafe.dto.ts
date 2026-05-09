@@ -2,22 +2,23 @@ import {
   IsString,
   IsNumber,
   IsOptional,
-  IsBoolean,
   IsArray,
   ValidateNested,
   Min,
   Max,
   IsEnum,
+  IsNotEmpty,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
-class FacilityDto {
+class FeatureDto {
   @IsString()
-  facilityKey: string;
+  @IsNotEmpty()
+  name: string;
 
   @IsOptional()
   @IsString()
-  facilityValue?: string;
+  category?: string;
 }
 
 export class CreateCafeDto {
@@ -50,18 +51,6 @@ export class CreateCafeDto {
   googlePlaceId?: string;
 
   @IsOptional()
-  @IsBoolean()
-  wifiAvailable?: boolean;
-
-  @IsOptional()
-  @IsNumber()
-  wifiSpeedMbps?: number;
-
-  @IsOptional()
-  @IsBoolean()
-  hasMushola?: boolean;
-
-  @IsOptional()
   openingHours?: Record<string, string>;
 
   @IsOptional()
@@ -71,6 +60,6 @@ export class CreateCafeDto {
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => FacilityDto)
-  facilities?: FacilityDto[];
+  @Type(() => FeatureDto)
+  features?: FeatureDto[];
 }

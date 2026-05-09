@@ -3180,20 +3180,15 @@ export async function seedCafes(dataSource: DataSource): Promise<void> {
 
     const googleMapsUrl = `https://www.google.com/maps?q=${cafe.latitude},${cafe.longitude}`;
 
-    const hasParking =
-      cafe.hasParking ?? cafe.facilities.includes('parking');
-
     // Insert cafe row with all columns including new promotion fields.
     // Slug is set in a follow-up UPDATE because it embeds the auto-generated id.
     const result = await dataSource.query(
       `INSERT INTO cafes (
         name, slug, description, address, latitude, longitude,
-        phone, google_maps_url, wifi_available, wifi_speed_mbps,
-        has_mushola, has_parking, opening_hours, price_range,
+        phone, google_maps_url, opening_hours, price_range,
         has_active_promotion, active_promotion_type,
         promotion_content, new_cafe_content
       ) VALUES (?, NULL, ?, ?, ?, ?,
-        ?, ?, ?, ?,
         ?, ?, ?, ?,
         ?, ?, ?, ?)`,
       [
@@ -3204,10 +3199,6 @@ export async function seedCafes(dataSource: DataSource): Promise<void> {
         cafe.longitude,
         cafe.phone,
         googleMapsUrl,
-        cafe.wifiAvailable,
-        cafe.wifiSpeedMbps,
-        cafe.hasMushola,
-        hasParking,
         JSON.stringify(cafe.openingHours),
         cafe.priceRange,
         cafe.hasActivePromotion ?? false,
@@ -3221,12 +3212,24 @@ export async function seedCafes(dataSource: DataSource): Promise<void> {
     const slug = buildCafeSlug(cafe.name, cafeId);
     await dataSource.query('UPDATE cafes SET slug = ? WHERE id = ?', [slug, cafeId]);
 
-    // Insert facilities
-    for (const key of cafe.facilities) {
+    // Insert features (via master features lookup)
+    for (const name of cafe.facilities) {
       await dataSource.query(
-        'INSERT INTO cafe_facilities (cafe_id, facility_key) VALUES (?, ?)',
-        [cafeId, key],
+        `INSERT INTO features (name, category) VALUES (?, NULL)
+         ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id)`,
+        [name],
       );
+      const [row] = await dataSource.query(
+        `SELECT id FROM features WHERE name = ? LIMIT 1`,
+        [name],
+      );
+      if (row) {
+        await dataSource.query(
+          `INSERT INTO cafe_features (cafe_id, feature_id, source) VALUES (?, ?, 'manual')
+           ON DUPLICATE KEY UPDATE source = 'manual'`,
+          [cafeId, row.id],
+        );
+      }
     }
 
     // Insert photos — use explicit list OR generate 3 picsum placeholders

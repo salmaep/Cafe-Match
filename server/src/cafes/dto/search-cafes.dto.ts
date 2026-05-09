@@ -6,7 +6,6 @@ import {
   IsPositive,
   IsString,
   IsIn,
-  IsBooleanString,
   IsArray,
 } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
@@ -41,18 +40,6 @@ export class SearchCafesDto {
   @IsOptional()
   @IsString()
   q?: string;
-
-  @IsOptional()
-  @IsBooleanString()
-  wifiAvailable?: string;
-
-  @IsOptional()
-  @IsBooleanString()
-  hasMushola?: string;
-
-  @IsOptional()
-  @IsBooleanString()
-  hasParking?: string;
 
   @IsOptional()
   @IsIn(['$', '$$', '$$$'])

@@ -12,11 +12,9 @@ function paramsForServer(p: SearchCafesParams) {
     lat: p.lat,
     lng: p.lng,
     radius: p.radius != null ? Math.min(p.radius, MAX_RADIUS_M) : undefined,
-    wifiAvailable: p.wifiAvailable === true ? 'true' : undefined,
-    hasMushola: p.hasMushola === true ? 'true' : undefined,
-    hasParking: p.hasParking === true ? 'true' : undefined,
     priceRange: p.priceRange,
     purposeId: p.purposeId,
+    facilities: p.facilities && p.facilities.length > 0 ? p.facilities : undefined,
     page: p.page ?? 1,
     limit: p.limit ?? 50,
   };

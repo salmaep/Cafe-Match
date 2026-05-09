@@ -1,31 +1,47 @@
+// Rich feature row from backend (DB shape).
+export interface CafeFeatureRich {
+  id?: number;
+  name: string;
+  category: string | null;
+}
+
 // Backend cafe entity mapped to frontend
 export interface Cafe {
   id: string;
   name: string;
-  slug?: string;
-  description?: string;
+  slug?: string | null;
+  description?: string | null;
   photos: string[];
-  distance: number; // in km
+  primaryPhotoUrl?: string | null;
+  distance: number; // in km — derived for compatibility
+  distanceMeters?: number; // raw — preferred for display
   address: string;
+  city?: string | null;
+  district?: string | null;
+  phone?: string | null;
   latitude: number;
   longitude: number;
   purposes: Purpose[];
+  // Legacy label list, preserved for swipe screen / wizard.
   facilities: Facility[];
+  // Raw feature names from backend (cafe_features.name).
+  featureNames?: string[];
+  // Categories assigned to features (parallel to featureNames).
+  featureCategories?: string[];
+  // Rich feature list (name + category) — used by buildFacilityChips.
+  facilitiesRich?: CafeFeatureRich[];
   menu: MenuCategory[];
   matchScore?: number;
   favoritesCount: number;
   bookmarksCount: number;
-  wifiAvailable?: boolean;
-  wifiSpeedMbps?: number;
-  hasMushola?: boolean;
-  priceRange?: '$' | '$$' | '$$$';
+  openingHours?: Record<string, string> | null;
+  priceRange?: string;
   promotionType?: 'A' | 'B';
   promoTitle?: string;
   promoDescription?: string;
   promoPhoto?: string;
   hasActivePromotion?: boolean;
-  activePromotionType?: string;
-  // Type B: Featured promo rich content
+  activePromotionType?: 'new_cafe' | 'featured_promo' | string | null;
   promotionContent?: {
     title: string;
     description: string;
@@ -33,7 +49,6 @@ export interface Cafe {
     validDays?: string;
     promoPhoto?: string;
   };
-  // Type A: New cafe rich content
   newCafeContent?: {
     openingSince: string;
     highlightText: string;
@@ -41,14 +56,18 @@ export interface Cafe {
     promoOffer?: string;
     promoPhoto?: string;
   };
-  // Enriched from scraped Google Places data
   googleRating?: number | null;
   totalGoogleReviews?: number | null;
   googleMapsUrl?: string | null;
+  googlePlaceId?: string | null;
   website?: string | null;
-  // Purpose scores from review analysis (slug → 0-100)
   purposeScores?: Record<string, number>;
   detectedFacilities?: string[];
+  // Top review summary (server-prepared via meili-cafes service).
+  topReviewText?: string | null;
+  topReviewAuthor?: string | null;
+  topReviewRating?: number | null;
+  topReviewAt?: number | null;
 }
 
 export type Purpose =
@@ -87,10 +106,11 @@ export interface WizardPreferences {
     label?: string;
   };
   radius?: number; // in km
-  // String labels (e.g., "WiFi", "Power Outlet"). Sourced from `/cafes/filters`
-  // — not constrained to the legacy Facility union so server can add facilities
-  // without a client release.
+  // Server facility keys (e.g., "wifi", "power_outlet") sourced from
+  // `/cafes/filters`. Stored as keys (not labels) so they can be sent
+  // straight to the search endpoint.
   amenities?: string[];
+  priceRange?: string; // '$' | '$$' | '$$$'
 }
 
 export interface User {

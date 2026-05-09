@@ -27,6 +27,55 @@ export async function fetchPurposes(): Promise<BackendPurpose[]> {
   return data;
 }
 
+// ─── Filter catalog (facilities + price ranges) ───
+
+export interface FilterCatalogOption {
+  key: string;
+  label: string;
+  icon?: string;
+  count?: number;
+}
+
+export interface FilterCatalogGroup {
+  key: string;
+  label: string;
+  options: FilterCatalogOption[];
+}
+
+// Pretty-print a feature name (e.g. "wifi gratis" → "Wifi Gratis").
+function formatFeatureLabel(name: string): string {
+  return name
+    .split(/\s+/)
+    .map((w) => (w ? w[0].toUpperCase() + w.slice(1) : ""))
+    .join(" ");
+}
+
+const CATEGORY_LABELS: Record<string, string> = {
+  amenity: "Fasilitas",
+  ambience: "Suasana",
+  space: "Ruang",
+  audience: "Cocok Untuk",
+  service: "Layanan",
+  payment: "Pembayaran",
+  accessibility: "Aksesibilitas",
+  uncategorized: "Lainnya",
+};
+
+export async function fetchFilterCatalog(): Promise<FilterCatalogGroup[]> {
+  const { data } = await api.get("/cafes/filters");
+  const groups: any[] = data?.groups ?? [];
+  return groups.map((g) => ({
+    key: g.category ?? g.key ?? "uncategorized",
+    label: CATEGORY_LABELS[g.category] ?? g.label ?? g.category ?? "Lainnya",
+    options: (g.items ?? g.options ?? []).map((item: any) => ({
+      key: item.name ?? item.key,
+      label: item.label ?? formatFeatureLabel(item.name ?? item.key ?? ""),
+      icon: item.icon,
+      count: typeof item.count === "number" ? item.count : undefined,
+    })),
+  }));
+}
+
 // ─── Destinations ───
 
 export interface BackendDestination {
@@ -101,6 +150,47 @@ export async function resend2faApi(otpId: string): Promise<{ otpId: string; expi
   return { otpId: data.otpId, expiresAt: data.expiresAt };
 }
 
+// ─── Social phone enrollment (Google/FB users without phone) ───
+// Mirrors the web flow: server returns `phoneEnrollRequired` when an OAuth
+// user has no phone yet. Mobile collects the phone, requests OTP, and verifies
+// — all without a JWT (the enrollmentId acts as a short-lived session token).
+
+export interface PhoneEnrollChallenge {
+  phoneEnrollRequired: true;
+  enrollmentId: string;
+  expiresAt: string;
+}
+
+export function isPhoneEnrollChallenge(r: any): r is PhoneEnrollChallenge {
+  return r?.phoneEnrollRequired === true;
+}
+
+export async function socialEnrollPhoneApi(
+  enrollmentId: string,
+  phone: string,
+): Promise<{ otpId: string; expiresAt: string }> {
+  const { data } = await api.post("/auth/social/phone/enroll", {
+    enrollmentId,
+    phone,
+  });
+  return { otpId: data.otpId, expiresAt: data.expiresAt };
+}
+
+export async function socialVerifyPhoneApi(
+  enrollmentId: string,
+  otpId: string,
+  code: string,
+  phone: string,
+): Promise<AuthResponse> {
+  const { data } = await api.post("/auth/social/phone/verify", {
+    enrollmentId,
+    otpId,
+    code,
+    phone,
+  });
+  return mapAuthResponse(data);
+}
+
 export async function registerApi(
   name: string,
   email: string,
@@ -127,6 +217,30 @@ export async function fetchMe(): Promise<User> {
     friendCode: data.friendCode,
     avatarUrl: data.avatarUrl,
   };
+}
+
+// ─── Users (profile management) ───
+
+export async function updateProfileApi(payload: {
+  name?: string;
+  avatarUrl?: string;
+}): Promise<User> {
+  const { data } = await api.patch("/users/me", payload);
+  return {
+    id: String(data.id),
+    name: data.name,
+    email: data.email,
+    role: data.role,
+    friendCode: data.friendCode,
+    avatarUrl: data.avatarUrl,
+  };
+}
+
+export async function changePasswordApi(payload: {
+  currentPassword: string;
+  newPassword: string;
+}): Promise<void> {
+  await api.post("/users/me/password", payload);
 }
 
 // ─── Bookmarks & Favorites ───
@@ -291,9 +405,23 @@ export async function fetchStreak() {
   return data as { current: number; longest: number; active: boolean };
 }
 
-export async function fetchGlobalLeaderboard(period: 'month' | 'all' = 'month') {
-  const { data } = await api.get("/checkins/global-leaderboard", { params: { period } });
-  return data;
+export type LeaderboardPeriod = "month" | "all";
+
+export async function fetchGlobalLeaderboard(period: LeaderboardPeriod = "month") {
+  const { data } = await api.get("/checkins/global-leaderboard", {
+    params: { period },
+  });
+  return data as Array<{
+    rank: number;
+    userId: number;
+    name: string;
+    avatarUrl?: string;
+    badge?: string | null;
+    totalCheckins: number;
+    uniqueCafes: number;
+    totalDuration: string;
+    score: number;
+  }>;
 }
 
 // ─── Friends ───

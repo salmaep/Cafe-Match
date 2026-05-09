@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import Swiper from 'react-native-deck-swiper';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -63,14 +63,21 @@ export default function CardSwipeScreen() {
   });
   const promotedQuery = usePromotedCafes();
 
-  const loading = cafesQuery.isLoading || promotedQuery.isLoading;
+  // Show loading ONLY when there is no data at all (initial fetch).
+  // Background refetches keep the existing deck visible to avoid blanking.
+  const hasAnyData =
+    (cafesQuery.data?.pages?.[0]?.data?.length ?? 0) > 0 ||
+    (promotedQuery.data?.length ?? 0) > 0 ||
+    cafes.length > 0;
+  const loading =
+    (cafesQuery.isLoading || promotedQuery.isLoading) && !hasAnyData;
 
   // Build the swipe deck from server data only.
-  // Server (Meilisearch) already filters by geo radius + amenities + purposeId;
-  // we just take the top results, optionally rank-by-purpose-score for display
-  // priority, and interleave promoted cafes.
+  // Server (Meilisearch) filters by geo radius + amenities + purposeId; this
+  // effect just ranks + interleaves promos for display order.
   useEffect(() => {
-    if (cafesQuery.isFetching || promotedQuery.isFetching) return;
+    // NOTE: don't gate on isFetching — that ping-pongs the deck on every
+    // background refetch (focus, tab switch, etc) and triggers blank flashes.
 
     const allCafes: Cafe[] = cafesQuery.data
       ? cafesQuery.data.pages.flatMap((p) =>
@@ -79,16 +86,18 @@ export default function CardSwipeScreen() {
       : [];
     const promotedCafes: Cafe[] = promotedQuery.data ?? [];
 
+    // Don't blank an existing deck when a refetch returns nothing transiently.
+    // Only commit empty if we genuinely have no data AND aren't fetching.
     if (allCafes.length === 0 && promotedCafes.length === 0) {
-      setCafes([]);
+      if (!cafesQuery.isFetching && !promotedQuery.isFetching) {
+        setCafes((prev) => (prev.length === 0 ? prev : []));
+      }
       return;
     }
 
     const wizardPurpose = preferences?.purpose;
     const wantedSlug = wizardPurpose ? PURPOSE_SLUG_MAP[wizardPurpose] : null;
 
-    // Display-order ranking using server-provided purposeScores / matchScore.
-    // (This is presentation logic on data the server already returned, not filtering.)
     const sorted = wantedSlug
       ? [...allCafes].sort(
           (a, b) =>
@@ -107,8 +116,6 @@ export default function CardSwipeScreen() {
     );
 
     const deck: Cafe[] = [...regular];
-
-    // Interleave any available promos at random positions in the first 4 slots.
     const insertAt = (cafe: Cafe) => {
       const pos = Math.min(deck.length, 1 + Math.floor(Math.random() * 3));
       deck.splice(pos, 0, cafe);
@@ -116,16 +123,35 @@ export default function CardSwipeScreen() {
     if (promoA) insertAt(promoA);
     if (promoB) insertAt(promoB);
 
-    setCafes(deck);
+    // Skip if the deck is unchanged (same length + same first id) to avoid
+    // remounting Swiper and resetting swipe progress on every refetch.
+    setCafes((prev) => {
+      if (
+        prev.length === deck.length &&
+        prev[0]?.id === deck[0]?.id &&
+        prev[prev.length - 1]?.id === deck[deck.length - 1]?.id
+      ) {
+        return prev;
+      }
+      return deck;
+    });
   }, [
     cafesQuery.data,
-    cafesQuery.isFetching,
     promotedQuery.data,
+    cafesQuery.isFetching,
     promotedQuery.isFetching,
     preferences?.purpose,
     lat,
     lng,
   ]);
+
+  // Reset "all swiped" state when the screen regains focus so coming back to
+  // the Discover tab doesn't strand the user on the empty state.
+  useFocusEffect(
+    useCallback(() => {
+      setAllSwiped(false);
+    }, []),
+  );
 
   const handleSwipedRight = (cardIndex: number) => {
     const cafe = cafes[cardIndex];
@@ -137,11 +163,11 @@ export default function CardSwipeScreen() {
   };
 
   const handleSwipedAll = () => {
+    // Discover IS a tab — don't navigate away (the previous
+    // navigation.replace('MainTabs') was a no-op on Android and an unwanted
+    // reset on iOS). Just show the empty state; user can tap Shortlist FAB
+    // or switch tabs naturally. allSwiped is reset on next focus.
     setAllSwiped(true);
-    // Fix 6: Always navigate, with safety timeout
-    setTimeout(() => {
-      navigation.replace('MainTabs');
-    }, 1200);
   };
 
   const openShortlist = () => navigation.navigate('ShortlistModal');
@@ -378,8 +404,12 @@ export default function CardSwipeScreen() {
         </Text>
       </View>
 
-      {/* Fix 1: Absolute container spanning full available area; cardStyle centers the card */}
+      {/* Absolute container spans full available area; cardStyle centers the card.
+          `key` is tied to deck identity (length + first id) so background
+          refetches that don't actually change the deck don't remount Swiper
+          (which would reset swipe progress). */}
       <Swiper
+        key={`${cafes.length}-${cafes[0]?.id ?? 'empty'}`}
         ref={swiperRef}
         cards={cafes}
         renderCard={renderCard}

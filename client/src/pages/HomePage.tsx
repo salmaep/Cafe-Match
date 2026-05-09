@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useGeolocation, FALLBACK_LAT, FALLBACK_LNG } from "../hooks/useGeolocation";
 import { cafesApi, type SearchParams } from "../api/cafes.api";
 import { promotionsApi } from "../api/promotions.api";
 import { parseCoords } from "../utils/parseCoords";
+import { usePreferences } from "../context/PreferencesContext";
 import type { Cafe } from "../types";
 import MapView from "../components/map/MapContainer";
 import MapErrorBoundary from "../components/map/MapErrorBoundary";
@@ -35,6 +36,12 @@ const RADIUS_PILLS = [500, 1000, 2000];
 
 export default function HomePage() {
   const geo = useGeolocation();
+  const {
+    preferences,
+    wizardCompleted,
+    setPreferences: setWizardPreferences,
+    getPurposeId,
+  } = usePreferences();
   const [purposes, setPurposes] = useState<Purpose[]>([]);
   useEffect(() => {
     purposesApi
@@ -80,6 +87,44 @@ export default function HomePage() {
   useEffect(() => {
     localStorage.setItem('cm_home_view', viewMode);
   }, [viewMode]);
+
+  // ── Hydrate filters from wizard preferences (one-time, on entry) ────────
+  // When user lands on HomePage right after finishing wizard / running out of
+  // swipe cards, prefill filters so the map shows the same matches. We only
+  // hydrate once per mount; further user edits are independent.
+  const [wizardBannerVisible, setWizardBannerVisible] = useState(false);
+  const hydratedRef = useRef(false);
+  useEffect(() => {
+    if (hydratedRef.current) return;
+    if (!wizardCompleted || !preferences) return;
+    // Wait for serverPurposes to load before resolving slug → numeric id.
+    const resolvedPurposeId = getPurposeId(preferences.purpose);
+    if (preferences.purpose && resolvedPurposeId == null) return;
+    hydratedRef.current = true;
+
+    if (preferences.radius) setRadius(preferences.radius * 1000);
+    if (resolvedPurposeId != null) setPurposeId(resolvedPurposeId);
+    setFilters({
+      q: '',
+      facilities: preferences.amenities ?? [],
+      priceRange: preferences.priceRange ?? '',
+    });
+    if (preferences.location?.type === 'custom' &&
+        preferences.location.latitude != null &&
+        preferences.location.longitude != null) {
+      setCenter([preferences.location.latitude, preferences.location.longitude]);
+      setCenterSource('manual');
+    }
+    setWizardBannerVisible(true);
+  }, [wizardCompleted, preferences, getPurposeId]);
+
+  const resetWizardFilters = () => {
+    setWizardPreferences(null);
+    setWizardBannerVisible(false);
+    setPurposeId(null);
+    setFilters({ q: '', facilities: [], priceRange: '' });
+    setRadius(2000);
+  };
 
   useEffect(() => {
     if (centerSource !== 'gps') return;
@@ -201,6 +246,31 @@ export default function HomePage() {
   const activeFilterCount =
     filters.facilities.length + (filters.priceRange ? 1 : 0);
 
+  // Selecting a purpose chip auto-applies that purpose's required features as
+  // the facility filter (mirrors wizard behaviour). Selecting "Semua" / null
+  // is a no-op for facilities — user can still keep their picks.
+  const handlePurposeSelect = (newId: number | null) => {
+    setPurposeId(newId);
+    if (newId == null) return;
+    const p = purposes.find((x) => x.id === newId);
+    if (!p?.requirements) return;
+    const features = p.requirements
+      .map((r) => r.feature?.name)
+      .filter((n): n is string => typeof n === 'string' && n.length > 0);
+    if (features.length === 0) return;
+    setFilters((prev) => ({ ...prev, facilities: features }));
+  };
+
+  // Feature names linked to the currently active purpose — drive the ⭐
+  // marker on FilterPanel chips so users see why those are pre-toggled.
+  const autoSelectedFromPurpose: string[] = (() => {
+    if (purposeId == null) return [];
+    const p = purposes.find((x) => x.id === purposeId);
+    return (p?.requirements ?? [])
+      .map((r) => r.feature?.name)
+      .filter((n): n is string => typeof n === 'string' && n.length > 0);
+  })();
+
   // Debounce mobile search input
   useEffect(() => {
     const t = setTimeout(() => {
@@ -251,6 +321,28 @@ export default function HomePage() {
         title="Find a cafe near you"
         description="Browse cafes around you and filter by WiFi, parking, mushola, price, and purpose to find your match."
       />
+      {wizardBannerVisible && (
+        <div className="fixed top-2 left-1/2 -translate-x-1/2 z-30 max-w-md w-[calc(100%-1rem)] sm:w-auto bg-[#FDF6EC] border border-[#F2DAB6] rounded-full shadow-md px-3 py-1.5 flex items-center gap-2">
+          <span className="text-[11px] font-semibold text-[#B97726] truncate">
+            ⭐ Filter dari wizard kamu
+          </span>
+          <button
+            type="button"
+            onClick={resetWizardFilters}
+            className="text-[11px] font-bold text-[#D48B3A] hover:text-[#B97726] underline shrink-0"
+          >
+            Reset
+          </button>
+          <button
+            type="button"
+            onClick={() => setWizardBannerVisible(false)}
+            aria-label="Tutup"
+            className="w-5 h-5 rounded-full hover:bg-[#F2DAB6] text-[#B97726] flex items-center justify-center text-[10px]"
+          >
+            ✕
+          </button>
+        </div>
+      )}
       {/* ─── MOBILE: full-screen map + floating search + draggable bottom sheet ─── */}
       {/* Map sits behind the sheet; bottom-16 reserves space for the tab bar. */}
       <div className="md:hidden fixed inset-x-0 top-0 bottom-16 z-0">
@@ -499,7 +591,7 @@ export default function HomePage() {
               <PurposeChips
                 purposes={purposes}
                 activeId={purposeId}
-                onSelect={setPurposeId}
+                onSelect={handlePurposeSelect}
               />
               <FilterPanel
                 variant="sidebar"
@@ -507,6 +599,7 @@ export default function HomePage() {
                 onFacilitiesChange={setFacilities}
                 priceRange={filters.priceRange}
                 onPriceRangeChange={setPriceRange}
+                autoSelectedKeys={autoSelectedFromPurpose}
               />
               <button
                 type="button"
@@ -552,7 +645,7 @@ export default function HomePage() {
         <div className="md:flex-1 lg:flex-[2] 2xl:flex-none 2xl:w-[580px] md:flex md:flex-col gap-3 md:overflow-hidden md:min-w-0">
           <SearchBar q={filters.q} onQChange={setQ} />
           <RadiusSlider radius={radius} onChange={setRadius} />
-          <PurposeFilter selectedPurposeId={purposeId} onSelect={setPurposeId} />
+          <PurposeFilter selectedPurposeId={purposeId} onSelect={handlePurposeSelect} />
 
           {featuredCafes.length > 0 && (
             <div className="mb-2">
@@ -673,11 +766,12 @@ export default function HomePage() {
         <MobileFilterModal
           purposes={purposes}
           activePurposeId={purposeId}
-          onPurposeSelect={setPurposeId}
+          onPurposeSelect={handlePurposeSelect}
           facilities={filters.facilities}
           onFacilitiesChange={setFacilities}
           priceRange={filters.priceRange}
           onPriceRangeChange={setPriceRange}
+          autoSelectedKeys={autoSelectedFromPurpose}
           onClose={() => setFilterPanelOpen(false)}
         />
       )}
@@ -793,6 +887,7 @@ function MobileFilterModal({
   onFacilitiesChange,
   priceRange,
   onPriceRangeChange,
+  autoSelectedKeys,
   onClose,
 }: {
   purposes: Purpose[];
@@ -802,6 +897,7 @@ function MobileFilterModal({
   onFacilitiesChange: (next: string[]) => void;
   priceRange: string;
   onPriceRangeChange: (next: string) => void;
+  autoSelectedKeys?: string[];
   onClose: () => void;
 }) {
   return (
@@ -863,6 +959,7 @@ function MobileFilterModal({
             onFacilitiesChange={onFacilitiesChange}
             priceRange={priceRange}
             onPriceRangeChange={onPriceRangeChange}
+            autoSelectedKeys={autoSelectedKeys}
           />
         </div>
 

@@ -2,19 +2,18 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { Cafe } from './entities/cafe.entity';
-import { CafeFacility } from './entities/cafe-facility.entity';
+import { CafeFeature } from './entities/cafe-feature.entity';
 import { PurposeRequirement } from '../purposes/entities/purpose-requirement.entity';
 import { SearchCafesDto } from './dto/search-cafes.dto';
 import { CreateCafeDto } from './dto/create-cafe.dto';
 import { MeiliCafesService } from '../meili/meili-cafes.service';
 import { buildCafeSlug, cafeSlugOrFallback } from '../common/utils/slug.util';
-import { FACILITY_CATALOG } from './facility-catalog';
 
 interface PurposeMatcher {
   id: number;
   name: string;
   slug: string;
-  requirements: { facilityKey: string; isMandatory: boolean; weight: number }[];
+  requirements: { featureName: string; isMandatory: boolean; weight: number }[];
   maxScore: number;
 }
 
@@ -23,8 +22,8 @@ export class CafesService {
   constructor(
     @InjectRepository(Cafe)
     private readonly cafesRepository: Repository<Cafe>,
-    @InjectRepository(CafeFacility)
-    private readonly facilitiesRepository: Repository<CafeFacility>,
+    @InjectRepository(CafeFeature)
+    private readonly featuresRepository: Repository<CafeFeature>,
     @InjectRepository(PurposeRequirement)
     private readonly requirementsRepository: Repository<PurposeRequirement>,
     private readonly dataSource: DataSource,
@@ -39,9 +38,6 @@ export class CafesService {
       lat: dto.lat,
       lng: dto.lng,
       radius: dto.radius,
-      wifiAvailable: dto.wifiAvailable,
-      hasMushola: dto.hasMushola,
-      hasParking: dto.hasParking,
       facilities: dto.facilities,
       priceRange: dto.priceRange,
       purposeId: dto.purposeId,
@@ -51,31 +47,38 @@ export class CafesService {
     });
   }
 
-  // ── Filter catalog (MySQL catalog + Meili counts) ──────────────────────────
+  // ── Filter catalog (cafe_features grouped by category) ─────────────────────
 
   async getFilters(isOptions = false) {
-    const counts = await this.meiliCafes.getFacilityCounts();
-    if (isOptions) {
-      return FACILITY_CATALOG.flatMap((group) =>
-        group.items.map((item) => ({
-          key: item.key,
-          label: item.label,
-          icon: item.icon ?? 'Circle',
-          count: counts[item.key] ?? 0,
-        })),
-      );
+    const rows = await this.dataSource.query<
+      { name: string; category: string | null; total: string }[]
+    >(
+      `SELECT f.name, f.category, COUNT(*) AS total
+       FROM cafe_features cf
+       JOIN features f ON f.id = cf.feature_id
+       JOIN cafes c ON c.id = cf.cafe_id
+       WHERE c.deleted_at IS NULL AND c.is_active = TRUE
+         AND f.category IS NOT NULL AND f.category != ''
+       GROUP BY f.id
+       ORDER BY f.category ASC, total DESC, f.name ASC`,
+    );
+
+    const flat = rows.map((r) => ({
+      name: r.name,
+      category: r.category as string,
+      count: Number(r.total),
+    }));
+
+    if (isOptions) return flat;
+
+    const groupMap = new Map<string, { category: string; items: { name: string; count: number }[] }>();
+    for (const item of flat) {
+      const g = groupMap.get(item.category) ?? { category: item.category, items: [] };
+      g.items.push({ name: item.name, count: item.count });
+      groupMap.set(item.category, g);
     }
-    return {
-      groups: FACILITY_CATALOG.map((group) => ({
-        key: group.key,
-        label: group.label,
-        options: group.items.map((item) => ({
-          key: item.key,
-          label: item.label,
-          count: counts[item.key] ?? 0,
-        })),
-      })),
-    };
+
+    return { groups: Array.from(groupMap.values()) };
   }
 
   // ── Detail (MySQL — always fresh from source of truth) ─────────────────────
@@ -83,13 +86,13 @@ export class CafesService {
   async findOne(id: number) {
     const cafe = await this.cafesRepository.findOne({
       where: { id, isActive: true },
-      relations: ['facilities', 'menus', 'photos'],
+      relations: ['features', 'features.feature', 'menus', 'photos'],
     });
     if (!cafe) throw new NotFoundException('Cafe not found');
 
-    const facilityKeys = (cafe.facilities || []).map((f) => f.facilityKey);
+    const featureNames = (cafe.features || []).map((f) => f.feature?.name).filter(Boolean) as string[];
     const purposeMatchers = await this.loadPurposeMatchers();
-    const { purposes, matchScore } = this.computePurposesAndScore(facilityKeys, purposeMatchers);
+    const { purposes, matchScore } = this.computePurposesAndScore(featureNames, purposeMatchers);
 
     const purposeScores: Record<string, number> = {};
     try {
@@ -126,7 +129,7 @@ export class CafesService {
       googleRating: cafe.googleRating != null ? Number(cafe.googleRating) : null,
       purposes,
       purposeScores,
-      detectedFacilities: facilityKeys,
+      detectedFacilities: featureNames,
       matchScore,
       reviewsSummary,
     };
@@ -137,7 +140,8 @@ export class CafesService {
   async findPromotedCafes(type?: string) {
     const qb = this.cafesRepository
       .createQueryBuilder('c')
-      .leftJoinAndSelect('c.facilities', 'facilities')
+      .leftJoinAndSelect('c.features', 'features')
+      .leftJoinAndSelect('features.feature', 'feature')
       .leftJoinAndSelect('c.photos', 'photos')
       .where('c.isActive = :active', { active: true })
       .andWhere('c.hasActivePromotion = :promoted', { promoted: true });
@@ -174,8 +178,8 @@ export class CafesService {
     const purposeMatchers = await this.loadPurposeMatchers();
 
     return cafes.map((cafe) => {
-      const facilityKeys = (cafe.facilities || []).map((f) => f.facilityKey);
-      const { purposes, matchScore } = this.computePurposesAndScore(facilityKeys, purposeMatchers);
+      const featureNames = (cafe.features || []).map((f) => f.feature?.name).filter(Boolean) as string[];
+      const { purposes, matchScore } = this.computePurposesAndScore(featureNames, purposeMatchers);
       return { ...cafe, purposes, matchScore, promotion: promoMap.get(cafe.id) || null };
     });
   }
@@ -195,9 +199,6 @@ export class CafesService {
       phone: dto.phone,
       googlePlaceId: dto.googlePlaceId,
       googleMapsUrl,
-      wifiAvailable: dto.wifiAvailable || false,
-      wifiSpeedMbps: dto.wifiSpeedMbps,
-      hasMushola: dto.hasMushola || false,
       openingHours: dto.openingHours,
       priceRange: dto.priceRange || '$$',
     } as Partial<Cafe>);
@@ -207,13 +208,25 @@ export class CafesService {
     saved.slug = buildCafeSlug(saved.name, saved.id);
     await this.cafesRepository.save(saved);
 
-    if (dto.facilities?.length) {
-      for (const f of dto.facilities) {
-        await this.facilitiesRepository.save({
-          cafeId: saved.id,
-          facilityKey: f.facilityKey,
-          facilityValue: f.facilityValue,
-        } as Partial<CafeFacility>);
+    if (dto.features?.length) {
+      for (const f of dto.features) {
+        const name = f.name.trim();
+        if (!name) continue;
+        // Upsert master features
+        await this.dataSource.query(
+          `INSERT INTO features (name, category) VALUES (?, ?)
+           ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id)`,
+          [name, f.category ?? null],
+        );
+        const [{ id: featureId }] = await this.dataSource.query(
+          `SELECT id FROM features WHERE name = ? LIMIT 1`,
+          [name],
+        );
+        await this.dataSource.query(
+          `INSERT INTO cafe_features (cafe_id, feature_id, source) VALUES (?, ?, 'manual')
+           ON DUPLICATE KEY UPDATE source = 'manual'`,
+          [saved.id, featureId],
+        );
       }
     }
 
@@ -297,13 +310,21 @@ export class CafesService {
     const purposes = await this.dataSource.query(
       `SELECT id, name, slug FROM purposes ORDER BY display_order ASC`,
     );
-    const reqs = await this.requirementsRepository.find();
-    const reqsByPurpose = new Map<number, { facilityKey: string; isMandatory: boolean; weight: number }[]>();
+    // Resolve feature name via JOIN — purpose_requirements.feature_id → features.name
+    const reqs = await this.dataSource.query<{
+      purposeId: number; featureName: string; isMandatory: number; weight: number;
+    }[]>(
+      `SELECT pr.purpose_id AS purposeId, f.name AS featureName,
+              pr.is_mandatory AS isMandatory, pr.weight AS weight
+       FROM purpose_requirements pr
+       JOIN features f ON f.id = pr.feature_id`,
+    );
+    const reqsByPurpose = new Map<number, { featureName: string; isMandatory: boolean; weight: number }[]>();
     for (const r of reqs) {
       if (!reqsByPurpose.has(r.purposeId)) reqsByPurpose.set(r.purposeId, []);
       reqsByPurpose.get(r.purposeId)!.push({
-        facilityKey: r.facilityKey,
-        isMandatory: r.isMandatory,
+        featureName: r.featureName,
+        isMandatory: !!r.isMandatory,
         weight: r.weight,
       });
     }
@@ -315,17 +336,17 @@ export class CafesService {
   }
 
   private computePurposesAndScore(
-    facilityKeys: string[],
+    featureNames: string[],
     matchers: PurposeMatcher[],
   ): { purposes: string[]; matchScore: number } {
     const strictMatches: { name: string; score: number }[] = [];
     const looseMatches: { name: string; score: number }[] = [];
 
     for (const p of matchers) {
-      const mandatoryKeys = p.requirements.filter((r) => r.isMandatory).map((r) => r.facilityKey);
-      const strictMet = mandatoryKeys.every((k) => facilityKeys.includes(k));
+      const mandatoryKeys = p.requirements.filter((r) => r.isMandatory).map((r) => r.featureName);
+      const strictMet = mandatoryKeys.every((k) => featureNames.includes(k));
       const matchedWeight = p.requirements
-        .filter((r) => facilityKeys.includes(r.facilityKey))
+        .filter((r) => featureNames.includes(r.featureName))
         .reduce((s, r) => s + r.weight, 0);
       const normalizedScore = p.maxScore > 0 ? Math.round((matchedWeight / p.maxScore) * 100) : 0;
 

@@ -19,19 +19,23 @@ import TrendingScreen from '../screens/TrendingScreen';
 import ReviewsScreen from '../screens/ReviewsScreen';
 import WriteReviewScreen from '../screens/WriteReviewScreen';
 import LeaderboardScreen from '../screens/LeaderboardScreen';
+import GlobalLeaderboardScreen from '../screens/GlobalLeaderboardScreen';
 import FriendsScreen from '../screens/FriendsScreen';
 import AchievementsScreen from '../screens/AchievementsScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
 import RecapScreen from '../screens/RecapScreen';
-import GlobalLeaderboardScreen from '../screens/GlobalLeaderboardScreen';
+import EditProfileModal from '../screens/EditProfileModal';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
 function TabIcon({ label, focused }: { label: string; focused: boolean }) {
+  // Match web BottomTabBar — 5 tabs: Explore (map), Discover (swipe),
+  // Trending (rank), Shortlist (★), Profile (avatar).
   const icons: Record<string, string> = {
-    Discover: '🗺️',
-    Explore: '🔥',
+    Explore: '🗺️',
+    Discover: '🃏',
+    Trending: '🔥',
     Shortlist: '★',
     Profile: '👤',
   };
@@ -59,8 +63,9 @@ function MainTabs() {
         tabBarIcon: ({ focused }) => <TabIcon label={route.name} focused={focused} />,
       })}
     >
-      <Tab.Screen name="Discover" component={MapScreen} />
-      <Tab.Screen name="Explore" component={TrendingScreen} />
+      <Tab.Screen name="Explore" component={MapScreen} />
+      <Tab.Screen name="Discover" component={CardSwipeScreen} />
+      <Tab.Screen name="Trending" component={TrendingScreen} />
       <Tab.Screen
         name="Shortlist"
         component={ShortlistModal}
@@ -118,6 +123,16 @@ export default function AppNavigator() {
         name="Recap"
         component={RecapScreen}
         options={{ ...TransitionPresets.ModalPresentationIOS }}
+      />
+      <Stack.Screen
+        name="EditProfileModal"
+        component={EditProfileModal}
+        options={{
+          ...TransitionPresets.ModalPresentationIOS,
+          cardOverlayEnabled: true,
+          gestureEnabled: true,
+          presentation: 'transparentModal',
+        }}
       />
     </Stack.Navigator>
   );

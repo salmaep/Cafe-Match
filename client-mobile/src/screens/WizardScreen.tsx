@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -7,7 +7,6 @@ import {
   TextInput,
   ScrollView,
   Dimensions,
-  Animated,
   ActivityIndicator,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -17,30 +16,15 @@ import { colors, spacing, radius } from '../theme';
 import { Purpose, WizardPreferences } from '../types';
 import { useLocation } from '../context/LocationContext';
 import { useDestinations } from '../queries/destinations/use-destinations';
-import { useCafeFilters, flattenFilterOptions } from '../queries/cafes/use-cafe-filters';
-import { getFacilityIcon } from '../constant/ui/facility-icons';
+import { useCafeFilters } from '../queries/cafes/use-cafe-filters';
+import { FACILITY_ICONS } from '../utils/facilities';
+import { WIZARD_PURPOSES, type PurposeOption } from '@shared/constants/purposes';
 
 const { width } = Dimensions.get('window');
 const TOTAL_STEPS = 4;
 
-// Local purpose list — mirrors web client's WIZARD_PURPOSES. Using a local
-// constant (not fetched from API) ensures the wizard always shows options
-// regardless of server availability. The slug is used downstream by
-// usePurposeId() to resolve the numeric purposeId for cafe filtering.
-const WIZARD_PURPOSES: { label: Purpose; emoji: string; tagline: string }[] = [
-  { label: 'Me Time',      emoji: '🧘',  tagline: 'Tenang & nyaman sendiri' },
-  { label: 'Date',         emoji: '💑',  tagline: 'Romantis berdua' },
-  { label: 'Family Time',  emoji: '👨‍👩‍👧', tagline: 'Cocok bawa keluarga' },
-  { label: 'Group Study',  emoji: '📚',  tagline: 'Belajar bareng teman' },
-  { label: 'WFC',          emoji: '💻',  tagline: 'WiFi & power outlet siap' },
-  { label: 'Meeting',      emoji: '🤝',  tagline: 'Diskusi serius / klien' },
-  { label: 'Brainstorm',   emoji: '💡',  tagline: 'Spasi luas, bebas ngobrol' },
-  { label: 'Catch Up',     emoji: '☕',  tagline: 'Reuni dengan teman lama' },
-  { label: 'Reading',      emoji: '📖',  tagline: 'Sudut tenang baca buku' },
-  { label: 'Quick Coffee', emoji: '⚡',  tagline: 'Mampir sebentar saja' },
-  { label: 'Celebration',  emoji: '🎉',  tagline: 'Ulang tahun / spesial' },
-  { label: 'Photo Spot',   emoji: '📸',  tagline: 'Estetik untuk konten' },
-];
+// WIZARD_PURPOSES is now centralized at repo-root `shared/constants/purposes.ts`
+// and imported above so web + mobile stay in lockstep with one edit.
 
 // Parse coord strings — supports paste from Google Maps, spreadsheets, plain text.
 // Examples that work:
@@ -62,17 +46,10 @@ function parseCoords(input: string): { lat: number; lng: number } | null {
   return { lat, lng };
 }
 
-// Fallback list shown only if `/cafes/filters` is unreachable. The server is
-// authoritative; this is a safety net so the wizard never blocks the user.
-const AMENITIES_FALLBACK: { label: string; icon: string }[] = [
-  { label: 'WiFi', icon: '📶' },
-  { label: 'Power Outlet', icon: '🔌' },
-  { label: 'Mushola', icon: '🕌' },
-  { label: 'Parking', icon: '🅿️' },
-  { label: 'Kid-Friendly', icon: '👶' },
-  { label: 'Quiet Atmosphere', icon: '🤫' },
-  { label: 'Large Tables', icon: '🪑' },
-  { label: 'Outdoor Area', icon: '🌿' },
+const PRICE_OPTIONS = [
+  { key: '$', label: '$' },
+  { key: '$$', label: '$$' },
+  { key: '$$$', label: '$$$' },
 ];
 
 export default function WizardScreen() {
@@ -81,16 +58,8 @@ export default function WizardScreen() {
   const { latitude: userLat, longitude: userLng } = useLocation();
   const destinationsQuery = useDestinations();
   const filtersQuery = useCafeFilters();
-  const amenityOptions = React.useMemo(() => {
-    const fromServer = flattenFilterOptions(filtersQuery.data);
-    if (fromServer.length === 0) return AMENITIES_FALLBACK;
-    return fromServer.map((opt) => ({
-      label: opt.label,
-      icon: getFacilityIcon(opt.label),
-    }));
-  }, [filtersQuery.data]);
+  const filterGroups = filtersQuery.data?.groups ?? [];
   const [step, setStep] = useState(0);
-  const slideAnim = useRef(new Animated.Value(0)).current;
 
   const [purpose, setPurpose] = useState<Purpose | undefined>();
   const [locationType, setLocationType] = useState<'current' | 'custom'>('current');
@@ -98,18 +67,11 @@ export default function WizardScreen() {
   const [customLat, setCustomLat] = useState<number | null>(null);
   const [customLng, setCustomLng] = useState<number | null>(null);
   const [radiusVal, setRadiusVal] = useState(1);
+  // Amenities = server facility keys (e.g. "wifi"); price = "$" | "$$" | "$$$".
   const [amenities, setAmenities] = useState<string[]>([]);
+  const [priceRange, setPriceRange] = useState<string>('');
 
   const radiusOptions = [0.5, 1, 2];
-
-  const animateStep = (next: number) => {
-    Animated.timing(slideAnim, {
-      toValue: -next * width,
-      duration: 300,
-      useNativeDriver: true,
-    }).start();
-    setStep(next);
-  };
 
   const handleSkip = () => {
     setPreferences(null);
@@ -119,14 +81,14 @@ export default function WizardScreen() {
 
   const handleNext = () => {
     if (step < TOTAL_STEPS - 1) {
-      animateStep(step + 1);
+      setStep(step + 1);
     } else {
       handleFinish();
     }
   };
 
   const handleBack = () => {
-    if (step > 0) animateStep(step - 1);
+    if (step > 0) setStep(step - 1);
   };
 
   const handleFinish = () => {
@@ -141,6 +103,7 @@ export default function WizardScreen() {
       },
       radius: radiusVal,
       amenities: amenities.length > 0 ? amenities : undefined,
+      priceRange: priceRange || undefined,
     };
     setPreferences(prefs);
     setWizardCompleted(true);
@@ -187,11 +150,10 @@ export default function WizardScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Steps */}
-      <Animated.View
-        style={[styles.stepsRow, { transform: [{ translateX: slideAnim }] }]}
-      >
-        {/* Step 1: Purpose */}
+      {/* Steps — only active step rendered to avoid hit-test/layout issues
+          with multi-view parallel rendering. */}
+      <View style={{ flex: 1 }}>
+        {step === 0 && (
         <View style={styles.stepContainer}>
           <Text style={styles.stepTitle}>What's your vibe today?</Text>
           <Text style={styles.stepSubtitle}>Choose one that fits your mood</Text>
@@ -204,7 +166,7 @@ export default function WizardScreen() {
               <TouchableOpacity
                 key={p.label}
                 style={[styles.optionCard, purpose === p.label && styles.optionCardActive]}
-                onPress={() => setPurpose(p.label)}
+                onPress={() => setPurpose(p.label as Purpose)}
               >
                 <Text style={styles.optionEmoji}>{p.emoji}</Text>
                 <Text
@@ -223,7 +185,8 @@ export default function WizardScreen() {
           </ScrollView>
         </View>
 
-        {/* Step 2: Location */}
+        )}
+        {step === 1 && (
         <View style={styles.stepContainer}>
           <Text style={styles.stepTitle}>Where are you heading?</Text>
           <Text style={styles.stepSubtitle}>We'll find cafes near you</Text>
@@ -308,7 +271,8 @@ export default function WizardScreen() {
           )}
         </View>
 
-        {/* Step 3: Radius */}
+        )}
+        {step === 2 && (
         <View style={styles.stepContainer}>
           <Text style={styles.stepTitle}>How far are you willing to go?</Text>
           <Text style={styles.stepSubtitle}>Select your search radius</Text>
@@ -336,35 +300,145 @@ export default function WizardScreen() {
           </View>
         </View>
 
-        {/* Step 4: Amenities */}
+        )}
+        {step === 3 && (
+        /* Step 4: Amenities — mirrors web FilterPanel sidebar variant */
         <View style={styles.stepContainer}>
           <Text style={styles.stepTitle}>Anything specific you need?</Text>
-          <Text style={styles.stepSubtitle}>Select all that apply</Text>
-          <ScrollView contentContainerStyle={styles.amenitiesGrid} showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
-            {filtersQuery.isLoading && amenityOptions.length === 0 ? (
-              <ActivityIndicator color={colors.accent} />
-            ) : (
-              amenityOptions.map((a) => (
-                <TouchableOpacity
-                  key={a.label}
-                  style={[styles.amenityChip, amenities.includes(a.label) && styles.amenityChipActive]}
-                  onPress={() => toggleAmenity(a.label)}
-                >
-                  <Text style={styles.amenityIcon}>{a.icon}</Text>
-                  <Text
-                    style={[
-                      styles.amenityLabel,
-                      amenities.includes(a.label) && styles.amenityLabelActive,
-                    ]}
-                  >
-                    {a.label}
+          <Text style={styles.stepSubtitle}>
+            Pilih fasilitas atau biarkan kosong — kami tunjukkan semua
+          </Text>
+          <View style={{ flex: 1 }}>
+          <ScrollView
+            contentContainerStyle={{ paddingBottom: spacing.xxl }}
+            showsVerticalScrollIndicator
+            style={{ flex: 1 }}
+            nestedScrollEnabled
+            keyboardShouldPersistTaps="handled"
+            scrollEnabled
+          >
+            <View style={styles.filterCard}>
+              {/* Price section */}
+              <View style={styles.filterGroup}>
+                <Text style={styles.filterGroupTitle}>HARGA</Text>
+                <View style={styles.filterChipWrap}>
+                  {PRICE_OPTIONS.map((p) => {
+                    const active = priceRange === p.key;
+                    return (
+                      <TouchableOpacity
+                        key={p.key}
+                        onPress={() => setPriceRange(active ? '' : p.key)}
+                        style={[
+                          styles.filterChip,
+                          active && styles.filterChipActive,
+                        ]}
+                      >
+                        {active && (
+                          <View style={styles.filterChipCheck}>
+                            <Text style={styles.filterChipCheckText}>✓</Text>
+                          </View>
+                        )}
+                        <Text
+                          style={[
+                            styles.filterChipLabel,
+                            active && styles.filterChipLabelActive,
+                          ]}
+                        >
+                          {p.label}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+
+              {/* Server-driven groups */}
+              {filtersQuery.isLoading && filterGroups.length === 0 ? (
+                <View style={{ padding: spacing.lg, alignItems: 'center' }}>
+                  <ActivityIndicator color={colors.accent} />
+                </View>
+              ) : filterGroups.length === 0 ? (
+                <View style={{ padding: spacing.lg, alignItems: 'center' }}>
+                  <Text style={styles.emptyFilterText}>
+                    Filter tidak tersedia.
                   </Text>
-                </TouchableOpacity>
-              ))
-            )}
+                </View>
+              ) : (
+                filterGroups.map((group) => {
+                  const selectedInGroup = group.options.filter((o) =>
+                    amenities.includes(o.key),
+                  ).length;
+                  return (
+                    <View
+                      key={group.key}
+                      style={[styles.filterGroup, styles.filterGroupBordered]}
+                    >
+                      <View style={styles.filterGroupHeaderRow}>
+                        <Text style={styles.filterGroupTitle}>
+                          {group.label.toUpperCase()}
+                        </Text>
+                        {selectedInGroup > 0 && (
+                          <View style={styles.filterGroupBadge}>
+                            <Text style={styles.filterGroupBadgeText}>
+                              {selectedInGroup}
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+                      <View style={styles.filterChipWrap}>
+                        {group.options.map((opt) => {
+                          const active = amenities.includes(opt.key);
+                          const icon = FACILITY_ICONS[opt.key];
+                          return (
+                            <TouchableOpacity
+                              key={opt.key}
+                              onPress={() => toggleAmenity(opt.key)}
+                              style={[
+                                styles.filterChip,
+                                active && styles.filterChipActive,
+                              ]}
+                            >
+                              {active ? (
+                                <View style={styles.filterChipCheck}>
+                                  <Text style={styles.filterChipCheckText}>
+                                    ✓
+                                  </Text>
+                                </View>
+                              ) : icon ? (
+                                <Text style={styles.filterChipIcon}>{icon}</Text>
+                              ) : null}
+                              <Text
+                                style={[
+                                  styles.filterChipLabel,
+                                  active && styles.filterChipLabelActive,
+                                ]}
+                              >
+                                {opt.label}
+                              </Text>
+                              {typeof opt.count === 'number' && opt.count > 0 && (
+                                <Text
+                                  style={[
+                                    styles.filterChipCount,
+                                    active && styles.filterChipCountActive,
+                                  ]}
+                                >
+                                  {opt.count}
+                                </Text>
+                              )}
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+                    </View>
+                  );
+                })
+              )}
+            </View>
           </ScrollView>
+          </View>
         </View>
-      </Animated.View>
+        )}
+      </View>
 
       {/* Bottom CTA */}
       <View style={styles.bottomBar}>
@@ -403,12 +477,10 @@ const styles = StyleSheet.create({
   },
   dotActive: { backgroundColor: colors.accent, width: 24 },
   dotDone: { backgroundColor: colors.accent },
-  stepsRow: { flexDirection: 'row', flex: 1 },
   stepContainer: {
-    width,
+    flex: 1,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.xl,
-    overflow: 'hidden',
   },
   stepTitle: {
     fontSize: 26,
@@ -425,25 +497,41 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.sm,
+    paddingBottom: spacing.lg,
   },
   optionCard: {
+    // Fixed width so all cards align in a 2-col grid regardless of tagline length.
+    width: (width - spacing.lg * 2 - spacing.sm) / 2,
     backgroundColor: colors.surface,
     borderRadius: radius.md,
     paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.sm,
     alignItems: 'center',
-    minWidth: (width - spacing.lg * 2 - spacing.sm) / 2 - 1,
+    justifyContent: 'flex-start',
     borderWidth: 2,
     borderColor: 'transparent',
+    minHeight: 110,
   },
   optionCardActive: {
     borderColor: colors.accent,
     backgroundColor: '#FDF6EC',
   },
-  optionEmoji: { fontSize: 28, marginBottom: spacing.xs },
-  optionLabel: { fontSize: 14, fontWeight: '600', color: colors.primary },
+  optionEmoji: { fontSize: 26, marginBottom: 4 },
+  optionLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.primary,
+    textAlign: 'center',
+  },
   optionLabelActive: { color: colors.accent },
-  optionTagline: { fontSize: 10, color: colors.textSecondary, textAlign: 'center', marginTop: 2 },
+  optionTagline: {
+    fontSize: 10,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginTop: 4,
+    lineHeight: 13,
+    paddingHorizontal: 2,
+  },
   optionTaglineActive: { color: colors.accent },
   locationOptions: { gap: spacing.sm },
   locationCard: {
@@ -545,33 +633,102 @@ const styles = StyleSheet.create({
     position: 'absolute',
   },
   radiusCenterDot: { fontSize: 24 },
-  amenitiesGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-    paddingBottom: 100,
-  },
-  amenityChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderRadius: radius.full,
-    paddingVertical: spacing.sm + 2,
-    paddingHorizontal: spacing.md,
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  amenityChipActive: {
-    borderColor: colors.accent,
-    backgroundColor: '#FDF6EC',
-  },
   loaderRow: {
     paddingVertical: spacing.lg,
     alignItems: 'center',
   },
-  amenityIcon: { fontSize: 16, marginRight: spacing.xs },
-  amenityLabel: { fontSize: 14, fontWeight: '600', color: colors.primary },
-  amenityLabelActive: { color: colors.accent },
+  // Filter card (mirror of web FilterPanel sidebar variant)
+  filterCard: {
+    backgroundColor: colors.white,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#F0EDE8',
+  },
+  filterGroup: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+  },
+  filterGroupBordered: {
+    borderTopWidth: 1,
+    borderTopColor: '#F0EDE8',
+  },
+  filterGroupHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 8,
+  },
+  filterGroupTitle: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#8A8880',
+    letterSpacing: 1.2,
+  },
+  filterGroupBadge: {
+    backgroundColor: colors.accent,
+    borderRadius: 999,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    minWidth: 18,
+    alignItems: 'center',
+  },
+  filterGroupBadgeText: {
+    color: colors.white,
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  filterChipWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  filterChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 999,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E8E4DD',
+    gap: 6,
+  },
+  filterChipActive: {
+    backgroundColor: colors.accent,
+    borderColor: colors.accent,
+  },
+  filterChipCheck: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  filterChipCheckText: {
+    fontSize: 9,
+    fontWeight: '900',
+    color: colors.accent,
+  },
+  filterChipIcon: { fontSize: 13 },
+  filterChipLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#1C1C1A',
+  },
+  filterChipLabelActive: { color: '#FFFFFF' },
+  filterChipCount: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#8A8880',
+    marginLeft: 2,
+  },
+  filterChipCountActive: { color: 'rgba(255,255,255,0.85)' },
+  emptyFilterText: {
+    fontSize: 13,
+    color: '#8A8880',
+    fontStyle: 'italic',
+  },
   bottomBar: {
     padding: spacing.lg,
     paddingBottom: 40,

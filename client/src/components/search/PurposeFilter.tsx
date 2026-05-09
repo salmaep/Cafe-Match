@@ -28,11 +28,12 @@ export default function PurposeFilter({ selectedPurposeId, onSelect }: Props) {
         All Cafes
       </button>
       {purposes.map((p) => {
-        // Source of truth = WIZARD_PURPOSES (label + emoji). Fall back to server values
-        // if the slug isn't in the wizard catalog (forward-compat for new server purposes).
+        // Server purpose is the source of truth (name + icon). Fall back to the
+        // bundled WIZARD_PURPOSES catalog only when the server returns no icon
+        // for a slug — keeps the chip from looking empty during transitions.
         const wizard = getPurposeBySlug(p.slug);
-        const label = wizard?.label ?? p.name;
-        const emoji = wizard?.emoji ?? '';
+        const label = p.name || wizard?.label || p.slug;
+        const emoji = p.icon || wizard?.emoji || '';
         return (
           <button
             key={p.id}

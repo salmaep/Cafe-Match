@@ -2,17 +2,24 @@ import { useQuery } from '@tanstack/react-query';
 import { http } from '../../lib/http';
 import { cafeKeys } from './keys';
 
-export interface FacilityOption {
+export interface CafeFilterOption {
   key: string;
   label: string;
-  icon: string;
   count: number;
 }
 
-async function fetchCafeFilters(): Promise<FacilityOption[]> {
-  const { data } = await http.get<FacilityOption[]>('/cafes/filters', {
-    params: { isOptions: 'true' },
-  });
+export interface CafeFilterGroup {
+  key: string;
+  label: string;
+  options: CafeFilterOption[];
+}
+
+export interface CafeFiltersResponse {
+  groups: CafeFilterGroup[];
+}
+
+async function fetchCafeFilters(): Promise<CafeFiltersResponse> {
+  const { data } = await http.get<CafeFiltersResponse>('/cafes/filters');
   return data;
 }
 

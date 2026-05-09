@@ -15,12 +15,14 @@ export interface SearchParams {
 }
 
 export interface FilterOption {
+  /** Feature name as stored in cafe_features.name */
   key: string;
   label: string;
   count: number;
 }
 
 export interface FilterGroup {
+  /** Feature category (amenity / ambience / payment / etc.) */
   key: string;
   label: string;
   options: FilterOption[];
@@ -28,6 +30,46 @@ export interface FilterGroup {
 
 export interface FiltersResponse {
   groups: FilterGroup[];
+}
+
+const CATEGORY_LABELS: Record<string, string> = {
+  amenity: 'Fasilitas',
+  ambience: 'Suasana',
+  space: 'Ruang',
+  audience: 'Cocok Untuk',
+  service: 'Layanan',
+  payment: 'Pembayaran',
+  accessibility: 'Aksesibilitas',
+  uncategorized: 'Lainnya',
+};
+
+function formatFeatureLabel(name: string): string {
+  return name
+    .split(/\s+/)
+    .map((w) => (w ? w[0].toUpperCase() + w.slice(1) : ''))
+    .join(' ');
+}
+
+// Server returns { groups: [{ category, items: [{ name, count }] }] } —
+// transform to { groups: [{ key, label, options: [{ key, label, count }] }] }
+// so existing FilterPanel UI keeps working without refactor.
+function normalizeFilters(raw: any): FiltersResponse {
+  const groups: any[] = raw?.groups ?? [];
+  return {
+    groups: groups.map((g) => ({
+      key: g.category ?? g.key ?? 'uncategorized',
+      label:
+        CATEGORY_LABELS[g.category as string] ??
+        g.label ??
+        g.category ??
+        'Lainnya',
+      options: (g.items ?? g.options ?? []).map((it: any) => ({
+        key: it.name ?? it.key,
+        label: it.label ?? formatFeatureLabel(it.name ?? it.key ?? ''),
+        count: typeof it.count === 'number' ? it.count : 0,
+      })),
+    })),
+  };
 }
 
 // Meilisearch returns documents with `_geo: { lat, lng }` (the geo field) instead
@@ -71,5 +113,8 @@ export const cafesApi = {
 
   getById: (id: number) => apiClient.get<Cafe>(`/cafes/${id}`),
 
-  getFilters: () => apiClient.get<FiltersResponse>('/cafes/filters'),
+  getFilters: async () => {
+    const res = await apiClient.get<any>('/cafes/filters');
+    return { ...res, data: normalizeFilters(res.data) };
+  },
 };

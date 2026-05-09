@@ -10,11 +10,10 @@ export interface SearchCafesParams {
   lng?: number;
   /** Meters. Server default 2000, max 50_000_000. */
   radius?: number;
-  wifiAvailable?: boolean;
-  hasMushola?: boolean;
-  hasParking?: boolean;
   priceRange?: '$' | '$$' | '$$$';
   purposeId?: number;
+  /** Server-side feature names (cafe_features.name). */
+  facilities?: string[];
   page?: number;
   limit?: number;
 }
@@ -29,9 +28,6 @@ export interface CafeDocument {
   district: string | null;
   phone: string | null;
   _geo: { lat: number; lng: number };
-  wifiAvailable: boolean;
-  hasMushola: boolean;
-  hasParking: boolean;
   hasActivePromotion: boolean;
   isActive: boolean;
   priceRange: string;
@@ -41,15 +37,21 @@ export interface CafeDocument {
   bookmarksCount: number;
   favoritesCount: number;
   createdAt: number;
+  /** Feature names from cafe_features.name (raw strings). */
   facilities: string[];
-  facilityValues: string[];
+  /** Distinct feature categories present on this cafe. */
+  featureCategories: string[];
   menuItems: string[];
   purposes: string[];
   primaryPhotoUrl: string | null;
   photos: string[];
   googleMapsUrl: string;
   openingHours: Record<string, any> | null;
-  wifiSpeedMbps: number | null;
+  // Top review snippet (server-prepared via meili-cafes service)
+  topReviewText?: string | null;
+  topReviewAuthor?: string | null;
+  topReviewRating?: number | null;
+  topReviewAt?: number | null;
 }
 
 export type CafeHit = CafeDocument & {

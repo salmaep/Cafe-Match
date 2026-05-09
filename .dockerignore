@@ -1,0 +1,28 @@
+# Build context is repo root (see docker-compose.yml client.build.context).
+# Excludes apply to all stages of the client image build.
+
+# Per-app artifacts & vendored deps
+**/node_modules
+**/dist
+**/build
+**/.expo
+**/.next
+
+# VCS & editor
+.git
+.vscode
+.idea
+
+# Local env / logs
+**/.env.local
+**/*.log
+
+# Mobile (not built via this Dockerfile)
+client-mobile
+
+# Server (built via server/Dockerfile, separate context)
+server
+
+# Misc
+**/README.md
+deploy

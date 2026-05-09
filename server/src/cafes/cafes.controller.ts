@@ -40,8 +40,8 @@ export class CafesController {
   // Must be declared BEFORE the @Get(':id') route below.
   @Public()
   @Get('filters')
-  getFilters() {
-    return this.cafesService.getFilters();
+  getFilters(@Query('isOptions') isOptions?: string) {
+    return this.cafesService.getFilters(isOptions === 'true');
   }
 
   @Public()

@@ -5,7 +5,7 @@ import { seedCafes } from './cafes.seed';
 import { seedScrapedCafes } from './cafe-scraping.seed';
 import { User } from '../../users/entities/user.entity';
 import { Cafe } from '../../cafes/entities/cafe.entity';
-import { CafeFacility } from '../../cafes/entities/cafe-facility.entity';
+import { CafeFeature } from '../../cafes/entities/cafe-feature.entity';
 import { Purpose } from '../../purposes/entities/purpose.entity';
 import { PurposeRequirement } from '../../purposes/entities/purpose-requirement.entity';
 import { CafeMenu } from '../../menus/entities/cafe-menu.entity';
@@ -32,7 +32,7 @@ async function run() {
     entities: [
       User,
       Cafe,
-      CafeFacility,
+      CafeFeature,
       Purpose,
       PurposeRequirement,
       CafeMenu,

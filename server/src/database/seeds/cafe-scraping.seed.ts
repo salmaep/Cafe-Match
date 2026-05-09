@@ -176,9 +176,6 @@ export async function seedScrapedCafes(dataSource: DataSource): Promise<void> {
 
       const scores = scoresMap.get(c.placeId);
       const detectedFacilities = scores?.detectedFacilities || [];
-      const wifiAvailable = detectedFacilities.includes('wifi');
-      const hasMushola = detectedFacilities.includes('mushola');
-      const hasParking = detectedFacilities.includes('parking');
 
       // Insert cafe — note: `location` is a NOT NULL POINT column, so we compute it
       // via ST_PointFromText using the lat/lng values. Slug is set in a follow-up
@@ -187,12 +184,11 @@ export async function seedScrapedCafes(dataSource: DataSource): Promise<void> {
         `INSERT INTO cafes (
           name, slug, description, address, latitude, longitude, location,
           phone, google_place_id, google_maps_url, website,
-          wifi_available, has_mushola, has_parking,
           opening_hours, price_range,
           google_rating, total_google_reviews,
           has_active_promotion, active_promotion_type,
           promotion_content, new_cafe_content, is_active
-        ) VALUES (?, NULL, ?, ?, ?, ?, ST_PointFromText(CONCAT('POINT(', ?, ' ', ?, ')'), 4326), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ) VALUES (?, NULL, ?, ?, ?, ?, ST_PointFromText(CONCAT('POINT(', ?, ' ', ?, ')'), 4326), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           c.name,
           null, // description — not available from scraping
@@ -206,9 +202,6 @@ export async function seedScrapedCafes(dataSource: DataSource): Promise<void> {
           c.placeId,
           googleMapsUrl,
           c.website || null,
-          wifiAvailable,
-          hasMushola,
-          hasParking,
           openingHours ? JSON.stringify(openingHours) : null,
           '$$', // price range default — Google priceLevel is unreliable
           c.rating ?? null,
@@ -235,15 +228,27 @@ export async function seedScrapedCafes(dataSource: DataSource): Promise<void> {
         }
       }
 
-      // Insert detected facilities into cafe_facilities
+      // Insert detected facilities into cafe_features (via master features lookup)
       for (const fac of detectedFacilities) {
         try {
           await dataSource.query(
-            `INSERT INTO cafe_facilities (cafe_id, facility_key) VALUES (?, ?)`,
-            [cafeId, fac],
+            `INSERT INTO features (name, category) VALUES (?, NULL)
+             ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id)`,
+            [fac],
           );
+          const [row] = await dataSource.query(
+            `SELECT id FROM features WHERE name = ? LIMIT 1`,
+            [fac],
+          );
+          if (row) {
+            await dataSource.query(
+              `INSERT INTO cafe_features (cafe_id, feature_id, source) VALUES (?, ?, 'google_scraper')
+               ON DUPLICATE KEY UPDATE source = 'google_scraper'`,
+              [cafeId, row.id],
+            );
+          }
         } catch {
-          // Skip duplicate facility errors silently
+          // Skip duplicate feature errors silently
         }
       }
 
@@ -304,7 +309,7 @@ async function wipeOldCafeData(dataSource: DataSource): Promise<void> {
     { table: 'favorites' },
     // Cafe-owned
     { table: 'cafe_purpose_tags' },
-    { table: 'cafe_facilities' },
+    { table: 'cafe_features' },
     { table: 'cafe_menus' },
     { table: 'cafe_photos' },
     { table: 'promotions' },

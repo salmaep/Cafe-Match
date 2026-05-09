@@ -116,12 +116,10 @@ export class AuthService {
         `INSERT INTO cafes (
           name, slug, address, phone, latitude, longitude, location,
           owner_id, google_maps_url, price_range, is_active,
-          wifi_available, has_mushola, has_parking,
           has_active_promotion, bookmarks_count, favorites_count
         ) VALUES (?, ?, ?, ?, ?, ?,
           ST_PointFromText(CONCAT('POINT(', ?, ' ', ?, ')'), 4326),
           ?, ?, '$$', TRUE,
-          FALSE, FALSE, FALSE,
           FALSE, 0, 0)`,
         [
           dto.cafeName,

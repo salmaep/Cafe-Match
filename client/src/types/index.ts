@@ -22,10 +22,6 @@ export interface Cafe {
   phone: string | null;
   googlePlaceId: string | null;
   googleMapsUrl: string | null;
-  wifiAvailable: boolean;
-  wifiSpeedMbps: number | null;
-  hasMushola: boolean;
-  hasParking: boolean;
   openingHours: Record<string, string> | null;
   priceRange: string;
   bookmarksCount: number;
@@ -39,7 +35,9 @@ export interface Cafe {
   activePromotionType?: 'new_cafe' | 'featured_promo' | null;
   distanceMeters?: number;
   matchScore?: number;
-  facilities?: CafeFacility[];
+  facilities?: string[] | CafeFeature[];
+  features?: CafeFeature[];
+  featureCategories?: string[];
   menus?: CafeMenu[];
   photos?: CafePhoto[];
   primaryPhotoUrl?: string | null;
@@ -50,10 +48,10 @@ export interface Cafe {
   topReviewAt?: number | null;
 }
 
-export interface CafeFacility {
+export interface CafeFeature {
   id: number;
-  facilityKey: string;
-  facilityValue: string | null;
+  name: string;
+  category: string | null;
 }
 
 export interface CafeMenu {
@@ -85,7 +83,9 @@ export interface Purpose {
 
 export interface PurposeRequirement {
   id: number;
-  facilityKey: string;
+  purposeId: number;
+  featureId: number;
+  feature: CafeFeature;
   isMandatory: boolean;
   weight: number;
 }

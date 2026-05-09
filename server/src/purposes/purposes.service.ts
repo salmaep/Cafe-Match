@@ -8,7 +8,7 @@ interface PurposeMatcher {
   id: number;
   slug: string;
   name: string;
-  requirements: { facilityKey: string; isMandatory: boolean; weight: number }[];
+  requirements: { featureName: string; isMandatory: boolean; weight: number }[];
   maxScore: number;
 }
 
@@ -29,6 +29,94 @@ export class PurposesService {
       relations: ['requirements'],
       order: { displayOrder: 'ASC' },
     });
+  }
+
+  /**
+   * Idempotent batch sync of purposes + their requirements.
+   *
+   * For each input purpose:
+   *   - Upsert by `slug`: insert new or update name/description/icon/displayOrder
+   *   - Replace requirements: DELETE old + INSERT new (purpose_id, feature_name)
+   *
+   * Returns counts of inserted / updated purposes and total requirements written.
+   */
+  async syncPurposes(input: {
+    purposes: {
+      slug: string;
+      name: string;
+      description?: string;
+      icon?: string;
+      displayOrder?: number;
+      requirements: { featureName: string; isMandatory?: boolean; weight?: number }[];
+    }[];
+  }): Promise<{ created: number; updated: number; requirementsWritten: number; skippedFeatures: string[] }> {
+    let created = 0;
+    let updated = 0;
+    let requirementsWritten = 0;
+    const skippedFeatures: string[] = [];
+
+    await this.dataSource.transaction(async (manager) => {
+      for (const p of input.purposes) {
+        let purpose = await manager.findOne(Purpose, { where: { slug: p.slug } });
+        if (purpose) {
+          purpose.name = p.name;
+          purpose.description = p.description ?? purpose.description;
+          purpose.icon = p.icon ?? purpose.icon;
+          if (p.displayOrder != null) purpose.displayOrder = p.displayOrder;
+          await manager.save(purpose);
+          updated++;
+        } else {
+          purpose = manager.create(Purpose, {
+            slug: p.slug,
+            name: p.name,
+            description: p.description ?? '',
+            icon: p.icon ?? '',
+            displayOrder: p.displayOrder ?? 0,
+          });
+          purpose = await manager.save(purpose);
+          created++;
+        }
+
+        // Replace all requirements for this purpose
+        await manager.delete(PurposeRequirement, { purposeId: purpose.id });
+
+        for (const req of p.requirements ?? []) {
+          const featureName = req.featureName.trim();
+          if (!featureName) continue;
+
+          // Upsert master features (auto-create if missing — admins can later
+          // edit/curate the entry).
+          await manager.query(
+            `INSERT INTO features (name, category) VALUES (?, NULL)
+             ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id)`,
+            [featureName],
+          );
+          const [row] = await manager.query(
+            `SELECT id FROM features WHERE name = ? LIMIT 1`,
+            [featureName],
+          );
+          if (!row) {
+            skippedFeatures.push(featureName);
+            continue;
+          }
+
+          await manager.save(
+            manager.create(PurposeRequirement, {
+              purposeId: purpose.id,
+              featureId: row.id,
+              isMandatory: req.isMandatory ?? false,
+              weight: req.weight ?? 1,
+            }),
+          );
+          requirementsWritten++;
+        }
+      }
+    });
+
+    this.logger.log(
+      `Purposes sync: created=${created}, updated=${updated}, reqs=${requirementsWritten}, skipped=${skippedFeatures.length}`,
+    );
+    return { created, updated, requirementsWritten, skippedFeatures };
   }
 
   /**
@@ -58,9 +146,9 @@ export class PurposesService {
 
     let tagsWritten = 0;
     for (const cafe of cafes) {
-      const facilityKeys = await this.loadCafeFacilityKeys(cafe.id);
+      const featureNames = await this.loadCafeFacilityKeys(cafe.id);
       for (const matcher of matchers) {
-        const score = this.scoreMatcher(facilityKeys, matcher);
+        const score = this.scoreMatcher(featureNames, matcher);
         if (score <= 0) continue;
         await this.dataSource.query(
           `INSERT INTO cafe_purpose_tags (cafe_id, purpose_slug, score)
@@ -85,16 +173,24 @@ export class PurposesService {
       await this.dataSource.query(
         `SELECT id, slug, name FROM purposes ORDER BY display_order ASC`,
       );
-    const reqs = await this.requirementsRepository.find();
+    // Resolve feature names via JOIN — purpose_requirements.feature_id → features.name
+    const reqs: {
+      purposeId: number; featureName: string; isMandatory: number; weight: number;
+    }[] = await this.dataSource.query(
+      `SELECT pr.purpose_id AS purposeId, f.name AS featureName,
+              pr.is_mandatory AS isMandatory, pr.weight AS weight
+       FROM purpose_requirements pr
+       JOIN features f ON f.id = pr.feature_id`,
+    );
     const reqsByPurpose = new Map<
       number,
-      { facilityKey: string; isMandatory: boolean; weight: number }[]
+      { featureName: string; isMandatory: boolean; weight: number }[]
     >();
     for (const r of reqs) {
       if (!reqsByPurpose.has(r.purposeId)) reqsByPurpose.set(r.purposeId, []);
       reqsByPurpose.get(r.purposeId)!.push({
-        facilityKey: r.facilityKey,
-        isMandatory: r.isMandatory,
+        featureName: r.featureName,
+        isMandatory: !!r.isMandatory,
         weight: r.weight,
       });
     }
@@ -106,37 +202,30 @@ export class PurposesService {
   }
 
   /**
-   * All facility keys present for a cafe, including synthesized keys derived
-   * from boolean columns (mirrors meili/cafe-to-document.ts behavior).
+   * All feature names present for a cafe. Note: purpose_requirements.facility_key
+   * must align with the new cafe_features.name strings — legacy canonical keys
+   * (e.g. 'strong_wifi') won't match raw feature names (e.g. 'wifi gratis')
+   * unless purpose_requirements is updated separately.
    */
   private async loadCafeFacilityKeys(cafeId: number): Promise<string[]> {
-    const rows: { facility_key: string }[] = await this.dataSource.query(
-      `SELECT facility_key FROM cafe_facilities WHERE cafe_id = ?`,
+    const rows: { name: string }[] = await this.dataSource.query(
+      `SELECT f.name FROM cafe_features cf
+       JOIN features f ON f.id = cf.feature_id
+       WHERE cf.cafe_id = ?`,
       [cafeId],
     );
-    const keys = new Set(rows.map((r) => r.facility_key));
-
-    const [flags] = await this.dataSource.query(
-      `SELECT wifi_available, has_mushola, has_parking FROM cafes WHERE id = ?`,
-      [cafeId],
-    );
-    if (flags) {
-      if (flags.wifi_available) keys.add('strong_wifi');
-      if (flags.has_mushola) keys.add('mushola');
-      if (flags.has_parking) keys.add('parking');
-    }
-    return Array.from(keys);
+    return rows.map((r) => r.name);
   }
 
-  private scoreMatcher(facilityKeys: string[], matcher: PurposeMatcher): number {
+  private scoreMatcher(featureNames: string[], matcher: PurposeMatcher): number {
     const mandatoryKeys = matcher.requirements
       .filter((r) => r.isMandatory)
-      .map((r) => r.facilityKey);
-    const mandatoryMet = mandatoryKeys.every((k) => facilityKeys.includes(k));
+      .map((r) => r.featureName);
+    const mandatoryMet = mandatoryKeys.every((k) => featureNames.includes(k));
     if (!mandatoryMet) return 0;
 
     const matchedWeight = matcher.requirements
-      .filter((r) => facilityKeys.includes(r.facilityKey))
+      .filter((r) => featureNames.includes(r.featureName))
       .reduce((s, r) => s + r.weight, 0);
 
     if (matchedWeight === 0) return 0;

@@ -10,9 +10,6 @@ export interface CafeDocument {
   district: string | null;
   phone: string | null;
   _geo: { lat: number; lng: number };
-  wifiAvailable: boolean;
-  hasMushola: boolean;
-  hasParking: boolean;
   hasActivePromotion: boolean;
   isActive: boolean;
   priceRange: string;
@@ -23,14 +20,13 @@ export interface CafeDocument {
   favoritesCount: number;
   createdAt: number;
   facilities: string[];
-  facilityValues: string[];
+  featureCategories: string[];
   menuItems: string[];
   purposes: string[];
   primaryPhotoUrl: string | null;
   photos: string[];
   googleMapsUrl: string;
   openingHours: Record<string, any> | null;
-  wifiSpeedMbps: number | null;
   topReviewText: string | null;
   topReviewAuthor: string | null;
   topReviewRating: number | null;
@@ -39,7 +35,7 @@ export interface CafeDocument {
 
 export function toCafeDocument(raw: {
   cafe: Record<string, any>;
-  facilities: { facilityKey: string; facilityValue: string | null }[];
+  features: { name: string; category: string | null }[];
   photos: { url: string; isPrimary: boolean; displayOrder: number }[];
   menus: { itemName: string }[];
   purposeSlugs: string[];
@@ -50,7 +46,7 @@ export function toCafeDocument(raw: {
     createdAt: Date | string | number | null;
   } | null;
 }): CafeDocument {
-  const { cafe, facilities, photos, menus, purposeSlugs, topReview } = raw;
+  const { cafe, features, photos, menus, purposeSlugs, topReview } = raw;
   const { city, district } = parseAddressParts(cafe.address || '');
 
   const primaryPhoto = photos.find((p) => p.isPrimary) ?? photos[0] ?? null;
@@ -59,13 +55,11 @@ export function toCafeDocument(raw: {
     .slice(0, 5)
     .map((p) => p.url);
 
-  // Synthesize facility keys from boolean columns so the filter facet counts
-  // match what users actually see in the list. A cafe with wifi_available=true
-  // but no cafe_facilities row would otherwise be invisible to facet counts.
-  const facilityKeySet = new Set<string>(facilities.map((f) => f.facilityKey));
-  if (Boolean(cafe.wifiAvailable ?? cafe.wifi_available)) facilityKeySet.add('strong_wifi');
-  if (Boolean(cafe.hasMushola ?? cafe.has_mushola)) facilityKeySet.add('mushola');
-  if (Boolean(cafe.hasParking ?? cafe.has_parking)) facilityKeySet.add('parking');
+  const featureNames = features.map((f) => f.name);
+  const categoriesSet = new Set<string>();
+  for (const f of features) {
+    if (f.category) categoriesSet.add(f.category);
+  }
 
   const googleMapsUrl =
     cafe.googleMapsUrl ?? cafe.google_maps_url ??
@@ -84,10 +78,6 @@ export function toCafeDocument(raw: {
       lat: Number(cafe.latitude),
       lng: Number(cafe.longitude),
     },
-    wifiAvailable: Boolean(cafe.wifiAvailable ?? cafe.wifi_available),
-    wifiSpeedMbps: (cafe.wifiSpeedMbps ?? cafe.wifi_speed_mbps) ?? null,
-    hasMushola: Boolean(cafe.hasMushola ?? cafe.has_mushola),
-    hasParking: Boolean(cafe.hasParking ?? cafe.has_parking),
     hasActivePromotion: Boolean(cafe.hasActivePromotion ?? cafe.has_active_promotion),
     isActive: Boolean(cafe.isActive ?? cafe.is_active),
     priceRange: (cafe.priceRange ?? cafe.price_range) ?? '$$',
@@ -97,8 +87,8 @@ export function toCafeDocument(raw: {
     bookmarksCount: (cafe.bookmarksCount ?? cafe.bookmarks_count) ?? 0,
     favoritesCount: (cafe.favoritesCount ?? cafe.favorites_count) ?? 0,
     createdAt: cafe.createdAt ?? cafe.created_at ? new Date(cafe.createdAt ?? cafe.created_at).getTime() : Date.now(),
-    facilities: Array.from(facilityKeySet),
-    facilityValues: facilities.map((f) => f.facilityValue).filter(Boolean) as string[],
+    facilities: featureNames,
+    featureCategories: Array.from(categoriesSet),
     menuItems: menus.slice(0, 20).map((m) => m.itemName),
     purposes: purposeSlugs,
     primaryPhotoUrl: primaryPhoto?.url ?? null,

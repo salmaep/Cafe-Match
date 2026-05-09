@@ -9,13 +9,11 @@ import { cleanAddress } from '../../utils/address';
 
 interface Props {
   cafe: Cafe;
-  isSaved: boolean;
-  onSave: () => void;
 }
 
 const VISIBLE_CHIPS = 5;
 
-export default function SwipeCard({ cafe, isSaved, onSave }: Props) {
+export default function SwipeCard({ cafe }: Props) {
   const navigate = useNavigate();
   const photo = getCafeImage(cafe);
   const distanceKm =
@@ -82,26 +80,6 @@ export default function SwipeCard({ cafe, isSaved, onSave }: Props) {
           </span>
         )}
       </div>
-
-      <button
-        type="button"
-        onPointerDown={(e) => {
-          e.stopPropagation();
-        }}
-        onPointerUp={(e) => {
-          e.stopPropagation();
-        }}
-        onClick={(e) => {
-          e.stopPropagation();
-          e.preventDefault();
-          onSave();
-        }}
-        className={`absolute bottom-4 right-4 w-11 h-11 rounded-full flex items-center justify-center transition-colors shadow-lg z-20 ${
-          isSaved ? 'bg-[#D48B3A]' : 'bg-white/30 hover:bg-white/50 backdrop-blur-sm'
-        }`}
-      >
-        <span className="text-2xl text-white leading-none">{isSaved ? '★' : '☆'}</span>
-      </button>
 
       <div className="absolute inset-x-0 bottom-0 p-6 text-white">
         <h3 className="text-2xl font-bold mb-1 line-clamp-1">{cafe.name}</h3>

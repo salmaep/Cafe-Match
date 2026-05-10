@@ -24,6 +24,14 @@ export class CafePhoto {
   @Column({ type: 'enum', enum: ['manual', 'google'], default: 'manual' })
   source: string;
 
+  @Column({
+    name: 'photo_type',
+    type: 'enum',
+    enum: ['cover', 'gallery', 'menu'],
+    default: 'gallery',
+  })
+  photoType: 'cover' | 'gallery' | 'menu';
+
   @Column({ name: 'google_photo_ref', length: 500, nullable: true })
   googlePhotoRef: string;
 

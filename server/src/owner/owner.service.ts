@@ -4,7 +4,7 @@ import { Repository, DataSource } from 'typeorm';
 import { Cafe } from '../cafes/entities/cafe.entity';
 import { CafeMenu } from '../menus/entities/cafe-menu.entity';
 import { CafePhoto } from '../photos/entities/cafe-photo.entity';
-import { CafeFacility } from '../cafes/entities/cafe-facility.entity';
+import { CafeFeature } from '../cafes/entities/cafe-feature.entity';
 import { Promotion } from '../promotions/entities/promotion.entity';
 import { CafeAnalytics } from '../analytics/entities/cafe-analytics.entity';
 import { UpdateCafeDto, CreateOwnerCafeDto, UpdateMenuItemDto } from './dto/update-cafe.dto';
@@ -18,8 +18,8 @@ export class OwnerService {
     private readonly menusRepo: Repository<CafeMenu>,
     @InjectRepository(CafePhoto)
     private readonly photosRepo: Repository<CafePhoto>,
-    @InjectRepository(CafeFacility)
-    private readonly facilitiesRepo: Repository<CafeFacility>,
+    @InjectRepository(CafeFeature)
+    private readonly featuresRepo: Repository<CafeFeature>,
     @InjectRepository(Promotion)
     private readonly promotionsRepo: Repository<Promotion>,
     @InjectRepository(CafeAnalytics)
@@ -40,7 +40,7 @@ export class OwnerService {
     if (cafesWithActive.length > 0) {
       return this.cafesRepo.findOne({
         where: { id: cafesWithActive[0].id },
-        relations: ['facilities', 'menus', 'photos'],
+        relations: ['features', 'menus', 'photos'],
       });
     }
 
@@ -55,13 +55,13 @@ export class OwnerService {
     if (cafesWithAnyPromo.length > 0) {
       return this.cafesRepo.findOne({
         where: { id: cafesWithAnyPromo[0].id },
-        relations: ['facilities', 'menus', 'photos'],
+        relations: ['features', 'menus', 'photos'],
       });
     }
 
     return this.cafesRepo.findOne({
       where: { ownerId: userId },
-      relations: ['facilities', 'menus', 'photos'],
+      relations: ['features', 'menus', 'photos'],
     });
   }
 
@@ -88,12 +88,10 @@ export class OwnerService {
          name, slug, address, phone, description,
          latitude, longitude, location,
          owner_id, google_maps_url, price_range, is_active,
-         wifi_available, has_mushola, has_parking,
          has_active_promotion, bookmarks_count, favorites_count
        ) VALUES (?, ?, ?, ?, ?,
          ?, ?, ST_PointFromText(CONCAT('POINT(', ?, ' ', ?, ')'), 4326),
          ?, ?, '$$', TRUE,
-         FALSE, FALSE, FALSE,
          FALSE, 0, 0)`,
       [
         dto.name,

@@ -10,37 +10,84 @@ import {
   NativeMediaView,
 } from '../lib/ads';
 import { adUnitIds } from '../config/ads';
-import { colors, radius, spacing } from '../theme';
+
+// Color palette mirrors components/cafe/CafeListItem so the layout is a 1:1
+// match. The only divergences: amber border (highlight cue) + amber tint on
+// the photo edge + a small amber "AD" badge in the right column.
+const C = {
+  border: '#F0EDE8',
+  ink: '#1C1C1A',
+  muted: '#8A8880',
+  mutedDeep: '#5C5A52',
+  veryMuted: '#A8A59C',
+  divider: '#D9D6CE',
+  amber: '#D48B3A',
+  amberInk: '#B45309',
+  amberSoft: '#FFF8EC',
+  amberRing: '#FCD34D',
+  star: '#F59E0B',
+};
 
 export default function NativeAdCard() {
   const [ad, setAd] = useState<NativeAdType | null>(null);
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    if (!adsAvailable || !NativeAd) return;
+    if (!adsAvailable || !NativeAd) {
+      if (__DEV__) {
+        // eslint-disable-next-line no-console
+        console.log('[Ad] skip — adsAvailable=', adsAvailable);
+      }
+      return;
+    }
     let cancelled = false;
     let current: NativeAdType | null = null;
 
+    if (__DEV__) {
+      // eslint-disable-next-line no-console
+      console.log('[Ad] requesting unit:', adUnitIds.native);
+    }
+
+    // Hard timeout: if no response after 10s, give up rather than spin forever.
+    const timeoutId = setTimeout(() => {
+      if (cancelled) return;
+      if (__DEV__) {
+        // eslint-disable-next-line no-console
+        console.warn('[Ad] timeout — no ad after 10s, giving up.');
+      }
+      setFailed(true);
+    }, 10_000);
+
     NativeAd.createForAdRequest(adUnitIds.native)
       .then((loaded) => {
+        clearTimeout(timeoutId);
         if (cancelled) {
           loaded.destroy();
           return;
         }
+        if (__DEV__) {
+          // eslint-disable-next-line no-console
+          console.log('[Ad] loaded:', loaded.headline);
+        }
         current = loaded;
         setAd(loaded);
       })
-      .catch(() => {
+      .catch((err) => {
+        clearTimeout(timeoutId);
+        if (__DEV__) {
+          // eslint-disable-next-line no-console
+          console.warn('[Ad] failed:', err?.message ?? err);
+        }
         if (!cancelled) setFailed(true);
       });
 
     return () => {
       cancelled = true;
+      clearTimeout(timeoutId);
       current?.destroy();
     };
   }, []);
 
-  // In Expo Go (or any build without the native module) skip rendering entirely.
   if (!adsAvailable || !NativeAdView || !NativeAsset || !NativeAssetType || !NativeMediaView) {
     return null;
   }
@@ -49,145 +96,203 @@ export default function NativeAdCard() {
   if (!ad) {
     return (
       <View style={[styles.card, styles.loading]}>
-        <ActivityIndicator size="small" color={colors.accent} />
+        <ActivityIndicator size="small" color={C.amber} />
       </View>
     );
   }
 
+  const advertiser = ad.advertiser || ad.store;
+  const ratingValue =
+    typeof ad.starRating === 'number' && ad.starRating > 0
+      ? ad.starRating.toFixed(1)
+      : null;
   const iconUri = ad.icon?.url;
 
   return (
     <NativeAdView nativeAd={ad} style={styles.card}>
-      <View style={styles.sponsoredBadge}>
-        <Text style={styles.sponsoredText}>Ad</Text>
+      {/* Photo column — same 96×96 as CafeListItem */}
+      <View style={styles.photo}>
+        {iconUri ? (
+          <NativeAsset assetType={NativeAssetType.ICON}>
+            <Image source={{ uri: iconUri }} style={StyleSheet.absoluteFill} />
+          </NativeAsset>
+        ) : (
+          <NativeMediaView style={StyleSheet.absoluteFill} />
+        )}
       </View>
 
-      {iconUri ? (
-        <NativeAsset assetType={NativeAssetType.ICON}>
-          <Image source={{ uri: iconUri }} style={styles.photo} />
-        </NativeAsset>
-      ) : (
-        <View style={styles.photo}>
-          <NativeMediaView style={StyleSheet.absoluteFill} />
+      {/* Body column */}
+      <View style={styles.body}>
+        {/* Title row — title + SPONSOR badge (in place of promoBadge) */}
+        <View style={styles.titleRow}>
+          <NativeAsset assetType={NativeAssetType.HEADLINE}>
+            <Text style={styles.title} numberOfLines={1}>
+              {ad.headline}
+            </Text>
+          </NativeAsset>
+          <View style={styles.sponsorBadge}>
+            <Text style={styles.sponsorBadgeText}>SPONSOR</Text>
+          </View>
         </View>
-      )}
 
-      <View style={styles.info}>
-        <NativeAsset assetType={NativeAssetType.HEADLINE}>
-          <Text style={styles.name} numberOfLines={1}>
-            {ad.headline}
-          </Text>
-        </NativeAsset>
+        {/* Meta row — same shape as CafeListItem (rating · advertiser) */}
+        {(ratingValue || advertiser) && (
+          <View style={styles.metaRow}>
+            {ratingValue && (
+              <>
+                <Text style={styles.metaStar}>★</Text>
+                <Text style={styles.metaRating}>{ratingValue}</Text>
+                {advertiser && <Text style={styles.metaDot}>·</Text>}
+              </>
+            )}
+            {advertiser && (
+              <Text style={styles.metaMuted} numberOfLines={1}>
+                {advertiser}
+              </Text>
+            )}
+          </View>
+        )}
+
+        {/* Body snippet — same slot as the cafe's top review */}
         {ad.body ? (
           <NativeAsset assetType={NativeAssetType.BODY}>
-            <Text style={styles.body} numberOfLines={1}>
+            <Text style={styles.review} numberOfLines={2}>
               {ad.body}
             </Text>
           </NativeAsset>
         ) : null}
-        {ad.advertiser || ad.store ? (
-          <View style={styles.pill}>
-            <Text style={styles.pillText} numberOfLines={1}>
-              {ad.advertiser || ad.store}
-            </Text>
+
+        {/* CTA chip — drops into the chipRow slot, mirroring open-status chip */}
+        {ad.callToAction ? (
+          <View style={styles.chipRow}>
+            <NativeAsset assetType={NativeAssetType.CALL_TO_ACTION}>
+              <View style={styles.ctaChip}>
+                <Text style={styles.ctaChipText} numberOfLines={1}>
+                  {ad.callToAction}
+                </Text>
+              </View>
+            </NativeAsset>
           </View>
         ) : null}
       </View>
 
-      {ad.callToAction ? (
-        <NativeAsset assetType={NativeAssetType.CALL_TO_ACTION}>
-          <View style={styles.cta}>
-            <Text style={styles.ctaText} numberOfLines={1}>
-              {ad.callToAction}
-            </Text>
-          </View>
-        </NativeAsset>
-      ) : null}
+      {/* Right column — same 40px width as CafeListItem.right */}
+      <View style={styles.right}>
+        <Text style={styles.adLabel}>AD</Text>
+        <Text style={styles.chev}>›</Text>
+      </View>
     </NativeAdView>
   );
 }
 
 const styles = StyleSheet.create({
+  // Same skeleton as CafeListItem.card, but visually elevated so it's
+  // unambiguous that this row is sponsored: cream-amber wash background,
+  // thicker amber border, warm orange shadow. Padding/radius/gap match the
+  // cafe card so the row keeps its place in the rhythm of the list.
   card: {
     flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.white,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
-    position: 'relative',
+    alignItems: 'stretch',
+    gap: 12,
+    backgroundColor: C.amberSoft,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: C.amber,
+    padding: 12,
+    shadowColor: '#EA580C',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.18,
+    shadowRadius: 10,
+    elevation: 4,
   },
   loading: {
-    height: 102,
+    height: 122,
     justifyContent: 'center',
+    alignItems: 'center',
   },
-  sponsoredBadge: {
-    position: 'absolute',
-    top: 6,
-    left: 6,
-    backgroundColor: '#FBBF24',
+  photo: {
+    width: 96,
+    height: 96,
+    borderRadius: 12,
+    backgroundColor: C.border,
+    overflow: 'hidden',
+  },
+  body: { flex: 1, minWidth: 0, justifyContent: 'flex-start' },
+
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  title: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: C.ink,
+    flexShrink: 1,
+  },
+  sponsorBadge: {
     paddingHorizontal: 6,
     paddingVertical: 1,
     borderRadius: 4,
-    zIndex: 2,
+    backgroundColor: C.amber,
   },
-  sponsoredText: {
-    fontSize: 10,
+  sponsorBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 9,
     fontWeight: '800',
-    color: '#1F2937',
-    letterSpacing: 0.5,
+    letterSpacing: 0.4,
   },
-  photo: {
-    width: 70,
-    height: 70,
-    borderRadius: radius.md,
-    backgroundColor: colors.surface,
-    marginRight: spacing.md,
-    overflow: 'hidden',
+
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    marginTop: 3,
   },
-  info: {
-    flex: 1,
-    justifyContent: 'center',
+  metaStar: { color: C.star, fontSize: 12, marginRight: 2 },
+  metaRating: {
+    fontSize: 12, fontWeight: '700', color: C.ink, marginRight: 2,
   },
-  name: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: colors.primary,
-    marginBottom: 3,
+  metaMuted: { fontSize: 12, color: C.muted, flexShrink: 1 },
+  metaDot: { fontSize: 12, color: C.divider, marginHorizontal: 4 },
+
+  // Reuses the review-snippet slot in CafeListItem so the visual rhythm matches.
+  review: {
+    fontSize: 11,
+    color: C.mutedDeep,
+    marginTop: 6,
+    fontStyle: 'italic',
+    lineHeight: 14,
   },
-  body: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginBottom: spacing.xs,
+
+  // CTA pill placed in the chip row — same vertical position as openChip.
+  chipRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 4,
+    marginTop: 6,
   },
-  pill: {
-    alignSelf: 'flex-start',
-    backgroundColor: colors.accent + '20',
-    borderRadius: radius.full,
-    paddingHorizontal: spacing.sm,
+  ctaChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 999,
+    backgroundColor: C.amber,
+  },
+  ctaChipText: {
+    fontSize: 10,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: 0.4,
+  },
+
+  // Right column — mirrors CafeListItem.right (40px, top/bottom split).
+  right: {
+    width: 40,
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
     paddingVertical: 2,
   },
-  pillText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: colors.accent,
-    maxWidth: 120,
+  adLabel: {
+    fontSize: 10,
+    fontWeight: '900',
+    color: C.amberInk,
+    letterSpacing: 1,
   },
-  cta: {
-    marginLeft: spacing.sm,
-    paddingHorizontal: spacing.sm + 2,
-    paddingVertical: 6,
-    borderRadius: radius.full,
-    backgroundColor: colors.accent,
-  },
-  ctaText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: colors.white,
-    letterSpacing: 0.3,
-  },
+  chev: { fontSize: 22, color: C.muted, lineHeight: 22 },
 });

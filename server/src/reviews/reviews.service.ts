@@ -216,7 +216,7 @@ export class ReviewsService {
     mood_wfc: 'wfc',
   };
 
-  /** Facility key (from review category) → cafe_facilities.facility_key */
+  /** Facility key (from review category) → cafe_features.name */
   private readonly FACILITY_REVIEW_KEYS = new Set([
     'wifi', 'power_outlet', 'mushola', 'parking',
     'kid_friendly', 'quiet_atmosphere', 'large_tables', 'outdoor_area',
@@ -291,39 +291,23 @@ export class ReviewsService {
       const votes = parseInt(f.votes, 10);
       if (votes < this.SIGNAL_MIN_VOTES) continue;
 
-      // Check if already present (whether from scraping or previous aggregation)
-      const [existing] = await this.dataSource.query(
-        `SELECT id FROM cafe_facilities WHERE cafe_id = ? AND facility_key = ? LIMIT 1`,
-        [cafeId, key],
+      // Upsert master feature → get feature_id
+      await this.dataSource.query(
+        `INSERT INTO features (name, category) VALUES (?, NULL)
+         ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id)`,
+        [key],
       );
-      if (!existing) {
-        await this.dataSource.query(
-          `INSERT INTO cafe_facilities (cafe_id, facility_key, facility_value)
-           VALUES (?, ?, ?)`,
-          [cafeId, key, `reviews:${votes}`],
-        );
-      }
-      // If already exists, leave it alone — don't overwrite scraping metadata
-    }
+      const [{ id: featureId }] = await this.dataSource.query(
+        `SELECT id FROM features WHERE name = ? LIMIT 1`,
+        [key],
+      );
 
-    // 3. Update has_mushola / has_parking / wifi_available flags on cafes
-    //    row based on aggregated facilities (so filter wizard picks them up)
-    const flagUpdates: { key: string; col: string }[] = [
-      { key: 'wifi', col: 'wifi_available' },
-      { key: 'mushola', col: 'has_mushola' },
-      { key: 'parking', col: 'has_parking' },
-    ];
-    for (const { key, col } of flagUpdates) {
-      const [f] = await this.dataSource.query(
-        `SELECT 1 FROM cafe_facilities WHERE cafe_id = ? AND facility_key = ? LIMIT 1`,
-        [cafeId, key],
+      // Insert junction row idempotently
+      await this.dataSource.query(
+        `INSERT INTO cafe_features (cafe_id, feature_id, source) VALUES (?, ?, 'manual')
+         ON DUPLICATE KEY UPDATE source = source`,
+        [cafeId, featureId],
       );
-      if (f) {
-        await this.dataSource.query(
-          `UPDATE cafes SET ${col} = TRUE WHERE id = ? AND ${col} = FALSE`,
-          [cafeId],
-        );
-      }
     }
   }
 }

@@ -48,11 +48,11 @@ const MOCK_OWNER_CAFE = {
     { id: 2, url: 'https://images.unsplash.com/photo-1559305616-3f99cd43e353?w=800', displayOrder: 1, isPrimary: false },
     { id: 3, url: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800', displayOrder: 2, isPrimary: false },
   ],
-  facilities: [
-    { facilityKey: 'wifi', facilityValue: '50 Mbps' },
-    { facilityKey: 'power_outlet', facilityValue: null },
-    { facilityKey: 'parking', facilityValue: null },
-    { facilityKey: 'quiet_atmosphere', facilityValue: null },
+  features: [
+    { name: 'wifi', category: 'amenity' },
+    { name: 'power_outlet', category: 'amenity' },
+    { name: 'parking', category: 'amenity' },
+    { name: 'quiet_atmosphere', category: 'ambience' },
   ],
   menus: [
     { id: 1, category: 'Coffee', itemName: 'Americano', price: 28000, isAvailable: true },
@@ -62,9 +62,6 @@ const MOCK_OWNER_CAFE = {
     { id: 5, category: 'Snacks', itemName: 'Croissant', price: 25000, isAvailable: true },
     { id: 6, category: 'Snacks', itemName: 'Banana Bread', price: 22000, isAvailable: false },
   ],
-  wifiAvailable: true,
-  wifiSpeedMbps: 50,
-  hasMushola: false,
   priceRange: '$$',
   favoritesCount: 156,
   bookmarksCount: 89,
@@ -92,10 +89,6 @@ export default function MyCafeScreen() {
   const [description, setDescription] = useState('');
   const [latitude, setLatitude] = useState('');
   const [longitude, setLongitude] = useState('');
-  const [wifiAvailable, setWifiAvailable] = useState(false);
-  const [wifiSpeed, setWifiSpeed] = useState('');
-  const [hasMushola, setHasMushola] = useState(false);
-  const [hasParking, setHasParking] = useState(false);
   const [priceRange, setPriceRange] = useState<string>('$$');
   const [activeFacilities, setActiveFacilities] = useState<Set<string>>(new Set());
   const [photos, setPhotos] = useState<any[]>([]);
@@ -149,18 +142,15 @@ export default function MyCafeScreen() {
     setDescription(data.description || '');
     setLatitude(data.latitude != null ? String(data.latitude) : '');
     setLongitude(data.longitude != null ? String(data.longitude) : '');
-    setWifiAvailable(!!data.wifiAvailable);
-    setWifiSpeed(data.wifiSpeedMbps ? String(data.wifiSpeedMbps) : '');
-    setHasMushola(!!data.hasMushola);
     setPriceRange(data.priceRange || '$$');
     setPhotos(data.photos || []);
     setMenus(data.menus || []);
-    const facSet = new Set<string>((data.facilities || []).map((f: any) => f.facilityKey));
-    if (data.wifiAvailable) facSet.add('wifi');
-    if (data.hasMushola) facSet.add('mushola');
-    const parkingFac = (data.facilities || []).find((f: any) => f.facilityKey === 'parking');
-    if (parkingFac) facSet.add('parking');
-    setHasParking(facSet.has('parking'));
+    // Build feature set from cafe.features (rich) or feature names array.
+    const facSet = new Set<string>(
+      (data.features ?? data.facilities ?? []).map((f: any) =>
+        typeof f === 'string' ? f : f?.name ?? f?.facilityKey,
+      ).filter(Boolean),
+    );
     setActiveFacilities(facSet);
   };
 
@@ -171,10 +161,7 @@ export default function MyCafeScreen() {
     }
     setSaving(true);
 
-    const facilitiesPayload = Array.from(activeFacilities).map((key) => ({
-      facilityKey: key,
-      facilityValue: key === 'wifi' && wifiSpeed ? wifiSpeed + ' Mbps' : null,
-    }));
+    const featuresPayload = Array.from(activeFacilities).map((name) => ({ name }));
 
     // Parse + validate coordinates (optional — only sent if both filled)
     const latNum = latitude.trim() ? Number(latitude) : null;
@@ -195,11 +182,8 @@ export default function MyCafeScreen() {
       address: address.trim(),
       phone: phone.trim() || undefined,
       description: description.trim() || undefined,
-      wifiAvailable,
-      wifiSpeedMbps: wifiAvailable && wifiSpeed ? Number(wifiSpeed) : undefined,
-      hasMushola,
       priceRange,
-      facilities: facilitiesPayload,
+      features: featuresPayload,
     };
     if (latNum !== null && lngNum !== null) {
       payload.latitude = latNum;
@@ -208,7 +192,7 @@ export default function MyCafeScreen() {
 
     const applyLocalUpdate = () => {
       // Merge payload into local cafe state so the read-only view re-renders
-      const updated = { ...cafe, ...payload, facilities: facilitiesPayload };
+      const updated = { ...cafe, ...payload, features: featuresPayload };
       setCafe(updated);
       setEditMode(false);
     };
@@ -659,21 +643,6 @@ export default function MyCafeScreen() {
               );
             })}
           </View>
-          {/* WiFi speed input */}
-          {activeFacilities.has('wifi') && (
-            <View style={[styles.fieldGroup, { marginTop: spacing.sm }]}>
-              <Text style={styles.fieldLabel}>WiFi Speed (Mbps)</Text>
-              <TextInput
-                style={[styles.fieldInput, !editMode && styles.fieldInputReadonly]}
-                value={wifiSpeed}
-                onChangeText={setWifiSpeed}
-                editable={editMode}
-                keyboardType="numeric"
-                placeholder="e.g. 50"
-                placeholderTextColor={colors.textSecondary}
-              />
-            </View>
-          )}
         </View>
 
         {/* Menu */}

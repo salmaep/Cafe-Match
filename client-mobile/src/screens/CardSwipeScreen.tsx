@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
+import WizardScreen from './WizardScreen';
 import {
   View,
   Text,
@@ -39,6 +40,15 @@ export default function CardSwipeScreen() {
   const [toastMsg, setToastMsg] = useState('');
   const [showToast, setShowToast] = useState(false);
   const [cafes, setCafes] = useState<Cafe[]>([]);
+
+  // Mirror web DiscoverPage: every visit to Discover starts with the wizard.
+  // Reset on every focus so switching tabs and coming back re-shows the wizard.
+  const [showWizard, setShowWizard] = useState(true);
+  useFocusEffect(
+    useCallback(() => {
+      setShowWizard(true);
+    }, []),
+  );
 
   // Fix 1: Calculate available height for card centering
   const HEADER_H = insets.top + 72; // status bar + header row
@@ -155,25 +165,35 @@ export default function CardSwipeScreen() {
 
   const handleSwipedRight = (cardIndex: number) => {
     const cafe = cafes[cardIndex];
-    if (cafe && !isInShortlist(cafe.id)) {
+    if (!cafe || isInShortlist(cafe.id)) return;
+    // Defer state updates well past the swipe animation (~250ms). Touching
+    // ShortlistContext or toast state too early re-renders the parent while
+    // Swiper is still settling its internal stack — known cause of blank
+    // next/last cards in react-native-deck-swiper.
+    setTimeout(() => {
       addToShortlist(cafe);
       setToastMsg(`Added "${cafe.name}" to Shortlist!`);
       setShowToast(true);
-    }
+    }, 350);
   };
 
   const handleSwipedAll = () => {
-    // Discover IS a tab — don't navigate away (the previous
-    // navigation.replace('MainTabs') was a no-op on Android and an unwanted
-    // reset on iOS). Just show the empty state; user can tap Shortlist FAB
-    // or switch tabs naturally. allSwiped is reset on next focus.
     setAllSwiped(true);
+    // Briefly show "No match?" then auto-navigate to the Explore (map) tab
+    // so the user is never stranded on the empty state. Works both when
+    // CardSwipe is reached via wizard (stack) and when it's the Discover tab.
+    setTimeout(() => {
+      navigation.navigate('MainTabs', { screen: 'Explore' });
+    }, 1200);
   };
 
   const openShortlist = () => navigation.navigate('ShortlistModal');
 
-  // Fix 2: Card with correctly stacked bottom overlay
-  const renderCard = (cafe: Cafe) => {
+  // Memoized so its identity is stable across re-renders. Without this,
+  // every parent re-render (Toast state, ShortlistContext, etc) gives Swiper
+  // a new renderCard reference, which can confuse its internal stack and
+  // cause blank/missing cards.
+  const renderCard = useCallback((cafe: Cafe) => {
     if (!cafe) return null;
     const saved = isInShortlist(cafe.id);
     const isTypeA = cafe.promotionType === 'A' || cafe.activePromotionType === 'new_cafe';
@@ -362,7 +382,7 @@ export default function CardSwipeScreen() {
         </View>
       </TouchableOpacity>
     );
-  };
+  }, [navigation, addToShortlist, isInShortlist]);
 
   if (allSwiped) {
     return (
@@ -373,6 +393,9 @@ export default function CardSwipeScreen() {
       </View>
     );
   }
+
+  const goExplore = () =>
+    navigation.navigate('MainTabs', { screen: 'Explore' });
 
   if (loading) {
     return (
@@ -387,11 +410,33 @@ export default function CardSwipeScreen() {
     return (
       <View style={styles.emptyContainer}>
         <Text style={styles.emptyEmoji}>☕</Text>
-        <Text style={styles.emptyTitle}>No cafes found</Text>
+        <Text style={styles.emptyTitle}>Tidak ada kafe</Text>
         <Text style={styles.emptySubtitle}>
-          Try widening your radius or removing filters in the wizard.
+          Coba perluas radius atau hapus filter di Explore.
         </Text>
+        <View style={styles.emptyActions}>
+          <TouchableOpacity style={styles.emptyPrimaryBtn} onPress={goExplore}>
+            <Text style={styles.emptyPrimaryBtnText}>🗺️  Buka Map</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.emptySecondaryBtn}
+            onPress={() => cafesQuery.refetch()}
+          >
+            <Text style={styles.emptySecondaryBtnText}>↻ Coba Lagi</Text>
+          </TouchableOpacity>
+        </View>
       </View>
+    );
+  }
+
+  // Gate behind wizard — every Discover visit starts here. After complete or
+  // skip, the wizard hides and the swipe deck below renders.
+  if (showWizard) {
+    return (
+      <WizardScreen
+        onComplete={() => setShowWizard(false)}
+        onSkip={() => setShowWizard(false)}
+      />
     );
   }
 
@@ -417,11 +462,14 @@ export default function CardSwipeScreen() {
         onSwipedAll={handleSwipedAll}
         cardIndex={0}
         backgroundColor="transparent"
-        stackSize={3}
+        // stackSize=2 + no opacity animation: empirically prevents the
+        // last-card blank bug in react-native-deck-swiper. With stackSize=3
+        // and animateCardOpacity enabled, the final card was rendering
+        // transparent because the lib expects 3 cards to compute fade.
+        stackSize={2}
         stackSeparation={12}
         stackScale={4}
         animateOverlayLabelsOpacity
-        animateCardOpacity
         disableTopSwipe
         disableBottomSwipe
         overlayLabels={{
@@ -769,6 +817,43 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
   },
   emptyEmoji: { fontSize: 56, marginBottom: spacing.md },
-  emptyTitle: { fontSize: 24, fontWeight: '700', color: colors.primary },
-  emptySubtitle: { fontSize: 16, color: colors.textSecondary, marginTop: spacing.xs },
+  emptyTitle: { fontSize: 24, fontWeight: '700', color: colors.primary, textAlign: 'center' },
+  emptySubtitle: {
+    fontSize: 15,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
+    textAlign: 'center',
+    maxWidth: 320,
+    lineHeight: 21,
+  },
+  emptyActions: {
+    width: '100%',
+    maxWidth: 280,
+    gap: spacing.sm,
+    marginTop: spacing.xl,
+  },
+  emptyPrimaryBtn: {
+    backgroundColor: colors.primary,
+    borderRadius: radius.md,
+    paddingVertical: spacing.md,
+    alignItems: 'center',
+  },
+  emptyPrimaryBtnText: {
+    color: colors.white,
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  emptySecondaryBtn: {
+    backgroundColor: colors.white,
+    borderRadius: radius.md,
+    paddingVertical: spacing.md,
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: colors.accent,
+  },
+  emptySecondaryBtnText: {
+    color: colors.accent,
+    fontSize: 14,
+    fontWeight: '700',
+  },
 });

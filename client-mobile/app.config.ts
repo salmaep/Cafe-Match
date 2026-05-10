@@ -1,5 +1,20 @@
 import { ExpoConfig, ConfigContext } from 'expo/config';
 
+// Only attach googleServicesFile when the file actually exists on disk.
+// Firebase plugin is currently disabled, so missing files shouldn't break prebuild.
+// Uses require() to avoid needing @types/node — this file runs on Node at
+// build time, so the modules are available at runtime regardless.
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const fs = require('fs') as { existsSync: (p: string) => boolean };
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const nodePath = require('path') as { resolve: (...p: string[]) => string };
+declare const __dirname: string;
+
+function resolveIfExists(envVar: string | undefined, fallback: string): string | undefined {
+  const candidate = envVar ?? nodePath.resolve(__dirname, fallback);
+  return fs.existsSync(candidate) ? candidate : undefined;
+}
+
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: 'CafeMatch',
@@ -17,7 +32,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   ios: {
     supportsTablet: true,
-    googleServicesFile: process.env.GOOGLE_SERVICES_PLIST ?? './GoogleService-Info.plist',
+    googleServicesFile: resolveIfExists(
+      process.env.GOOGLE_SERVICES_PLIST,
+      './GoogleService-Info.plist',
+    ),
     config: {
       googleMapsApiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY,
     },
@@ -30,7 +48,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     edgeToEdgeEnabled: true,
     predictiveBackGestureEnabled: false,
     package: 'com.anonymous.cafematch',
-    googleServicesFile: process.env.GOOGLE_SERVICES_JSON ?? './google-services.json',
+    googleServicesFile: resolveIfExists(
+      process.env.GOOGLE_SERVICES_JSON,
+      './google-services.json',
+    ),
     config: {
       googleMaps: {
         apiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY,
@@ -42,6 +63,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   plugins: [
     // '@react-native-firebase/app', // disabled in Expo Go — re-enable when using dev build
+    '@react-native-google-signin/google-signin',
     'expo-web-browser',
     [
       'expo-build-properties',
@@ -52,6 +74,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     [
       'react-native-google-mobile-ads',
       {
+        // TEMPORARY: Google's official test App IDs while the real AdMob app
+        // ID (`ca-app-pub-1232702196287166~3064497244`) propagates — Google
+        // notes new ad units can take up to ~1 hour to start serving. Test
+        // App IDs always work instantly, so this lets us verify the SDK is
+        // wired correctly. Swap back to the real App ID once it's live.
         androidAppId: 'ca-app-pub-3940256099942544~3347511713',
         iosAppId: 'ca-app-pub-3940256099942544~1458002511',
         userTrackingUsageDescription:

@@ -3,14 +3,6 @@ import { ConfigService } from '@nestjs/config';
 import { DataSource } from 'typeorm';
 import * as crypto from 'crypto';
 import { SyncCafeDto } from './dto/sync-cafe.dto';
-import { parseOpeningHours } from './parsers/opening-hours.parser';
-import {
-  parseFeatures,
-  parsePayment,
-  ParsedFacility,
-  DerivedFlags,
-} from './parsers/features.parser';
-import { parsePriceRange } from './parsers/pricing.parser';
 import { MeiliCafesService } from '../meili/meili-cafes.service';
 import { buildCafeSlug } from '../common/utils/slug.util';
 
@@ -21,6 +13,14 @@ export interface SyncResult {
   errors: { googlePlaceId: string; reason: string }[];
 }
 
+/**
+ * Pure inserter: stores incoming cafe data exactly as supplied by the
+ * pre-processor frontend. No parsing, no alias mapping, no derived flags.
+ *
+ * Idempotency: lookup by `google_place_id`. Existing rows are UPDATEd and
+ * child rows (features/photos/google reviews) are replaced (delete + insert)
+ * so payload remains the source of truth for that source.
+ */
 @Injectable()
 export class ScraperSyncService {
   private readonly logger = new Logger(ScraperSyncService.name);
@@ -63,49 +63,27 @@ export class ScraperSyncService {
 
   private async upsertCafe(dto: SyncCafeDto, result: SyncResult): Promise<number | null> {
     const [lng, lat] = dto.location;
-    const openingHours = parseOpeningHours(dto.openingHours);
-    const priceRange = parsePriceRange(dto.pricing);
     const isActive = dto.status === 'active';
 
-    // Parse once — child rows + boolean columns share the same source.
-    const parsedFeatures = parseFeatures(dto.features ?? []);
-    const paymentFacilities = parsePayment(dto.payment as Record<string, unknown> | null);
-    const allFacilities = [...parsedFeatures.facilities, ...paymentFacilities];
-
-    // Boolean flags: OR-merge DTO explicit field with parsed-from-features.
-    // For has_mushola the DTO has no field, so it relies entirely on parsing.
-    const flags: DerivedFlags = {
-      wifiAvailable: !!dto.wifiAvailable || parsedFeatures.derivedFlags.wifiAvailable,
-      hasParking: !!dto.hasParking || parsedFeatures.derivedFlags.hasParking,
-      hasMushola: parsedFeatures.derivedFlags.hasMushola,
-    };
-
-    // Idempotency: lookup by google_place_id (UNIQUE in scraper context).
-    // Existing row → UPDATE + replace child rows (no append, no duplicate).
-    // Missing row → INSERT new.
     const [existing] = await this.dataSource.query(
       `SELECT id FROM cafes WHERE google_place_id = ? LIMIT 1`,
       [dto.googlePlaceId],
     );
 
     if (existing) {
-      await this.updateCafe(
-        existing.id, dto, lat, lng, openingHours, priceRange, isActive, flags,
-      );
+      await this.updateCafe(existing.id, dto, lat, lng, isActive);
       result.updated++;
       await this.replaceGooglePhotos(existing.id, dto);
-      await this.replaceFacilities(existing.id, allFacilities);
+      await this.replaceFeatures(existing.id, dto);
+      await this.replacePurposeScores(existing.id, dto);
       await this.upsertGoogleReviews(existing.id, dto);
       return existing.id;
     } else {
-      const cafeId = await this.insertCafe(
-        dto, lat, lng, openingHours, priceRange, isActive, flags,
-      );
-      await Promise.all([
-        this.replaceGooglePhotos(cafeId, dto),
-        this.replaceFacilities(cafeId, allFacilities),
-        this.upsertGoogleReviews(cafeId, dto),
-      ]);
+      const cafeId = await this.insertCafe(dto, lat, lng, isActive);
+      await this.replaceGooglePhotos(cafeId, dto);
+      await this.replaceFeatures(cafeId, dto);
+      await this.replacePurposeScores(cafeId, dto);
+      await this.upsertGoogleReviews(cafeId, dto);
       result.created++;
       return cafeId;
     }
@@ -115,23 +93,20 @@ export class ScraperSyncService {
     dto: SyncCafeDto,
     lat: number,
     lng: number,
-    openingHours: Record<string, string> | null,
-    priceRange: string,
     isActive: boolean,
-    flags: DerivedFlags,
   ): Promise<number> {
     const result: any = await this.dataSource.query(
       `INSERT INTO cafes (
         name, slug, description, address, latitude, longitude,
         location, phone, google_place_id, google_maps_url, website,
-        wifi_available, has_parking, has_mushola, opening_hours, price_range, pricing_raw,
+        opening_hours, price_range, pricing_raw,
         google_rating, total_google_reviews, is_active,
         category, city, district, claimed_by_owner, reviews_distribution,
         last_scraped_at, scraper_source
       ) VALUES (
         ?, NULL, ?, ?, ?, ?,
         ST_PointFromText(CONCAT('POINT(', ?, ' ', ?, ')'), 4326), ?, ?, ?, ?,
-        ?, ?, ?, ?, ?, ?,
+        ?, ?, ?,
         ?, ?, ?,
         ?, ?, ?, ?, ?,
         NOW(), 'google_scraper'
@@ -142,18 +117,15 @@ export class ScraperSyncService {
         dto.address.trim(),
         lat,
         lng,
-        lat,
         lng,
+        lat,
         dto.phone?.trim() ?? null,
         dto.googlePlaceId,
         dto.urlGoogleMaps ?? null,
         dto.website ?? null,
-        flags.wifiAvailable ? 1 : 0,
-        flags.hasParking ? 1 : 0,
-        flags.hasMushola ? 1 : 0,
-        openingHours ? JSON.stringify(openingHours) : null,
-        priceRange,
-        dto.pricing ?? null,
+        dto.openingHours ? JSON.stringify(dto.openingHours) : null,
+        dto.priceRange ?? '$$',
+        dto.pricingRaw ?? null,
         dto.rating ?? null,
         dto.totalReviews ?? null,
         isActive ? 1 : 0,
@@ -177,15 +149,10 @@ export class ScraperSyncService {
     dto: SyncCafeDto,
     lat: number,
     lng: number,
-    openingHours: Record<string, string> | null,
-    priceRange: string,
     isActive: boolean,
-    flags: DerivedFlags,
   ): Promise<void> {
     // Smart merge: do NOT overwrite owner_id, bookmarks_count, favorites_count,
     // has_active_promotion, active_promotion_type, promotion_content, new_cafe_content.
-    // For boolean flags (wifi_available, has_parking, has_mushola): OR-merge —
-    // never downgrade an admin-set TRUE to FALSE just because the scraper missed it.
     const slug = buildCafeSlug(dto.name.trim(), cafeId);
 
     await this.dataSource.query(
@@ -195,9 +162,6 @@ export class ScraperSyncService {
         location=ST_PointFromText(CONCAT('POINT(', ?, ' ', ?, ')'), 4326),
         opening_hours=?, google_maps_url=?, website=?,
         google_rating=?, total_google_reviews=?,
-        wifi_available = (wifi_available OR ?),
-        has_parking    = (has_parking    OR ?),
-        has_mushola    = (has_mushola    OR ?),
         price_range=?, pricing_raw=?, is_active=?,
         category=?, city=?, district=?,
         claimed_by_owner=?, reviews_distribution=?,
@@ -211,18 +175,15 @@ export class ScraperSyncService {
         dto.description ?? null,
         lat,
         lng,
-        lat,
         lng,
-        openingHours ? JSON.stringify(openingHours) : null,
+        lat,
+        dto.openingHours ? JSON.stringify(dto.openingHours) : null,
         dto.urlGoogleMaps ?? null,
         dto.website ?? null,
         dto.rating ?? null,
         dto.totalReviews ?? null,
-        flags.wifiAvailable ? 1 : 0,
-        flags.hasParking ? 1 : 0,
-        flags.hasMushola ? 1 : 0,
-        priceRange,
-        dto.pricing ?? null,
+        dto.priceRange ?? '$$',
+        dto.pricingRaw ?? null,
         isActive ? 1 : 0,
         dto.category ?? null,
         dto.city ?? null,
@@ -234,6 +195,77 @@ export class ScraperSyncService {
     );
   }
 
+  private async replaceFeatures(cafeId: number, dto: SyncCafeDto): Promise<void> {
+    // Wipe only google_scraper-sourced rows; preserve manual entries (owner edits).
+    await this.dataSource.query(
+      `DELETE FROM cafe_features WHERE cafe_id = ? AND source = 'google_scraper'`,
+      [cafeId],
+    );
+
+    const seen = new Set<string>();
+    for (const feature of dto.features ?? []) {
+      const name = feature.name.trim();
+      if (!name || seen.has(name)) continue;
+      seen.add(name);
+
+      // Upsert master features table — first time seen, INSERT new row.
+      // ON DUPLICATE KEY = same name already exists → return its id.
+      // We use LAST_INSERT_ID() trick to get the id of the matched row.
+      await this.dataSource.query(
+        `INSERT INTO features (name, category) VALUES (?, ?)
+         ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id)`,
+        [name, feature.category ?? null],
+      );
+      const [{ id: featureId }] = await this.dataSource.query(
+        `SELECT id FROM features WHERE name = ? LIMIT 1`,
+        [name],
+      );
+
+      // Insert junction row.
+      await this.dataSource.query(
+        `INSERT INTO cafe_features (cafe_id, feature_id, source) VALUES (?, ?, 'google_scraper')
+         ON DUPLICATE KEY UPDATE source = 'google_scraper'`,
+        [cafeId, featureId],
+      );
+    }
+  }
+
+  /**
+   * Replace cafe_purpose_tags for one cafe based on AI-supplied scores.
+   * Each entry must reference an existing purpose by slug. Score < 1 is
+   * skipped. Score > 100 is clamped.
+   */
+  private async replacePurposeScores(cafeId: number, dto: SyncCafeDto): Promise<void> {
+    if (!dto.purposeScores || dto.purposeScores.length === 0) return;
+
+    await this.dataSource.query(
+      `DELETE FROM cafe_purpose_tags WHERE cafe_id = ?`,
+      [cafeId],
+    );
+
+    for (const ps of dto.purposeScores) {
+      const slug = ps.slug?.trim();
+      const score = Math.max(0, Math.min(100, Math.round(ps.score)));
+      if (!slug || score < 1) continue;
+
+      // Best-effort: skip silently if slug not registered.
+      const [purposeRow] = await this.dataSource.query(
+        `SELECT id FROM purposes WHERE slug = ? LIMIT 1`,
+        [slug],
+      );
+      if (!purposeRow) {
+        this.logger.warn(`Unknown purpose slug "${slug}" for cafe ${cafeId} — skipped`);
+        continue;
+      }
+
+      await this.dataSource.query(
+        `INSERT INTO cafe_purpose_tags (cafe_id, purpose_slug, score) VALUES (?, ?, ?)
+         ON DUPLICATE KEY UPDATE score = VALUES(score)`,
+        [cafeId, slug, score],
+      );
+    }
+  }
+
   private async replaceGooglePhotos(cafeId: number, dto: SyncCafeDto): Promise<void> {
     // Remove existing google-sourced photos (preserve source='manual')
     await this.dataSource.query(
@@ -241,48 +273,34 @@ export class ScraperSyncService {
       [cafeId],
     );
 
-    const photos: { url: string; isPrimary: boolean; order: number; caption?: string }[] = [];
+    let order = 0;
 
     if (dto.coverImage) {
-      photos.push({ url: dto.coverImage, isPrimary: true, order: 0 });
+      await this.insertGooglePhoto(cafeId, dto.coverImage, 'cover', order++, true);
     }
 
-    let order = dto.coverImage ? 1 : 0;
     for (const url of dto.gallery ?? []) {
       if (url === dto.coverImage) continue;
-      photos.push({ url, isPrimary: false, order: order++ });
+      await this.insertGooglePhoto(cafeId, url, 'gallery', order++, false);
     }
 
     for (const url of dto.menu?.photos ?? []) {
-      photos.push({ url, isPrimary: false, order: order++, caption: 'menu_photo' });
-    }
-
-    for (const p of photos) {
-      await this.dataSource.query(
-        `INSERT INTO cafe_photos (cafe_id, url, source, display_order, is_primary, caption)
-         VALUES (?, ?, 'google', ?, ?, ?)`,
-        [cafeId, p.url, p.order, p.isPrimary ? 1 : 0, p.caption ?? null],
-      );
+      await this.insertGooglePhoto(cafeId, url, 'menu', order++, false);
     }
   }
 
-  private async replaceFacilities(
+  private async insertGooglePhoto(
     cafeId: number,
-    facilities: ParsedFacility[],
+    url: string,
+    photoType: 'cover' | 'gallery' | 'menu',
+    displayOrder: number,
+    isPrimary: boolean,
   ): Promise<void> {
-    // Idempotent: wipe then re-insert. UNIQUE(cafe_id, facility_key) protects
-    // against concurrent duplicates if this ever runs in parallel.
-    await this.dataSource.query(`DELETE FROM cafe_facilities WHERE cafe_id = ?`, [cafeId]);
-
-    const seen = new Set<string>();
-    for (const fac of facilities) {
-      if (seen.has(fac.facilityKey)) continue;
-      seen.add(fac.facilityKey);
-      await this.dataSource.query(
-        `INSERT INTO cafe_facilities (cafe_id, facility_key, facility_value) VALUES (?, ?, ?)`,
-        [cafeId, fac.facilityKey, fac.facilityValue ?? null],
-      ).catch(() => {});
-    }
+    await this.dataSource.query(
+      `INSERT INTO cafe_photos (cafe_id, url, source, photo_type, display_order, is_primary)
+       VALUES (?, ?, 'google', ?, ?, ?)`,
+      [cafeId, url, photoType, displayOrder, isPrimary ? 1 : 0],
+    );
   }
 
   private async upsertGoogleReviews(cafeId: number, dto: SyncCafeDto): Promise<void> {
@@ -313,5 +331,4 @@ export class ScraperSyncService {
       );
     }
   }
-
 }

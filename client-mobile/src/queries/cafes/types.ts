@@ -19,6 +19,7 @@ export interface SearchCafesParams {
   facilities?: string[];
   page?: number;
   limit?: number;
+  sort?: 'distance' | 'trending' | 'rating' | 'newest';
 }
 
 export interface CafeDocument {

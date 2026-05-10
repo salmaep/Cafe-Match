@@ -12,12 +12,23 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import * as WebBrowser from 'expo-web-browser';
-import * as Linking from 'expo-linking';
+import * as Facebook from 'expo-auth-session/providers/facebook';
+import { makeRedirectUri } from 'expo-auth-session';
+import {
+  GoogleSignin,
+  statusCodes,
+} from '@react-native-google-signin/google-signin';
+import Svg, { Path } from 'react-native-svg';
 import { useAuth } from '../context/AuthContext';
 import { colors, spacing, radius } from '../theme';
-import { socialEnrollPhoneApi, socialVerifyPhoneApi } from '../services/api';
-
-const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3084/api/v1';
+import {
+  socialEnrollPhoneApi,
+  socialVerifyPhoneApi,
+  googleIdTokenLoginApi,
+  facebookTokenLoginApi,
+  isTwoFaChallenge,
+  isPhoneEnrollChallenge,
+} from '../services/api';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -271,88 +282,183 @@ export default function AuthModal() {
     }
   };
 
-  // ─── Social login ─────────────────────────────────────────────────────────
-  const handleSocialLogin = async (provider: 'google' | 'facebook') => {
-    try {
-      setErrorMsg('');
-      setSocialLoading(provider);
-      const redirectUrl = Linking.createURL('auth/callback');
-      const authUrl = `${API_BASE}/auth/${provider}?mobile_redirect=${encodeURIComponent(redirectUrl)}`;
+  // ─── Google Sign-In (native SDK) ──────────────────────────────────────
+  // We use the native Google Sign-In SDK directly (same one Kotlin Firebase
+  // Auth wraps) rather than expo-auth-session's web-flow, because:
+  //   1) The audience claim is always the Web client ID — server only needs
+  //      to know one audience to verify, regardless of platform.
+  //   2) No "redirect URI mismatch" errors — the SDK handshakes directly with
+  //      Google using the package + SHA-1 registered against the Android
+  //      OAuth client.
+  // Configure once when the modal mounts.
+  useEffect(() => {
+    if (__DEV__) {
+      // eslint-disable-next-line no-console
+      console.log(
+        '[Google] webClientId =',
+        process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID || '(MISSING — restart Metro with -c)',
+      );
+    }
+    GoogleSignin.configure({
+      webClientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID,
+      offlineAccess: false,
+      scopes: ['openid', 'profile', 'email'],
+    });
+  }, []);
 
-      const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUrl);
+  // Pin Facebook's redirect URI to the app's deep link (`cafematch://...`).
+  // Without this, expo-auth-session picks a default that varies between Expo
+  // Go and dev client, which makes "Valid OAuth Redirect URIs" maintenance
+  // in the FB dashboard a moving target. Whatever this prints in the Metro
+  // log, paste verbatim into Facebook → Login → Settings.
+  const fbRedirectUri = makeRedirectUri({ scheme: 'cafematch' });
+  if (__DEV__) {
+    // eslint-disable-next-line no-console
+    console.log('[FB OAuth] redirectUri =', fbRedirectUri);
+  }
+  const [, facebookResponse, facebookPromptAsync] = Facebook.useAuthRequest({
+    clientId: process.env.EXPO_PUBLIC_FB_APP_ID ?? '',
+    redirectUri: fbRedirectUri,
+  });
 
-      if (result.type !== 'success') {
+  // Common server-response handler — same shapes (twoFa / phoneEnroll /
+  // success) the legacy redirect flow returned, just received via JSON now.
+  const consumeSocialResult = async (
+    result: Awaited<ReturnType<typeof googleIdTokenLoginApi>>,
+  ) => {
+    if (isPhoneEnrollChallenge(result)) {
+      setEnrollChallenge({
+        enrollmentId: result.enrollmentId,
+        expiresAt: result.expiresAt,
+      });
+      setEnrollPhone('');
+      setEnrollError('');
+      return;
+    }
+    if (isTwoFaChallenge(result)) {
+      setOtpChallenge({
+        otpId: result.otpId,
+        phoneHint: result.phoneHint,
+        expiresAt: result.expiresAt,
+        mode: 'login',
+      });
+      setOtpCode('');
+      lastSentAt.current = Date.now();
+      setOtpNow(Date.now());
+      return;
+    }
+    const r = await loginWithToken(result.accessToken);
+    if (r.success) navigation.goBack();
+    else setErrorMsg(r.error || 'Login gagal. Coba lagi.');
+  };
+
+  // Google sign-in via native SDK — kicked off from handleSocialLogin below.
+
+  // Facebook response → server verify
+  useEffect(() => {
+    if (facebookResponse?.type !== 'success') {
+      if (facebookResponse?.type === 'error' || facebookResponse?.type === 'dismiss') {
         setSocialLoading(null);
-        return;
       }
-
-      const url = new URL(result.url);
-      const token = url.searchParams.get('token');
-      const twoFaRequired = url.searchParams.get('twoFaRequired');
-      const otpId = url.searchParams.get('otpId');
-      const phoneHint = url.searchParams.get('phoneHint') ?? undefined;
-      const expiresAt = url.searchParams.get('expiresAt') ?? undefined;
-      const phoneEnrollRequired = url.searchParams.get('phoneEnrollRequired');
-      const enrollmentId = url.searchParams.get('enrollmentId');
-      const errorParam = url.searchParams.get('error');
-
-      if (errorParam) {
-        setErrorMsg(decodeURIComponent(errorParam));
-        setSocialLoading(null);
-        return;
-      }
-
-      if (phoneEnrollRequired === '1' && enrollmentId) {
-        setEnrollChallenge({ enrollmentId, expiresAt });
-        setEnrollPhone('');
-        setEnrollError('');
-        setSocialLoading(null);
-        return;
-      }
-
-      if (twoFaRequired === '1' && otpId) {
-        setOtpChallenge({ otpId, phoneHint, expiresAt, mode: 'login' });
-        setOtpCode('');
-        lastSentAt.current = Date.now();
-        setOtpNow(Date.now());
-        setSocialLoading(null);
-        return;
-      }
-
-      if (!token) {
-        setErrorMsg('Login gagal: token tidak diterima dari server.');
-        setSocialLoading(null);
-        return;
-      }
-
-      const r = await loginWithToken(token);
+      return;
+    }
+    const accessToken =
+      (facebookResponse as any)?.authentication?.accessToken ||
+      (facebookResponse.params as any)?.access_token;
+    if (!accessToken) {
+      setErrorMsg('Login gagal: access_token tidak diterima dari Facebook.');
       setSocialLoading(null);
-      if (r.success) {
-        navigation.goBack();
-      } else {
-        setErrorMsg(r.error || 'Login gagal. Coba lagi.');
+      return;
+    }
+    (async () => {
+      try {
+        const r = await facebookTokenLoginApi(accessToken);
+        await consumeSocialResult(r);
+      } catch (err: any) {
+        setErrorMsg(err?.response?.data?.message || err?.message || 'Login Facebook gagal.');
+      } finally {
+        setSocialLoading(null);
       }
+    })();
+  }, [facebookResponse]);
+
+  const handleGoogleLogin = async () => {
+    setErrorMsg('');
+    setSocialLoading('google');
+    try {
+      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+      // signOut first so the account picker always shows — without this, a
+      // previous session is reused silently and users can't switch accounts.
+      try {
+        await GoogleSignin.signOut();
+      } catch {
+        // first-run / nothing to sign out — ignore
+      }
+      const userInfo = await GoogleSignin.signIn();
+      // The SDK shape changed in v13: idToken now lives under .data.idToken.
+      const idToken =
+        (userInfo as any)?.data?.idToken ?? (userInfo as any)?.idToken ?? null;
+      if (!idToken) {
+        throw new Error('id_token tidak diterima dari Google.');
+      }
+      const r = await googleIdTokenLoginApi(idToken);
+      await consumeSocialResult(r);
+    } catch (err: any) {
+      const code = err?.code;
+      if (code === statusCodes.SIGN_IN_CANCELLED) {
+        // User backed out — silent, no error banner
+      } else if (code === statusCodes.IN_PROGRESS) {
+        setErrorMsg('Login Google sedang berjalan, tunggu sebentar.');
+      } else if (code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+        setErrorMsg('Google Play Services tidak tersedia di perangkat ini.');
+      } else {
+        setErrorMsg(
+          err?.response?.data?.message || err?.message || 'Login Google gagal.',
+        );
+      }
+    } finally {
+      setSocialLoading(null);
+    }
+  };
+
+  const handleSocialLogin = async (provider: 'google' | 'facebook') => {
+    if (provider === 'google') {
+      await handleGoogleLogin();
+      return;
+    }
+    setErrorMsg('');
+    setSocialLoading('facebook');
+    try {
+      await facebookPromptAsync();
     } catch (err: any) {
       setSocialLoading(null);
-      setErrorMsg(err?.message || `Login dengan ${provider} gagal.`);
+      setErrorMsg(err?.message || 'Login dengan facebook gagal.');
     }
   };
 
   // ─── Phone Enrollment Screen (social users without phone) ────────────────
+  // Rendered as a full-page screen (not bottom-sheet) — feels more substantial
+  // for what is effectively account-setup, and gives the keyboard more room.
   if (enrollChallenge && !otpChallenge) {
     return (
       <KeyboardAvoidingView
-        style={styles.container}
+        style={styles.fullPage}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <TouchableOpacity
-          style={styles.backdrop}
-          activeOpacity={1}
-          onPress={() => navigation.goBack()}
-        />
-        <View style={styles.sheet}>
-          <View style={styles.handleBar} />
+        <View style={styles.fullPageHeader}>
+          <TouchableOpacity
+            style={styles.fullPageBackBtn}
+            onPress={() => {
+              setEnrollChallenge(null);
+              setEnrollPhone('');
+              setEnrollError('');
+            }}
+          >
+            <Text style={styles.fullPageBackIcon}>‹</Text>
+          </TouchableOpacity>
+        </View>
 
+        <View style={styles.fullPageBody}>
           <View style={styles.otpIcon}>
             <Text style={styles.otpIconText}>📱</Text>
           </View>
@@ -393,37 +499,34 @@ export default function AuthModal() {
               <Text style={styles.submitText}>Kirim Kode WhatsApp</Text>
             )}
           </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.cancelBtn}
-            onPress={() => {
-              setEnrollChallenge(null);
-              setEnrollPhone('');
-              setEnrollError('');
-            }}
-          >
-            <Text style={styles.cancelText}>Batal — kembali ke login</Text>
-          </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
     );
   }
 
   // ─── OTP Screen ───────────────────────────────────────────────────────────
+  // Full-page (not bottom-sheet) so the 6-digit input + countdown have space
+  // and keyboard doesn't crowd the layout.
   if (otpChallenge) {
     return (
       <KeyboardAvoidingView
-        style={styles.container}
+        style={styles.fullPage}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <TouchableOpacity
-          style={styles.backdrop}
-          activeOpacity={1}
-          onPress={() => navigation.goBack()}
-        />
-        <View style={styles.sheet}>
-          <View style={styles.handleBar} />
+        <View style={styles.fullPageHeader}>
+          <TouchableOpacity
+            style={styles.fullPageBackBtn}
+            onPress={() => {
+              setOtpChallenge(null);
+              setOtpCode('');
+              setOtpError('');
+            }}
+          >
+            <Text style={styles.fullPageBackIcon}>‹</Text>
+          </TouchableOpacity>
+        </View>
 
+        <View style={styles.fullPageBody}>
           <View style={styles.otpIcon}>
             <Text style={styles.otpIconText}>💬</Text>
           </View>
@@ -490,17 +593,6 @@ export default function AuthModal() {
             ) : (
               <Text style={styles.submitText}>Verifikasi</Text>
             )}
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.cancelBtn}
-            onPress={() => {
-              setOtpChallenge(null);
-              setOtpCode('');
-              setOtpError('');
-            }}
-          >
-            <Text style={styles.cancelText}>Batal — kembali ke login</Text>
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -666,24 +758,39 @@ export default function AuthModal() {
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
+// Real Google + Facebook brand SVGs — match the web LoginForm exactly so the
+// two surfaces feel like the same product.
 function GoogleIcon() {
   return (
-    <Text style={{ fontSize: 16, fontWeight: '900', color: '#4285F4' }}>G</Text>
+    <Svg width={18} height={18} viewBox="0 0 24 24">
+      <Path
+        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1z"
+        fill="#4285F4"
+      />
+      <Path
+        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.99.66-2.26 1.06-3.71 1.06-2.86 0-5.28-1.93-6.15-4.53H2.18v2.84A11 11 0 0 0 12 23z"
+        fill="#34A853"
+      />
+      <Path
+        d="M5.85 14.1A6.6 6.6 0 0 1 5.5 12c0-.73.13-1.43.35-2.1V7.07H2.18a11 11 0 0 0 0 9.86l3.67-2.83z"
+        fill="#FBBC05"
+      />
+      <Path
+        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.67 2.83C6.72 7.31 9.14 5.38 12 5.38z"
+        fill="#EA4335"
+      />
+    </Svg>
   );
 }
 
 function FacebookIcon() {
   return (
-    <Text
-      style={{
-        fontSize: 18,
-        fontWeight: '900',
-        color: colors.white,
-        fontFamily: Platform.OS === 'ios' ? 'Helvetica' : undefined,
-      }}
-    >
-      f
-    </Text>
+    <Svg width={18} height={18} viewBox="0 0 24 24">
+      <Path
+        d="M24 12c0-6.63-5.37-12-12-12S0 5.37 0 12c0 5.99 4.39 10.95 10.13 11.85V15.47H7.08V12h3.05V9.36c0-3 1.79-4.66 4.53-4.66 1.31 0 2.69.23 2.69.23v2.96h-1.51c-1.49 0-1.96.93-1.96 1.87V12h3.33l-.53 3.47h-2.8v8.38C19.61 22.95 24 17.99 24 12z"
+        fill="#FFFFFF"
+      />
+    </Svg>
   );
 }
 
@@ -693,6 +800,38 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'flex-end',
+  },
+
+  // ─── Full-page (OTP + phone enrollment) ─────────────────────────────────
+  // Used instead of the bottom-sheet for screens where we want more vertical
+  // space (keyboard input, countdown timer, etc.). No backdrop, no handle bar.
+  fullPage: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  fullPageHeader: {
+    paddingTop: Platform.OS === 'ios' ? 50 : 24,
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.sm,
+  },
+  fullPageBackBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  fullPageBackIcon: {
+    fontSize: 28,
+    color: colors.primary,
+    fontWeight: '600',
+    marginTop: -4,
+  },
+  fullPageBody: {
+    flex: 1,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
@@ -785,32 +924,43 @@ const styles = StyleSheet.create({
   submitText: { color: colors.white, fontSize: 16, fontWeight: '700' },
 
   // ─── Social ───────────────────────────────────────────────────────────────
+  // Mirrors web LoginForm: divider with "atau lanjutkan dengan", then a white
+  // Google button with border + a #1877F2 Facebook button. Font weight 600,
+  // py-3 (12px), gap 8px between icon and label, rounded-xl (12px).
   socialDivider: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: spacing.lg,
+    marginTop: spacing.md,
     marginBottom: spacing.md,
     gap: spacing.sm,
   },
-  dividerLine: { flex: 1, height: 1, backgroundColor: colors.surface },
-  dividerText: { fontSize: 12, color: colors.textSecondary },
+  dividerLine: { flex: 1, height: 1, backgroundColor: '#F0EDE8' },
+  dividerText: { fontSize: 12, color: '#8A8880' },
   socialBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: spacing.md - 2,
-    borderRadius: radius.md,
-    marginBottom: spacing.sm,
-    gap: spacing.sm,
+    paddingVertical: 12,
+    borderRadius: 12,
+    marginBottom: spacing.xs + 2,
+    gap: 8,
   },
   googleBtn: {
-    backgroundColor: colors.white,
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: colors.surface,
+    borderColor: '#E8E4DD',
   },
-  googleText: { color: colors.primary, fontSize: 15, fontWeight: '600' },
+  googleText: {
+    color: '#1C1C1A',
+    fontSize: 14,
+    fontWeight: '600',
+  },
   fbBtn: { backgroundColor: '#1877F2' },
-  fbText: { color: colors.white, fontSize: 15, fontWeight: '600' },
+  fbText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
 
   // ─── Switch login/register ────────────────────────────────────────────────
   switchBtn: { alignItems: 'center', marginTop: spacing.md },

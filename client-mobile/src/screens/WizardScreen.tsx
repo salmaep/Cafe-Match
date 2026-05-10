@@ -11,6 +11,8 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
+import MapView, { Circle } from 'react-native-maps';
+import RadiusPickerModal from '../components/cafe/RadiusPickerModal';
 import { usePreferences } from '../context/PreferencesContext';
 import { colors, spacing, radius } from '../theme';
 import { Purpose, WizardPreferences } from '../types';
@@ -52,7 +54,16 @@ const PRICE_OPTIONS = [
   { key: '$$$', label: '$$$' },
 ];
 
-export default function WizardScreen() {
+interface WizardScreenProps {
+  /** Called after the user finishes the wizard. If not provided, navigates to
+   *  CardSwipe (standalone-screen behavior). Pass this when embedding the
+   *  wizard inside another screen (e.g. Discover tab). */
+  onComplete?: () => void;
+  /** Called when the user taps Skip. Defaults to navigating to MainTabs. */
+  onSkip?: () => void;
+}
+
+export default function WizardScreen({ onComplete, onSkip }: WizardScreenProps = {}) {
   const navigation = useNavigation<StackNavigationProp<any>>();
   const { setPreferences, setWizardCompleted } = usePreferences();
   const { latitude: userLat, longitude: userLng } = useLocation();
@@ -67,15 +78,22 @@ export default function WizardScreen() {
   const [customLat, setCustomLat] = useState<number | null>(null);
   const [customLng, setCustomLng] = useState<number | null>(null);
   const [radiusVal, setRadiusVal] = useState(1);
+  const [radiusModalOpen, setRadiusModalOpen] = useState(false);
   // Amenities = server facility keys (e.g. "wifi"); price = "$" | "$$" | "$$$".
   const [amenities, setAmenities] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState<string>('');
 
-  const radiusOptions = [0.5, 1, 2];
+  // Radius slider bounds (mirrors web RadiusSlider: 0.5 → 10km)
+  const RADIUS_MIN_KM = 0.5;
+  const RADIUS_MAX_KM = 10;
 
   const handleSkip = () => {
     setPreferences(null);
     setWizardCompleted(false);
+    if (onSkip) {
+      onSkip();
+      return;
+    }
     navigation.replace('MainTabs');
   };
 
@@ -107,6 +125,10 @@ export default function WizardScreen() {
     };
     setPreferences(prefs);
     setWizardCompleted(true);
+    if (onComplete) {
+      onComplete();
+      return;
+    }
     navigation.replace('CardSwipe');
   };
 
@@ -274,30 +296,124 @@ export default function WizardScreen() {
         )}
         {step === 2 && (
         <View style={styles.stepContainer}>
-          <Text style={styles.stepTitle}>How far are you willing to go?</Text>
-          <Text style={styles.stepSubtitle}>Select your search radius</Text>
-          <View style={styles.radiusRow}>
-            {radiusOptions.map((r) => (
+          <ScrollView
+            contentContainerStyle={{ paddingBottom: spacing.xl }}
+            showsVerticalScrollIndicator={false}
+            style={{ flex: 1 }}
+          >
+            <Text style={styles.stepTitle}>How far are you willing to go?</Text>
+            <Text style={styles.stepSubtitle}>Pilih radius pencarian</Text>
+
+            {/* Quick pick — 3 common values + a "More" pill that opens a modal */}
+            <View style={styles.radiusRow}>
+              {[0.5, 1, 2].map((r) => (
+                <TouchableOpacity
+                  key={r}
+                  style={[styles.radiusBtn, radiusVal === r && styles.radiusBtnActive]}
+                  onPress={() => setRadiusVal(r)}
+                >
+                  <Text style={[styles.radiusText, radiusVal === r && styles.radiusTextActive]}>
+                    {r} km
+                  </Text>
+                </TouchableOpacity>
+              ))}
+              {/* Show current custom value as its own active pill so user
+                  doesn't lose track when they pick something via modal */}
+              {![0.5, 1, 2].includes(radiusVal) && (
+                <View style={[styles.radiusBtn, styles.radiusBtnActive]}>
+                  <Text style={[styles.radiusText, styles.radiusTextActive]}>
+                    {radiusVal} km
+                  </Text>
+                </View>
+              )}
               <TouchableOpacity
-                key={r}
-                style={[styles.radiusBtn, radiusVal === r && styles.radiusBtnActive]}
-                onPress={() => setRadiusVal(r)}
+                style={styles.radiusMoreBtn}
+                onPress={() => setRadiusModalOpen(true)}
               >
-                <Text style={[styles.radiusText, radiusVal === r && styles.radiusTextActive]}>
-                  {r} km
-                </Text>
+                <Text style={styles.radiusMoreBtnText}>⋯</Text>
               </TouchableOpacity>
-            ))}
+            </View>
+
+          {/* Live map preview — circle = search radius (mirrors web StepRadius). */}
+          <View style={styles.mapPreviewWrap}>
+            {(() => {
+              const previewLat =
+                locationType === 'custom' && customLat !== null
+                  ? customLat
+                  : userLat;
+              const previewLng =
+                locationType === 'custom' && customLng !== null
+                  ? customLng
+                  : userLng;
+              if (previewLat == null || previewLng == null) {
+                return (
+                  <View style={styles.mapPreviewFallback}>
+                    <ActivityIndicator color={colors.accent} />
+                    <Text style={styles.mapPreviewFallbackText}>
+                      Menunggu lokasi…
+                    </Text>
+                  </View>
+                );
+              }
+              // Fixed zoom — frame the LARGEST radius option with breathing
+              // room. Smaller radius = smaller circle in the same view, so
+              // the user actually sees the circle grow when they bump radius.
+              const MAX_RADIUS_KM = RADIUS_MAX_KM;
+              const FIT_PADDING = 1.35; // ~35% breathing room
+              const delta =
+                (MAX_RADIUS_KM * 2 * FIT_PADDING * 1000) / 111320;
+              return (
+                <>
+                  <MapView
+                    style={StyleSheet.absoluteFill}
+                    // initialRegion (set once) — NOT region. region re-fits the
+                    // map every render, which makes the slider feel janky as
+                    // it re-snaps the view on every tick.
+                    initialRegion={{
+                      latitude: previewLat,
+                      longitude: previewLng,
+                      latitudeDelta: delta,
+                      longitudeDelta: delta,
+                    }}
+                    pointerEvents="none"
+                    showsUserLocation={false}
+                    showsCompass={false}
+                    toolbarEnabled={false}
+                    rotateEnabled={false}
+                    scrollEnabled={false}
+                    zoomEnabled={false}
+                    pitchEnabled={false}
+                  >
+                    <Circle
+                      center={{ latitude: previewLat, longitude: previewLng }}
+                      radius={radiusVal * 1000}
+                      strokeColor="#D48B3A"
+                      strokeWidth={2}
+                      fillColor="rgba(251, 191, 36, 0.18)"
+                    />
+                  </MapView>
+                  {/* Current-position pin — Google-Maps "you are here" style.
+                      Absolute overlay (not Marker) for pixel-perfect center. */}
+                  <View pointerEvents="none" style={styles.mapPreviewPinOverlay}>
+                    <View style={styles.mapPreviewPinRing} />
+                    <View style={styles.mapPreviewPinDot} />
+                  </View>
+                </>
+              );
+            })()}
           </View>
-          <View style={styles.radiusVisual}>
-            <View
-              style={[
-                styles.radiusCircle,
-                { width: radiusVal * 80, height: radiusVal * 80, borderRadius: radiusVal * 40 },
-              ]}
-            />
-            <Text style={styles.radiusCenterDot}>📍</Text>
-          </View>
+          </ScrollView>
+
+          {/* Radius picker modal — manual input + complete km options */}
+          <RadiusPickerModal
+            visible={radiusModalOpen}
+            initial={radiusVal}
+            onClose={() => setRadiusModalOpen(false)}
+            onApply={(v) => {
+              setRadiusVal(v);
+              setRadiusModalOpen(false);
+            }}
+          />
         </View>
 
         )}
@@ -456,6 +572,7 @@ export default function WizardScreen() {
   );
 }
 
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   header: {
@@ -601,17 +718,18 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginTop: 1,
   },
+  // Radius pill row + manual input
   radiusRow: {
     flexDirection: 'row',
-    gap: spacing.sm,
-    marginBottom: spacing.xl,
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: spacing.md,
   },
   radiusBtn: {
-    flex: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 999,
     backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
     borderWidth: 2,
     borderColor: 'transparent',
   },
@@ -619,20 +737,62 @@ const styles = StyleSheet.create({
     borderColor: colors.accent,
     backgroundColor: '#FDF6EC',
   },
-  radiusText: { fontSize: 16, fontWeight: '700', color: colors.primary },
+  radiusText: { fontSize: 13, fontWeight: '700', color: colors.primary },
   radiusTextActive: { color: colors.accent },
-  radiusVisual: {
+  radiusMoreBtn: {
+    width: 38, height: 38, borderRadius: 19,
+    backgroundColor: colors.surface,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  radiusMoreBtnText: {
+    fontSize: 18, fontWeight: '900',
+    color: colors.primary,
+    lineHeight: 18,
+  },
+  // Map preview — replaces the old fake radiusVisual circle.
+  mapPreviewWrap: {
+    width: '100%',
+    height: 280,
+    marginTop: spacing.md,
+    borderRadius: radius.lg,
+    overflow: 'hidden',
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: '#F0EDE8',
+    position: 'relative',
+  },
+  mapPreviewFallback: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    height: 180,
+    gap: 8,
   },
-  radiusCircle: {
-    backgroundColor: 'rgba(212, 139, 58, 0.1)',
-    borderWidth: 2,
-    borderColor: 'rgba(212, 139, 58, 0.3)',
+  mapPreviewFallbackText: { fontSize: 13, color: colors.textSecondary },
+  // Overlay-style center pin — guaranteed pixel-centered in mapPreviewWrap
+  // (no Marker anchor / emoji glyph offset problems).
+  mapPreviewPinOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  // Current-position pin: solid dot + faint outer pulse ring.
+  mapPreviewPinDot: {
+    width: 16, height: 16, borderRadius: 8,
+    backgroundColor: colors.accent,
+    borderWidth: 3, borderColor: colors.white,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.35,
+    shadowRadius: 4,
+    elevation: 4,
+    zIndex: 2,
+  },
+  mapPreviewPinRing: {
     position: 'absolute',
+    width: 32, height: 32, borderRadius: 16,
+    backgroundColor: 'rgba(212, 139, 58, 0.22)',
+    zIndex: 1,
   },
-  radiusCenterDot: { fontSize: 24 },
   loaderRow: {
     paddingVertical: spacing.lg,
     alignItems: 'center',

@@ -19,6 +19,9 @@ export interface FilterPanelProps {
   // Optional: hide price section (e.g. wizard amenities step where price
   // is configured elsewhere).
   hidePrice?: boolean;
+  // Optional: keys that were auto-selected from a purpose's requirements.
+  // Rendered with a star marker so users see why they were preselected.
+  autoSelectedKeys?: string[];
 }
 
 // Module-level cache so the catalog is fetched once across mounts/remounts.
@@ -53,10 +56,11 @@ interface ChipProps {
   count?: number;
   disabled?: boolean;
   icon?: string;
+  autoSelected?: boolean;
   onClick: () => void;
 }
 
-function Chip({ label, active, count, disabled, icon, onClick }: ChipProps) {
+function Chip({ label, active, count, disabled, icon, autoSelected, onClick }: ChipProps) {
   return (
     <button
       type="button"
@@ -70,7 +74,9 @@ function Chip({ label, active, count, disabled, icon, onClick }: ChipProps) {
             : "bg-white text-[#1C1C1A] border-[#E8E4DD] hover:border-[#D48B3A] hover:text-[#D48B3A]"
       }`}
     >
-      {active ? (
+      {autoSelected ? (
+        <span className="text-[11px] leading-none shrink-0" aria-label="Direkomendasikan">⭐</span>
+      ) : active ? (
         <span className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-white text-[#D48B3A] text-[9px] font-extrabold shrink-0">
           ✓
         </span>
@@ -101,7 +107,12 @@ export default function FilterPanel({
   onClose,
   hideHeader,
   hidePrice,
+  autoSelectedKeys,
 }: FilterPanelProps) {
+  const autoSet = useMemo(
+    () => new Set(autoSelectedKeys ?? []),
+    [autoSelectedKeys],
+  );
   const [groups, setGroups] = useState<FilterGroup[] | null>(catalogCache);
   const [loading, setLoading] = useState(!catalogCache);
   // For modal: collapsible groups. For sidebar: always expanded.
@@ -286,6 +297,7 @@ export default function FilterPanel({
                           label={opt.label}
                           icon={FACILITY_ICONS[opt.key]}
                           active={checked}
+                          autoSelected={autoSet.has(opt.key)}
                           onClick={() => toggleFacility(opt.key)}
                         />
                       );

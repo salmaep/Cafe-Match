@@ -8,7 +8,6 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AdminService } from './admin.service';
-import { MeiliCafesService } from '../meili/meili-cafes.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -17,10 +16,7 @@ import { Roles } from '../common/decorators/roles.decorator';
 @Roles('admin')
 @Controller('admin')
 export class AdminController {
-  constructor(
-    private readonly adminService: AdminService,
-    private readonly meiliCafes: MeiliCafesService,
-  ) {}
+  constructor(private readonly adminService: AdminService) {}
 
   @Get('promotions')
   getPendingPromotions() {
@@ -38,10 +34,5 @@ export class AdminController {
     @Body() body: { reason: string },
   ) {
     return this.adminService.rejectPromotion(id, body.reason);
-  }
-
-  @Post('meili/reindex-all')
-  reindexAll() {
-    return this.meiliCafes.reindexAll();
   }
 }

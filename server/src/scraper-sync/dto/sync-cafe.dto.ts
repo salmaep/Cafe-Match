@@ -1,6 +1,7 @@
 import {
   IsArray,
   IsBoolean,
+  IsEnum,
   IsNotEmpty,
   IsNumber,
   IsObject,
@@ -10,21 +11,26 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
+export class FeatureItemDto {
+  @IsString() @IsNotEmpty() name: string;
+
+  @IsOptional() @IsString() category?: string;
+}
+
+export class PurposeScoreDto {
+  /** Must match purposes.slug exactly. */
+  @IsString() @IsNotEmpty() slug: string;
+
+  /** AI-computed match score 0-100. <1 is treated as no match (skipped). */
+  @IsNumber() score: number;
+}
+
 export class ReviewsDistributionDto {
   @IsNumber() oneStar: number;
   @IsNumber() twoStar: number;
   @IsNumber() threeStar: number;
   @IsNumber() fourStar: number;
   @IsNumber() fiveStar: number;
-}
-
-export class PaymentDto {
-  @IsBoolean() cash: boolean;
-  @IsBoolean() debitCard: boolean;
-  @IsBoolean() creditCard: boolean;
-  @IsBoolean() qris: boolean;
-  @IsBoolean() nfc: boolean;
-  @IsBoolean() ewallet: boolean;
 }
 
 export class MenuDto {
@@ -52,9 +58,19 @@ export class SyncCafeDto {
 
   @IsArray() @IsNumber({}, { each: true }) location: [number, number];
 
-  @IsOptional() @IsObject() openingHours: Record<string, { open: string; close: string }> | null;
+  // Frontend pre-processes to final DB format:
+  // { mon: "09:00-23:00", sun: "Closed" }
+  @IsOptional() @IsObject()
+  openingHours: Record<string, string> | null;
+
   @IsOptional() @IsString() description: string | null;
-  @IsArray() @IsString({ each: true }) features: string[];
+
+  // All features as raw strings + optional category. Server stores as-is.
+  // Replaces the old `features: string[]` + `payment` + `wifiAvailable`/`hasParking` fields.
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => FeatureItemDto)
+  features: FeatureItemDto[];
 
   @IsOptional() @IsString() coverImage: string | null;
   @IsNumber() rating: number;
@@ -69,13 +85,16 @@ export class SyncCafeDto {
 
   @IsOptional() @IsString() status: string;
   @IsOptional() @IsBoolean() claimed: boolean;
-  @IsBoolean() wifiAvailable: boolean;
-  @IsBoolean() hasParking: boolean;
 
-  @IsOptional() @ValidateNested() @Type(() => PaymentDto)
-  payment: PaymentDto | null;
+  // Frontend supplies enum directly (no Rp string parsing on server)
+  @IsOptional() @IsEnum(['$', '$$', '$$$'])
+  priceRange: '$' | '$$' | '$$$' | null;
 
-  @IsOptional() @IsString() pricing: string | null;
+  // Raw price label from scraper (e.g. "Rp 25", "Rp 30-50") for display.
+  // Stored as-is in cafes.pricing_raw, not parsed.
+  @IsOptional() @IsString()
+  pricingRaw: string | null;
+
   @IsArray() @IsString({ each: true }) gallery: string[];
 
   @IsOptional() @ValidateNested() @Type(() => MenuDto)
@@ -86,4 +105,9 @@ export class SyncCafeDto {
 
   @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => GoogleReviewDto)
   reviews: GoogleReviewDto[];
+
+  // AI-computed purpose match scores. Server replaces cafe_purpose_tags wholesale
+  // for this cafe. If omitted, existing tags remain untouched.
+  @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => PurposeScoreDto)
+  purposeScores?: PurposeScoreDto[];
 }

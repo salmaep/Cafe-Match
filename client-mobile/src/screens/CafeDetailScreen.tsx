@@ -16,6 +16,7 @@ import {
 } from "react-native";
 import { useRoute, useNavigation, RouteProp } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useShortlist } from "../context/ShortlistContext";
 import { useAuth } from "../context/AuthContext";
 import { useLocation } from "../context/LocationContext";
@@ -36,6 +37,8 @@ import { reviewKeys } from "../queries/reviews/keys";
 import { Cafe } from "../types";
 import { colors, spacing, radius } from "../theme";
 import { buildFacilityChips } from "../utils/facilities";
+import { formatRating } from "../utils/rating";
+import { formatHoursTable } from "../utils/openingHours";
 import {
   prettyReviewCategory,
   isMoodCategory,
@@ -45,11 +48,176 @@ import {
 
 const { width, height } = Dimensions.get("window");
 
+// Hero carousel sizing — leave a sliver of the next photo peeking on the
+// right so the user knows it's swipeable. Card = screen minus left padding
+// minus next-photo peek; gap is just a hair so cards don't touch.
+const HERO_SIDE_PAD = 0;
+const HERO_PEEK = 24;
+const HERO_GAP = 6;
+const HERO_CARD_W = width - HERO_SIDE_PAD - HERO_PEEK;
+
+// ─── Hero photo mosaic (Airbnb-style, mirrors web HeroMosaic) ──────────────
+// Layout:
+//   1 photo  → single full-bleed
+//   2 photos → side-by-side
+//   3 photos → 1 large left + 2 stacked right
+//   4 photos → 1 large left + 3 stacked right
+//   5+ photos → 1 large left + 2x2 grid right
+// "Show all N photos" button overlays bottom-right when count > 1.
+function PhotoHeroMosaic({
+  photos,
+  cafeName,
+  onOpen,
+}: {
+  photos: string[];
+  cafeName: string;
+  onOpen: (i: number) => void;
+}) {
+  const HEIGHT = 280;
+  const GAP = 4;
+
+  const Tile = ({ uri, index, style }: { uri: string; index: number; style?: any }) => (
+    <TouchableOpacity
+      style={[heroStyles.tile, style]}
+      activeOpacity={0.9}
+      onPress={() => onOpen(index)}
+    >
+      <Image
+        source={{ uri }}
+        style={heroStyles.tileImg}
+        accessibilityLabel={cafeName}
+      />
+    </TouchableOpacity>
+  );
+
+  const ShowAllBtn = () =>
+    photos.length > 1 ? (
+      <TouchableOpacity
+        style={heroStyles.showAllBtn}
+        activeOpacity={0.85}
+        onPress={() => onOpen(0)}
+      >
+        <Text style={heroStyles.showAllBtnText}>
+          ▦  Show all {photos.length} photos
+        </Text>
+      </TouchableOpacity>
+    ) : null;
+
+  if (photos.length === 0) {
+    return (
+      <View style={[heroStyles.wrap, { height: HEIGHT, backgroundColor: '#F0EDE8' }]} />
+    );
+  }
+
+  if (photos.length === 1) {
+    return (
+      <View style={[heroStyles.wrap, { height: HEIGHT }]}>
+        <Tile uri={photos[0]} index={0} style={{ flex: 1 }} />
+      </View>
+    );
+  }
+
+  if (photos.length === 2) {
+    return (
+      <View style={[heroStyles.wrap, heroStyles.row, { height: HEIGHT, gap: GAP }]}>
+        <Tile uri={photos[0]} index={0} style={{ flex: 1 }} />
+        <Tile uri={photos[1]} index={1} style={{ flex: 1 }} />
+        <ShowAllBtn />
+      </View>
+    );
+  }
+
+  if (photos.length === 3) {
+    return (
+      <View style={[heroStyles.wrap, heroStyles.row, { height: HEIGHT, gap: GAP }]}>
+        <Tile uri={photos[0]} index={0} style={{ flex: 1 }} />
+        <View style={{ flex: 1, gap: GAP }}>
+          <Tile uri={photos[1]} index={1} style={{ flex: 1 }} />
+          <Tile uri={photos[2]} index={2} style={{ flex: 1 }} />
+        </View>
+        <ShowAllBtn />
+      </View>
+    );
+  }
+
+  if (photos.length === 4) {
+    return (
+      <View style={[heroStyles.wrap, heroStyles.row, { height: HEIGHT, gap: GAP }]}>
+        <Tile uri={photos[0]} index={0} style={{ flex: 1 }} />
+        <View style={{ flex: 1, gap: GAP }}>
+          <Tile uri={photos[1]} index={1} style={{ flex: 1 }} />
+          <Tile uri={photos[2]} index={2} style={{ flex: 1 }} />
+          <Tile uri={photos[3]} index={3} style={{ flex: 1 }} />
+        </View>
+        <ShowAllBtn />
+      </View>
+    );
+  }
+
+  // 5+ → Airbnb 1 large + 2×2
+  return (
+    <View style={[heroStyles.wrap, heroStyles.row, { height: HEIGHT, gap: GAP }]}>
+      <Tile uri={photos[0]} index={0} style={{ flex: 1 }} />
+      <View style={{ flex: 1, gap: GAP }}>
+        <View style={{ flex: 1, flexDirection: 'row', gap: GAP }}>
+          <Tile uri={photos[1]} index={1} style={{ flex: 1 }} />
+          <Tile uri={photos[2]} index={2} style={{ flex: 1 }} />
+        </View>
+        <View style={{ flex: 1, flexDirection: 'row', gap: GAP }}>
+          <Tile uri={photos[3]} index={3} style={{ flex: 1 }} />
+          <Tile uri={photos[4]} index={4} style={{ flex: 1 }} />
+        </View>
+      </View>
+      <ShowAllBtn />
+    </View>
+  );
+}
+
+const heroStyles = StyleSheet.create({
+  wrap: {
+    width: '100%',
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  row: {
+    flexDirection: 'row',
+  },
+  tile: {
+    backgroundColor: '#F0EDE8',
+    overflow: 'hidden',
+  },
+  tileImg: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  showAllBtn: {
+    position: 'absolute',
+    bottom: 12,
+    right: 12,
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 999,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  showAllBtnText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#1C1C1A',
+  },
+});
+
 type RouteParams = { CafeDetail: { cafe: Cafe } };
 
 export default function CafeDetailScreen() {
   const route = useRoute<RouteProp<RouteParams, "CafeDetail">>();
   const navigation = useNavigation<StackNavigationProp<any>>();
+  const insets = useSafeAreaInsets();
   // Defensive: route.params or route.params.cafe may be undefined after nav
   // merges (e.g. when returning from WriteReviewScreen with only a timestamp).
   const initialCafe: Cafe =
@@ -84,11 +252,12 @@ export default function CafeDetailScreen() {
     (!initialCafe?.menu?.length || !initialCafe?.facilities?.length);
 
   const reviewSummary = reviewSummaryQuery.data ?? [];
-  const leaderboard = (leaderboardQuery.data ?? []).slice(0, 3);
+  const leaderboard = (leaderboardQuery.data ?? []).slice(0, 5);
+  const leaderboardLoading = leaderboardQuery.isLoading;
 
-  const [currentPhoto, setCurrentPhoto] = useState(0);
   const [isFavorited, setIsFavorited] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
+  const [currentPhoto, setCurrentPhoto] = useState(0);
   const inShortlist = isInShortlist(cafe.id);
 
   const [checkingIn, setCheckingIn] = useState(false);
@@ -293,16 +462,26 @@ export default function CafeDetailScreen() {
         </View>
       )}
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Photo carousel */}
+        {/* Hero photo carousel — single photo at a time, with the next
+            photo peeking from the right edge so user knows to swipe. */}
         <View style={styles.carouselContainer}>
           <FlatList
             data={cafe.photos}
             horizontal
-            pagingEnabled
+            // snapToInterval lets each card "snap" while still leaving a
+            // peek of the next photo on the right (pagingEnabled snaps to
+            // full screen width with no peek).
+            snapToInterval={HERO_CARD_W + HERO_GAP}
+            decelerationRate="fast"
+            snapToAlignment="start"
             showsHorizontalScrollIndicator={false}
             keyExtractor={(_, i) => i.toString()}
+            contentContainerStyle={{ paddingHorizontal: HERO_SIDE_PAD }}
+            ItemSeparatorComponent={() => <View style={{ width: HERO_GAP }} />}
             onMomentumScrollEnd={(e) => {
-              const idx = Math.round(e.nativeEvent.contentOffset.x / width);
+              const idx = Math.round(
+                e.nativeEvent.contentOffset.x / (HERO_CARD_W + HERO_GAP),
+              );
               setCurrentPhoto(idx);
             }}
             renderItem={({ item, index }) => (
@@ -326,12 +505,14 @@ export default function CafeDetailScreen() {
             ))}
           </View>
           <TouchableOpacity
-            style={styles.backBtn}
+            style={[styles.backBtn, { top: insets.top + 12 }]}
             onPress={() => navigation.goBack()}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            activeOpacity={0.8}
           >
-            <Text style={styles.backIcon}>←</Text>
+            <Text style={styles.backIcon}>‹</Text>
           </TouchableOpacity>
-          <View style={styles.photoCounter}>
+          <View style={[styles.photoCounter, { top: insets.top + 18 }]}>
             <Text style={styles.photoCounterText}>
               {currentPhoto + 1} / {(cafe.photos ?? []).length}
             </Text>
@@ -340,9 +521,33 @@ export default function CafeDetailScreen() {
 
         <View style={styles.content}>
           <Text style={styles.cafeName}>{cafe.name}</Text>
-          <Text style={styles.distance}>
-            {realDistance} km from your location
-          </Text>
+
+          {/* Rating + price + distance row (mirrors web detail header) */}
+          <View style={styles.ratingRow}>
+            {formatRating(cafe.googleRating) && (
+              <>
+                <Text style={styles.ratingStar}>★</Text>
+                <Text style={styles.ratingNum}>
+                  {formatRating(cafe.googleRating)}
+                </Text>
+                {cafe.totalGoogleReviews != null && (
+                  <Text style={styles.ratingMeta}>
+                    ({cafe.totalGoogleReviews.toLocaleString()})
+                  </Text>
+                )}
+                <Text style={styles.ratingDot}>·</Text>
+              </>
+            )}
+            {!!cafe.priceRange && (
+              <>
+                <Text style={styles.ratingMeta}>{cafe.priceRange}</Text>
+                <Text style={styles.ratingDot}>·</Text>
+              </>
+            )}
+            <Text style={styles.ratingMeta}>
+              {realDistance} km from your location
+            </Text>
+          </View>
 
           {cafe.description ? (
             <Text style={styles.description}>{cafe.description}</Text>
@@ -353,6 +558,18 @@ export default function CafeDetailScreen() {
             <Text style={styles.addressText}>{cafe.address}</Text>
             <Text style={styles.openMaps}>Open in Maps →</Text>
           </TouchableOpacity>
+
+          {/* Phone — clickable tel: link */}
+          {!!cafe.phone && (
+            <TouchableOpacity
+              style={styles.phoneRow}
+              onPress={() => Linking.openURL(`tel:${cafe.phone}`)}
+            >
+              <Text style={styles.phoneIcon}>📞</Text>
+              <Text style={styles.phoneText}>{cafe.phone}</Text>
+              <Text style={styles.phoneCta}>Telepon →</Text>
+            </TouchableOpacity>
+          )}
 
           {/* Mood chips from review aggregation — shown under address */}
           {moodChips.length > 0 && (
@@ -373,6 +590,57 @@ export default function CafeDetailScreen() {
             </View>
           )}
           {/* Legacy cafe.purposes row removed — now merged into moodChips above */}
+
+          {/* Jam Buka — opening hours table, today highlighted */}
+          {cafe.openingHours && Object.keys(cafe.openingHours).length > 0 && (
+            <>
+              <Text style={styles.sectionTitle}>Jam Buka</Text>
+              <View style={styles.hoursCard}>
+                {(() => {
+                  const todayIdx = new Date().getDay();
+                  const todayKey = (
+                    ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const
+                  )[todayIdx];
+                  const labels: Record<string, string> = {
+                    Sen: 'mon', Sel: 'tue', Rab: 'wed', Kam: 'thu',
+                    Jum: 'fri', Sab: 'sat', Min: 'sun',
+                  };
+                  return formatHoursTable(cafe.openingHours, 'id').map((row, i) => {
+                    const isToday = labels[row.day] === todayKey;
+                    const closed = row.hours === 'Tutup';
+                    return (
+                      <View
+                        key={row.day}
+                        style={[
+                          styles.hoursRow,
+                          i > 0 && styles.hoursRowDivider,
+                          isToday && styles.hoursRowToday,
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.hoursDay,
+                            isToday && styles.hoursDayToday,
+                          ]}
+                        >
+                          {row.day}
+                          {isToday ? '  (Hari ini)' : ''}
+                        </Text>
+                        <Text
+                          style={[
+                            styles.hoursValue,
+                            closed && styles.hoursValueClosed,
+                          ]}
+                        >
+                          {row.hours}
+                        </Text>
+                      </View>
+                    );
+                  });
+                })()}
+              </View>
+            </>
+          )}
 
           <Text style={styles.sectionTitle}>Facilities</Text>
           {facilityChips.length > 0 ? (
@@ -477,34 +745,164 @@ export default function CafeDetailScreen() {
           {/* Vote section (cafe is best for…) */}
           <VoteSection cafeId={Number(cafe.id)} />
 
-          {/* Leaderboard Top 3 */}
-          {leaderboard.length > 0 && (
+          {/* Top check-in leaderboard — mirrors web CafeLeaderboard:
+              loading skeleton, empty CTA, top 5 with rank emoji badge,
+              checkin count + total time, score in pts. */}
+          <View style={styles.sectionRow}>
+            <Text style={styles.sectionTitle}>Top check-in</Text>
+            {leaderboard.length > 0 && (
+              <TouchableOpacity
+                onPress={() =>
+                  navigation.navigate("Leaderboard", {
+                    cafeId: cafe.id,
+                    cafeName: cafe.name,
+                  })
+                }
+              >
+                <Text style={styles.seeAll}>Selengkapnya →</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {leaderboardLoading ? (
+            <View>
+              {[0, 1, 2].map((i) => (
+                <View key={i} style={styles.lbSkeleton} />
+              ))}
+            </View>
+          ) : leaderboard.length === 0 ? (
+            <View style={styles.lbEmpty}>
+              <Text style={styles.lbEmptyEmoji}>🏆</Text>
+              <Text style={styles.lbEmptyTitle}>Belum ada yang check-in</Text>
+              <Text style={styles.lbEmptyHint}>
+                Jadi yang pertama, tunjukkan namamu di leaderboard!
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.lbCard}>
+              {leaderboard.map((e, idx) => {
+                const rankBgStyle =
+                  e.rank === 1
+                    ? styles.lbRankGold
+                    : e.rank === 2
+                      ? styles.lbRankSilver
+                      : e.rank === 3
+                        ? styles.lbRankBronze
+                        : styles.lbRankPlain;
+                const rankLabel =
+                  e.rank === 1
+                    ? "👑"
+                    : e.rank === 2
+                      ? "🥈"
+                      : e.rank === 3
+                        ? "🥉"
+                        : String(e.rank);
+                const totalMin =
+                  typeof e.totalDuration === "number" && e.totalDuration > 0
+                    ? e.totalDuration
+                    : null;
+                const durationText =
+                  totalMin != null
+                    ? totalMin >= 60
+                      ? `${Math.floor(totalMin / 60)}j ${totalMin % 60}m`
+                      : `${totalMin}m`
+                    : null;
+                return (
+                  <View
+                    key={`${e.userId}-${e.rank}`}
+                    style={[
+                      styles.lbItem,
+                      idx > 0 && styles.lbItemDivider,
+                      e.rank <= 3 && styles.lbItemTop3,
+                    ]}
+                  >
+                    <View style={[styles.lbRankBadge, rankBgStyle]}>
+                      <Text
+                        style={
+                          e.rank <= 3 ? styles.lbRankBadgeEmoji : styles.lbRankBadgeNum
+                        }
+                      >
+                        {rankLabel}
+                      </Text>
+                    </View>
+
+                    <View style={styles.lbInfo}>
+                      <View style={styles.lbNameRow}>
+                        <Text style={styles.lbItemName} numberOfLines={1}>
+                          {e.name}
+                        </Text>
+                        {!!e.badge && (
+                          <View style={styles.lbItemBadge}>
+                            <Text style={styles.lbItemBadgeText} numberOfLines={1}>
+                              {e.badge}
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+                      <View style={styles.lbMetaRow}>
+                        <Text style={styles.lbMeta}>
+                          {e.checkinCount}× check-in
+                        </Text>
+                        {durationText && (
+                          <>
+                            <Text style={styles.lbMetaDot}>·</Text>
+                            <Text style={styles.lbMeta}>{durationText}</Text>
+                          </>
+                        )}
+                      </View>
+                    </View>
+
+                    <View style={styles.lbScore}>
+                      <Text style={styles.lbScoreNum}>{e.score}</Text>
+                      <Text style={styles.lbScoreLabel}>PTS</Text>
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          )}
+
+          {/* Photos — clean 3-column grid (square tiles, rounded, subtle
+              shadow). Cap visible at 9 with a "+N more" overlay; tap any
+              tile to open the fullscreen zoom modal at that index. */}
+          {(cafe.photos?.length ?? 0) > 0 && (
             <>
               <View style={styles.sectionRow}>
-                <Text style={styles.sectionTitle}>Leaderboard</Text>
-                <TouchableOpacity
-                  onPress={() =>
-                    navigation.navigate("Leaderboard", {
-                      cafeId: cafe.id,
-                      cafeName: cafe.name,
-                    })
-                  }
-                >
-                  <Text style={styles.seeAll}>Selengkapnya →</Text>
-                </TouchableOpacity>
+                <Text style={styles.sectionTitle}>Photos</Text>
+                {(cafe.photos?.length ?? 0) > 9 && (
+                  <TouchableOpacity onPress={() => openZoom(0)}>
+                    <Text style={styles.seeAll}>
+                      Lihat semua ({cafe.photos!.length})
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
-              {leaderboard.map((e) => (
-                <View key={e.userId} style={styles.lbRow}>
-                  <Text style={styles.lbRank}>
-                    {e.rank === 1 ? "👑" : e.rank === 2 ? "🥈" : "🥉"}
-                  </Text>
-                  <Text style={styles.lbName} numberOfLines={1}>
-                    {e.name}
-                  </Text>
-                  {e.badge && <Text style={styles.lbBadge}>{e.badge}</Text>}
-                  <Text style={styles.lbCount}>{e.checkinCount}x</Text>
-                </View>
-              ))}
+              <View style={styles.photoGrid}>
+                {(cafe.photos ?? []).slice(0, 9).map((photoUri, i) => {
+                  const isLastVisible = i === 8;
+                  const overflow = (cafe.photos?.length ?? 0) - 9;
+                  return (
+                    <TouchableOpacity
+                      key={`${photoUri}-${i}`}
+                      style={styles.photoGridItem}
+                      activeOpacity={0.85}
+                      onPress={() => openZoom(i)}
+                    >
+                      <Image
+                        source={{ uri: photoUri }}
+                        style={styles.photoGridImage}
+                      />
+                      {isLastVisible && overflow > 0 && (
+                        <View style={styles.photoGridOverflow}>
+                          <Text style={styles.photoGridOverflowText}>
+                            +{overflow}
+                          </Text>
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
             </>
           )}
 
@@ -589,7 +987,7 @@ export default function CafeDetailScreen() {
               <ScrollView
                 style={{ width, height }}
                 contentContainerStyle={styles.zoomScrollContent}
-                maximumZoomScale={3}
+                maximumZoomScale={4}
                 minimumZoomScale={1}
                 showsVerticalScrollIndicator={false}
                 showsHorizontalScrollIndicator={false}
@@ -604,16 +1002,26 @@ export default function CafeDetailScreen() {
               </ScrollView>
             )}
           />
+
+          {/* Subtle gradient strip at top so the back button + counter always
+              have contrast no matter what the photo behind them looks like. */}
+          <View pointerEvents="none" style={styles.zoomTopScrim} />
+
           <TouchableOpacity
-            style={styles.zoomCloseBtn}
+            style={[styles.zoomCloseBtn, { top: insets.top + 12 }]}
             onPress={closeZoom}
             hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            activeOpacity={0.8}
           >
-            <Text style={styles.zoomCloseText}>✕</Text>
+            <Text style={styles.zoomCloseText}>‹</Text>
           </TouchableOpacity>
-          <View style={styles.zoomCounter}>
+
+          <View style={[styles.zoomCounter, { top: insets.top + 18 }]}>
             <Text style={styles.zoomCounterText}>
-              {zoomIndex + 1} / {cafe.photos.length}
+              {zoomIndex + 1}{' '}
+              <Text style={styles.zoomCounterTotal}>
+                / {cafe.photos.length}
+              </Text>
             </Text>
           </View>
         </View>
@@ -664,46 +1072,64 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   carouselContainer: { position: "relative" },
-  photo: { width, height: 280, resizeMode: "cover" },
+  // Hero photo card — width = screen minus peek so the next photo's left
+  // edge stays visible on the right of the current one.
+  photo: {
+    width: HERO_CARD_W,
+    height: 280,
+    borderRadius: 16,
+    resizeMode: "cover",
+    backgroundColor: "#F0EDE8",
+  },
   photoDots: {
     position: "absolute",
-    bottom: spacing.md,
+    bottom: 12,
     alignSelf: "center",
     flexDirection: "row",
     gap: 6,
   },
   photoDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "rgba(255,255,255,0.4)",
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "rgba(255,255,255,0.55)",
   },
-  photoDotActive: { backgroundColor: colors.white, width: 20 },
+  photoDotActive: { backgroundColor: "#FFFFFF", width: 18 },
+  photoCounter: {
+    position: "absolute",
+    right: spacing.md,
+    backgroundColor: "rgba(0,0,0,0.55)",
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    zIndex: 10,
+  },
+  photoCounterText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "800",
+  },
+  // Back button — solid translucent dark + white outline so it's legible on
+  // ANY photo (the previous rgba(0,0,0,0.3) was invisible on bright photos).
   backBtn: {
     position: "absolute",
-    top: 48,
     left: spacing.md,
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "rgba(0,0,0,0.3)",
+    backgroundColor: "rgba(0,0,0,0.55)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.4)",
     justifyContent: "center",
     alignItems: "center",
+    zIndex: 10,
   },
-  backIcon: { fontSize: 20, color: colors.white },
-  photoCounter: {
-    position: "absolute",
-    top: 48,
-    right: spacing.md,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    borderRadius: radius.full,
-    paddingHorizontal: spacing.sm + 4,
-    paddingVertical: 4,
-  },
-  photoCounterText: {
-    color: colors.white,
-    fontSize: 12,
-    fontWeight: "700",
+  backIcon: {
+    fontSize: 28,
+    color: "#FFFFFF",
+    fontWeight: "600",
+    lineHeight: 30,
+    marginTop: -2,
   },
 
   // Zoom modal
@@ -718,36 +1144,163 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  // Image fills the entire viewport — resizeMode "contain" keeps aspect
+  // ratio so portrait photos don't get cut off. No more 85% box leaving
+  // an awkward black band at the bottom.
   zoomImage: {
     width,
-    height: height * 0.85,
+    height,
   },
+  // Top-strip gradient via solid color overlay (cheap, no expo-linear here):
+  // 88px of dark wash so the back button + counter are always legible.
+  zoomTopScrim: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 96,
+    backgroundColor: "rgba(0,0,0,0.45)",
+  },
+  // Back button — solid translucent dark with white outline + chevron, big
+  // hit area, properly offset by safe-area inset (set inline in JSX).
   zoomCloseBtn: {
     position: "absolute",
-    top: 48,
-    right: spacing.md,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "rgba(255,255,255,0.15)",
+    left: spacing.md,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(0,0,0,0.55)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.35)",
     justifyContent: "center",
     alignItems: "center",
     zIndex: 10,
   },
-  zoomCloseText: { color: colors.white, fontSize: 22, fontWeight: "700" },
+  zoomCloseText: {
+    color: "#FFFFFF",
+    fontSize: 28,
+    fontWeight: "600",
+    lineHeight: 30,
+    marginTop: -2,
+  },
   zoomCounter: {
     position: "absolute",
-    top: 52,
     alignSelf: "center",
-    backgroundColor: "rgba(255,255,255,0.15)",
+    backgroundColor: "rgba(0,0,0,0.55)",
     borderRadius: radius.full,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: 14,
     paddingVertical: 6,
+    zIndex: 10,
   },
-  zoomCounterText: { color: colors.white, fontSize: 14, fontWeight: "700" },
+  zoomCounterText: { color: "#FFFFFF", fontSize: 14, fontWeight: "800" },
+  zoomCounterTotal: { color: "rgba(255,255,255,0.65)", fontWeight: "600" },
   content: { padding: spacing.lg },
   cafeName: { fontSize: 24, fontWeight: "700", color: colors.primary },
   distance: { fontSize: 14, color: colors.textSecondary, marginTop: 2 },
+
+  // Rating row under title — ★ {rating} ({n}) · {price} · {distance}
+  ratingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    marginTop: 4,
+    gap: 4,
+  },
+  ratingStar: { fontSize: 14, color: "#F59E0B" },
+  ratingNum: { fontSize: 14, fontWeight: "800", color: colors.primary },
+  ratingMeta: { fontSize: 13, color: colors.textSecondary },
+  ratingDot: { fontSize: 13, color: "#D9D6CE", marginHorizontal: 4 },
+
+  // Phone row (clickable tel:)
+  phoneRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: spacing.sm,
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm + 2,
+    gap: 8,
+  },
+  phoneIcon: { fontSize: 16 },
+  phoneText: { flex: 1, fontSize: 14, color: colors.primary, fontWeight: "600" },
+  phoneCta: { fontSize: 13, color: colors.accent, fontWeight: "700" },
+
+  // Jam Buka (opening hours) table
+  hoursCard: {
+    backgroundColor: colors.white,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#F0EDE8",
+    overflow: "hidden",
+    marginBottom: spacing.sm,
+  },
+  hoursRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: spacing.md,
+    paddingVertical: 10,
+  },
+  hoursRowDivider: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: "#F0EDE8",
+  },
+  hoursRowToday: { backgroundColor: "#FDF6EC" },
+  hoursDay: { fontSize: 13, fontWeight: "700", color: "#5C5A52" },
+  hoursDayToday: { color: colors.accent },
+  hoursValue: {
+    fontSize: 13,
+    color: colors.primary,
+    fontVariant: ["tabular-nums"],
+  },
+  hoursValueClosed: { color: "#EF4444" },
+
+  // Photos grid — exact 3-col using window width math (avoids the percent
+  // rounding that left tiny gaps on some phones).
+  photoGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: spacing.sm,
+  },
+  photoGridItem: (() => {
+    const PADDING = spacing.lg * 2; // content paddingLeft + paddingRight
+    const GAP = 8;
+    const COLS = 3;
+    const cellW = Math.floor((width - PADDING - GAP * (COLS - 1)) / COLS);
+    return {
+      width: cellW,
+      height: cellW,
+      borderRadius: 14,
+      overflow: "hidden" as const,
+      backgroundColor: "#F0EDE8",
+      // Subtle lift so tiles feel separated from the page bg.
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.06,
+      shadowRadius: 3,
+      elevation: 1,
+    };
+  })(),
+  photoGridImage: {
+    width: "100%",
+    height: "100%",
+    resizeMode: "cover",
+  },
+  photoGridOverflow: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.55)",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 14,
+  },
+  photoGridOverflowText: {
+    color: "#FFFFFF",
+    fontSize: 22,
+    fontWeight: "900",
+    letterSpacing: 0.5,
+  },
   description: {
     fontSize: 14,
     color: colors.textSecondary,
@@ -989,21 +1542,118 @@ const styles = StyleSheet.create({
   },
   writeReviewText: { color: colors.accent, fontWeight: "700", fontSize: 14 },
 
-  lbRow: {
+  // ─── Top check-in leaderboard ─────────────────────────────────────────
+  // Loading skeleton — three pulsing pills mimicking row height.
+  lbSkeleton: {
+    height: 56,
+    backgroundColor: "#F0EDE8",
+    borderRadius: 12,
+    marginBottom: spacing.xs,
+    opacity: 0.7,
+  },
+  // Empty CTA — encourages first check-in instead of hiding the section.
+  lbEmpty: {
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderColor: "#E0DCD3",
+    borderRadius: 12,
+    paddingVertical: 24,
+    paddingHorizontal: spacing.md,
+    alignItems: "center",
+  },
+  lbEmptyEmoji: { fontSize: 28, marginBottom: 4 },
+  lbEmptyTitle: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#5C5A52",
+  },
+  lbEmptyHint: {
+    fontSize: 11,
+    color: "#8A8880",
+    marginTop: 2,
+    textAlign: "center",
+  },
+  // List card — single rounded container with internal dividers (matches web).
+  lbCard: {
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: "#F0EDE8",
+    borderRadius: 16,
+    overflow: "hidden",
+  },
+  lbItem: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.surface,
-    borderRadius: radius.sm,
-    padding: spacing.sm,
-    marginBottom: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 10,
+    gap: spacing.sm,
   },
-  lbRank: { fontSize: 18, marginRight: spacing.sm },
-  lbName: { flex: 1, fontSize: 14, fontWeight: "600", color: colors.primary },
-  lbBadge: {
-    fontSize: 11,
-    color: colors.accent,
-    fontWeight: "700",
-    marginRight: spacing.sm,
+  lbItemDivider: {
+    borderTopWidth: 1,
+    borderTopColor: "#F0EDE8",
   },
-  lbCount: { fontSize: 14, fontWeight: "800", color: colors.primary },
+  // Subtle warm tint behind ranks 1-3 to reinforce the "top" nature.
+  lbItemTop3: { backgroundColor: "#FFFBF3" },
+
+  // Rank badge — gradient-mimicking solid colors (RN doesn't do CSS gradients
+  // out of the box; use a single color from each web gradient stop).
+  lbRankBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  lbRankGold: { backgroundColor: "#F59E0B" },
+  lbRankSilver: { backgroundColor: "#9CA3AF" },
+  lbRankBronze: { backgroundColor: "#B45309" },
+  lbRankPlain: { backgroundColor: "#F0EDE8" },
+  lbRankBadgeEmoji: { fontSize: 16 },
+  lbRankBadgeNum: { fontSize: 13, fontWeight: "800", color: "#8A8880" },
+
+  // Middle info column — name + badge on one line, meta on next.
+  lbInfo: { flex: 1, minWidth: 0 },
+  lbNameRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  lbItemName: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: "#1C1C1A",
+    flexShrink: 1,
+  },
+  lbItemBadge: {
+    backgroundColor: "#FFF1E0",
+    borderRadius: 999,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+  },
+  lbItemBadgeText: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: "#B45309",
+  },
+  lbMetaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 2,
+    gap: 6,
+  },
+  lbMeta: { fontSize: 11, color: "#8A8880", fontWeight: "600" },
+  lbMetaDot: { fontSize: 11, color: "#D9D6CE" },
+
+  // Right column — score in big orange numerals + "PTS" label.
+  lbScore: { alignItems: "flex-end", minWidth: 40 },
+  lbScoreNum: {
+    fontSize: 16,
+    fontWeight: "900",
+    color: "#EA580C",
+    lineHeight: 18,
+  },
+  lbScoreLabel: {
+    fontSize: 9,
+    fontWeight: "800",
+    color: "#8A8880",
+    letterSpacing: 0.6,
+    marginTop: 1,
+  },
 });

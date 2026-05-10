@@ -16,10 +16,10 @@ interface CafeRow {
   [key: string]: unknown;
 }
 
-interface FacilityRow {
+interface FeatureRow {
   cafeId: number;
-  facilityKey: string;
-  facilityValue: string | null;
+  name: string;
+  category: string | null;
 }
 
 interface PhotoRow {
@@ -60,9 +60,6 @@ export interface SearchCafesQuery {
   lat?: number;
   lng?: number;
   radius?: number;
-  wifiAvailable?: string;
-  hasMushola?: string;
-  hasParking?: string;
   facilities?: string[];
   priceRange?: string;
   purposeId?: number;
@@ -252,9 +249,6 @@ export class MeiliCafesService {
       lat,
       lng,
       radius = 2000,
-      wifiAvailable,
-      hasMushola,
-      hasParking,
       facilities,
       priceRange,
       purposeId,
@@ -270,15 +264,9 @@ export class MeiliCafesService {
     }
     if (priceRange) filters.push(`priceRange = "${priceRange}"`);
 
-    // Merge legacy boolean params + facilities[] into a single OR-filter:
-    //   facilities IN ["wifi", "mushola", ...]
-    // matches a cafe that has ANY of the requested keys.
-    const facilityKeys = new Set<string>(facilities ?? []);
-    if (wifiAvailable === 'true') facilityKeys.add('strong_wifi');
-    if (hasMushola === 'true') facilityKeys.add('mushola');
-    if (hasParking === 'true') facilityKeys.add('parking');
-    if (facilityKeys.size > 0) {
-      const escaped = Array.from(facilityKeys)
+    // facilities[] = feature names. Cafe matches if it has ANY of the requested names.
+    if (facilities && facilities.length > 0) {
+      const escaped = facilities
         .map((k) => `"${k.replace(/"/g, '\\"')}"`)
         .join(', ');
       filters.push(`facilities IN [${escaped}]`);
@@ -291,8 +279,6 @@ export class MeiliCafesService {
 
     const sort: string[] = [];
     if (sortMode === 'trending') {
-      // Engagement-driven trending: favorites + bookmarks weight most, rating as tiebreaker.
-      // Meili can't sum fields, so we sort by the strongest signal first then tiebreak.
       sort.push('favoritesCount:desc', 'bookmarksCount:desc', 'googleRating:desc');
     } else if (sortMode === 'rating') {
       sort.push('googleRating:desc', 'favoritesCount:desc');
@@ -302,9 +288,6 @@ export class MeiliCafesService {
       sort.push(`_geoPoint(${lat}, ${lng}):asc`);
     }
 
-    // Full-text only — hybrid/semantic search disabled. Searchable attributes
-    // (name, description, address, city, district, facilities, menuItems, purposes)
-    // are configured in MeiliService.applySettingsToIndex.
     const searchParams: SearchParams = {
       filter: filters.join(' AND '),
       offset: (page - 1) * limit,
@@ -349,9 +332,8 @@ export class MeiliCafesService {
   // ── Facets ──────────────────────────────────────────────────────────────────
 
   /**
-   * Returns distribution of `facilities` values across all active cafes.
-   * Used by GET /cafes/filters to show counts next to each filter option.
-   * Cached 60s — counts don't need real-time accuracy.
+   * Returns distribution of `facilities` values (feature names) across all
+   * active cafes. Used by GET /cafes/filters to show counts. Cached 60s.
    */
   async getFacilityCounts(): Promise<Record<string, number>> {
     const now = Date.now();
@@ -400,14 +382,16 @@ export class MeiliCafesService {
 
     const placeholders = cafeIds.map(() => '?').join(',');
 
-    const [cafes, facilities, photos, menus, topReviews] = await Promise.all([
+    const [cafes, features, photos, menus, topReviews] = await Promise.all([
       this.q<CafeRow>(
         `SELECT * FROM cafes WHERE id IN (${placeholders}) AND deleted_at IS NULL`,
         cafeIds,
       ),
-      this.q<FacilityRow>(
-        `SELECT cafe_id AS cafeId, facility_key AS facilityKey, facility_value AS facilityValue
-         FROM cafe_facilities WHERE cafe_id IN (${placeholders})`,
+      this.q<FeatureRow>(
+        `SELECT cf.cafe_id AS cafeId, f.name, f.category
+         FROM cafe_features cf
+         JOIN features f ON f.id = cf.feature_id
+         WHERE cf.cafe_id IN (${placeholders})`,
         cafeIds,
       ),
       this.q<PhotoRow>(
@@ -422,7 +406,6 @@ export class MeiliCafesService {
         cafeIds,
       ),
       // Latest non-empty review per cafe (with author + overall rating).
-      // MySQL 8 window function — picks newest review with non-blank text.
       this.q<TopReviewRow>(
         `SELECT t.cafe_id AS cafeId, t.text, t.created_at AS createdAt,
                 u.name AS authorName,
@@ -454,7 +437,7 @@ export class MeiliCafesService {
       // Table may not exist — OK
     }
 
-    const facilityMap = groupBy(facilities, 'cafeId');
+    const featureMap = groupBy(features, 'cafeId');
     const photoMap = groupBy(photos, 'cafeId');
     const menuMap = groupBy(menus, 'cafeId');
     const tagMap = groupBy(tagRows, 'cafeId');
@@ -464,7 +447,7 @@ export class MeiliCafesService {
     return cafes.map((cafe) =>
       toCafeDocument({
         cafe,
-        facilities: facilityMap[cafe.id] ?? [],
+        features: featureMap[cafe.id] ?? [],
         photos: (photoMap[cafe.id] ?? []).slice(0, 10),
         menus: (menuMap[cafe.id] ?? []).slice(0, 20),
         purposeSlugs: (tagMap[cafe.id] ?? []).map((t) => t.purposeSlug),

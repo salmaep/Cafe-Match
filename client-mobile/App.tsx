@@ -22,10 +22,19 @@ export default function App() {
   const lastScreenName = useRef<string | undefined>(undefined);
 
   useEffect(() => {
-    if (!adsAvailable) return;
+    if (!adsAvailable) {
+      if (__DEV__) console.log('[Ads] adsAvailable=false (Expo Go or no native module)');
+      return;
+    }
+    if (__DEV__) console.log('[Ads] initializing Mobile Ads SDK…');
     mobileAds()
       .initialize()
-      .catch(() => {});
+      .then((adapterStatuses) => {
+        if (__DEV__) console.log('[Ads] init OK', adapterStatuses);
+      })
+      .catch((err) => {
+        if (__DEV__) console.warn('[Ads] init failed:', err?.message ?? err);
+      });
   }, []);
 
   const handleNavReady = () => {

@@ -76,6 +76,13 @@ export class AddFeaturesMasterTable1715400000000
     `);
     // Best-effort: any pr.feature_name not in master gets dropped
     await queryRunner.query(`DELETE FROM \`purpose_requirements\` WHERE feature_id IS NULL`);
+    // Drop the legacy composite index before removing the column it references.
+    // Without this, MySQL strips feature_name from the index but keeps it as a
+    // UNIQUE index on (purpose_id) alone — causing ER_DUP_ENTRY on multi-req inserts.
+    await queryRunner.query(`
+      ALTER TABLE \`purpose_requirements\`
+        DROP INDEX \`idx_purpose_facility\`
+    `);
     await queryRunner.query(`ALTER TABLE \`purpose_requirements\` DROP COLUMN \`feature_name\``);
     await queryRunner.query(`
       ALTER TABLE \`purpose_requirements\`

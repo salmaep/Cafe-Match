@@ -73,7 +73,7 @@ export default function StepPurpose({ value, onChange }: Props) {
                 }`}
               >
                 <span className="mb-1.5 leading-none flex items-center justify-center">
-                  <PurposeIcon name={p.icon} />
+                  <PurposeIcon name={p.icon ?? undefined} />
                 </span>
                 <span
                   className={`text-sm font-bold leading-tight ${

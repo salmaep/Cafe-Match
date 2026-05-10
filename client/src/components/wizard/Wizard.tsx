@@ -73,10 +73,10 @@ export default function Wizard({ onComplete, onSkip }: Props = {}) {
     const prefs: WizardPreferences = {
       purpose,
       location: {
-        type: 'custom',
+        type: params.lat != null ? 'custom' : 'current',
         latitude: lat,
         longitude: lng,
-        label: lat != null ? `${lat.toFixed(4)}, ${lng?.toFixed(4)}` : 'Current Location',
+        label: params.lat != null ? `${lat?.toFixed(4)}, ${lng?.toFixed(4)}` : 'Current Location',
       },
       radius: params.r,
       amenities: params.f.length > 0 ? params.f : undefined,

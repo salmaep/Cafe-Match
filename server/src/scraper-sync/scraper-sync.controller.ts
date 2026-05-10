@@ -6,13 +6,13 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { AdminApiKeyGuard } from '../common/guards/admin-api-key.guard';
+import { ScraperApiKeyGuard } from '../common/guards/scraper-api-key.guard';
 import { Public } from '../common/decorators/public.decorator';
 import { ScraperSyncService } from './scraper-sync.service';
 import { SyncCafesBatchDto } from './dto/sync-cafes-batch.dto';
 
 @Public()
-@UseGuards(AdminApiKeyGuard)
+@UseGuards(ScraperApiKeyGuard)
 @Controller('sync')
 export class ScraperSyncController {
   constructor(private readonly syncService: ScraperSyncService) {}

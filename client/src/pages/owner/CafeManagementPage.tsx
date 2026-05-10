@@ -630,27 +630,6 @@ function TextInput({
   );
 }
 
-function Toggle({
-  label,
-  checked,
-  onChange,
-}: {
-  label: string;
-  checked: boolean;
-  onChange: (v: boolean) => void;
-}) {
-  return (
-    <label className="flex items-center justify-between gap-3 px-4 py-3 bg-[#F0EDE8] rounded-xl cursor-pointer hover:bg-[#E8E4DD] transition-colors">
-      <span className="text-sm font-semibold text-[#1C1C1A]">{label}</span>
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
-        className="w-5 h-5 accent-[#D48B3A] rounded"
-      />
-    </label>
-  );
-}
 
 function SmallLabel({ children }: { children: React.ReactNode }) {
   return (

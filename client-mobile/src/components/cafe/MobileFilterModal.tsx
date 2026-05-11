@@ -13,6 +13,7 @@ import {
 } from '../../services/api';
 import { BackendPurpose } from '../../types';
 import PurposeChips from './PurposeChips';
+import { getFacilityIcon } from '../../constant/ui/facility-icons';
 
 interface Props {
   visible: boolean;
@@ -66,6 +67,10 @@ export default function MobileFilterModal({
   onPriceRangeChange,
 }: Props) {
   const [groups, setGroups] = useState<FilterCatalogGroup[] | null>(catalogCache);
+  // Mirror web mobile modal: groups collapsible, default `amenity` open.
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
+    amenity: true,
+  });
 
   useEffect(() => {
     if (catalogCache) return;
@@ -73,16 +78,25 @@ export default function MobileFilterModal({
   }, []);
 
   const facilityGroups = useMemo(
-    () => (groups ?? []).filter((g) => g.key !== 'price'),
+    () =>
+      (groups ?? []).filter(
+        (g) => g && g.key !== 'price' && Array.isArray(g.options) && g.options.length > 0,
+      ),
     [groups],
   );
 
+  const facilitySet = useMemo(() => new Set(facilities), [facilities]);
+
   const toggleFacility = (key: string) => {
-    if (facilities.includes(key)) {
+    if (facilitySet.has(key)) {
       onFacilitiesChange(facilities.filter((k) => k !== key));
     } else {
       onFacilitiesChange([...facilities, key]);
     }
+  };
+
+  const toggleGroup = (key: string) => {
+    setOpenGroups((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   const clearAll = () => {
@@ -117,9 +131,11 @@ export default function MobileFilterModal({
                 </Text>
               )}
             </View>
-            <TouchableOpacity onPress={clearAll} style={styles.clearBtn}>
-              <Text style={styles.clearBtnText}>Reset</Text>
-            </TouchableOpacity>
+            {activeCount > 0 && (
+              <TouchableOpacity onPress={clearAll} style={styles.clearBtn}>
+                <Text style={styles.clearBtnText}>Reset</Text>
+              </TouchableOpacity>
+            )}
             <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
               <Text style={styles.closeBtnText}>✕</Text>
             </TouchableOpacity>
@@ -127,85 +143,103 @@ export default function MobileFilterModal({
 
           <ScrollView
             style={{ flex: 1 }}
-            contentContainerStyle={styles.body}
             showsVerticalScrollIndicator={false}
           >
-            {/* Purpose */}
-            <Section title="TUJUAN">
+            {/* Tujuan */}
+            <View style={styles.flatSection}>
+              <Text style={styles.smallSectionTitle}>TUJUAN</Text>
               <PurposeChips
                 purposes={purposes}
                 activeId={activePurposeId}
                 onSelect={onPurposeSelect}
                 title={null}
               />
-            </Section>
+            </View>
 
-            {/* Price */}
-            <Section title="HARGA">
+            {/* Harga — click active to clear (no "Semua" chip) */}
+            <View style={styles.flatSection}>
+              <Text style={styles.smallSectionTitle}>HARGA</Text>
               <View style={styles.chipWrap}>
-                <FilterChip
-                  label="Semua"
-                  active={!priceRange}
-                  onPress={() => onPriceRangeChange('')}
-                />
-                {PRICE_OPTIONS.map((opt) => (
-                  <FilterChip
-                    key={opt.key}
-                    label={opt.label}
-                    active={priceRange === opt.key}
-                    onPress={() => onPriceRangeChange(opt.key)}
-                  />
-                ))}
-              </View>
-            </Section>
-
-            {/* Facilities (server-driven groups) */}
-            {facilityGroups.length === 0 && (
-              <Text style={styles.loadingText}>
-                {groups === null ? 'Memuat fasilitas…' : 'Tidak ada fasilitas.'}
-              </Text>
-            )}
-            {facilityGroups.map((g) => (
-              <Section key={g.key} title={g.label.toUpperCase()}>
-                <View style={styles.chipWrap}>
-                  {g.options.map((opt) => (
+                {PRICE_OPTIONS.map((opt) => {
+                  const active = priceRange === opt.key;
+                  return (
                     <FilterChip
                       key={opt.key}
                       label={opt.label}
-                      icon={opt.icon}
-                      count={opt.count}
-                      active={facilities.includes(opt.key)}
-                      onPress={() => toggleFacility(opt.key)}
+                      active={active}
+                      onPress={() => onPriceRangeChange(active ? '' : opt.key)}
                     />
-                  ))}
+                  );
+                })}
+              </View>
+            </View>
+
+            {/* Facility groups — collapsible */}
+            {groups === null && (
+              <Text style={styles.loadingText}>Memuat filter…</Text>
+            )}
+            {groups !== null && facilityGroups.length === 0 && (
+              <Text style={styles.loadingText}>Filter tidak tersedia.</Text>
+            )}
+            {facilityGroups.map((g) => {
+              const isOpen = openGroups[g.key] ?? false;
+              const selectedInGroup = g.options.filter(
+                (o) => o?.key && facilitySet.has(o.key),
+              ).length;
+              return (
+                <View key={g.key} style={styles.groupBlock}>
+                  <TouchableOpacity
+                    style={styles.groupHeader}
+                    onPress={() => toggleGroup(g.key)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.groupTitleRow}>
+                      <Text style={styles.groupLabel}>
+                        {g.label ?? g.key ?? ''}
+                      </Text>
+                      {selectedInGroup > 0 && (
+                        <View style={styles.groupCountBadge}>
+                          <Text style={styles.groupCountBadgeText}>
+                            {selectedInGroup}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                    <Text style={[styles.chevron, isOpen && styles.chevronOpen]}>
+                      ▼
+                    </Text>
+                  </TouchableOpacity>
+                  {isOpen && (
+                    <View style={[styles.chipWrap, styles.groupChipWrap]}>
+                      {g.options
+                        .filter((opt) => opt && opt.key)
+                        .map((opt) => (
+                          <FilterChip
+                            key={opt.key}
+                            label={opt.label ?? opt.key}
+                            icon={getFacilityIcon(opt.key)}
+                            count={opt.count}
+                            active={facilitySet.has(opt.key)}
+                            onPress={() => toggleFacility(opt.key)}
+                          />
+                        ))}
+                    </View>
+                  )}
                 </View>
-              </Section>
-            ))}
+              );
+            })}
           </ScrollView>
 
           <View style={styles.footer}>
             <TouchableOpacity style={styles.applyBtn} onPress={onClose}>
-              <Text style={styles.applyBtnText}>Terapkan</Text>
+              <Text style={styles.applyBtnText}>
+                Terapkan{activeCount > 0 ? ` (${activeCount})` : ''}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
       </View>
     </Modal>
-  );
-}
-
-function Section({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      {children}
-    </View>
   );
 }
 
@@ -285,13 +319,67 @@ const styles = StyleSheet.create({
   },
   closeBtnText: { fontSize: 18, color: '#8A8880' },
 
-  body: { paddingHorizontal: 16, paddingVertical: 16, gap: 16 },
-
-  section: { gap: 8 },
-  sectionTitle: {
-    fontSize: 11, fontWeight: '800',
+  flatSection: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0EDE8',
+    gap: 8,
+  },
+  smallSectionTitle: {
+    fontSize: 11,
+    fontWeight: '800',
     color: '#8A8880',
     letterSpacing: 1.2,
+  },
+
+  // Collapsible facility group
+  groupBlock: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0EDE8',
+  },
+  groupHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  groupTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  groupLabel: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#1C1C1A',
+  },
+  groupCountBadge: {
+    backgroundColor: '#D48B3A',
+    borderRadius: 999,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    minWidth: 18,
+    alignItems: 'center',
+  },
+  groupCountBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  chevron: {
+    fontSize: 12,
+    color: '#8A8880',
+  },
+  chevronOpen: {
+    transform: [{ rotate: '180deg' }],
+  },
+  groupChipWrap: {
+    paddingHorizontal: 16,
+    paddingBottom: 14,
+    paddingTop: 2,
   },
 
   chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
@@ -324,7 +412,7 @@ const styles = StyleSheet.create({
   chipCountText: { fontSize: 9, fontWeight: '800', color: '#8A8880' },
   chipCountTextActive: { color: '#FFFFFF' },
 
-  loadingText: { fontSize: 12, color: '#8A8880', textAlign: 'center', paddingVertical: 16 },
+  loadingText: { fontSize: 12, color: '#8A8880', textAlign: 'center', paddingVertical: 24 },
 
   footer: {
     paddingHorizontal: 16, paddingVertical: 12,

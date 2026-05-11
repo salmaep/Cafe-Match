@@ -42,9 +42,43 @@ export interface FilterCatalogGroup {
   options: FilterCatalogOption[];
 }
 
+const CATEGORY_LABELS: Record<string, string> = {
+  amenity: 'Fasilitas',
+  ambience: 'Suasana',
+  space: 'Ruang',
+  audience: 'Cocok Untuk',
+  service: 'Layanan',
+  payment: 'Pembayaran',
+  accessibility: 'Aksesibilitas',
+  uncategorized: 'Lainnya',
+};
+
+function formatFeatureLabel(name: string): string {
+  return name
+    .split(/\s+/)
+    .map((w) => (w ? w[0].toUpperCase() + w.slice(1) : ''))
+    .join(' ');
+}
+
+// Server returns { groups: [{ category, items: [{ name, count }] }] };
+// transform to { key, label, options: [{ key, label, count }] } so the
+// mobile filter UI (mirrors web FilterPanel) renders without extra mapping.
 export async function fetchFilterCatalog(): Promise<FilterCatalogGroup[]> {
   const { data } = await api.get("/cafes/filters");
-  return data?.groups ?? [];
+  const raw: any[] = data?.groups ?? [];
+  return raw.map((g: any) => ({
+    key: g.category ?? g.key ?? 'uncategorized',
+    label:
+      CATEGORY_LABELS[g.category as string] ??
+      g.label ??
+      g.category ??
+      'Lainnya',
+    options: (g.items ?? g.options ?? []).map((it: any) => ({
+      key: it.name ?? it.key,
+      label: it.label ?? formatFeatureLabel(it.name ?? it.key ?? ''),
+      count: typeof it.count === 'number' ? it.count : 0,
+    })),
+  }));
 }
 
 // ─── Destinations ───

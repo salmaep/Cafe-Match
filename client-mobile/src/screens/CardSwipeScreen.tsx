@@ -19,6 +19,7 @@ import { usePreferences } from '../context/PreferencesContext';
 import { useLocation } from '../context/LocationContext';
 import { useSearchCafes } from '../queries/cafes/use-search-cafes';
 import { usePromotedCafes } from '../queries/cafes/use-promoted-cafes';
+import { usePurposeId } from '../queries/purposes/use-purpose-id';
 import { hitsToCafes } from '../queries/cafes/api';
 import { PURPOSE_SLUG_MAP } from '../constant/purpose';
 import { Cafe } from '../types';
@@ -32,23 +33,19 @@ export default function CardSwipeScreen() {
   const navigation = useNavigation<StackNavigationProp<any>>();
   const route = useRoute();
   const insets = useSafeAreaInsets();
-  const { addToShortlist, isInShortlist } = useShortlist();
+  const { addToShortlist, isInShortlist, shortlist } = useShortlist();
   const { preferences } = usePreferences();
   const { latitude, longitude } = useLocation();
+  const purposeId = usePurposeId(preferences?.purpose);
   const swiperRef = useRef<any>(null);
 
-  // This screen is mounted in two places (see AppNavigator):
-  //   - Stack screen "CardSwipe" — reached from Splash → Wizard on first open,
-  //     standalone with NO bottom nav. Wizard already ran in the previous step
-  //     so the inline wizard gate would be redundant here.
-  //   - Tab "Discover" inside MainTabs — has bottom nav. We want every revisit
-  //     to re-show the wizard (mirrors web DiscoverPage behavior).
   const isStandalone = route.name === 'CardSwipe';
 
   const [allSwiped, setAllSwiped] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
   const [showToast, setShowToast] = useState(false);
   const [cafes, setCafes] = useState<Cafe[]>([]);
+  const [sessionId, setSessionId] = useState(0);
 
   const [showWizard, setShowWizard] = useState(!isStandalone);
   useFocusEffect(
@@ -57,31 +54,45 @@ export default function CardSwipeScreen() {
     }, [isStandalone]),
   );
 
-  // Fix 1: Calculate available height for card centering
-  const HEADER_H = insets.top + 72; // status bar + header row
-  const BOTTOM_H = insets.bottom + 72; // FAB + bottom safe area
+  const dismissWizard = useCallback(() => {
+    setShowWizard(false);
+    setAllSwiped(false);
+    deckBuiltRef.current = false;
+    setSessionId((s) => s + 1);
+  }, []);
+
+  const HEADER_H = insets.top + 72;
+  const BOTTOM_H = insets.bottom + 72;
   const availableH = height - HEADER_H - BOTTOM_H;
   const CARD_H = Math.min(availableH * 0.88, height * 0.68);
 
-  // Position cards exactly in center of available area
   const cardTop = Math.max(0, (availableH - CARD_H) / 2);
   const cardLeft = (width - CARD_W) / 2;
 
-  // ─── Cafe data via TanStack Query + Meilisearch ─────────────────────────
   const lat = preferences?.location?.latitude ?? latitude;
   const lng = preferences?.location?.longitude ?? longitude;
   const radKm = preferences?.radius ?? 2;
+
+  const priceRangeParam = (['$', '$$', '$$$'] as const).includes(
+    preferences?.priceRange as any,
+  )
+    ? (preferences?.priceRange as '$' | '$$' | '$$$')
+    : undefined;
 
   const cafesQuery = useSearchCafes({
     lat: lat ?? undefined,
     lng: lng ?? undefined,
     radius: Math.min(radKm * 1000, 50_000_000),
+    purposeId,
+    facilities:
+      preferences?.amenities && preferences.amenities.length > 0
+        ? preferences.amenities
+        : undefined,
+    priceRange: priceRangeParam,
     limit: 50,
   });
   const promotedQuery = usePromotedCafes();
 
-  // Show loading ONLY when there is no data at all (initial fetch).
-  // Background refetches keep the existing deck visible to avoid blanking.
   const hasAnyData =
     (cafesQuery.data?.pages?.[0]?.data?.length ?? 0) > 0 ||
     (promotedQuery.data?.length ?? 0) > 0 ||
@@ -89,12 +100,19 @@ export default function CardSwipeScreen() {
   const loading =
     (cafesQuery.isLoading || promotedQuery.isLoading) && !hasAnyData;
 
-  // Build the swipe deck from server data only.
-  // Server (Meilisearch) filters by geo radius + amenities + purposeId; this
-  // effect just ranks + interleaves promos for display order.
+  const deckBuiltRef = useRef(false);
+  const deckInputsRef = useRef('');
   useEffect(() => {
-    // NOTE: don't gate on isFetching — that ping-pongs the deck on every
-    // background refetch (focus, tab switch, etc) and triggers blank flashes.
+    const amenitiesKey = (preferences?.amenities ?? []).slice().sort().join(',');
+    const inputsKey = `${preferences?.purpose ?? ''}|${lat ?? ''}|${lng ?? ''}|${amenitiesKey}|${preferences?.priceRange ?? ''}|${purposeId ?? ''}`;
+
+    if (deckInputsRef.current !== inputsKey) {
+      deckInputsRef.current = inputsKey;
+      deckBuiltRef.current = false;
+    }
+
+    if (deckBuiltRef.current) return;
+    if (cafesQuery.isFetching || promotedQuery.isFetching) return;
 
     const allCafes: Cafe[] = cafesQuery.data
       ? cafesQuery.data.pages.flatMap((p) =>
@@ -102,15 +120,6 @@ export default function CardSwipeScreen() {
         )
       : [];
     const promotedCafes: Cafe[] = promotedQuery.data ?? [];
-
-    // Don't blank an existing deck when a refetch returns nothing transiently.
-    // Only commit empty if we genuinely have no data AND aren't fetching.
-    if (allCafes.length === 0 && promotedCafes.length === 0) {
-      if (!cafesQuery.isFetching && !promotedQuery.isFetching) {
-        setCafes((prev) => (prev.length === 0 ? prev : []));
-      }
-      return;
-    }
 
     const wizardPurpose = preferences?.purpose;
     const wantedSlug = wizardPurpose ? PURPOSE_SLUG_MAP[wizardPurpose] : null;
@@ -123,13 +132,27 @@ export default function CardSwipeScreen() {
         )
       : allCafes;
 
-    const regular = sorted.filter((c) => !c.promotionType).slice(0, 5);
+    const shortlistedIds = new Set(shortlist.map((c) => c.id));
+
+    const regular = sorted
+      .filter((c) => !c.promotionType && !shortlistedIds.has(c.id))
+      .slice(0, 7);
+
+    if (regular.length === 0) {
+      setCafes([]);
+      deckBuiltRef.current = true;
+      return;
+    }
 
     const promoA = promotedCafes.find(
-      (c) => c.promotionType === 'A' || c.activePromotionType === 'new_cafe',
+      (c) =>
+        (c.promotionType === 'A' || c.activePromotionType === 'new_cafe') &&
+        !shortlistedIds.has(c.id),
     );
     const promoB = promotedCafes.find(
-      (c) => c.promotionType === 'B' || c.activePromotionType === 'featured_promo',
+      (c) =>
+        (c.promotionType === 'B' || c.activePromotionType === 'featured_promo') &&
+        !shortlistedIds.has(c.id),
     );
 
     const deck: Cafe[] = [...regular];
@@ -140,30 +163,23 @@ export default function CardSwipeScreen() {
     if (promoA) insertAt(promoA);
     if (promoB) insertAt(promoB);
 
-    // Skip if the deck is unchanged (same length + same first id) to avoid
-    // remounting Swiper and resetting swipe progress on every refetch.
-    setCafes((prev) => {
-      if (
-        prev.length === deck.length &&
-        prev[0]?.id === deck[0]?.id &&
-        prev[prev.length - 1]?.id === deck[deck.length - 1]?.id
-      ) {
-        return prev;
-      }
-      return deck;
-    });
+    setCafes(deck);
+    deckBuiltRef.current = true;
   }, [
     cafesQuery.data,
-    promotedQuery.data,
     cafesQuery.isFetching,
+    promotedQuery.data,
     promotedQuery.isFetching,
     preferences?.purpose,
+    preferences?.amenities,
+    preferences?.priceRange,
+    purposeId,
     lat,
     lng,
+    sessionId,
+    shortlist,
   ]);
 
-  // Reset "all swiped" state when the screen regains focus so coming back to
-  // the Discover tab doesn't strand the user on the empty state.
   useFocusEffect(
     useCallback(() => {
       setAllSwiped(false);
@@ -173,10 +189,6 @@ export default function CardSwipeScreen() {
   const handleSwipedRight = (cardIndex: number) => {
     const cafe = cafes[cardIndex];
     if (!cafe || isInShortlist(cafe.id)) return;
-    // Defer state updates well past the swipe animation (~250ms). Touching
-    // ShortlistContext or toast state too early re-renders the parent while
-    // Swiper is still settling its internal stack — known cause of blank
-    // next/last cards in react-native-deck-swiper.
     setTimeout(() => {
       addToShortlist(cafe);
       setToastMsg(`Added "${cafe.name}" to Shortlist!`);
@@ -186,27 +198,25 @@ export default function CardSwipeScreen() {
 
   const handleSwipedAll = () => {
     setAllSwiped(true);
-    // Briefly show "No match?" then auto-navigate to the Explore (map) tab
-    // so the user is never stranded on the empty state. Works both when
-    // CardSwipe is reached via wizard (stack) and when it's the Discover tab.
     setTimeout(() => {
       navigation.navigate('MainTabs', { screen: 'Explore' });
     }, 1200);
   };
 
+  const handleSwiped = (cardIndex: number) => {
+    if (cardIndex >= cafes.length - 1) {
+      handleSwipedAll();
+    }
+  };
+
   const openShortlist = () => navigation.navigate('ShortlistModal');
 
-  // Memoized so its identity is stable across re-renders. Without this,
-  // every parent re-render (Toast state, ShortlistContext, etc) gives Swiper
-  // a new renderCard reference, which can confuse its internal stack and
-  // cause blank/missing cards.
   const renderCard = useCallback((cafe: Cafe) => {
     if (!cafe) return null;
     const saved = isInShortlist(cafe.id);
     const isTypeA = cafe.promotionType === 'A' || cafe.activePromotionType === 'new_cafe';
     const isTypeB = cafe.promotionType === 'B' || cafe.activePromotionType === 'featured_promo';
 
-    // Pick background photo: promo photo if provided, else cafe photo, else placeholder
     const bgPhoto =
       (isTypeB && (cafe.promotionContent?.promoPhoto || cafe.promoPhoto)) ||
       (isTypeA && cafe.newCafeContent?.promoPhoto) ||
@@ -229,14 +239,12 @@ export default function CardSwipeScreen() {
       >
         <Image source={{ uri: bgPhoto }} style={styles.cardImage} />
 
-        {/* Taller gradient for promo cards so rich text stays readable */}
         <LinearGradient
           colors={['transparent', 'rgba(0,0,0,0.55)', 'rgba(0,0,0,0.92)']}
           locations={[0, 0.4, 1]}
           style={[styles.gradient, (isTypeA || isTypeB) && styles.gradientPromo]}
         />
 
-        {/* Promo badge — top left */}
         {isTypeA && (
           <View style={[styles.promoBadgeLeft, styles.promoBadgeNew]}>
             <Text style={styles.promoBadgeText}>NEW!</Text>
@@ -248,7 +256,6 @@ export default function CardSwipeScreen() {
           </View>
         )}
 
-        {/* Match score badge — top right (only non-promo cards) */}
         {cafe.matchScore != null && !isTypeA && !isTypeB && (
           <View style={styles.matchBadge}>
             <Text style={styles.matchText}>{cafe.matchScore}%</Text>
@@ -256,14 +263,12 @@ export default function CardSwipeScreen() {
           </View>
         )}
 
-        {/* Distance badge — top right for promo cards */}
         {(isTypeA || isTypeB) && (
           <View style={styles.distanceBadge}>
             <Text style={styles.distanceBadgeText}>{cafe.distance} km</Text>
           </View>
         )}
 
-        {/* Shortlist heart — top left (non-promo) or below badge (promo) */}
         <TouchableOpacity
           style={[
             styles.heartBtn,
@@ -279,12 +284,9 @@ export default function CardSwipeScreen() {
           <Text style={styles.heartIcon}>{saved ? '★' : '☆'}</Text>
         </TouchableOpacity>
 
-        {/* Bottom content stack */}
         <View style={styles.cardBottom}>
-          {/* ── Type A: New Cafe rich content ──────────────────────────── */}
           {isTypeA && (
             <>
-              {/* Grand opening offer banner — amber strip */}
               {newCafe?.promoOffer ? (
                 <View style={styles.newCafeOfferBanner}>
                   <Text style={styles.newCafeOfferText} numberOfLines={2}>
@@ -302,7 +304,6 @@ export default function CardSwipeScreen() {
                 ) : (
                   <Text style={styles.cafeDistance}>{cafe.distance} km away</Text>
                 )}
-                {/* Keunggulan pills row */}
                 {newCafe?.keunggulan && newCafe.keunggulan.length > 0 && (
                   <View style={styles.tagsRow}>
                     {newCafe.keunggulan.slice(0, 3).map((k) => (
@@ -312,7 +313,6 @@ export default function CardSwipeScreen() {
                     ))}
                   </View>
                 )}
-                {/* Fallback: show purposes if no keunggulan */}
                 {(!newCafe?.keunggulan || newCafe.keunggulan.length === 0) && (
                   <View style={styles.tagsRow}>
                     {(cafe.purposes ?? []).slice(0, 2).map((p) => (
@@ -326,7 +326,6 @@ export default function CardSwipeScreen() {
             </>
           )}
 
-          {/* ── Type B: Featured Promo rich content ────────────────────── */}
           {isTypeB && (
             <>
               <View style={styles.promoBannerTall}>
@@ -339,7 +338,6 @@ export default function CardSwipeScreen() {
                   </Text>
                 ) : null}
 
-                {/* Valid hours chip */}
                 {(promoContent?.validHours || promoContent?.validDays) && (
                   <View style={styles.validHoursRowPromo}>
                     <View style={styles.validHoursChipWhite}>
@@ -367,7 +365,6 @@ export default function CardSwipeScreen() {
             </>
           )}
 
-          {/* ── Regular card ───────────────────────────────────────────── */}
           {!isTypeA && !isTypeB && (
             <View style={styles.cardInfo}>
               <Text style={styles.cafeName} numberOfLines={1}>{cafe.name}</Text>
@@ -436,43 +433,33 @@ export default function CardSwipeScreen() {
     );
   }
 
-  // Gate behind wizard — every Discover visit starts here. After complete or
-  // skip, the wizard hides and the swipe deck below renders.
   if (showWizard) {
     return (
       <WizardScreen
-        onComplete={() => setShowWizard(false)}
-        onSkip={() => setShowWizard(false)}
+        onComplete={dismissWizard}
+        onSkip={dismissWizard}
       />
     );
   }
 
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
         <Text style={styles.headerTitle}>
           Cafe<Text style={{ color: colors.accent }}>Match</Text>
         </Text>
       </View>
 
-      {/* Absolute container spans full available area; cardStyle centers the card.
-          `key` is tied to deck identity (length + first id) so background
-          refetches that don't actually change the deck don't remount Swiper
-          (which would reset swipe progress). */}
       <Swiper
-        key={`${cafes.length}-${cafes[0]?.id ?? 'empty'}`}
+        key={`${sessionId}-${cafes.length}-${cafes[0]?.id ?? 'empty'}`}
         ref={swiperRef}
         cards={cafes}
         renderCard={renderCard}
+        onSwiped={handleSwiped}
         onSwipedRight={handleSwipedRight}
         onSwipedAll={handleSwipedAll}
         cardIndex={0}
         backgroundColor="transparent"
-        // stackSize=2 + no opacity animation: empirically prevents the
-        // last-card blank bug in react-native-deck-swiper. With stackSize=3
-        // and animateCardOpacity enabled, the final card was rendering
-        // transparent because the lib expects 3 cards to compute fade.
         stackSize={2}
         stackSeparation={12}
         stackScale={4}
@@ -537,7 +524,6 @@ export default function CardSwipeScreen() {
         }}
       />
 
-      {/* Shortlist FAB */}
       <TouchableOpacity
         style={[styles.fab, { bottom: insets.bottom + 24 }]}
         onPress={openShortlist}
@@ -651,7 +637,6 @@ const styles = StyleSheet.create({
   heartBtnPromo: {
     left: undefined,
     right: spacing.md,
-    // Position heart below the distance badge on promo cards
     top: spacing.md + 42,
   },
 
@@ -682,7 +667,6 @@ const styles = StyleSheet.create({
   heartBtnActive: { backgroundColor: colors.accent },
   heartIcon: { fontSize: 22, color: colors.white },
 
-  // Fix 2: Single stacked bottom container
   cardBottom: {
     position: 'absolute',
     bottom: 0,
@@ -704,7 +688,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 2,
   },
-  // Type B: tall rich promo banner
   promoBannerTall: {
     backgroundColor: 'rgba(212, 139, 58, 0.95)',
     paddingHorizontal: spacing.md,
@@ -742,7 +725,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
-  // Type A: new cafe offer banner
   newCafeOfferBanner: {
     backgroundColor: 'rgba(232, 89, 60, 0.95)',
     paddingHorizontal: spacing.md,

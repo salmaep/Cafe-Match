@@ -20,7 +20,8 @@ import { useLocation } from '../context/LocationContext';
 import { useDestinations } from '../queries/destinations/use-destinations';
 import { useCafeFilters } from '../queries/cafes/use-cafe-filters';
 import { FACILITY_ICONS } from '../utils/facilities';
-import { WIZARD_PURPOSES, type PurposeOption } from '@shared/constants/purposes';
+import { WIZARD_PURPOSES, getPurposeBySlug } from '@shared/constants/purposes';
+import { usePurposes } from '../queries/purposes/use-purposes';
 
 const { width } = Dimensions.get('window');
 const TOTAL_STEPS = 4;
@@ -70,6 +71,21 @@ export default function WizardScreen({ onComplete, onSkip }: WizardScreenProps =
   const destinationsQuery = useDestinations();
   const filtersQuery = useCafeFilters();
   const filterGroups = filtersQuery.data?.groups ?? [];
+  // Mirror web StepPurpose: drive options from server `/purposes` so adding
+  // or renaming a purpose server-side reflects in the app without a release.
+  // While loading, fall back to the local WIZARD_PURPOSES so users still see
+  // a populated grid (matches the mobile "always-something-visible" feel).
+  const purposesQuery = usePurposes();
+  const wizardPurposes = (purposesQuery.data ?? []).map((p) => {
+    const local = getPurposeBySlug(p.slug);
+    return {
+      slug: p.slug,
+      label: p.name,
+      emoji: local?.emoji ?? '⭐',
+      tagline: p.description ?? local?.tagline ?? '',
+    };
+  });
+  const purposeOptions = wizardPurposes.length > 0 ? wizardPurposes : WIZARD_PURPOSES;
   const [step, setStep] = useState(0);
 
   const [purpose, setPurpose] = useState<Purpose | undefined>();
@@ -184,9 +200,9 @@ export default function WizardScreen({ onComplete, onSkip }: WizardScreenProps =
             showsVerticalScrollIndicator={false}
             style={{ flex: 1 }}
           >
-            {WIZARD_PURPOSES.map((p) => (
+            {purposeOptions.map((p) => (
               <TouchableOpacity
-                key={p.label}
+                key={p.slug}
                 style={[styles.optionCard, purpose === p.label && styles.optionCardActive]}
                 onPress={() => setPurpose(p.label as Purpose)}
               >
@@ -196,12 +212,14 @@ export default function WizardScreen({ onComplete, onSkip }: WizardScreenProps =
                 >
                   {p.label}
                 </Text>
-                <Text
-                  style={[styles.optionTagline, purpose === p.label && styles.optionTaglineActive]}
-                  numberOfLines={2}
-                >
-                  {p.tagline}
-                </Text>
+                {!!p.tagline && (
+                  <Text
+                    style={[styles.optionTagline, purpose === p.label && styles.optionTaglineActive]}
+                    numberOfLines={2}
+                  >
+                    {p.tagline}
+                  </Text>
+                )}
               </TouchableOpacity>
             ))}
           </ScrollView>

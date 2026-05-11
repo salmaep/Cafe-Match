@@ -53,7 +53,7 @@ export class ShortlistsService {
   async findByUser(userId: number) {
     const items = await this.shortlistsRepository.find({
       where: { userId },
-      relations: ['cafe', 'cafe.facilities', 'cafe.photos'],
+      relations: ['cafe', 'cafe.features', 'cafe.photos'],
       order: { createdAt: 'DESC' },
     });
     // Enrich each cafe with derived locality (district/city) so the client

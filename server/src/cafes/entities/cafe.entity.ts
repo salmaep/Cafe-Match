@@ -10,7 +10,7 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
-import { CafeFacility } from './cafe-facility.entity';
+import { CafeFeature } from './cafe-feature.entity';
 import { CafeMenu } from '../../menus/entities/cafe-menu.entity';
 import { CafePhoto } from '../../photos/entities/cafe-photo.entity';
 import { Bookmark } from '../../bookmarks/entities/bookmark.entity';
@@ -51,23 +51,6 @@ export class Cafe {
 
   @Column({ name: 'google_maps_url', length: 500, nullable: true })
   googleMapsUrl: string;
-
-  @Column({ name: 'wifi_available', default: false })
-  wifiAvailable: boolean;
-
-  @Column({
-    name: 'wifi_speed_mbps',
-    type: 'smallint',
-    unsigned: true,
-    nullable: true,
-  })
-  wifiSpeedMbps: number;
-
-  @Column({ name: 'has_mushola', default: false })
-  hasMushola: boolean;
-
-  @Column({ name: 'has_parking', default: false })
-  hasParking: boolean;
 
   @Column({ name: 'google_rating', type: 'decimal', precision: 2, scale: 1, nullable: true })
   googleRating: number;
@@ -179,8 +162,8 @@ export class Cafe {
   @JoinColumn({ name: 'owner_id' })
   owner: User;
 
-  @OneToMany(() => CafeFacility, (facility) => facility.cafe, { cascade: true })
-  facilities: CafeFacility[];
+  @OneToMany(() => CafeFeature, (feature) => feature.cafe, { cascade: true })
+  features: CafeFeature[];
 
   @OneToMany(() => CafeMenu, (menu) => menu.cafe)
   menus: CafeMenu[];

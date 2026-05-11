@@ -9,9 +9,6 @@ interface FormState {
   address: string;
   phone: string;
   description: string;
-  wifiAvailable: boolean;
-  wifiSpeedMbps: string;
-  hasMushola: boolean;
   priceRange: string;
   latitude: string;
   longitude: string;
@@ -22,9 +19,6 @@ const EMPTY_FORM: FormState = {
   address: '',
   phone: '',
   description: '',
-  wifiAvailable: false,
-  wifiSpeedMbps: '',
-  hasMushola: false,
   priceRange: '$$',
   latitude: '',
   longitude: '',
@@ -41,9 +35,6 @@ function cafeToForm(cafe: Cafe): FormState {
     address: cafe.address || '',
     phone: cafe.phone || '',
     description: cafe.description || '',
-    wifiAvailable: cafe.wifiAvailable || false,
-    wifiSpeedMbps: cafe.wifiSpeedMbps?.toString() || '',
-    hasMushola: cafe.hasMushola || false,
     priceRange: cafe.priceRange || '$$',
     latitude: cafe.latitude?.toString() || '',
     longitude: cafe.longitude?.toString() || '',
@@ -110,8 +101,6 @@ export default function CafeManagementPage() {
     setMessage(null);
     try {
       const data: any = { ...form };
-      if (data.wifiSpeedMbps) data.wifiSpeedMbps = Number(data.wifiSpeedMbps);
-      else delete data.wifiSpeedMbps;
       if (data.latitude) data.latitude = Number(data.latitude);
       else delete data.latitude;
       if (data.longitude) data.longitude = Number(data.longitude);
@@ -300,30 +289,9 @@ export default function CafeManagementPage() {
             </Field>
           </div>
 
-          <SectionHeader className="mt-6">Facilities</SectionHeader>
+          <SectionHeader className="mt-6">Pricing</SectionHeader>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Toggle
-              label="WiFi Available"
-              checked={form.wifiAvailable}
-              onChange={(v) => set('wifiAvailable', v)}
-            />
-            {form.wifiAvailable && (
-              <Field label="WiFi Speed (Mbps)">
-                <TextInput
-                  value={form.wifiSpeedMbps}
-                  onChange={(v) => set('wifiSpeedMbps', v.replace(/[^\d]/g, ''))}
-                  placeholder="50"
-                  inputMode="numeric"
-                  maxLength={4}
-                />
-              </Field>
-            )}
-            <Toggle
-              label="Mushola Available"
-              checked={form.hasMushola}
-              onChange={(v) => set('hasMushola', v)}
-            />
             <Field label="Price Range">
               <select
                 value={form.priceRange}
@@ -486,9 +454,15 @@ export default function CafeManagementPage() {
 function CafeSummary({ cafe, onEdit }: { cafe: Cafe; onEdit: () => void }) {
   const chips: string[] = [];
   if (cafe.priceRange) chips.push(`💰 ${cafe.priceRange}`);
-  if (cafe.wifiAvailable) chips.push(`📶 WiFi${cafe.wifiSpeedMbps ? ` ${cafe.wifiSpeedMbps}Mbps` : ''}`);
-  if (cafe.hasMushola) chips.push('🕌 Mushola');
-  if (cafe.hasParking) chips.push('🅿️ Parking');
+  const featureNames: string[] = Array.isArray(cafe.features)
+    ? cafe.features.slice(0, 4).map((f) => f.name)
+    : Array.isArray(cafe.facilities)
+      ? cafe.facilities
+          .slice(0, 4)
+          .map((f: any) => (typeof f === 'string' ? f : f?.name))
+          .filter(Boolean)
+      : [];
+  for (const name of featureNames) chips.push(`✓ ${name}`);
   if (cafe.latitude != null && cafe.longitude != null) {
     chips.push(`📍 ${Number(cafe.latitude).toFixed(4)}, ${Number(cafe.longitude).toFixed(4)}`);
   }
@@ -656,27 +630,6 @@ function TextInput({
   );
 }
 
-function Toggle({
-  label,
-  checked,
-  onChange,
-}: {
-  label: string;
-  checked: boolean;
-  onChange: (v: boolean) => void;
-}) {
-  return (
-    <label className="flex items-center justify-between gap-3 px-4 py-3 bg-[#F0EDE8] rounded-xl cursor-pointer hover:bg-[#E8E4DD] transition-colors">
-      <span className="text-sm font-semibold text-[#1C1C1A]">{label}</span>
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
-        className="w-5 h-5 accent-[#D48B3A] rounded"
-      />
-    </label>
-  );
-}
 
 function SmallLabel({ children }: { children: React.ReactNode }) {
   return (

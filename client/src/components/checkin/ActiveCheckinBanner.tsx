@@ -3,13 +3,23 @@ import { Link } from 'react-router-dom';
 import { useActiveCheckin } from '../../context/ActiveCheckinContext';
 import { cafeUrl } from '../../utils/cafeUrl';
 
-function formatDuration(ms: number): string {
-  const totalSec = Math.max(0, Math.floor(ms / 1000));
-  const h = Math.floor(totalSec / 3600);
-  const m = Math.floor((totalSec % 3600) / 60);
-  const s = totalSec % 60;
-  const pad = (n: number) => n.toString().padStart(2, '0');
-  return `${pad(h)}:${pad(m)}:${pad(s)}`;
+function pad2(n: number): string {
+  return n < 10 ? `0${n}` : `${n}`;
+}
+
+/** Format milliseconds as HH:MM:SS (live ticking duration). */
+function formatDurationHHMMSS(ms: number): string {
+  const safe = Math.max(0, ms);
+  const totalSec = Math.floor(safe / 1000);
+  const hours = Math.floor(totalSec / 3600);
+  const minutes = Math.floor((totalSec % 3600) / 60);
+  const seconds = totalSec % 60;
+  return `${pad2(hours)}:${pad2(minutes)}:${pad2(seconds)}`;
+}
+
+/** Format an absolute time as HH:MM:SS in the user's locale. */
+function formatClockHHMMSS(date: Date): string {
+  return `${pad2(date.getHours())}:${pad2(date.getMinutes())}:${pad2(date.getSeconds())}`;
 }
 
 export default function ActiveCheckinBanner() {
@@ -17,17 +27,19 @@ export default function ActiveCheckinBanner() {
   const [now, setNow] = useState(Date.now());
   const [submitting, setSubmitting] = useState(false);
 
-  // Tick every second so the HH:MM:SS counter stays live.
+  // Tick every second for live HH:MM:SS duration.
   useEffect(() => {
     if (!active) return;
-    const t = window.setInterval(() => setNow(Date.now()), 1000);
+    const t = window.setInterval(() => setNow(Date.now()), 1_000);
     return () => window.clearInterval(t);
   }, [active]);
 
   if (!active) return null;
 
-  const startedAt = new Date(active.checkInAt).getTime();
-  const duration = formatDuration(now - startedAt);
+  const startedDate = new Date(active.checkInAt);
+  const startedAt = startedDate.getTime();
+  const startedClock = formatClockHHMMSS(startedDate);
+  const duration = formatDurationHHMMSS(now - startedAt);
   const cafeName = active.cafeName || active.cafe?.name || 'Cafe';
   const detailUrl = active.cafe ? cafeUrl(active.cafe) : null;
 
@@ -51,13 +63,14 @@ export default function ActiveCheckinBanner() {
         <span className="relative rounded-full w-2.5 h-2.5 bg-emerald-300" />
       </span>
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2 min-w-0">
+        <div className="flex items-baseline gap-2 min-w-0">
           <span className="text-[10px] font-extrabold tracking-[0.15em] uppercase text-emerald-200 shrink-0">
-            Checked In
+            Check-in {startedClock}
           </span>
-          <span className="text-sm font-extrabold text-white tabular-nums shrink-0">
-            {duration}
+          <span className="text-[11px] text-white/85 tabular-nums shrink-0">
+            · Durasi {duration}
           </span>
+          <span className="text-[11px] text-white/85 tabular-nums shrink-0">· {duration}</span>
         </div>
         <div className="text-xs font-semibold text-white/90 truncate mt-0.5">{cafeName}</div>
       </div>

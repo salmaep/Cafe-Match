@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryStates, parseAsInteger, parseAsFloat, parseAsString, parseAsArrayOf } from 'nuqs';
 import type { WizardPreferences } from '../../types/wizard';
 import type { PurposeSlug } from '../../constants/purposes';
 import { usePreferences } from '../../context/PreferencesContext';
 import { useGeolocation } from '../../hooks/useGeolocation';
-import { parseCoords } from '../../utils/parseCoords';
 import { TOTAL_STEPS } from './wizardData';
 import StepPurpose from './StepPurpose';
 import StepLocation from './StepLocation';
@@ -12,34 +12,52 @@ import StepRadius from './StepRadius';
 import StepAmenities from './StepAmenities';
 
 interface Props {
-  // Optional callback fired after wizard finishes. When provided, Wizard does
-  // not navigate — caller is responsible for transitioning. When omitted,
-  // falls back to navigate('/discover') for backwards compat.
   onComplete?: () => void;
   onSkip?: () => void;
 }
 
 export default function Wizard({ onComplete, onSkip }: Props = {}) {
   const navigate = useNavigate();
-  const { setPreferences, setWizardCompleted } = usePreferences();
+  const { setPreferences, setWizardCompleted, serverPurposes } = usePreferences();
   const { latitude: userLat, longitude: userLng } = useGeolocation();
 
-  const [step, setStep] = useState(0);
-  const [purpose, setPurpose] = useState<PurposeSlug | undefined>();
-  const [locationType, setLocationType] = useState<'current' | 'custom'>('current');
-  const [customAddress, setCustomAddress] = useState('');
-  const [customLat, setCustomLat] = useState<number | null>(null);
-  const [customLng, setCustomLng] = useState<number | null>(null);
-  const [radiusVal, setRadiusVal] = useState(1);
-  const [amenities, setAmenities] = useState<string[]>([]);
-  const [priceRange, setPriceRange] = useState<string>('');
+  // URL: /discover?step=0&vibe=date&lat=-6.9175&lng=107.6191&r=3&f=Romantic,Quiet&price=$$
+  const [params, setParams] = useQueryStates(
+    {
+      step:  parseAsInteger.withDefault(0),
+      vibe:  parseAsString.withDefault(''),
+      lat:   parseAsFloat,
+      lng:   parseAsFloat,
+      r:     parseAsInteger.withDefault(1),
+      f:     parseAsArrayOf(parseAsString).withDefault([]),
+      price: parseAsString.withDefault(''),
+    },
+    { history: 'push' },
+  );
+
+  const purpose = (params.vibe || undefined) as PurposeSlug | undefined;
+  const step    = params.step;
+
+  const preselectedFromPurpose = useMemo<string[]>(() => {
+    if (!purpose) return [];
+    const found = serverPurposes.find((p) => p.slug === purpose);
+    if (!found?.requirements) return [];
+    return found.requirements
+      .map((r) => r.feature?.name)
+      .filter((n): n is string => typeof n === 'string' && n.length > 0);
+  }, [purpose, serverPurposes]);
+
+  useEffect(() => {
+    if (preselectedFromPurpose.length === 0) return;
+    setParams({ f: preselectedFromPurpose });
+  }, [preselectedFromPurpose]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleNext = () => {
-    if (step < TOTAL_STEPS - 1) setStep(step + 1);
+    if (step < TOTAL_STEPS - 1) setParams({ step: step + 1 });
     else handleFinish();
   };
   const handleBack = () => {
-    if (step > 0) setStep(step - 1);
+    if (step > 0) setParams({ step: step - 1 });
   };
 
   const handleSkip = () => {
@@ -50,18 +68,19 @@ export default function Wizard({ onComplete, onSkip }: Props = {}) {
   };
 
   const handleFinish = () => {
-    const useCustomCoords = locationType === 'custom' && customLat !== null && customLng !== null;
+    const lat = params.lat ?? userLat;
+    const lng = params.lng ?? userLng;
     const prefs: WizardPreferences = {
       purpose,
       location: {
-        type: locationType,
-        latitude: useCustomCoords ? customLat : userLat,
-        longitude: useCustomCoords ? customLng : userLng,
-        label: locationType === 'custom' ? customAddress || 'Custom Destination' : 'Current Location',
+        type: params.lat != null ? 'custom' : 'current',
+        latitude: lat,
+        longitude: lng,
+        label: params.lat != null ? `${lat?.toFixed(4)}, ${lng?.toFixed(4)}` : 'Current Location',
       },
-      radius: radiusVal,
-      amenities: amenities.length > 0 ? amenities : undefined,
-      priceRange: priceRange || undefined,
+      radius: params.r,
+      amenities: params.f.length > 0 ? params.f : undefined,
+      priceRange: params.price || undefined,
     };
     setPreferences(prefs);
     setWizardCompleted(true);
@@ -69,12 +88,9 @@ export default function Wizard({ onComplete, onSkip }: Props = {}) {
     else navigate('/discover', { replace: true });
   };
 
-
-  // Block "Next" on Step 2 (location) when user picked custom but coords are empty.
+  // Block Next on step 1 only when lat/lng completely missing (no geolocation either)
   const isNextDisabled =
-    step === 1 &&
-    locationType === 'custom' &&
-    (customLat === null || customLng === null);
+    step === 1 && params.lat === null && params.lng === null && userLat === null;
 
   return (
     <div className="flex flex-col bg-[#FAF9F6] min-h-screen md:min-h-[calc(100vh-4rem)]">
@@ -115,39 +131,34 @@ export default function Wizard({ onComplete, onSkip }: Props = {}) {
 
       <main className="flex-1 overflow-y-auto">
         <div className="max-w-2xl w-full mx-auto">
-          {step === 0 && <StepPurpose value={purpose} onChange={setPurpose} />}
-          {step === 1 && (
-            <StepLocation
-              locationType={locationType}
-              customAddress={customAddress}
-              customLat={customLat}
-              customLng={customLng}
-              onTypeChange={setLocationType}
-              onAddressChange={(text) => {
-                setCustomAddress(text);
-                const coords = parseCoords(text);
-                if (coords) {
-                  setCustomLat(coords.lat);
-                  setCustomLng(coords.lng);
-                } else {
-                  setCustomLat(null);
-                  setCustomLng(null);
-                }
-              }}
-              onSuggestionPick={(s) => {
-                setCustomAddress(s.label);
-                setCustomLat(s.latitude);
-                setCustomLng(s.longitude);
-              }}
+          {step === 0 && (
+            <StepPurpose
+              value={purpose}
+              onChange={(slug) => setParams({ vibe: slug, step: 1 })}
             />
           )}
-          {step === 2 && <StepRadius value={radiusVal} onChange={setRadiusVal} />}
+          {step === 1 && (
+            <StepLocation
+              lat={params.lat}
+              lng={params.lng}
+              userLat={userLat}
+              userLng={userLng}
+              onChange={(lat, lng) => setParams({ lat, lng })}
+            />
+          )}
+          {step === 2 && (
+            <StepRadius
+              value={params.r}
+              onChange={(v) => setParams({ r: v })}
+            />
+          )}
           {step === 3 && (
             <StepAmenities
-              facilities={amenities}
-              onFacilitiesChange={setAmenities}
-              priceRange={priceRange}
-              onPriceRangeChange={setPriceRange}
+              facilities={params.f}
+              onFacilitiesChange={(next) => setParams({ f: next })}
+              priceRange={params.price}
+              onPriceRangeChange={(v) => setParams({ price: v })}
+              autoSelectedKeys={preselectedFromPurpose}
             />
           )}
         </div>

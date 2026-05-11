@@ -51,8 +51,8 @@ export class RecapsService {
     const purposeRows = await this.dataSource.query(
       `SELECT p.name, COUNT(DISTINCT ck.cafe_id) AS cnt
        FROM checkins ck
-       JOIN cafe_facilities cf ON cf.cafe_id = ck.cafe_id
-       JOIN purpose_requirements pr ON pr.facility_key = cf.facility_key AND pr.is_mandatory = TRUE
+       JOIN cafe_features cf ON cf.cafe_id = ck.cafe_id
+       JOIN purpose_requirements pr ON pr.feature_id = cf.feature_id AND pr.is_mandatory = TRUE
        JOIN purposes p ON p.id = pr.purpose_id
        WHERE ck.user_id = ? AND ck.check_in_at BETWEEN ? AND ?
        GROUP BY p.name ORDER BY cnt DESC LIMIT 1`,

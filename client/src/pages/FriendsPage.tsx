@@ -2,6 +2,11 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { friendsApi, type Friend, type FriendRequest } from '../api/friends.api';
+import {
+  getHiddenFriends,
+  hideFriend,
+  unhideFriend,
+} from '../utils/hiddenFriends';
 
 type Tab = 'friends' | 'requests' | 'add';
 
@@ -15,6 +20,21 @@ export default function FriendsPage() {
   const [sending, setSending] = useState(false);
   const [msg, setMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
   const [copied, setCopied] = useState(false);
+  const [hidden, setHidden] = useState<Set<number>>(() => getHiddenFriends());
+
+  const toggleHidden = (friendId: number) => {
+    setHidden((prev) => {
+      const next = new Set(prev);
+      if (next.has(friendId)) {
+        next.delete(friendId);
+        unhideFriend(friendId);
+      } else {
+        next.add(friendId);
+        hideFriend(friendId);
+      }
+      return next;
+    });
+  };
 
   const load = () => {
     setLoading(true);
@@ -141,20 +161,52 @@ export default function FriendsPage() {
                 subtitle="Tambahkan teman lewat kode pertemanan"
               />
             ) : (
-              friends.map((f) => (
-                <div
-                  key={f.id}
-                  className="flex items-center gap-3 bg-white rounded-2xl p-3 border border-[#F0EDE8]"
-                >
-                  <div className="w-12 h-12 rounded-full bg-[#D48B3A] text-white font-extrabold flex items-center justify-center">
-                    {f.name[0]?.toUpperCase()}
+              friends.map((f) => {
+                const isHidden = hidden.has(f.id);
+                return (
+                  <div
+                    key={f.id}
+                    className={`flex items-center gap-3 bg-white rounded-2xl p-3 border transition-colors ${
+                      isHidden
+                        ? 'border-[#E0DCD3] opacity-60'
+                        : 'border-[#F0EDE8]'
+                    }`}
+                  >
+                    <div
+                      className={`w-12 h-12 rounded-full font-extrabold flex items-center justify-center ${
+                        isHidden
+                          ? 'bg-[#9CA3AF] text-white'
+                          : 'bg-[#D48B3A] text-white'
+                      }`}
+                    >
+                      {f.name[0]?.toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-[#1C1C1A] truncate flex items-center gap-2">
+                        <span className="truncate">{f.name}</span>
+                        {isHidden && (
+                          <span className="text-[10px] font-bold text-[#8A8880] bg-[#F0EDE8] px-1.5 py-0.5 rounded-full shrink-0">
+                            Disembunyikan
+                          </span>
+                        )}
+                      </p>
+                      <p className="text-xs text-[#8A8880] truncate">🎫 {f.friendCode}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => toggleHidden(f.id)}
+                      title={
+                        isHidden
+                          ? 'Tampilkan kembali di profil'
+                          : 'Sembunyikan dari profil saya'
+                      }
+                      className="px-3 py-1.5 rounded-full text-xs font-bold border border-[#E8E4DD] text-[#5C5A52] hover:border-[#D48B3A] hover:text-[#D48B3A] transition-colors"
+                    >
+                      {isHidden ? '👁 Tampilkan' : '🚫 Sembunyikan'}
+                    </button>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-[#1C1C1A] truncate">{f.name}</p>
-                    <p className="text-xs text-[#8A8880] truncate">🎫 {f.friendCode}</p>
-                  </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         ) : tab === 'requests' ? (

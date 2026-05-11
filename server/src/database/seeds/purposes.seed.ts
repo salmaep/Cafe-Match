@@ -14,9 +14,9 @@ export async function seedPurposes(dataSource: DataSource): Promise<void> {
       icon: 'coffee',
       displayOrder: 1,
       requirements: [
-        { facilityKey: 'quiet_atmosphere', isMandatory: true, weight: 5 },
-        { facilityKey: 'cozy_seating', isMandatory: false, weight: 4 },
-        { facilityKey: 'outdoor_seating', isMandatory: false, weight: 2 },
+        { featureName: 'quiet_atmosphere', isMandatory: true, weight: 5 },
+        { featureName: 'cozy_seating', isMandatory: false, weight: 4 },
+        { featureName: 'outdoor_seating', isMandatory: false, weight: 2 },
       ],
     },
     {
@@ -26,10 +26,10 @@ export async function seedPurposes(dataSource: DataSource): Promise<void> {
       icon: 'heart',
       displayOrder: 2,
       requirements: [
-        { facilityKey: 'ambient_lighting', isMandatory: true, weight: 5 },
-        { facilityKey: 'intimate_seating', isMandatory: true, weight: 5 },
-        { facilityKey: 'quiet_atmosphere', isMandatory: false, weight: 3 },
-        { facilityKey: 'outdoor_seating', isMandatory: false, weight: 2 },
+        { featureName: 'ambient_lighting', isMandatory: true, weight: 5 },
+        { featureName: 'intimate_seating', isMandatory: true, weight: 5 },
+        { featureName: 'quiet_atmosphere', isMandatory: false, weight: 3 },
+        { featureName: 'outdoor_seating', isMandatory: false, weight: 2 },
       ],
     },
     {
@@ -39,10 +39,10 @@ export async function seedPurposes(dataSource: DataSource): Promise<void> {
       icon: 'users',
       displayOrder: 3,
       requirements: [
-        { facilityKey: 'kid_friendly', isMandatory: true, weight: 5 },
-        { facilityKey: 'spacious', isMandatory: true, weight: 4 },
-        { facilityKey: 'noise_tolerant', isMandatory: false, weight: 3 },
-        { facilityKey: 'parking', isMandatory: false, weight: 3 },
+        { featureName: 'kid_friendly', isMandatory: true, weight: 5 },
+        { featureName: 'spacious', isMandatory: true, weight: 4 },
+        { featureName: 'noise_tolerant', isMandatory: false, weight: 3 },
+        { featureName: 'parking', isMandatory: false, weight: 3 },
       ],
     },
     {
@@ -52,11 +52,11 @@ export async function seedPurposes(dataSource: DataSource): Promise<void> {
       icon: 'book-open',
       displayOrder: 4,
       requirements: [
-        { facilityKey: 'large_tables', isMandatory: true, weight: 5 },
-        { facilityKey: 'strong_wifi', isMandatory: true, weight: 4 },
-        { facilityKey: 'power_outlets', isMandatory: false, weight: 3 },
-        { facilityKey: 'whiteboard', isMandatory: false, weight: 3 },
-        { facilityKey: 'bookable_space', isMandatory: false, weight: 2 },
+        { featureName: 'large_tables', isMandatory: true, weight: 5 },
+        { featureName: 'strong_wifi', isMandatory: true, weight: 4 },
+        { featureName: 'power_outlets', isMandatory: false, weight: 3 },
+        { featureName: 'whiteboard', isMandatory: false, weight: 3 },
+        { featureName: 'bookable_space', isMandatory: false, weight: 2 },
       ],
     },
     {
@@ -66,11 +66,11 @@ export async function seedPurposes(dataSource: DataSource): Promise<void> {
       icon: 'laptop',
       displayOrder: 5,
       requirements: [
-        { facilityKey: 'strong_wifi', isMandatory: true, weight: 5 },
-        { facilityKey: 'power_outlets', isMandatory: true, weight: 5 },
-        { facilityKey: 'quiet_atmosphere', isMandatory: false, weight: 3 },
-        { facilityKey: 'large_tables', isMandatory: false, weight: 2 },
-        { facilityKey: 'cozy_seating', isMandatory: false, weight: 1 },
+        { featureName: 'strong_wifi', isMandatory: true, weight: 5 },
+        { featureName: 'power_outlets', isMandatory: true, weight: 5 },
+        { featureName: 'quiet_atmosphere', isMandatory: false, weight: 3 },
+        { featureName: 'large_tables', isMandatory: false, weight: 2 },
+        { featureName: 'cozy_seating', isMandatory: false, weight: 1 },
       ],
     },
     {
@@ -80,11 +80,11 @@ export async function seedPurposes(dataSource: DataSource): Promise<void> {
       icon: 'briefcase',
       displayOrder: 6,
       requirements: [
-        { facilityKey: 'bookable_space', isMandatory: false, weight: 4 },
-        { facilityKey: 'strong_wifi', isMandatory: true, weight: 5 },
-        { facilityKey: 'quiet_atmosphere', isMandatory: false, weight: 4 },
-        { facilityKey: 'large_tables', isMandatory: false, weight: 3 },
-        { facilityKey: 'power_outlets', isMandatory: false, weight: 2 },
+        { featureName: 'bookable_space', isMandatory: false, weight: 4 },
+        { featureName: 'strong_wifi', isMandatory: true, weight: 5 },
+        { featureName: 'quiet_atmosphere', isMandatory: false, weight: 4 },
+        { featureName: 'large_tables', isMandatory: false, weight: 3 },
+        { featureName: 'power_outlets', isMandatory: false, weight: 2 },
       ],
     },
     {
@@ -94,11 +94,11 @@ export async function seedPurposes(dataSource: DataSource): Promise<void> {
       icon: 'lightbulb',
       displayOrder: 7,
       requirements: [
-        { facilityKey: 'large_tables', isMandatory: true, weight: 5 },
-        { facilityKey: 'whiteboard', isMandatory: false, weight: 4 },
-        { facilityKey: 'spacious', isMandatory: false, weight: 4 },
-        { facilityKey: 'noise_tolerant', isMandatory: false, weight: 3 },
-        { facilityKey: 'strong_wifi', isMandatory: false, weight: 2 },
+        { featureName: 'large_tables', isMandatory: true, weight: 5 },
+        { featureName: 'whiteboard', isMandatory: false, weight: 4 },
+        { featureName: 'spacious', isMandatory: false, weight: 4 },
+        { featureName: 'noise_tolerant', isMandatory: false, weight: 3 },
+        { featureName: 'strong_wifi', isMandatory: false, weight: 2 },
       ],
     },
     {
@@ -108,10 +108,10 @@ export async function seedPurposes(dataSource: DataSource): Promise<void> {
       icon: 'coffee-cup',
       displayOrder: 8,
       requirements: [
-        { facilityKey: 'cozy_seating', isMandatory: true, weight: 5 },
-        { facilityKey: 'noise_tolerant', isMandatory: false, weight: 3 },
-        { facilityKey: 'outdoor_seating', isMandatory: false, weight: 3 },
-        { facilityKey: 'ambient_lighting', isMandatory: false, weight: 2 },
+        { featureName: 'cozy_seating', isMandatory: true, weight: 5 },
+        { featureName: 'noise_tolerant', isMandatory: false, weight: 3 },
+        { featureName: 'outdoor_seating', isMandatory: false, weight: 3 },
+        { featureName: 'ambient_lighting', isMandatory: false, weight: 2 },
       ],
     },
     {
@@ -121,10 +121,10 @@ export async function seedPurposes(dataSource: DataSource): Promise<void> {
       icon: 'book',
       displayOrder: 9,
       requirements: [
-        { facilityKey: 'quiet_atmosphere', isMandatory: true, weight: 5 },
-        { facilityKey: 'cozy_seating', isMandatory: false, weight: 4 },
-        { facilityKey: 'ambient_lighting', isMandatory: false, weight: 3 },
-        { facilityKey: 'power_outlets', isMandatory: false, weight: 1 },
+        { featureName: 'quiet_atmosphere', isMandatory: true, weight: 5 },
+        { featureName: 'cozy_seating', isMandatory: false, weight: 4 },
+        { featureName: 'ambient_lighting', isMandatory: false, weight: 3 },
+        { featureName: 'power_outlets', isMandatory: false, weight: 1 },
       ],
     },
     {
@@ -134,11 +134,11 @@ export async function seedPurposes(dataSource: DataSource): Promise<void> {
       icon: 'party',
       displayOrder: 10,
       requirements: [
-        { facilityKey: 'spacious', isMandatory: true, weight: 5 },
-        { facilityKey: 'large_tables', isMandatory: false, weight: 4 },
-        { facilityKey: 'outdoor_seating', isMandatory: false, weight: 3 },
-        { facilityKey: 'noise_tolerant', isMandatory: false, weight: 3 },
-        { facilityKey: 'ambient_lighting', isMandatory: false, weight: 2 },
+        { featureName: 'spacious', isMandatory: true, weight: 5 },
+        { featureName: 'large_tables', isMandatory: false, weight: 4 },
+        { featureName: 'outdoor_seating', isMandatory: false, weight: 3 },
+        { featureName: 'noise_tolerant', isMandatory: false, weight: 3 },
+        { featureName: 'ambient_lighting', isMandatory: false, weight: 2 },
       ],
     },
     {
@@ -149,10 +149,10 @@ export async function seedPurposes(dataSource: DataSource): Promise<void> {
       displayOrder: 11,
       requirements: [
         // No mandatory — any cafe with seating qualifies. Score driven by amenities.
-        { facilityKey: 'cozy_seating', isMandatory: false, weight: 3 },
-        { facilityKey: 'parking', isMandatory: false, weight: 3 },
-        { facilityKey: 'payment_qris', isMandatory: false, weight: 2 },
-        { facilityKey: 'payment_ewallet', isMandatory: false, weight: 2 },
+        { featureName: 'cozy_seating', isMandatory: false, weight: 3 },
+        { featureName: 'parking', isMandatory: false, weight: 3 },
+        { featureName: 'payment_qris', isMandatory: false, weight: 2 },
+        { featureName: 'payment_ewallet', isMandatory: false, weight: 2 },
       ],
     },
     {
@@ -162,10 +162,10 @@ export async function seedPurposes(dataSource: DataSource): Promise<void> {
       icon: 'camera',
       displayOrder: 12,
       requirements: [
-        { facilityKey: 'ambient_lighting', isMandatory: true, weight: 5 },
-        { facilityKey: 'outdoor_seating', isMandatory: false, weight: 4 },
-        { facilityKey: 'cozy_seating', isMandatory: false, weight: 3 },
-        { facilityKey: 'spacious', isMandatory: false, weight: 2 },
+        { featureName: 'ambient_lighting', isMandatory: true, weight: 5 },
+        { featureName: 'outdoor_seating', isMandatory: false, weight: 4 },
+        { featureName: 'cozy_seating', isMandatory: false, weight: 3 },
+        { featureName: 'spacious', isMandatory: false, weight: 2 },
       ],
     },
   ];
@@ -179,16 +179,11 @@ export async function seedPurposes(dataSource: DataSource): Promise<void> {
       purpose = await purposeRepo.save(purpose);
     }
 
-    for (const req of requirements) {
-      const existing = await requirementRepo.findOne({
-        where: { purposeId: purpose.id, facilityKey: req.facilityKey },
-      });
-      if (!existing) {
-        await requirementRepo.save(
-          requirementRepo.create({ ...req, purposeId: purpose.id }),
-        );
-      }
-    }
+    // Legacy seed disabled — purpose_requirements now uses feature_id (FK).
+    // Use POST /admin/purposes/sync API instead. The `requirements` list is
+    // kept in this file as historical reference data only.
+    void requirementRepo;
+    void requirements;
   }
 
   console.log('Purposes and requirements seeded successfully');

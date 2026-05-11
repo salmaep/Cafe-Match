@@ -67,8 +67,8 @@ export class AchievementsService {
     const purposeCounts: { purpose_slug: string; cnt: string }[] = await this.dataSource.query(
       `SELECT pr.purpose_slug, COUNT(DISTINCT ck.cafe_id) AS cnt
        FROM checkins ck
-       JOIN cafe_facilities cf ON cf.cafe_id = ck.cafe_id
-       JOIN purpose_requirements pr2 ON pr2.facility_key = cf.facility_key AND pr2.is_mandatory = TRUE
+       JOIN cafe_features cf ON cf.cafe_id = ck.cafe_id
+       JOIN purpose_requirements pr2 ON pr2.feature_id = cf.feature_id AND pr2.is_mandatory = TRUE
        JOIN purposes p ON p.id = pr2.purpose_id
        JOIN (SELECT DISTINCT slug AS purpose_slug FROM purposes) pr ON pr.purpose_slug = p.slug
        WHERE ck.user_id = ? AND ck.check_in_at >= ?

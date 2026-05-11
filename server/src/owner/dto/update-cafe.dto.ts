@@ -18,18 +18,6 @@ export class UpdateCafeDto {
   description?: string;
 
   @IsOptional()
-  @IsBoolean()
-  wifiAvailable?: boolean;
-
-  @IsOptional()
-  @IsNumber()
-  wifiSpeedMbps?: number;
-
-  @IsOptional()
-  @IsBoolean()
-  hasMushola?: boolean;
-
-  @IsOptional()
   openingHours?: Record<string, string>;
 
   @IsOptional()

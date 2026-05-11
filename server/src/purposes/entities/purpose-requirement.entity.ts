@@ -5,11 +5,13 @@ import {
   ManyToOne,
   JoinColumn,
   Unique,
+  Index,
 } from 'typeorm';
 import { Purpose } from './purpose.entity';
+import { Feature } from '../../cafes/entities/feature.entity';
 
 @Entity('purpose_requirements')
-@Unique(['purpose', 'facilityKey'])
+@Unique(['purpose', 'feature'])
 export class PurposeRequirement {
   @PrimaryGeneratedColumn({ unsigned: true })
   id: number;
@@ -17,8 +19,9 @@ export class PurposeRequirement {
   @Column({ name: 'purpose_id', unsigned: true })
   purposeId: number;
 
-  @Column({ name: 'facility_key', length: 50 })
-  facilityKey: string;
+  @Index()
+  @Column({ name: 'feature_id', unsigned: true })
+  featureId: number;
 
   @Column({ name: 'is_mandatory', default: false })
   isMandatory: boolean;
@@ -31,4 +34,8 @@ export class PurposeRequirement {
   })
   @JoinColumn({ name: 'purpose_id' })
   purpose: Purpose;
+
+  @ManyToOne(() => Feature, { onDelete: 'CASCADE', eager: true })
+  @JoinColumn({ name: 'feature_id' })
+  feature: Feature;
 }

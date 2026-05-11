@@ -1,26 +1,41 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { reviewsApi } from '../../api/reviews.api';
-
-const MOODS = [
-  { key: 'me-time', label: 'Me Time', emoji: '🧘' },
-  { key: 'date', label: 'Date', emoji: '💑' },
-  { key: 'family', label: 'Family Time', emoji: '👨‍👩‍👧' },
-  { key: 'group-work', label: 'Group Study', emoji: '📚' },
-  { key: 'wfc', label: 'WFC', emoji: '💻' },
-];
-
-const FACILITIES = [
-  { key: 'wifi', label: 'WiFi', icon: '📶' },
-  { key: 'power_outlet', label: 'Power Outlet', icon: '🔌' },
-  { key: 'mushola', label: 'Mushola', icon: '🕌' },
-  { key: 'parking', label: 'Parking', icon: '🅿️' },
-  { key: 'kid_friendly', label: 'Kid-Friendly', icon: '👶' },
-  { key: 'quiet_atmosphere', label: 'Quiet', icon: '🤫' },
-  { key: 'large_tables', label: 'Large Tables', icon: '🪑' },
-  { key: 'outdoor_area', label: 'Outdoor', icon: '🌿' },
-];
+import { cafesApi, type FilterGroup } from '../../api/cafes.api';
+import { usePreferences } from '../../context/PreferencesContext';
+import { FACILITY_ICONS } from '../../utils/facilities';
 
 const TOTAL_STEPS = 5;
+
+interface MoodOption {
+  key: string;
+  label: string;
+  emoji: string;
+}
+interface FacilityOption {
+  key: string;
+  label: string;
+  icon: string;
+}
+
+// Module-level cache so we don't re-hit /cafes/filters every time the modal opens.
+let facilityCatalogCache: FilterGroup[] | null = null;
+let facilityCatalogPromise: Promise<FilterGroup[]> | null = null;
+
+async function loadFacilityCatalog(): Promise<FilterGroup[]> {
+  if (facilityCatalogCache) return facilityCatalogCache;
+  if (facilityCatalogPromise) return facilityCatalogPromise;
+  facilityCatalogPromise = cafesApi
+    .getFilters()
+    .then((res) => {
+      facilityCatalogCache = res.data?.groups ?? [];
+      return facilityCatalogCache;
+    })
+    .catch((err) => {
+      facilityCatalogPromise = null;
+      throw err;
+    });
+  return facilityCatalogPromise;
+}
 
 type MediaItem = { url: string; type: 'photo' | 'video'; name: string };
 
@@ -46,6 +61,42 @@ export default function WriteReviewModal({
   const [hoverRating, setHoverRating] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Mood chips ← /purposes (cached in PreferencesContext, loaded once on app mount)
+  const { serverPurposes } = usePreferences();
+  const moodOptions: MoodOption[] = useMemo(
+    () =>
+      serverPurposes.map((p) => ({
+        key: p.slug,
+        label: p.name,
+        emoji: p.icon ?? '⭐',
+      })),
+    [serverPurposes],
+  );
+
+  // Facility chips ← /cafes/filters (cached in module-level)
+  const [facilityGroups, setFacilityGroups] = useState<FilterGroup[] | null>(facilityCatalogCache);
+  useEffect(() => {
+    if (facilityCatalogCache) {
+      setFacilityGroups(facilityCatalogCache);
+      return;
+    }
+    let cancelled = false;
+    loadFacilityCatalog()
+      .then((g) => { if (!cancelled) setFacilityGroups(g); })
+      .catch(() => { if (!cancelled) setFacilityGroups([]); });
+    return () => { cancelled = true; };
+  }, []);
+  const facilityOptions: FacilityOption[] = useMemo(() => {
+    const groups = facilityGroups ?? [];
+    return groups.flatMap((g) =>
+      g.options.map((o) => ({
+        key: o.key,
+        label: o.label,
+        icon: FACILITY_ICONS[o.key] ?? '•',
+      })),
+    );
+  }, [facilityGroups]);
 
   // Lock body scroll while modal is open
   useEffect(() => {
@@ -183,7 +234,7 @@ export default function WriteReviewModal({
               hint="Pilih satu yang paling cocok"
             >
               <div className="grid grid-cols-2 gap-3">
-                {MOODS.map((m) => {
+                {moodOptions.map((m) => {
                   const active = mood === m.key;
                   return (
                     <button
@@ -217,7 +268,7 @@ export default function WriteReviewModal({
               hint="Pilih semua yang relevan · opsional"
             >
               <div className="flex flex-wrap gap-2">
-                {FACILITIES.map((f) => {
+                {facilityOptions.map((f) => {
                   const active = facilities.includes(f.key);
                   return (
                     <button

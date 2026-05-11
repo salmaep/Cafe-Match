@@ -22,6 +22,7 @@ import { formatRating } from '../utils/rating';
 import { cleanAddress } from '../utils/address';
 import CheckInButton from '../components/checkin/CheckInButton';
 import CafeLeaderboard from '../components/checkin/CafeLeaderboard';
+import VoteSection from '../components/cafe/VoteSection';
 
 const REVIEW_CATEGORY_LABELS: Record<string, string> = {
   overall: '⭐ Rating',
@@ -295,7 +296,7 @@ export default function CafeDetailPage() {
   const seoImage = validPhotos[0]?.url ?? placeholderImage(cafe.id);
   const seoDescription =
     cafe.description ??
-    `${cafe.name} — ${cafe.address}. ${cafe.wifiAvailable ? 'WiFi available. ' : ''}${
+    `${cafe.name} — ${cafe.address}. ${
       cafe.priceRange ? `Price range ${cafe.priceRange}.` : ''
     }`.trim();
   const jsonLd: Record<string, unknown> = {
@@ -660,6 +661,9 @@ export default function CafeDetailPage() {
               </button>
             )}
           </Section>
+
+          {/* Vote section — community vote for which purposes this cafe fits */}
+          <VoteSection cafeId={cafe.id} />
 
           {/* Leaderboard — top check-in users at this cafe */}
           <Section title="🏆 Top Check-in">

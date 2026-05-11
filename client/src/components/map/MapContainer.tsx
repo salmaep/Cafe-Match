@@ -306,21 +306,20 @@ export default function MapView({ center, cafes, radius, onMapClick }: Props) {
                   {activeCafe.address}
                 </div>
                 <div className="flex flex-wrap gap-1 mt-2">
-                  {activeCafe.wifiAvailable && (
-                    <span className="bg-[#F0EDE8] text-[#8A8880] text-[10px] font-medium rounded-full px-1.5 py-0.5">
-                      📶 WiFi
+                  {(Array.isArray(activeCafe.facilities)
+                    ? activeCafe.facilities
+                        .slice(0, 3)
+                        .map((f: any) => (typeof f === 'string' ? f : f?.name))
+                        .filter(Boolean)
+                    : []
+                  ).map((name: string) => (
+                    <span
+                      key={name}
+                      className="bg-[#F0EDE8] text-[#8A8880] text-[10px] font-medium rounded-full px-1.5 py-0.5"
+                    >
+                      {name}
                     </span>
-                  )}
-                  {activeCafe.hasMushola && (
-                    <span className="bg-[#F0EDE8] text-[#8A8880] text-[10px] font-medium rounded-full px-1.5 py-0.5">
-                      🕌 Mushola
-                    </span>
-                  )}
-                  {activeCafe.hasParking && (
-                    <span className="bg-[#F0EDE8] text-[#8A8880] text-[10px] font-medium rounded-full px-1.5 py-0.5">
-                      🅿️ Parkir
-                    </span>
-                  )}
+                  ))}
                 </div>
                 <div className="mt-2 text-[12px] font-bold text-[#D48B3A]">
                   Lihat detail →

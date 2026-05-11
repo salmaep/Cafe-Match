@@ -58,7 +58,7 @@ export class FavoritesService {
       where: cutoff
         ? { userId, createdAt: MoreThanOrEqual(cutoff) }
         : { userId },
-      relations: ['cafe', 'cafe.facilities', 'cafe.photos'],
+      relations: ['cafe', 'cafe.features', 'cafe.photos'],
       order: { createdAt: 'DESC' },
     });
     return items.map((it) => ({

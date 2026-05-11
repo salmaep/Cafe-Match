@@ -14,7 +14,7 @@ const SWIPE_THRESHOLD = 120;
 export default function DiscoverPage() {
   const navigate = useNavigate();
   const { preferences, getPurposeId } = usePreferences();
-  const { addToShortlist, removeFromShortlist, isInShortlist, shortlist } = useShortlist();
+  const { addToShortlist, shortlist } = useShortlist();
 
   // Wizard always shows first when entering Discover. Each visit re-mounts this
   // component and resets `showWizard` to true.
@@ -47,7 +47,7 @@ export default function DiscoverPage() {
     const priceRange = preferences?.priceRange || undefined;
 
     cafesApi
-      .search({ lat, lng, radius, limit: 10, purposeId, facilities, priceRange })
+      .search({ lat, lng, radius, limit: 5, purposeId, facilities, priceRange })
       .then((res) => setCafes(res.data?.data ?? []))
       .catch(() => setCafes([]))
       .finally(() => setLoading(false));
@@ -75,7 +75,7 @@ export default function DiscoverPage() {
     return (
       <Wizard
         onComplete={() => setShowWizard(false)}
-        onSkip={() => setShowWizard(false)}
+        onSkip={() => navigate('/', { replace: true })}
       />
     );
   }
@@ -166,7 +166,19 @@ export default function DiscoverPage() {
         title="Discover cafes"
         description="Swipe through cafes that match your preferences and shortlist the ones you love."
       />
-      <div className="flex-1 flex items-start justify-center px-4 pt-[8vh] md:pt-6 lg:pt-8 pb-3 select-none min-h-0">
+      {/* Hint banner — explains swipe gestures */}
+      <div className="px-4 pt-3 pb-1 max-w-md mx-auto w-full">
+        <div className="flex items-center justify-between gap-2 bg-white border border-[#F0EDE8] rounded-full px-3 py-1.5 text-[11px] font-semibold text-[#5C5A52] shadow-sm">
+          <span className="flex items-center gap-1 text-red-500">
+            <span className="text-sm">←</span> Geser kiri = <span className="font-bold">Skip</span>
+          </span>
+          <span className="flex items-center gap-1 text-[#D48B3A]">
+            <span className="font-bold">Shortlist</span> = Geser kanan <span className="text-sm">→</span>
+          </span>
+        </div>
+      </div>
+
+      <div className="flex-1 flex items-start justify-center px-4 pt-[2vh] md:pt-4 lg:pt-6 pb-3 select-none min-h-0">
         <div className="relative w-full max-w-sm md:max-w-md lg:max-w-lg">
           <div
             onPointerDown={onPointerDown}
@@ -182,21 +194,7 @@ export default function DiscoverPage() {
           >
             {current && (
               <div className="relative">
-                <SwipeCard
-                  cafe={current}
-                  isSaved={isInShortlist(current.id)}
-                  onSave={() => {
-                    const cafe = current;
-                    if (isInShortlist(cafe.id)) {
-                      removeFromShortlist(cafe.id);
-                      setToast(`Removed "${cafe.name}" from Shortlist`);
-                    } else {
-                      addToShortlist(cafe).then((added) => {
-                        if (added) setToast(`Added "${cafe.name}" to Shortlist!`);
-                      });
-                    }
-                  }}
-                />
+                <SwipeCard cafe={current} />
                 <div
                   className="absolute top-8 left-8 -rotate-12 px-4 py-2 border-4 border-[#D48B3A] rounded-lg pointer-events-none"
                   style={{ opacity: likeOverlayOpacity }}
@@ -233,31 +231,23 @@ export default function DiscoverPage() {
         )}
       </button>
 
-      {/* Footer action buttons — desktop only (mobile uses gesture, mirrors mobile CardSwipe) */}
-      <footer className="hidden md:flex px-6 pb-6 pt-2 max-w-md w-full mx-auto items-end justify-center gap-5 relative z-20">
+      {/* Footer action buttons — only 2 (left = skip/nope, right = shortlist) */}
+      <footer className="flex px-6 pb-6 pt-2 max-w-md w-full mx-auto items-center justify-center gap-10 relative z-20">
         <button
           onClick={() => triggerSwipe('left')}
           disabled={!!exitDir}
-          className="w-12 h-12 rounded-full bg-white shadow flex items-center justify-center text-lg text-red-500 hover:bg-red-50 transition-colors border border-red-200 disabled:opacity-50"
-          title="Pass"
+          className="w-16 h-16 rounded-full bg-white shadow-lg flex items-center justify-center text-2xl text-red-500 hover:bg-red-50 transition-colors border-2 border-red-200 disabled:opacity-50"
+          title="Skip / Nope"
         >
           ✕
         </button>
         <button
           onClick={() => triggerSwipe('right')}
           disabled={!!exitDir}
-          className="w-14 h-14 rounded-full bg-[#D48B3A] shadow-md flex items-center justify-center text-2xl text-white hover:bg-[#b87528] transition-colors disabled:opacity-50"
-          title="Shortlist & next"
+          className="w-16 h-16 rounded-full bg-[#D48B3A] shadow-lg flex items-center justify-center text-3xl text-white hover:bg-[#b87528] transition-colors disabled:opacity-50"
+          title="Add to Shortlist"
         >
           ★
-        </button>
-        <button
-          onClick={() => triggerSwipe('left')}
-          disabled={!!exitDir}
-          className="w-12 h-12 rounded-full bg-white shadow flex items-center justify-center text-lg text-gray-500 hover:bg-gray-50 transition-colors border border-gray-200 disabled:opacity-50"
-          title="Skip"
-        >
-          ›
         </button>
       </footer>
 

@@ -34,7 +34,7 @@ export class BookmarksService {
   async findByUser(userId: number) {
     const items = await this.bookmarksRepository.find({
       where: { userId },
-      relations: ['cafe', 'cafe.facilities', 'cafe.photos'],
+      relations: ['cafe', 'cafe.features', 'cafe.photos'],
       order: { createdAt: 'DESC' },
     });
     return items.map((it) => ({

@@ -770,9 +770,12 @@ export default function MapScreen() {
             <View style={styles.checkinDot} />
           </View>
           <View style={styles.checkinCardBody}>
-            <Text style={styles.checkinCardLabel}>
-              CHECKED IN · {formatDuration(checkinDurationSec)}
-            </Text>
+            <View style={styles.checkinCardLabelRow}>
+              <Text style={styles.checkinCardLabel}>CHECKED IN</Text>
+              <Text style={styles.checkinCardDuration}>
+                {formatDuration(checkinDurationSec)}
+              </Text>
+            </View>
             <Text style={styles.checkinCardName} numberOfLines={1}>
               {activeCheckin.cafe?.name || activeCheckin.cafeName || 'Active cafe'}
             </Text>
@@ -1783,12 +1786,12 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     paddingVertical: spacing.sm + 2,
     paddingHorizontal: spacing.sm + 4,
-    elevation: 8,
+    elevation: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.18,
     shadowRadius: 8,
-    zIndex: 30,
+    zIndex: 999,
     borderLeftWidth: 4,
     borderLeftColor: colors.success,
   },
@@ -1806,11 +1809,22 @@ const styles = StyleSheet.create({
   checkinCardBody: {
     flex: 1,
   },
+  checkinCardLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
   checkinCardLabel: {
     fontSize: 10,
     fontWeight: '800',
     color: colors.success,
     letterSpacing: 0.6,
+  },
+  checkinCardDuration: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: colors.primary,
+    fontVariant: ['tabular-nums'],
   },
   checkinCardName: {
     fontSize: 14,

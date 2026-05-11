@@ -380,14 +380,13 @@ export default function CafeDetailScreen() {
   );
 
   const openMaps = () => {
-    if (cafe.googleMapsUrl) {
-      Linking.openURL(cafe.googleMapsUrl);
-      return;
-    }
     const query = encodeURIComponent(
       `${cafe.name} ${cafe.address ?? ""}`.trim(),
     );
-    const url = `https://www.google.com/maps/search/?api=1&query=${query}`;
+    let url = `https://www.google.com/maps/search/?api=1&query=${query}`;
+    if (cafe.googlePlaceId) {
+      url += `&query_place_id=${encodeURIComponent(cafe.googlePlaceId)}`;
+    }
     Linking.openURL(url);
   };
 

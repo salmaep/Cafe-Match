@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import { ChevronDown } from "lucide-react";
 import { cafesApi, type FilterGroup } from "../../api/cafes.api";
-import { FACILITY_ICONS } from "../../utils/facilities";
+import { LucideIcon, lucideForFacility, X } from "../../utils/lucideIcon";
 
 export interface FilterPanelProps {
   facilities: string[];
@@ -23,6 +24,8 @@ export interface FilterPanelProps {
   // Rendered with a star marker so users see why they were preselected.
   autoSelectedKeys?: string[];
 }
+
+const INITIAL_VISIBLE = 10;
 
 // Module-level cache so the catalog is fetched once across mounts/remounts.
 let catalogCache: FilterGroup[] | null = null;
@@ -55,6 +58,7 @@ interface ChipProps {
   active: boolean;
   count?: number;
   disabled?: boolean;
+  /** Lucide icon name (e.g. "wifi", "zap"). Resolved via lucideForFacility. */
   icon?: string;
   autoSelected?: boolean;
   onClick: () => void;
@@ -81,7 +85,12 @@ function Chip({ label, active, count, disabled, icon, autoSelected, onClick }: C
           ✓
         </span>
       ) : icon ? (
-        <span className="text-sm leading-none shrink-0">{icon}</span>
+        <LucideIcon
+          name={icon}
+          size={13}
+          strokeWidth={2}
+          className="shrink-0"
+        />
       ) : null}
       <span>{label}</span>
       {typeof count === "number" && (
@@ -197,7 +206,7 @@ export default function FilterPanel({
                 aria-label="Tutup"
                 className="w-8 h-8 rounded-full hover:bg-[#F0EDE8] text-[#8A8880] flex items-center justify-center"
               >
-                ✕
+                <X size={18} strokeWidth={2.25} />
               </button>
             )}
           </div>
@@ -274,13 +283,13 @@ export default function FilterPanel({
                     </span>
                   )}
                 </div>
-                <span
-                  className={`text-[#8A8880] text-xs transition-transform ${
+                <ChevronDown
+                  size={14}
+                  strokeWidth={2}
+                  className={`text-[#8A8880] transition-transform ${
                     isOpen ? "rotate-180" : ""
                   }`}
-                >
-                  ▼
-                </span>
+                />
               </button>
             );
 
@@ -289,13 +298,13 @@ export default function FilterPanel({
                 {header}
                 {isOpen && (
                   <div className="px-4 pb-4 pt-1 flex flex-wrap gap-1.5">
-                    {group.options.map((opt) => {
+                    {group.options.slice(0, INITIAL_VISIBLE).map((opt) => {
                       const checked = facilitySet.has(opt.key);
                       return (
                         <Chip
                           key={opt.key}
                           label={opt.label}
-                          icon={FACILITY_ICONS[opt.key]}
+                          icon={lucideForFacility(opt.key, group.key)}
                           active={checked}
                           autoSelected={autoSet.has(opt.key)}
                           onClick={() => toggleFacility(opt.key)}

@@ -1,33 +1,6 @@
-import type { LucideIcon } from 'lucide-react';
-import {
-  Coffee, Heart, Users, BookOpen, Laptop, Briefcase,
-  Lightbulb, BookMarked, Book, PartyPopper, Zap, Camera,
-  Star,
-} from 'lucide-react';
 import type { PurposeSlug } from '../../constants/purposes';
+import { getPurposeBySlug } from '@shared/constants/purposes';
 import { usePreferences } from '../../context/PreferencesContext';
-
-const ICON_MAP: Record<string, LucideIcon> = {
-  coffee: Coffee,
-  heart: Heart,
-  users: Users,
-  'book-open': BookOpen,
-  laptop: Laptop,
-  briefcase: Briefcase,
-  lightbulb: Lightbulb,
-  'coffee-cup': Coffee,
-  book: Book,
-  'book-mark': BookMarked,
-  party: PartyPopper,
-  zap: Zap,
-  camera: Camera,
-};
-
-function PurposeIcon({ name }: { name?: string }) {
-  const Icon = name ? ICON_MAP[name] : undefined;
-  if (Icon) return <Icon size={26} strokeWidth={1.8} />;
-  return <Star size={26} strokeWidth={1.8} />;
-}
 
 interface Props {
   value: PurposeSlug | undefined;
@@ -61,6 +34,7 @@ export default function StepPurpose({ value, onChange }: Props) {
           {serverPurposes.map((p) => {
             const active = value === p.slug;
             const reqCount = p.requirements?.length ?? 0;
+            const emoji = getPurposeBySlug(p.slug)?.emoji ?? '✨';
             return (
               <button
                 key={p.slug}
@@ -72,9 +46,7 @@ export default function StepPurpose({ value, onChange }: Props) {
                     : 'border-transparent bg-[#F0EDE8] hover:bg-[#E8E4DD] hover:border-[#E0DCD3]'
                 }`}
               >
-                <span className="mb-1.5 leading-none flex items-center justify-center">
-                  <PurposeIcon name={p.icon ?? undefined} />
-                </span>
+                <span className="mb-1.5 text-2xl leading-none">{emoji}</span>
                 <span
                   className={`text-sm font-bold leading-tight ${
                     active ? 'text-[#D48B3A]' : 'text-[#1C1C1A]'

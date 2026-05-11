@@ -1,5 +1,5 @@
 import { Controller, Post, Put, Delete, Get, Param, Body, Query, ParseIntPipe } from '@nestjs/common';
-import { ReviewsService } from './reviews.service';
+import { ReviewsService, ReviewSort } from './reviews.service';
 import { CreateReviewDto, UpdateReviewDto } from './dto/create-review.dto';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Public } from '../common/decorators/public.decorator';
@@ -40,8 +40,29 @@ export class ReviewsController {
     @Param('cafeId', ParseIntPipe) cafeId: number,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
+    @Query('sort') sort?: string,
   ) {
-    return this.reviewsService.findByCafe(cafeId, page || 1, limit || 20);
+    const sortNorm: ReviewSort = sort === 'recent' ? 'recent' : 'helpful';
+    return this.reviewsService.findByCafe(cafeId, page || 1, limit || 20, sortNorm);
+  }
+
+  /** Returns review IDs the current user has voted helpful on for this cafe.
+   *  Lets the public list endpoint stay public while web/mobile still know
+   *  which buttons should render as already-voted. */
+  @Get('cafe/:cafeId/my-votes')
+  myVotes(
+    @CurrentUser() user: any,
+    @Param('cafeId', ParseIntPipe) cafeId: number,
+  ) {
+    return this.reviewsService.myVoteIds(user.id, cafeId);
+  }
+
+  @Post(':reviewId/vote')
+  toggleVote(
+    @CurrentUser() user: any,
+    @Param('reviewId', ParseIntPipe) reviewId: number,
+  ) {
+    return this.reviewsService.toggleVote(user.id, reviewId);
   }
 
   @Public()

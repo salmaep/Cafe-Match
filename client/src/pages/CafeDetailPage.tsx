@@ -8,7 +8,8 @@ import { useAuth } from '../context/AuthContext';
 import { useGeolocation } from '../hooks/useGeolocation';
 import { haversineDistance, formatDistance } from '../utils/haversine';
 import { analyticsApi } from '../api/analytics.api';
-import { reviewsApi, type ReviewSummary } from '../api/reviews.api';
+import { reviewsApi, type ReviewSummary, type Review } from '../api/reviews.api';
+import ReviewCard from '../components/review/ReviewCard';
 import { useShortlist } from '../context/ShortlistContext';
 import { placeholderImage } from '../utils/cafeImage';
 import { extractCafeIdFromSlug, cafeUrl } from '../utils/cafeUrl';
@@ -23,6 +24,7 @@ import { cleanAddress } from '../utils/address';
 import CheckInButton from '../components/checkin/CheckInButton';
 import CafeLeaderboard from '../components/checkin/CafeLeaderboard';
 import VoteSection from '../components/cafe/VoteSection';
+import { Bookmark, Heart, MapPin, Phone, Navigation } from '../utils/lucideIcon';
 
 const REVIEW_CATEGORY_LABELS: Record<string, string> = {
   overall: '⭐ Rating',
@@ -53,6 +55,9 @@ export default function CafeDetailPage() {
   const [favorited, setFavorited] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [reviewSummary, setReviewSummary] = useState<ReviewSummary[]>([]);
+  const [reviewPreviews, setReviewPreviews] = useState<Review[]>([]);
+  const [reviewTotal, setReviewTotal] = useState(0);
+  const [reviewVotedSet, setReviewVotedSet] = useState<Set<number>>(new Set());
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
 
   useEffect(() => {
@@ -74,7 +79,30 @@ export default function CafeDetailPage() {
       .getSummary(cafeId)
       .then((res) => setReviewSummary(res.data ?? []))
       .catch(() => setReviewSummary([]));
+    reviewsApi
+      .listByCafe(cafeId, { page: 1, limit: 3, sort: 'helpful' })
+      .then((res) => {
+        setReviewPreviews(res.data?.data ?? []);
+        setReviewTotal(res.data?.meta?.total ?? 0);
+      })
+      .catch(() => {
+        setReviewPreviews([]);
+        setReviewTotal(0);
+      });
   }, [cafeId]);
+
+  // Fetch user's helpful votes for preview cards. Separate effect so it can
+  // re-run when auth state changes without re-fetching reviews.
+  useEffect(() => {
+    if (!cafeId || !user) {
+      setReviewVotedSet(new Set());
+      return;
+    }
+    reviewsApi
+      .myVoteIds(cafeId)
+      .then((res) => setReviewVotedSet(new Set(res.data ?? [])))
+      .catch(() => setReviewVotedSet(new Set()));
+  }, [cafeId, user]);
 
   // Canonicalize URL: if user landed on /cafe/615 or /cafe/wrong-slug-615,
   // rewrite to the canonical /cafe/<slugified-name>-615 once we know the cafe.
@@ -494,8 +522,8 @@ export default function CafeDetailPage() {
             rel="noopener noreferrer"
             className="flex flex-wrap items-center gap-3 mt-6 bg-white border border-[#F0EDE8] rounded-2xl p-4 lg:p-5 hover:border-[#D48B3A] hover:bg-[#FDF6EC] transition-all group"
           >
-            <span className="w-10 h-10 lg:w-11 lg:h-11 rounded-full bg-[#F0EDE8] group-hover:bg-white flex items-center justify-center text-lg shrink-0">
-              📍
+            <span className="w-10 h-10 lg:w-11 lg:h-11 rounded-full bg-[#F0EDE8] group-hover:bg-white flex items-center justify-center text-[#D48B3A] shrink-0">
+              <MapPin size={20} strokeWidth={2} />
             </span>
             <div className="flex-1 min-w-0">
               <div className="text-xs font-semibold text-[#8A8880] uppercase tracking-wider">
@@ -515,8 +543,8 @@ export default function CafeDetailPage() {
               href={`tel:${cafe.phone}`}
               className="flex flex-wrap items-center gap-3 mt-3 bg-white border border-[#F0EDE8] rounded-2xl p-4 lg:p-5 hover:border-[#D48B3A] hover:bg-[#FDF6EC] transition-all group"
             >
-              <span className="w-10 h-10 lg:w-11 lg:h-11 rounded-full bg-[#F0EDE8] group-hover:bg-white flex items-center justify-center text-lg shrink-0">
-                📞
+              <span className="w-10 h-10 lg:w-11 lg:h-11 rounded-full bg-[#F0EDE8] group-hover:bg-white flex items-center justify-center text-[#D48B3A] shrink-0">
+                <Phone size={20} strokeWidth={2} />
               </span>
               <div className="flex-1 min-w-0">
                 <div className="text-xs font-semibold text-[#8A8880] uppercase tracking-wider">
@@ -613,13 +641,12 @@ export default function CafeDetailPage() {
             title="Reviews"
             action={
               starSummary.length > 0 ? (
-                <button
-                  type="button"
-                  onClick={handleWriteReview}
+                <Link
+                  to={`${cafeUrl(cafe)}/reviews`}
                   className="text-sm font-semibold text-[#D48B3A] hover:underline"
                 >
                   Lihat semua →
-                </button>
+                </Link>
               ) : null
             }
           >
@@ -643,6 +670,30 @@ export default function CafeDetailPage() {
                     </div>
                   ))}
                 </div>
+
+                {/* Review previews — top 3 by helpful, clickable to full list */}
+                {reviewPreviews.length > 0 && (
+                  <div className="mt-4 space-y-3">
+                    {reviewPreviews.map((r) => (
+                      <ReviewCard
+                        key={r.id}
+                        review={r}
+                        votedByMe={reviewVotedSet.has(r.id)}
+                        variant="preview"
+                        onClick={() => navigate(`${cafeUrl(cafe)}/reviews`)}
+                      />
+                    ))}
+                    {reviewTotal > reviewPreviews.length && (
+                      <Link
+                        to={`${cafeUrl(cafe)}/reviews`}
+                        className="block text-center text-sm font-semibold text-[#D48B3A] hover:underline py-2"
+                      >
+                        Lihat semua {reviewTotal} review →
+                      </Link>
+                    )}
+                  </div>
+                )}
+
                 <button
                   type="button"
                   onClick={handleWriteReview}
@@ -800,7 +851,11 @@ export default function CafeDetailPage() {
                   onClick={handleFavorite}
                   className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-[#F0EDE8] hover:border-[#D48B3A] hover:bg-[#FDF6EC] transition-colors"
                 >
-                  <span className="text-lg">{favorited ? '❤️' : '🤍'}</span>
+                  <Heart
+                    size={18}
+                    className={favorited ? 'text-red-500' : 'text-[#5C5A52]'}
+                    fill={favorited ? 'currentColor' : 'none'}
+                  />
                   <span className="text-sm font-semibold text-[#1C1C1A]">
                     Favorite
                   </span>
@@ -810,7 +865,11 @@ export default function CafeDetailPage() {
                   onClick={handleBookmark}
                   className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-[#F0EDE8] hover:border-[#D48B3A] hover:bg-[#FDF6EC] transition-colors"
                 >
-                  <span className="text-lg">{bookmarked ? '🔖' : '📑'}</span>
+                  <Bookmark
+                    size={18}
+                    className={bookmarked ? 'text-[#D48B3A]' : 'text-[#5C5A52]'}
+                    fill={bookmarked ? 'currentColor' : 'none'}
+                  />
                   <span className="text-sm font-semibold text-[#1C1C1A]">
                     Bookmark
                   </span>
@@ -824,7 +883,7 @@ export default function CafeDetailPage() {
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2 mt-3 py-2.5 rounded-xl bg-[#F0EDE8] hover:bg-[#E8E4DD] transition-colors"
               >
-                <span className="text-base">📍</span>
+                <Navigation size={16} className="text-[#1C1C1A]" />
                 <span className="text-sm font-semibold text-[#1C1C1A]">
                   Open in Google Maps
                 </span>
@@ -849,7 +908,11 @@ export default function CafeDetailPage() {
             onClick={handleFavorite}
             className="flex flex-col items-center px-3 hover:bg-[#FAF9F6] rounded-lg py-1 transition-colors"
           >
-            <span className="text-2xl">{favorited ? '❤️' : '🤍'}</span>
+            <Heart
+              size={24}
+              className={favorited ? 'text-red-500' : 'text-[#5C5A52]'}
+              fill={favorited ? 'currentColor' : 'none'}
+            />
             <span className="text-[10px] text-[#8A8880] mt-0.5">Favorite</span>
           </button>
           <button
@@ -857,7 +920,11 @@ export default function CafeDetailPage() {
             onClick={handleBookmark}
             className="flex flex-col items-center px-3 hover:bg-[#FAF9F6] rounded-lg py-1 transition-colors"
           >
-            <span className="text-2xl">{bookmarked ? '🔖' : '📑'}</span>
+            <Bookmark
+              size={24}
+              className={bookmarked ? 'text-[#D48B3A]' : 'text-[#5C5A52]'}
+              fill={bookmarked ? 'currentColor' : 'none'}
+            />
             <span className="text-[10px] text-[#8A8880] mt-0.5">Bookmark</span>
           </button>
           <button

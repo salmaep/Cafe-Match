@@ -76,6 +76,16 @@ export class AddFeaturesMasterTable1715400000000
     `);
     // Best-effort: any pr.feature_name not in master gets dropped
     await queryRunner.query(`DELETE FROM \`purpose_requirements\` WHERE feature_id IS NULL`);
+    // Before dropping idx_purpose_facility, give the FK on purpose_id an
+    // alternate backing index — otherwise MySQL rejects the DROP with
+    // ER_DROP_INDEX_FK (1553) because idx_purpose_facility is the only index
+    // whose leftmost column is purpose_id. Once UQ_purpose_feature is added
+    // below, this temp index becomes redundant (the new unique key has
+    // purpose_id as leftmost) and is dropped at the end of this block.
+    await queryRunner.query(`
+      ALTER TABLE \`purpose_requirements\`
+        ADD KEY \`IDX_purpose_req_purpose_tmp\` (\`purpose_id\`)
+    `);
     // Drop the legacy composite index before removing the column it references.
     // Without this, MySQL strips feature_name from the index but keeps it as a
     // UNIQUE index on (purpose_id) alone — causing ER_DUP_ENTRY on multi-req inserts.
@@ -90,6 +100,12 @@ export class AddFeaturesMasterTable1715400000000
         ADD UNIQUE KEY \`UQ_purpose_feature\` (\`purpose_id\`, \`feature_id\`),
         ADD KEY \`IDX_purpose_req_feature\` (\`feature_id\`),
         ADD CONSTRAINT \`FK_purpose_req_feature\` FOREIGN KEY (\`feature_id\`) REFERENCES \`features\`(\`id\`) ON DELETE CASCADE
+    `);
+    // Clean up the temp backing index — UQ_purpose_feature now covers
+    // purpose_id as its leftmost column, so the FK has a permanent home.
+    await queryRunner.query(`
+      ALTER TABLE \`purpose_requirements\`
+        DROP INDEX \`IDX_purpose_req_purpose_tmp\`
     `);
   }
 

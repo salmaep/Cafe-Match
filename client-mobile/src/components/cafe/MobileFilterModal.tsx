@@ -28,6 +28,9 @@ interface Props {
   // Price
   priceRange: string;
   onPriceRangeChange: (next: string) => void;
+  // Feature keys recommended by the active purpose — rendered with ⭐ when
+  // not yet active to signal "auto-suggested for this vibe".
+  autoSelectedKeys?: Set<string>;
 }
 
 const PRICE_OPTIONS: { key: string; label: string }[] = [
@@ -65,6 +68,7 @@ export default function MobileFilterModal({
   onFacilitiesChange,
   priceRange,
   onPriceRangeChange,
+  autoSelectedKeys,
 }: Props) {
   const [groups, setGroups] = useState<FilterCatalogGroup[] | null>(catalogCache);
   // Mirror web mobile modal: groups collapsible, default `amenity` open.
@@ -245,28 +249,42 @@ export default function MobileFilterModal({
 
 function FilterChip({
   label,
-  icon,
+  iconName,
   active,
   count,
   onPress,
+  autoSelected = false,
 }: {
   label: string;
-  icon?: string;
+  /** Lucide icon name resolved via lucideForFacility (with category fallback). */
+  iconName?: string;
   active: boolean;
   count?: number;
   onPress: () => void;
+  autoSelected?: boolean;
 }) {
   return (
     <TouchableOpacity
       onPress={onPress}
-      style={[styles.chip, active && styles.chipActive]}
+      style={[
+        styles.chip,
+        active && styles.chipActive,
+        !active && autoSelected && styles.chipAuto,
+      ]}
     >
       {active ? (
         <View style={styles.chipCheck}>
           <Text style={styles.chipCheckText}>✓</Text>
         </View>
-      ) : icon ? (
-        <Text style={styles.chipIcon}>{icon}</Text>
+      ) : autoSelected ? (
+        <Text style={styles.chipIcon}>⭐</Text>
+      ) : iconName ? (
+        <LucideIcon
+          name={iconName}
+          size={13}
+          strokeWidth={2}
+          color={active ? '#FFFFFF' : '#5C5A52'}
+        />
       ) : null}
       <Text style={[styles.chipLabel, active && styles.chipLabelActive]}>
         {label}
@@ -393,6 +411,10 @@ const styles = StyleSheet.create({
   },
   chipActive: {
     backgroundColor: '#D48B3A',
+    borderColor: '#D48B3A',
+  },
+  chipAuto: {
+    backgroundColor: '#FDF6EC',
     borderColor: '#D48B3A',
   },
   chipCheck: {

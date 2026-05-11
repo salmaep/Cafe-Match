@@ -15,17 +15,26 @@ export class BookmarksService {
 
   async toggle(userId: number, cafeId: number) {
     return this.dataSource.transaction(async (manager) => {
+      // Load the cafe row up-front so we can mutate + save() it. We avoid
+      // manager.increment/decrement here because raw SQL UPDATEs do NOT
+      // dispatch entity subscribers — CafeMeiliSubscriber.afterUpdate would
+      // be skipped, leaving Meilisearch's bookmarksCount stale.
+      const cafe = await manager.findOne(Cafe, { where: { id: cafeId } });
+      if (!cafe) throw new NotFoundException('Cafe not found');
+
       const existing = await manager.findOne(Bookmark, {
         where: { userId, cafeId },
       });
 
       if (existing) {
         await manager.remove(existing);
-        await manager.decrement(Cafe, { id: cafeId }, 'bookmarksCount', 1);
+        cafe.bookmarksCount = Math.max(0, (cafe.bookmarksCount ?? 0) - 1);
+        await manager.save(cafe);
         return { bookmarked: false };
       } else {
         await manager.save(Bookmark, { userId, cafeId });
-        await manager.increment(Cafe, { id: cafeId }, 'bookmarksCount', 1);
+        cafe.bookmarksCount = (cafe.bookmarksCount ?? 0) + 1;
+        await manager.save(cafe);
         return { bookmarked: true };
       }
     });

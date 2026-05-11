@@ -49,6 +49,12 @@ export class CafesService {
 
   // ── Filter catalog (cafe_features grouped by category) ─────────────────────
 
+  /** Hard cap on items returned per category. Matches the frontend FilterPanel
+   *  `INITIAL_VISIBLE` so categories like `service` (~70 features) don't flood
+   *  the API response with options the user can never see anyway. Categories
+   *  are pre-sorted by count DESC, so this keeps the top picks. */
+  private static readonly FILTER_ITEMS_PER_CATEGORY = 10;
+
   async getFilters(isOptions = false) {
     const rows = await this.dataSource.query<
       { name: string; category: string | null; total: string }[]
@@ -74,7 +80,9 @@ export class CafesService {
     const groupMap = new Map<string, { category: string; items: { name: string; count: number }[] }>();
     for (const item of flat) {
       const g = groupMap.get(item.category) ?? { category: item.category, items: [] };
-      g.items.push({ name: item.name, count: item.count });
+      if (g.items.length < CafesService.FILTER_ITEMS_PER_CATEGORY) {
+        g.items.push({ name: item.name, count: item.count });
+      }
       groupMap.set(item.category, g);
     }
 

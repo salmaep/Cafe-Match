@@ -1,4 +1,4 @@
-import { Controller, Post, Put, Get, Param, Body, ParseIntPipe } from '@nestjs/common';
+import { Controller, Post, Put, Get, Param, Body, Query, ParseIntPipe } from '@nestjs/common';
 import { FriendsService } from './friends.service';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { IsString } from 'class-validator';
@@ -20,6 +20,11 @@ export class FriendsController {
   @Post('request')
   sendRequest(@CurrentUser() user: any, @Body() dto: SendRequestDto) {
     return this.friendsService.sendRequest(user.id, dto.friendCode);
+  }
+
+  @Get('lookup')
+  lookup(@CurrentUser() user: any, @Query('code') code: string) {
+    return this.friendsService.lookupByCode(user.id, code);
   }
 
   @Put('request/:id/accept')

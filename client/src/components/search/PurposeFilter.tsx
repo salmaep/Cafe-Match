@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import type { Purpose } from '../../types';
 import { purposesApi } from '../../api/purposes.api';
 import { getPurposeBySlug } from '../../constants/purposes';
+import { LucideIcon } from '../../utils/lucideIcon';
 
 interface Props {
   selectedPurposeId: number | null;
@@ -28,23 +29,30 @@ export default function PurposeFilter({ selectedPurposeId, onSelect }: Props) {
         All Cafes
       </button>
       {purposes.map((p) => {
-        // Server purpose is the source of truth (name + icon). Fall back to the
-        // bundled WIZARD_PURPOSES catalog only when the server returns no icon
-        // for a slug — keeps the chip from looking empty during transitions.
+        // Server purpose.icon is a lucide-style name (e.g. "coffee"). Resolve
+        // it via LucideIcon. When the server hasn't set one yet, fall back to
+        // the bundled WIZARD_PURPOSES emoji so the chip never renders blank.
         const wizard = getPurposeBySlug(p.slug);
         const label = p.name || wizard?.label || p.slug;
-        const emoji = p.icon || wizard?.emoji || '';
+        const active = selectedPurposeId === p.id;
         return (
           <button
             key={p.id}
             onClick={() => onSelect(p.id)}
-            className={`px-4 py-2 rounded-full text-sm whitespace-nowrap border transition-colors ${
-              selectedPurposeId === p.id
+            className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm whitespace-nowrap border transition-colors ${
+              active
                 ? 'bg-amber-600 text-white border-amber-600'
                 : 'bg-white text-gray-600 border-gray-300 hover:border-amber-400'
             }`}
           >
-            {emoji} {label}
+            {p.icon ? (
+              <LucideIcon name={p.icon} size={14} strokeWidth={2} />
+            ) : wizard?.emoji ? (
+              <span className="text-sm leading-none">{wizard.emoji}</span>
+            ) : (
+              <LucideIcon size={14} strokeWidth={2} />
+            )}
+            <span>{label}</span>
           </button>
         );
       })}

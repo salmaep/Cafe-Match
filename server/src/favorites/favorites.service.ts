@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, MoreThanOrEqual } from 'typeorm';
 import { Favorite } from './entities/favorite.entity';
@@ -36,17 +36,25 @@ export class FavoritesService {
 
   async toggle(userId: number, cafeId: number) {
     return this.dataSource.transaction(async (manager) => {
+      // Load + save() instead of increment/decrement so CafeMeiliSubscriber
+      // fires and Meilisearch's favoritesCount stays in sync. See bookmarks
+      // service for the same pattern + reasoning.
+      const cafe = await manager.findOne(Cafe, { where: { id: cafeId } });
+      if (!cafe) throw new NotFoundException('Cafe not found');
+
       const existing = await manager.findOne(Favorite, {
         where: { userId, cafeId },
       });
 
       if (existing) {
         await manager.remove(existing);
-        await manager.decrement(Cafe, { id: cafeId }, 'favoritesCount', 1);
+        cafe.favoritesCount = Math.max(0, (cafe.favoritesCount ?? 0) - 1);
+        await manager.save(cafe);
         return { favorited: false };
       } else {
         await manager.save(Favorite, { userId, cafeId });
-        await manager.increment(Cafe, { id: cafeId }, 'favoritesCount', 1);
+        cafe.favoritesCount = (cafe.favoritesCount ?? 0) + 1;
+        await manager.save(cafe);
         return { favorited: true };
       }
     });

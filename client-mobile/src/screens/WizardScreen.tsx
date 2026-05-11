@@ -19,7 +19,7 @@ import { Purpose, WizardPreferences } from '../types';
 import { useLocation } from '../context/LocationContext';
 import { useDestinations } from '../queries/destinations/use-destinations';
 import { useCafeFilters } from '../queries/cafes/use-cafe-filters';
-import { FACILITY_ICONS } from '../utils/facilities';
+import { facilityIconFor } from '../utils/facilities';
 import { WIZARD_PURPOSES, getPurposeBySlug } from '@shared/constants/purposes';
 import { usePurposes } from '../queries/purposes/use-purposes';
 
@@ -73,7 +73,8 @@ export default function WizardScreen({ onComplete, onSkip }: WizardScreenProps =
   // While loading, fall back to the local WIZARD_PURPOSES so users still see
   // a populated grid (matches the mobile "always-something-visible" feel).
   const purposesQuery = usePurposes();
-  const wizardPurposes = (purposesQuery.data ?? []).map((p) => {
+  const purposeList = purposesQuery.data ?? [];
+  const wizardPurposes = purposeList.map((p) => {
     const local = getPurposeBySlug(p.slug);
     return {
       slug: p.slug,
@@ -85,13 +86,16 @@ export default function WizardScreen({ onComplete, onSkip }: WizardScreenProps =
   const purposeOptions = wizardPurposes.length > 0 ? wizardPurposes : WIZARD_PURPOSES;
   const [step, setStep] = useState(0);
 
-  // purposeId drives the actual server lookups (requirements live here);
-  // `purpose` (string) is kept only for backward compat with WizardPreferences.
   const [purposeId, setPurposeId] = useState<number | null>(null);
   const purpose: Purpose | undefined = useMemo(() => {
     if (purposeId == null) return undefined;
     return (purposeList.find((p) => p.id === purposeId)?.name as Purpose) ?? undefined;
   }, [purposeId, purposeList]);
+
+  const handleSelectPurpose = (slug: string) => {
+    const found = purposeList.find((x) => x.slug === slug);
+    if (found) setPurposeId(found.id);
+  };
   const [locationType, setLocationType] = useState<'current' | 'custom'>('current');
   const [customAddress, setCustomAddress] = useState('');
   const [customLat, setCustomLat] = useState<number | null>(null);
@@ -222,28 +226,29 @@ export default function WizardScreen({ onComplete, onSkip }: WizardScreenProps =
             showsVerticalScrollIndicator={false}
             style={{ flex: 1 }}
           >
-            {purposeOptions.map((p) => (
-              <TouchableOpacity
-                key={p.slug}
-                style={[styles.optionCard, purpose === p.label && styles.optionCardActive]}
-                onPress={() => setPurpose(p.label as Purpose)}
-              >
-                <Text style={styles.optionEmoji}>{p.emoji}</Text>
-                <Text
-                  style={[styles.optionLabel, purpose === p.label && styles.optionLabelActive]}
+            {purposeOptions.map((p) => {
+              const active = purpose === p.label;
+              return (
+                <TouchableOpacity
+                  key={p.slug}
+                  style={[styles.optionCard, active && styles.optionCardActive]}
+                  onPress={() => handleSelectPurpose(p.slug)}
                 >
-                  {p.label}
-                </Text>
-                {!!p.tagline && (
-                  <Text
-                    style={[styles.optionTagline, purpose === p.label && styles.optionTaglineActive]}
-                    numberOfLines={2}
-                  >
-                    {p.tagline}
+                  <Text style={styles.optionEmoji}>{p.emoji}</Text>
+                  <Text style={[styles.optionLabel, active && styles.optionLabelActive]}>
+                    {p.label}
                   </Text>
-                )}
-              </TouchableOpacity>
-            ))}
+                  {!!p.tagline && (
+                    <Text
+                      style={[styles.optionTagline, active && styles.optionTaglineActive]}
+                      numberOfLines={2}
+                    >
+                      {p.tagline}
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              );
+            })}
           </ScrollView>
         </View>
 
@@ -545,9 +550,7 @@ export default function WizardScreen({ onComplete, onSkip }: WizardScreenProps =
                         {group.options.map((opt) => {
                           const active = amenities.includes(opt.key);
                           const autoSelected = autoSelectedKeys.has(opt.key);
-                          // Pass group.key so unknown features get a sensible
-                          // category fallback (e.g. unknown space → House).
-                          const iconName = lucideForFacility(opt.key, group.key);
+                          const icon = facilityIconFor(opt.key);
                           return (
                             <TouchableOpacity
                               key={opt.key}
@@ -566,13 +569,8 @@ export default function WizardScreen({ onComplete, onSkip }: WizardScreenProps =
                                 </View>
                               ) : autoSelected ? (
                                 <Text style={styles.filterChipIcon}>⭐</Text>
-                              ) : iconName ? (
-                                <LucideIcon
-                                  name={iconName}
-                                  size={14}
-                                  strokeWidth={2}
-                                  color="#5C5A52"
-                                />
+                              ) : icon ? (
+                                <Text style={styles.filterChipIcon}>{icon}</Text>
                               ) : null}
                               <Text
                                 style={[

@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, useCallback } from 'react';
+import React, { useRef, useState, useCallback, useMemo } from 'react';
 import WizardScreen from './WizardScreen';
 import {
   View,
@@ -17,11 +17,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useShortlist } from '../context/ShortlistContext';
 import { usePreferences } from '../context/PreferencesContext';
 import { useLocation } from '../context/LocationContext';
-import { useSearchCafes } from '../queries/cafes/use-search-cafes';
-import { usePromotedCafes } from '../queries/cafes/use-promoted-cafes';
+import { useDiscoverDeck } from '../queries/cafes/use-discover-deck';
 import { usePurposeId } from '../queries/purposes/use-purpose-id';
-import { hitsToCafes } from '../queries/cafes/api';
-import { PURPOSE_SLUG_MAP } from '../constant/purpose';
 import { Cafe } from '../types';
 import { colors, spacing, radius } from '../theme';
 import Toast from '../components/Toast';
@@ -33,7 +30,7 @@ export default function CardSwipeScreen() {
   const navigation = useNavigation<StackNavigationProp<any>>();
   const route = useRoute();
   const insets = useSafeAreaInsets();
-  const { addToShortlist, isInShortlist, shortlist } = useShortlist();
+  const { addToShortlist, isInShortlist } = useShortlist();
   const { preferences } = usePreferences();
   const { latitude, longitude } = useLocation();
   const purposeId = usePurposeId(preferences?.purpose);
@@ -44,7 +41,6 @@ export default function CardSwipeScreen() {
   const [allSwiped, setAllSwiped] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
   const [showToast, setShowToast] = useState(false);
-  const [cafes, setCafes] = useState<Cafe[]>([]);
   const [sessionId, setSessionId] = useState(0);
 
   const [showWizard, setShowWizard] = useState(!isStandalone);
@@ -57,7 +53,6 @@ export default function CardSwipeScreen() {
   const dismissWizard = useCallback(() => {
     setShowWizard(false);
     setAllSwiped(false);
-    deckBuiltRef.current = false;
     setSessionId((s) => s + 1);
   }, []);
 
@@ -79,7 +74,7 @@ export default function CardSwipeScreen() {
     ? (preferences?.priceRange as '$' | '$$' | '$$$')
     : undefined;
 
-  const cafesQuery = useSearchCafes({
+  const deckQuery = useDiscoverDeck({
     lat: lat ?? undefined,
     lng: lng ?? undefined,
     radius: Math.min(radKm * 1000, 50_000_000),
@@ -89,96 +84,11 @@ export default function CardSwipeScreen() {
         ? preferences.amenities
         : undefined,
     priceRange: priceRangeParam,
-    limit: 50,
+    limit: 7,
   });
-  const promotedQuery = usePromotedCafes();
 
-  const hasAnyData =
-    (cafesQuery.data?.pages?.[0]?.data?.length ?? 0) > 0 ||
-    (promotedQuery.data?.length ?? 0) > 0 ||
-    cafes.length > 0;
-  const loading =
-    (cafesQuery.isLoading || promotedQuery.isLoading) && !hasAnyData;
-
-  const deckBuiltRef = useRef(false);
-  const deckInputsRef = useRef('');
-  useEffect(() => {
-    const amenitiesKey = (preferences?.amenities ?? []).slice().sort().join(',');
-    const inputsKey = `${preferences?.purpose ?? ''}|${lat ?? ''}|${lng ?? ''}|${amenitiesKey}|${preferences?.priceRange ?? ''}|${purposeId ?? ''}`;
-
-    if (deckInputsRef.current !== inputsKey) {
-      deckInputsRef.current = inputsKey;
-      deckBuiltRef.current = false;
-    }
-
-    if (deckBuiltRef.current) return;
-    if (cafesQuery.isFetching || promotedQuery.isFetching) return;
-
-    const allCafes: Cafe[] = cafesQuery.data
-      ? cafesQuery.data.pages.flatMap((p) =>
-          hitsToCafes(p, lat ?? undefined, lng ?? undefined),
-        )
-      : [];
-    const promotedCafes: Cafe[] = promotedQuery.data ?? [];
-
-    const wizardPurpose = preferences?.purpose;
-    const wantedSlug = wizardPurpose ? PURPOSE_SLUG_MAP[wizardPurpose] : null;
-
-    const sorted = wantedSlug
-      ? [...allCafes].sort(
-          (a, b) =>
-            (b.purposeScores?.[wantedSlug] || b.matchScore || 0) -
-            (a.purposeScores?.[wantedSlug] || a.matchScore || 0),
-        )
-      : allCafes;
-
-    const shortlistedIds = new Set(shortlist.map((c) => c.id));
-
-    const regular = sorted
-      .filter((c) => !c.promotionType && !shortlistedIds.has(c.id))
-      .slice(0, 7);
-
-    if (regular.length === 0) {
-      setCafes([]);
-      deckBuiltRef.current = true;
-      return;
-    }
-
-    const promoA = promotedCafes.find(
-      (c) =>
-        (c.promotionType === 'A' || c.activePromotionType === 'new_cafe') &&
-        !shortlistedIds.has(c.id),
-    );
-    const promoB = promotedCafes.find(
-      (c) =>
-        (c.promotionType === 'B' || c.activePromotionType === 'featured_promo') &&
-        !shortlistedIds.has(c.id),
-    );
-
-    const deck: Cafe[] = [...regular];
-    const insertAt = (cafe: Cafe) => {
-      const pos = Math.min(deck.length, 1 + Math.floor(Math.random() * 3));
-      deck.splice(pos, 0, cafe);
-    };
-    if (promoA) insertAt(promoA);
-    if (promoB) insertAt(promoB);
-
-    setCafes(deck);
-    deckBuiltRef.current = true;
-  }, [
-    cafesQuery.data,
-    cafesQuery.isFetching,
-    promotedQuery.data,
-    promotedQuery.isFetching,
-    preferences?.purpose,
-    preferences?.amenities,
-    preferences?.priceRange,
-    purposeId,
-    lat,
-    lng,
-    sessionId,
-    shortlist,
-  ]);
+  const cafes: Cafe[] = useMemo(() => deckQuery.data?.data ?? [], [deckQuery.data]);
+  const loading = deckQuery.isPending || deckQuery.isFetching;
 
   useFocusEffect(
     useCallback(() => {
@@ -227,15 +137,13 @@ export default function CardSwipeScreen() {
     const newCafe = cafe.newCafeContent;
 
     return (
-      <TouchableOpacity
-        activeOpacity={0.95}
+      <View
         style={[
           styles.card,
           { width: CARD_W, height: CARD_H },
           isTypeA && styles.cardTypeA,
           isTypeB && styles.cardTypeB,
         ]}
-        onPress={() => navigation.navigate('CafeDetail', { cafe })}
       >
         <Image source={{ uri: bgPhoto }} style={styles.cardImage} />
 
@@ -384,9 +292,9 @@ export default function CardSwipeScreen() {
             </View>
           )}
         </View>
-      </TouchableOpacity>
+      </View>
     );
-  }, [navigation, addToShortlist, isInShortlist]);
+  }, [addToShortlist, isInShortlist]);
 
   if (allSwiped) {
     return (
@@ -424,7 +332,7 @@ export default function CardSwipeScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.emptySecondaryBtn}
-            onPress={() => cafesQuery.refetch()}
+            onPress={() => deckQuery.refetch()}
           >
             <Text style={styles.emptySecondaryBtnText}>↻ Coba Lagi</Text>
           </TouchableOpacity>
@@ -458,6 +366,10 @@ export default function CardSwipeScreen() {
         onSwiped={handleSwiped}
         onSwipedRight={handleSwipedRight}
         onSwipedAll={handleSwipedAll}
+        onTapCard={(cardIndex) => {
+          const cafe = cafes[cardIndex];
+          if (cafe) navigation.navigate('CafeDetail', { cafe });
+        }}
         cardIndex={0}
         backgroundColor="transparent"
         stackSize={2}

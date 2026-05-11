@@ -13,7 +13,7 @@ import {
 } from '../../services/api';
 import { BackendPurpose } from '../../types';
 import PurposeChips from './PurposeChips';
-import { getFacilityIcon } from '../../constant/ui/facility-icons';
+import { facilityIconFor } from '../../utils/facilities';
 
 interface Props {
   visible: boolean;
@@ -221,9 +221,10 @@ export default function MobileFilterModal({
                           <FilterChip
                             key={opt.key}
                             label={opt.label ?? opt.key}
-                            icon={getFacilityIcon(opt.key)}
+                            icon={facilityIconFor(opt.key)}
                             count={opt.count}
                             active={facilitySet.has(opt.key)}
+                            autoSelected={autoSelectedKeys?.has(opt.key) ?? false}
                             onPress={() => toggleFacility(opt.key)}
                           />
                         ))}
@@ -249,15 +250,14 @@ export default function MobileFilterModal({
 
 function FilterChip({
   label,
-  iconName,
+  icon,
   active,
   count,
   onPress,
   autoSelected = false,
 }: {
   label: string;
-  /** Lucide icon name resolved via lucideForFacility (with category fallback). */
-  iconName?: string;
+  icon?: string;
   active: boolean;
   count?: number;
   onPress: () => void;
@@ -278,13 +278,8 @@ function FilterChip({
         </View>
       ) : autoSelected ? (
         <Text style={styles.chipIcon}>⭐</Text>
-      ) : iconName ? (
-        <LucideIcon
-          name={iconName}
-          size={13}
-          strokeWidth={2}
-          color={active ? '#FFFFFF' : '#5C5A52'}
-        />
+      ) : icon ? (
+        <Text style={styles.chipIcon}>{icon}</Text>
       ) : null}
       <Text style={[styles.chipLabel, active && styles.chipLabelActive]}>
         {label}

@@ -1,7 +1,12 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { friendsApi, type Friend, type FriendRequest } from '../api/friends.api';
+import {
+  friendsApi,
+  type Friend,
+  type FriendRequest,
+  type FriendPreview,
+} from '../api/friends.api';
 import {
   getHiddenFriends,
   hideFriend,
@@ -19,6 +24,8 @@ export default function FriendsPage() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [msg, setMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
+  const [preview, setPreview] = useState<FriendPreview | null>(null);
+  const [lookupState, setLookupState] = useState<'idle' | 'loading' | 'notfound'>('idle');
   const [copied, setCopied] = useState(false);
   const [hidden, setHidden] = useState<Set<number>>(() => getHiddenFriends());
 
@@ -52,6 +59,37 @@ export default function FriendsPage() {
     load();
   }, [user]);
 
+  // Debounced lookup so the user sees the friend's name + avatar before
+  // confirming the request. Only fires when 8 valid chars have been typed
+  // (matches the friend-code format).
+  useEffect(() => {
+    if (code.length < 8) {
+      setPreview(null);
+      setLookupState('idle');
+      return;
+    }
+    setLookupState('loading');
+    setPreview(null);
+    const timer = setTimeout(() => {
+      friendsApi
+        .lookup(code)
+        .then((res) => {
+          if (res.data) {
+            setPreview(res.data);
+            setLookupState('idle');
+          } else {
+            setPreview(null);
+            setLookupState('notfound');
+          }
+        })
+        .catch(() => {
+          setPreview(null);
+          setLookupState('notfound');
+        });
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [code]);
+
   const sendRequest = async (e: FormEvent) => {
     e.preventDefault();
     if (!code.trim()) return;
@@ -61,6 +99,8 @@ export default function FriendsPage() {
       await friendsApi.sendRequest(code.trim().toUpperCase());
       setMsg({ type: 'ok', text: 'Permintaan pertemanan terkirim!' });
       setCode('');
+      setPreview(null);
+      setLookupState('idle');
     } catch (err: any) {
       setMsg({ type: 'err', text: err?.response?.data?.message || 'Gagal mengirim permintaan' });
     } finally {
@@ -249,20 +289,61 @@ export default function FriendsPage() {
             <p className="text-xs text-[#8A8880] mb-3">
               Masukkan kode pertemanan teman Anda (8 karakter)
             </p>
-            <form onSubmit={sendRequest} className="flex gap-2">
+            <form onSubmit={sendRequest} className="flex flex-col gap-3">
               <input
                 type="text"
                 value={code}
                 onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8))}
                 placeholder="ABCD1234"
-                className="flex-1 px-4 py-3 bg-[#F0EDE8] rounded-xl text-[15px] font-bold tracking-widest focus:bg-white focus:ring-2 focus:ring-[#D48B3A]/30 outline-none border-none"
+                className="w-full px-4 py-3 bg-[#F0EDE8] rounded-xl text-[15px] font-bold tracking-widest focus:bg-white focus:ring-2 focus:ring-[#D48B3A]/30 outline-none border-none"
               />
+
+              {/* Preview card — shows the resolved name + avatar so the user
+                  confirms the right person before sending the request. */}
+              {lookupState === 'loading' && (
+                <div className="flex items-center gap-3 p-3 bg-[#FAF9F6] border border-[#F0EDE8] rounded-xl">
+                  <div className="w-10 h-10 rounded-full bg-[#F0EDE8] animate-pulse" />
+                  <div className="flex-1 space-y-1.5">
+                    <div className="h-3 w-24 bg-[#F0EDE8] rounded animate-pulse" />
+                    <div className="h-2.5 w-16 bg-[#F0EDE8] rounded animate-pulse" />
+                  </div>
+                </div>
+              )}
+              {lookupState === 'notfound' && (
+                <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-3 py-2">
+                  Kode tidak ditemukan
+                </p>
+              )}
+              {preview && (
+                <div className="flex items-center gap-3 p-3 bg-[#FDF6EC] border border-[#D48B3A]/30 rounded-xl">
+                  {preview.avatarUrl ? (
+                    <img
+                      src={preview.avatarUrl}
+                      alt={preview.name}
+                      className="w-10 h-10 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-[#D48B3A] text-white font-bold flex items-center justify-center">
+                      {preview.name.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="font-bold text-[#1C1C1A] truncate">
+                      {preview.name}
+                    </div>
+                    <div className="text-xs text-[#8A8880]">
+                      Kirim permintaan pertemanan?
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <button
                 type="submit"
-                disabled={sending || !code.trim()}
-                className="px-5 py-3 bg-[#1C1C1A] text-white rounded-xl font-bold disabled:opacity-50"
+                disabled={sending || !preview}
+                className="w-full px-5 py-3 bg-[#1C1C1A] text-white rounded-xl font-bold disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {sending ? '...' : 'Kirim'}
+                {sending ? 'Mengirim…' : 'Kirim Permintaan'}
               </button>
             </form>
             {msg && (

@@ -93,6 +93,32 @@ export default function MapScreen() {
   );
   const [filterModalOpen, setFilterModalOpen] = useState(false);
 
+  // Selecting a purpose auto-preselects its required features. User can still
+  // toggle individual feature chips off in the modal afterwards.
+  const handlePurposeSelect = useCallback(
+    (newId: number | null) => {
+      setFilterPurposeId(newId);
+      if (newId == null) return;
+      const purpose = purposeList.find((p) => p.id === newId);
+      const features = (purpose?.requirements ?? [])
+        .map((r) => r.feature?.name)
+        .filter((n): n is string => !!n);
+      if (features.length > 0) setFilterFacilityKeys(features);
+    },
+    [purposeList],
+  );
+
+  // ⭐ marker keys — features that came from the active purpose's requirements.
+  const autoSelectedFromPurpose = useMemo(() => {
+    if (filterPurposeId == null) return new Set<string>();
+    const p = purposeList.find((x) => x.id === filterPurposeId);
+    return new Set(
+      (p?.requirements ?? [])
+        .map((r) => r.feature?.name)
+        .filter((n): n is string => !!n),
+    );
+  }, [filterPurposeId, purposeList]);
+
   const activeFilterCount =
     filterFacilityKeys.length +
     (filterPriceRange ? 1 : 0) +
@@ -1083,11 +1109,12 @@ export default function MapScreen() {
         onClose={() => setFilterModalOpen(false)}
         purposes={purposeList}
         activePurposeId={filterPurposeId}
-        onPurposeSelect={setFilterPurposeId}
+        onPurposeSelect={handlePurposeSelect}
         facilities={filterFacilityKeys}
         onFacilitiesChange={setFilterFacilityKeys}
         priceRange={filterPriceRange}
         onPriceRangeChange={setFilterPriceRange}
+        autoSelectedKeys={autoSelectedFromPurpose}
       />
 
       <RadiusPickerModal

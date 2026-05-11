@@ -9,7 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { createReview } from '../services/api';
 import { colors, spacing, radius } from '../theme';
-import { WIZARD_PURPOSES } from '@shared/constants/purposes';
+import { usePurposes } from '../queries/purposes/use-purposes';
 import { useCafeFilters } from '../queries/cafes/use-cafe-filters';
 import { FACILITY_ICONS } from '../utils/facilities';
 
@@ -31,6 +31,8 @@ export default function WriteReviewScreen() {
   // new group/option on the server propagates here without code changes.
   const filtersQuery = useCafeFilters();
   const filterGroups = filtersQuery.data?.groups ?? [];
+  const purposesQuery = usePurposes();
+  const moodOptions = purposesQuery.data ?? [];
 
   const [step, setStep] = useState(0);
   const [mood, setMood] = useState<string | null>(null);
@@ -168,22 +170,24 @@ export default function WriteReviewScreen() {
             <Text style={styles.stepTitle}>Mood kamu pas di sini?</Text>
             <Text style={styles.stepHint}>Pilih satu yang paling cocok</Text>
             <View style={styles.optionsGrid}>
-              {WIZARD_PURPOSES.map((m) => (
+              {moodOptions.map((m) => (
                 <TouchableOpacity
                   key={m.slug}
                   style={[styles.optionCard, mood === m.slug && styles.optionCardActive]}
                   onPress={() => setMood(m.slug)}
                 >
-                  <Text style={styles.optionEmoji}>{m.emoji}</Text>
+                  <Text style={styles.optionEmoji}>{m.icon ?? '📌'}</Text>
                   <Text style={[styles.optionLabel, mood === m.slug && styles.optionLabelActive]}>
-                    {m.label}
+                    {m.name}
                   </Text>
-                  <Text
-                    style={[styles.optionTagline, mood === m.slug && styles.optionTaglineActive]}
-                    numberOfLines={2}
-                  >
-                    {m.tagline}
-                  </Text>
+                  {m.description ? (
+                    <Text
+                      style={[styles.optionTagline, mood === m.slug && styles.optionTaglineActive]}
+                      numberOfLines={2}
+                    >
+                      {m.description}
+                    </Text>
+                  ) : null}
                 </TouchableOpacity>
               ))}
             </View>

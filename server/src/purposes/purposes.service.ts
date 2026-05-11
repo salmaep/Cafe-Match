@@ -26,7 +26,7 @@ export class PurposesService {
 
   async findAll() {
     return this.purposesRepository.find({
-      relations: ['requirements'],
+      relations: ['requirements', 'requirements.feature'],
       order: { displayOrder: 'ASC' },
     });
   }

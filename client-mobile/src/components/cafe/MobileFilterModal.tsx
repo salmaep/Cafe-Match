@@ -27,6 +27,9 @@ interface Props {
   // Price
   priceRange: string;
   onPriceRangeChange: (next: string) => void;
+  // Feature keys recommended by the active purpose — rendered with ⭐ when
+  // not yet active to signal "auto-suggested for this vibe".
+  autoSelectedKeys?: Set<string>;
 }
 
 const PRICE_OPTIONS: { key: string; label: string }[] = [
@@ -64,6 +67,7 @@ export default function MobileFilterModal({
   onFacilitiesChange,
   priceRange,
   onPriceRangeChange,
+  autoSelectedKeys,
 }: Props) {
   const [groups, setGroups] = useState<FilterCatalogGroup[] | null>(catalogCache);
 
@@ -175,6 +179,7 @@ export default function MobileFilterModal({
                       icon={opt.icon}
                       count={opt.count}
                       active={facilities.includes(opt.key)}
+                      autoSelected={autoSelectedKeys?.has(opt.key) ?? false}
                       onPress={() => toggleFacility(opt.key)}
                     />
                   ))}
@@ -215,22 +220,30 @@ function FilterChip({
   active,
   count,
   onPress,
+  autoSelected = false,
 }: {
   label: string;
   icon?: string;
   active: boolean;
   count?: number;
   onPress: () => void;
+  autoSelected?: boolean;
 }) {
   return (
     <TouchableOpacity
       onPress={onPress}
-      style={[styles.chip, active && styles.chipActive]}
+      style={[
+        styles.chip,
+        active && styles.chipActive,
+        !active && autoSelected && styles.chipAuto,
+      ]}
     >
       {active ? (
         <View style={styles.chipCheck}>
           <Text style={styles.chipCheckText}>✓</Text>
         </View>
+      ) : autoSelected ? (
+        <Text style={styles.chipIcon}>⭐</Text>
       ) : icon ? (
         <Text style={styles.chipIcon}>{icon}</Text>
       ) : null}
@@ -305,6 +318,10 @@ const styles = StyleSheet.create({
   },
   chipActive: {
     backgroundColor: '#D48B3A',
+    borderColor: '#D48B3A',
+  },
+  chipAuto: {
+    backgroundColor: '#FDF6EC',
     borderColor: '#D48B3A',
   },
   chipCheck: {

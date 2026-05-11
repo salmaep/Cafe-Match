@@ -4,9 +4,12 @@ import { Repository, DataSource } from 'typeorm';
 import { Review } from './entities/review.entity';
 import { ReviewRating } from './entities/review-rating.entity';
 import { ReviewMedia } from './entities/review-media.entity';
+import { ReviewVote } from './entities/review-vote.entity';
 import { CreateReviewDto, UpdateReviewDto } from './dto/create-review.dto';
 import { AchievementsService } from '../achievements/achievements.service';
 import { MeiliCafesService } from '../meili/meili-cafes.service';
+
+export type ReviewSort = 'helpful' | 'recent';
 
 @Injectable()
 export class ReviewsService {
@@ -17,6 +20,8 @@ export class ReviewsService {
     private readonly ratingRepo: Repository<ReviewRating>,
     @InjectRepository(ReviewMedia)
     private readonly mediaRepo: Repository<ReviewMedia>,
+    @InjectRepository(ReviewVote)
+    private readonly voteRepo: Repository<ReviewVote>,
     private readonly dataSource: DataSource,
     private readonly achievementsService: AchievementsService,
     private readonly meiliCafes: MeiliCafesService,
@@ -156,15 +161,68 @@ export class ReviewsService {
     await this.resyncCafeIndex(cafeId);
   }
 
-  async findByCafe(cafeId: number, page = 1, limit = 20) {
-    const [data, total] = await this.reviewRepo.findAndCount({
+  async findByCafe(
+    cafeId: number,
+    page = 1,
+    limit = 20,
+    sort: ReviewSort = 'helpful',
+  ) {
+    const order =
+      sort === 'helpful'
+        ? { helpfulCount: 'DESC' as const, createdAt: 'DESC' as const }
+        : { createdAt: 'DESC' as const };
+
+    const [reviews, total] = await this.reviewRepo.findAndCount({
       where: { cafeId },
       relations: ['user', 'ratings', 'media'],
-      order: { createdAt: 'DESC' },
+      order,
       skip: (page - 1) * limit,
       take: limit,
     });
+
+    const data = reviews.map((r) => ({
+      ...r,
+      helpfulCount: r.helpfulCount ?? 0,
+    }));
+
     return { data, meta: { page, limit, total } };
+  }
+
+  /** Review IDs the user has voted helpful on for the given cafe. */
+  async myVoteIds(userId: number, cafeId: number): Promise<number[]> {
+    const rows: { review_id: number }[] = await this.dataSource.query(
+      `SELECT rv.review_id
+       FROM review_votes rv
+       JOIN reviews r ON r.id = rv.review_id
+       WHERE rv.user_id = ? AND r.cafe_id = ?`,
+      [userId, cafeId],
+    );
+    return rows.map((r) => Number(r.review_id));
+  }
+
+  /** Toggle helpful vote. Uses load-mutate-save so subscribers (if any) fire,
+   *  and to avoid the raw-SQL increment trap that bypasses TypeORM events. */
+  async toggleVote(userId: number, reviewId: number) {
+    return this.dataSource.transaction(async (manager) => {
+      const review = await manager.findOne(Review, { where: { id: reviewId } });
+      if (!review) throw new NotFoundException('Review tidak ditemukan');
+
+      const existing = await manager.findOne(ReviewVote, {
+        where: { userId, reviewId },
+      });
+
+      if (existing) {
+        await manager.remove(existing);
+        review.helpfulCount = Math.max(0, (review.helpfulCount ?? 0) - 1);
+        await manager.save(review);
+        return { helpful: false, helpfulCount: review.helpfulCount };
+      } else {
+        await manager.save(ReviewVote, { userId, reviewId });
+        review.helpfulCount = (review.helpfulCount ?? 0) + 1;
+        await manager.save(review);
+        return { helpful: true, helpfulCount: review.helpfulCount };
+      }
+    });
   }
 
   async summary(cafeId: number) {

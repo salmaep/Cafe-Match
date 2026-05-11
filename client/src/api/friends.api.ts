@@ -15,6 +15,12 @@ export interface FriendRequest {
   createdAt: string;
 }
 
+export interface FriendPreview {
+  id: number;
+  name: string;
+  avatarUrl: string | null;
+}
+
 export const friendsApi = {
   list: () => apiClient.get<Friend[]>('/friends'),
   pendingRequests: () => apiClient.get<FriendRequest[]>('/friends/requests/pending'),
@@ -24,4 +30,8 @@ export const friendsApi = {
   reject: (requestId: number) => apiClient.put(`/friends/request/${requestId}/reject`),
   throwEmoji: (friendId: number, emoji: string) =>
     apiClient.post(`/friends/${friendId}/emoji`, { emoji }),
+  /** Resolve a friend code to minimal profile preview before sending a request.
+   *  Returns null when no user matches (or the code is the requester's own). */
+  lookup: (code: string) =>
+    apiClient.get<FriendPreview | null>('/friends/lookup', { params: { code } }),
 };

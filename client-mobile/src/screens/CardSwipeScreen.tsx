@@ -1,4 +1,4 @@
-import React, { useRef, useState, useCallback, useMemo } from 'react';
+import React, { useRef, useState, useCallback, useMemo, useEffect } from 'react';
 import WizardScreen from './WizardScreen';
 import {
   View,
@@ -9,11 +9,20 @@ import {
   Dimensions,
   ActivityIndicator,
 } from 'react-native';
-import Swiper from 'react-native-deck-swiper';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  runOnJS,
+  interpolate,
+  Extrapolation,
+} from 'react-native-reanimated';
 import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useAuth } from '../context/AuthContext';
 import { useShortlist } from '../context/ShortlistContext';
 import { usePreferences } from '../context/PreferencesContext';
 import { useLocation } from '../context/LocationContext';
@@ -30,18 +39,18 @@ export default function CardSwipeScreen() {
   const navigation = useNavigation<StackNavigationProp<any>>();
   const route = useRoute();
   const insets = useSafeAreaInsets();
+  const { user } = useAuth();
   const { addToShortlist, isInShortlist } = useShortlist();
   const { preferences } = usePreferences();
   const { latitude, longitude } = useLocation();
   const purposeId = usePurposeId(preferences?.purpose);
-  const swiperRef = useRef<any>(null);
-
   const isStandalone = route.name === 'CardSwipe';
 
   const [allSwiped, setAllSwiped] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
   const [showToast, setShowToast] = useState(false);
   const [sessionId, setSessionId] = useState(0);
+  const [index, setIndex] = useState(0);
 
   const [showWizard, setShowWizard] = useState(!isStandalone);
   useFocusEffect(
@@ -53,6 +62,7 @@ export default function CardSwipeScreen() {
   const dismissWizard = useCallback(() => {
     setShowWizard(false);
     setAllSwiped(false);
+    setIndex(0);
     setSessionId((s) => s + 1);
   }, []);
 
@@ -60,7 +70,6 @@ export default function CardSwipeScreen() {
   const BOTTOM_H = insets.bottom + 72;
   const availableH = height - HEADER_H - BOTTOM_H;
   const CARD_H = Math.min(availableH * 0.88, height * 0.68);
-
   const cardTop = Math.max(0, (availableH - CARD_H) / 2);
   const cardLeft = (width - CARD_W) / 2;
 
@@ -74,21 +83,55 @@ export default function CardSwipeScreen() {
     ? (preferences?.priceRange as '$' | '$$' | '$$$')
     : undefined;
 
-  const deckQuery = useDiscoverDeck({
-    lat: lat ?? undefined,
-    lng: lng ?? undefined,
-    radius: Math.min(radKm * 1000, 50_000_000),
-    purposeId,
-    facilities:
-      preferences?.amenities && preferences.amenities.length > 0
-        ? preferences.amenities
-        : undefined,
-    priceRange: priceRangeParam,
-    limit: 7,
-  });
+  const purposeReady = preferences?.purpose == null || purposeId != null;
 
-  const cafes: Cafe[] = useMemo(() => deckQuery.data?.data ?? [], [deckQuery.data]);
+  const deckQuery = useDiscoverDeck(
+    {
+      lat: lat ?? undefined,
+      lng: lng ?? undefined,
+      radius: Math.min(radKm * 1000, 50_000_000),
+      purposeId,
+      facilities:
+        preferences?.amenities && preferences.amenities.length > 0
+          ? preferences.amenities
+          : undefined,
+      priceRange: priceRangeParam,
+      limit: 7,
+    },
+    { enabled: purposeReady },
+  );
+
+  const cafes: Cafe[] = useMemo(() => {
+    const raw = deckQuery.data?.data ?? [];
+    return raw.filter((c) => !isInShortlist(c.id));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deckQuery.data]);
   const loading = deckQuery.isPending || deckQuery.isFetching;
+
+  useEffect(() => {
+    const upcoming = cafes.slice(index, index + 3);
+    upcoming.forEach((cafe) => {
+      const url =
+        cafe.promotionContent?.promoPhoto ||
+        cafe.newCafeContent?.promoPhoto ||
+        cafe.photos?.[0];
+      if (url) Image.prefetch(url);
+    });
+  }, [cafes, index]);
+
+  const isInShortlistRef = useRef(isInShortlist);
+  isInShortlistRef.current = isInShortlist;
+  const addToShortlistRef = useRef(addToShortlist);
+  addToShortlistRef.current = addToShortlist;
+  const cafesRef = useRef(cafes);
+  cafesRef.current = cafes;
+  const userRef = useRef(user);
+  userRef.current = user;
+
+  const promptLoginRef = useRef<() => void>(() => {});
+  promptLoginRef.current = () => navigation.navigate('AuthModal');
+
+  const heartNativeGesture = useMemo(() => Gesture.Native(), []);
 
   useFocusEffect(
     useCallback(() => {
@@ -96,34 +139,45 @@ export default function CardSwipeScreen() {
     }, []),
   );
 
-  const handleSwipedRight = (cardIndex: number) => {
-    const cafe = cafes[cardIndex];
-    if (!cafe || isInShortlist(cafe.id)) return;
-    setTimeout(() => {
-      addToShortlist(cafe);
-      setToastMsg(`Added "${cafe.name}" to Shortlist!`);
-      setShowToast(true);
-    }, 350);
-  };
+  const indexRef = useRef(0);
+  indexRef.current = index;
 
-  const handleSwipedAll = () => {
-    setAllSwiped(true);
-    setTimeout(() => {
-      navigation.navigate('MainTabs', { screen: 'Explore' });
-    }, 1200);
-  };
-
-  const handleSwiped = (cardIndex: number) => {
-    if (cardIndex >= cafes.length - 1) {
-      handleSwipedAll();
+  const advanceIndex = useCallback((dir: 'left' | 'right') => {
+    const i = indexRef.current;
+    const cafe = cafesRef.current[i];
+    if (dir === 'right' && cafe && !isInShortlistRef.current(cafe.id)) {
+      if (!userRef.current) {
+        promptLoginRef.current();
+      } else {
+        addToShortlistRef.current(cafe);
+        setToastMsg(`Added "${cafe.name}" to Shortlist!`);
+        setShowToast(true);
+      }
     }
-  };
+    const next = i + 1;
+    const total = cafesRef.current.length;
+    if (next >= total) {
+      setAllSwiped(true);
+      setTimeout(() => {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'MainTabs', params: { screen: 'Explore' } }],
+        });
+      }, 1200);
+    }
+    setIndex(next);
+  }, [navigation]);
+
+  const handleTapCard = useCallback(() => {
+    const cafe = cafesRef.current[indexRef.current];
+    if (cafe) navigation.navigate('CafeDetail', { cafe });
+  }, [navigation]);
 
   const openShortlist = () => navigation.navigate('ShortlistModal');
 
   const renderCard = useCallback((cafe: Cafe) => {
-    if (!cafe) return null;
-    const saved = isInShortlist(cafe.id);
+    if (!cafe) return <View />;
+    const saved = isInShortlistRef.current(cafe.id);
     const isTypeA = cafe.promotionType === 'A' || cafe.activePromotionType === 'new_cafe';
     const isTypeB = cafe.promotionType === 'B' || cafe.activePromotionType === 'featured_promo';
 
@@ -177,20 +231,26 @@ export default function CardSwipeScreen() {
           </View>
         )}
 
-        <TouchableOpacity
-          style={[
-            styles.heartBtn,
-            saved && styles.heartBtnActive,
-            (isTypeA || isTypeB) && styles.heartBtnPromo,
-          ]}
-          onPress={() => {
-            addToShortlist(cafe);
-            setToastMsg(`Added "${cafe.name}" to Shortlist!`);
-            setShowToast(true);
-          }}
-        >
-          <Text style={styles.heartIcon}>{saved ? '★' : '☆'}</Text>
-        </TouchableOpacity>
+        <GestureDetector gesture={heartNativeGesture}>
+          <TouchableOpacity
+            style={[
+              styles.heartBtn,
+              saved && styles.heartBtnActive,
+              (isTypeA || isTypeB) && styles.heartBtnPromo,
+            ]}
+            onPress={() => {
+              if (!userRef.current) {
+                promptLoginRef.current();
+                return;
+              }
+              addToShortlistRef.current(cafe);
+              setToastMsg(`Added "${cafe.name}" to Shortlist!`);
+              setShowToast(true);
+            }}
+          >
+            <Text style={styles.heartIcon}>{saved ? '★' : '☆'}</Text>
+          </TouchableOpacity>
+        </GestureDetector>
 
         <View style={styles.cardBottom}>
           {isTypeA && (
@@ -294,7 +354,22 @@ export default function CardSwipeScreen() {
         </View>
       </View>
     );
-  }, [addToShortlist, isInShortlist]);
+  }, []);
+
+  const goExplore = () =>
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'MainTabs', params: { screen: 'Explore' } }],
+    });
+
+  if (showWizard) {
+    return (
+      <WizardScreen
+        onComplete={dismissWizard}
+        onSkip={dismissWizard}
+      />
+    );
+  }
 
   if (allSwiped) {
     return (
@@ -305,9 +380,6 @@ export default function CardSwipeScreen() {
       </View>
     );
   }
-
-  const goExplore = () =>
-    navigation.navigate('MainTabs', { screen: 'Explore' });
 
   if (loading) {
     return (
@@ -341,15 +413,6 @@ export default function CardSwipeScreen() {
     );
   }
 
-  if (showWizard) {
-    return (
-      <WizardScreen
-        onComplete={dismissWizard}
-        onSkip={dismissWizard}
-      />
-    );
-  }
-
   return (
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
@@ -358,83 +421,45 @@ export default function CardSwipeScreen() {
         </Text>
       </View>
 
-      <Swiper
-        key={`${sessionId}-${cafes.length}-${cafes[0]?.id ?? 'empty'}`}
-        ref={swiperRef}
-        cards={cafes}
-        renderCard={renderCard}
-        onSwiped={handleSwiped}
-        onSwipedRight={handleSwipedRight}
-        onSwipedAll={handleSwipedAll}
-        onTapCard={(cardIndex) => {
-          const cafe = cafes[cardIndex];
-          if (cafe) navigation.navigate('CafeDetail', { cafe });
-        }}
-        cardIndex={0}
-        backgroundColor="transparent"
-        stackSize={2}
-        stackSeparation={12}
-        stackScale={4}
-        animateOverlayLabelsOpacity
-        disableTopSwipe
-        disableBottomSwipe
-        overlayLabels={{
-          left: {
-            title: 'NOPE',
-            style: {
-              label: {
-                backgroundColor: colors.error,
-                color: colors.white,
-                fontSize: 16,
-                fontWeight: '700',
-                borderRadius: 8,
-                padding: 8,
-              },
-              wrapper: {
-                flexDirection: 'column',
-                alignItems: 'flex-end',
-                justifyContent: 'flex-start',
-                marginTop: 40,
-                marginLeft: -20,
-              },
-            },
-          },
-          right: {
-            title: 'SHORTLIST ★',
-            style: {
-              label: {
-                backgroundColor: colors.accent,
-                color: colors.white,
-                fontSize: 16,
-                fontWeight: '700',
-                borderRadius: 8,
-                padding: 8,
-              },
-              wrapper: {
-                flexDirection: 'column',
-                alignItems: 'flex-start',
-                justifyContent: 'flex-start',
-                marginTop: 40,
-                marginLeft: 20,
-              },
-            },
-          },
-        }}
-        containerStyle={{
+      <View
+        style={{
           position: 'absolute',
           top: HEADER_H,
           left: 0,
           right: 0,
           bottom: BOTTOM_H,
-          backgroundColor: 'transparent',
         }}
-        cardStyle={{
-          top: cardTop,
-          left: cardLeft,
-          width: CARD_W,
-          height: CARD_H,
-        }}
-      />
+      >
+        {cafes[index + 1] && (
+          <View
+            style={{
+              position: 'absolute',
+              top: cardTop,
+              left: cardLeft,
+              width: CARD_W,
+              height: CARD_H,
+            }}
+            pointerEvents="none"
+          >
+            {renderCard(cafes[index + 1])}
+          </View>
+        )}
+
+        {cafes[index] && (
+          <SwipeableCard
+            key={`${sessionId}-${index}`}
+            top={cardTop}
+            left={cardLeft}
+            width={CARD_W}
+            height={CARD_H}
+            onSwipeComplete={advanceIndex}
+            onTap={handleTapCard}
+            tapFailGesture={heartNativeGesture}
+          >
+            {renderCard(cafes[index])}
+          </SwipeableCard>
+        )}
+      </View>
 
       <TouchableOpacity
         style={[styles.fab, { bottom: insets.bottom + 24 }]}
@@ -445,6 +470,129 @@ export default function CardSwipeScreen() {
 
       <Toast message={toastMsg} visible={showToast} onHide={() => setShowToast(false)} />
     </View>
+  );
+}
+
+const SWIPE_THRESHOLD = 120;
+const SWIPE_OUT_X = width * 1.5;
+const SPRING_OUT = { damping: 20, stiffness: 90, mass: 1, overshootClamping: true };
+const SPRING_BACK = { damping: 15, stiffness: 150, mass: 0.7 };
+
+type SwipeableCardProps = {
+  top: number;
+  left: number;
+  width: number;
+  height: number;
+  onSwipeComplete: (dir: 'left' | 'right') => void;
+  onTap: () => void;
+  tapFailGesture?: ReturnType<typeof Gesture.Native>;
+  children: React.ReactNode;
+};
+
+function SwipeableCard({
+  top,
+  left,
+  width: cardW,
+  height: cardH,
+  onSwipeComplete,
+  onTap,
+  tapFailGesture,
+  children,
+}: SwipeableCardProps) {
+  const translateX = useSharedValue(0);
+  const translateY = useSharedValue(0);
+
+  const pan = Gesture.Pan()
+    .onUpdate((e) => {
+      translateX.value = e.translationX;
+      translateY.value = e.translationY;
+    })
+    .onEnd((e) => {
+      if (e.translationX > SWIPE_THRESHOLD) {
+        translateX.value = withSpring(SWIPE_OUT_X, SPRING_OUT);
+        runOnJS(onSwipeComplete)('right');
+      } else if (e.translationX < -SWIPE_THRESHOLD) {
+        translateX.value = withSpring(-SWIPE_OUT_X, SPRING_OUT);
+        runOnJS(onSwipeComplete)('left');
+      } else {
+        translateX.value = withSpring(0, SPRING_BACK);
+        translateY.value = withSpring(0, SPRING_BACK);
+      }
+    });
+
+  const baseTap = Gesture.Tap().maxDistance(10).onEnd((_e, success) => {
+    if (success) runOnJS(onTap)();
+  });
+  const tap = tapFailGesture
+    ? baseTap.requireExternalGestureToFail(tapFailGesture)
+    : baseTap;
+
+  const composedGesture = Gesture.Exclusive(pan, tap);
+
+  const animatedCardStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: translateX.value },
+      { translateY: translateY.value },
+      {
+        rotate: `${interpolate(
+          translateX.value,
+          [-width, 0, width],
+          [-8, 0, 8],
+          Extrapolation.CLAMP,
+        )}deg`,
+      },
+    ],
+  }));
+
+  const nopeOverlayStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(
+      translateX.value,
+      [-SWIPE_THRESHOLD, 0],
+      [1, 0],
+      Extrapolation.CLAMP,
+    ),
+  }));
+
+  const likeOverlayStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(
+      translateX.value,
+      [0, SWIPE_THRESHOLD],
+      [0, 1],
+      Extrapolation.CLAMP,
+    ),
+  }));
+
+  return (
+    <GestureDetector gesture={composedGesture}>
+      <Animated.View
+        style={[
+          {
+            position: 'absolute',
+            top,
+            left,
+            width: cardW,
+            height: cardH,
+          },
+          animatedCardStyle,
+        ]}
+      >
+        {children}
+
+        <Animated.View
+          pointerEvents="none"
+          style={[styles.overlayLeftWrapper, nopeOverlayStyle]}
+        >
+          <Text style={styles.overlayLabelNope}>NOPE</Text>
+        </Animated.View>
+
+        <Animated.View
+          pointerEvents="none"
+          style={[styles.overlayRightWrapper, likeOverlayStyle]}
+        >
+          <Text style={styles.overlayLabelLike}>SHORTLIST ★</Text>
+        </Animated.View>
+      </Animated.View>
+    </GestureDetector>
   );
 }
 
@@ -756,5 +904,43 @@ const styles = StyleSheet.create({
     color: colors.accent,
     fontSize: 14,
     fontWeight: '700',
+  },
+
+  cardStackBehind: {
+    position: 'absolute',
+  },
+  overlayLeftWrapper: {
+    position: 'absolute',
+    top: 32,
+    right: 24,
+    transform: [{ rotate: '20deg' }],
+  },
+  overlayRightWrapper: {
+    position: 'absolute',
+    top: 32,
+    left: 24,
+    transform: [{ rotate: '-20deg' }],
+  },
+  overlayLabelNope: {
+    backgroundColor: colors.error,
+    color: colors.white,
+    fontSize: 18,
+    fontWeight: '800',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    letterSpacing: 1,
+    overflow: 'hidden',
+  },
+  overlayLabelLike: {
+    backgroundColor: colors.accent,
+    color: colors.white,
+    fontSize: 18,
+    fontWeight: '800',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    letterSpacing: 1,
+    overflow: 'hidden',
   },
 });

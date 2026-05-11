@@ -6,11 +6,18 @@ import {
   type DiscoverDeckResult,
 } from './api';
 
-export function useDiscoverDeck(params: DiscoverDeckParams) {
+export function useDiscoverDeck(
+  params: DiscoverDeckParams,
+  options: { enabled?: boolean } = {},
+) {
+  const baseEnabled = params.lat != null && params.lng != null;
   return useQuery<DiscoverDeckResult>({
     queryKey: cafeKeys.discover(params as Record<string, unknown>),
     queryFn: () => fetchDiscoverDeck(params),
-    enabled: params.lat != null && params.lng != null,
-    staleTime: 30_000,
+    enabled: baseEnabled && (options.enabled ?? true),
+    staleTime: Infinity,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
+    refetchOnWindowFocus: false,
   });
 }

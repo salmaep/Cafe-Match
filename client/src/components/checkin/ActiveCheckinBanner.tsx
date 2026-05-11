@@ -63,21 +63,22 @@ export default function ActiveCheckinBanner() {
         <span className="relative rounded-full w-2.5 h-2.5 bg-emerald-300" />
       </span>
       <div className="min-w-0 flex-1">
-        <div className="flex items-baseline gap-2 min-w-0 flex-wrap">
+        <div className="flex items-baseline gap-2 min-w-0">
           <span className="text-[10px] font-extrabold tracking-[0.15em] uppercase text-emerald-200 shrink-0">
             Check-in {startedClock}
           </span>
           <span className="text-[11px] text-white/85 tabular-nums shrink-0">
             · Durasi {duration}
           </span>
+          <span className="text-[11px] text-white/85 tabular-nums shrink-0">· {duration}</span>
         </div>
-        <div className="text-sm font-bold text-white truncate mt-0.5">{cafeName}</div>
+        <div className="text-xs font-semibold text-white/90 truncate mt-0.5">{cafeName}</div>
       </div>
     </div>
   );
 
   return (
-    <div className="sticky top-0 z-40 bg-gradient-to-r from-emerald-700 via-emerald-600 to-emerald-700 shadow-lg">
+    <div className="sticky top-0 z-50 bg-gradient-to-r from-emerald-700 via-emerald-600 to-emerald-700 shadow-lg">
       <div className="max-w-[88rem] mx-auto px-4 py-2 flex items-center gap-3">
         {detailUrl ? (
           <Link to={detailUrl} className="flex-1 min-w-0 flex items-center gap-2.5 hover:opacity-90 transition-opacity">

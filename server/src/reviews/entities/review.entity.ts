@@ -22,6 +22,9 @@ export class Review {
   @Column({ type: 'text', nullable: true })
   text: string | null;
 
+  @Column({ name: 'helpful_count', type: 'int', default: 0 })
+  helpfulCount: number;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

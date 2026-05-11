@@ -6,6 +6,7 @@ import OwnerLayout from './components/layout/OwnerLayout';
 import OwnerRoute from './components/auth/OwnerRoute';
 import HomePage from './pages/HomePage';
 import CafeDetailPage from './pages/CafeDetailPage';
+import CafeReviewsPage from './pages/CafeReviewsPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import BookmarksPage from './pages/BookmarksPage';
@@ -66,6 +67,7 @@ function App() {
         <Route element={<UserLayout />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/cafe/:slug" element={<CafeDetailPage />} />
+          <Route path="/cafe/:slug/reviews" element={<CafeReviewsPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/bookmarks" element={<BookmarksPage />} />

@@ -151,6 +151,20 @@ export interface OwnerDashboard {
   pendingCount: number;
 }
 
+export interface CafeFeature {
+  id: number;
+  name: string;
+  category?: string;
+  icon?: string;
+}
+
+export interface PurposeRequirement {
+  featureId: number;
+  feature: CafeFeature;
+  isMandatory: boolean;
+  weight: number;
+}
+
 export interface BackendPurpose {
   id: number;
   slug: string;
@@ -158,6 +172,7 @@ export interface BackendPurpose {
   description?: string;
   icon?: string;
   displayOrder: number;
+  requirements?: PurposeRequirement[];
 }
 
 // ── Social Feature Types ──────────────────────────────────────────────

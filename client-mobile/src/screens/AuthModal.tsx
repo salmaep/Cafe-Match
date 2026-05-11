@@ -8,6 +8,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -65,6 +66,8 @@ export default function AuthModal() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [socialLoading, setSocialLoading] = useState<'google' | 'facebook' | null>(null);
 
@@ -603,14 +606,19 @@ export default function AuthModal() {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <TouchableOpacity
         style={styles.backdrop}
         activeOpacity={1}
         onPress={() => navigation.goBack()}
       />
-      <View style={styles.sheet}>
+      <ScrollView
+        style={styles.sheetScroll}
+        contentContainerStyle={styles.sheet}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.handleBar} />
 
         <Text style={styles.title}>
@@ -658,30 +666,51 @@ export default function AuthModal() {
           autoComplete="email"
         />
 
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          placeholderTextColor={colors.textSecondary}
-          value={password}
-          onChangeText={(t) => { setPassword(t); setErrorMsg(''); }}
-          secureTextEntry
-          autoComplete={isLogin ? 'current-password' : 'new-password'}
-        />
+        <View style={styles.passwordWrap}>
+          <TextInput
+            style={[styles.input, styles.inputWithEye]}
+            placeholder="Password"
+            placeholderTextColor={colors.textSecondary}
+            value={password}
+            onChangeText={(t) => { setPassword(t); setErrorMsg(''); }}
+            secureTextEntry={!showPassword}
+            autoComplete={isLogin ? 'current-password' : 'new-password'}
+          />
+          <TouchableOpacity
+            style={styles.eyeBtn}
+            onPress={() => setShowPassword((v) => !v)}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Text style={styles.eyeIcon}>{showPassword ? '🙈' : '👁️'}</Text>
+          </TouchableOpacity>
+        </View>
 
         {!isLogin && (
           <>
-            <TextInput
-              style={[
-                styles.input,
-                passwordMismatch && styles.inputError,
-              ]}
-              placeholder="Confirm Password"
-              placeholderTextColor={colors.textSecondary}
-              value={confirmPassword}
-              onChangeText={(t) => { setConfirmPassword(t); setErrorMsg(''); }}
-              secureTextEntry
-              autoComplete="new-password"
-            />
+            <View style={styles.passwordWrap}>
+              <TextInput
+                style={[
+                  styles.input,
+                  styles.inputWithEye,
+                  passwordMismatch && styles.inputError,
+                ]}
+                placeholder="Confirm Password"
+                placeholderTextColor={colors.textSecondary}
+                value={confirmPassword}
+                onChangeText={(t) => { setConfirmPassword(t); setErrorMsg(''); }}
+                secureTextEntry={!showConfirmPassword}
+                autoComplete="new-password"
+              />
+              <TouchableOpacity
+                style={styles.eyeBtn}
+                onPress={() => setShowConfirmPassword((v) => !v)}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Text style={styles.eyeIcon}>
+                  {showConfirmPassword ? '🙈' : '👁️'}
+                </Text>
+              </TouchableOpacity>
+            </View>
             {passwordMismatch && (
               <Text style={styles.mismatchHint}>Passwords do not match</Text>
             )}
@@ -751,7 +780,7 @@ export default function AuthModal() {
             </Text>
           </Text>
         </TouchableOpacity>
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
@@ -837,6 +866,13 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.4)',
   },
+  // ScrollView wrapper — `flexGrow: 0` keeps the sheet hugging the bottom
+  // (like the old fixed `<View>`); when the keyboard pushes content up the
+  // scrollable area lets the user reach the password / submit row.
+  sheetScroll: {
+    flexGrow: 0,
+    maxHeight: '92%',
+  },
   sheet: {
     backgroundColor: colors.background,
     borderTopLeftRadius: radius.xl,
@@ -904,6 +940,25 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: '#FCA5A5',
   },
+  // Password field wrapper — relative positioning lets the eye toggle overlay
+  // the right edge of the input without affecting input metrics.
+  passwordWrap: {
+    position: 'relative',
+    justifyContent: 'center',
+  },
+  inputWithEye: {
+    paddingRight: spacing.md + 28,
+  },
+  eyeBtn: {
+    position: 'absolute',
+    right: spacing.md,
+    top: 0,
+    bottom: spacing.sm,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  eyeIcon: { fontSize: 18 },
   mismatchHint: {
     fontSize: 12,
     color: '#DC2626',

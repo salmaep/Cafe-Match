@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -19,14 +19,11 @@ import { Purpose, WizardPreferences } from '../types';
 import { useLocation } from '../context/LocationContext';
 import { useDestinations } from '../queries/destinations/use-destinations';
 import { useCafeFilters } from '../queries/cafes/use-cafe-filters';
+import { usePurposes } from '../queries/purposes/use-purposes';
 import { FACILITY_ICONS } from '../utils/facilities';
-import { WIZARD_PURPOSES, type PurposeOption } from '@shared/constants/purposes';
 
 const { width } = Dimensions.get('window');
 const TOTAL_STEPS = 4;
-
-// WIZARD_PURPOSES is now centralized at repo-root `shared/constants/purposes.ts`
-// and imported above so web + mobile stay in lockstep with one edit.
 
 // Parse coord strings — supports paste from Google Maps, spreadsheets, plain text.
 // Examples that work:
@@ -70,9 +67,17 @@ export default function WizardScreen({ onComplete, onSkip }: WizardScreenProps =
   const destinationsQuery = useDestinations();
   const filtersQuery = useCafeFilters();
   const filterGroups = filtersQuery.data?.groups ?? [];
+  const purposesQuery = usePurposes();
+  const purposeList = purposesQuery.data ?? [];
   const [step, setStep] = useState(0);
 
-  const [purpose, setPurpose] = useState<Purpose | undefined>();
+  // purposeId drives the actual server lookups (requirements live here);
+  // `purpose` (string) is kept only for backward compat with WizardPreferences.
+  const [purposeId, setPurposeId] = useState<number | null>(null);
+  const purpose: Purpose | undefined = useMemo(() => {
+    if (purposeId == null) return undefined;
+    return (purposeList.find((p) => p.id === purposeId)?.name as Purpose) ?? undefined;
+  }, [purposeId, purposeList]);
   const [locationType, setLocationType] = useState<'current' | 'custom'>('current');
   const [customAddress, setCustomAddress] = useState('');
   const [customLat, setCustomLat] = useState<number | null>(null);
@@ -82,6 +87,25 @@ export default function WizardScreen({ onComplete, onSkip }: WizardScreenProps =
   // Amenities = server facility keys (e.g. "wifi"); price = "$" | "$$" | "$$$".
   const [amenities, setAmenities] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState<string>('');
+
+  // Auto-prefill amenities from the selected purpose's required features.
+  // User can still toggle off — ⭐ marker just signals "recommended for this vibe".
+  const autoSelectedKeys = useMemo(() => {
+    if (purposeId == null) return new Set<string>();
+    const p = purposeList.find((x) => x.id === purposeId);
+    return new Set(
+      (p?.requirements ?? [])
+        .map((r) => r.feature?.name)
+        .filter((n): n is string => !!n),
+    );
+  }, [purposeId, purposeList]);
+
+  useEffect(() => {
+    if (autoSelectedKeys.size === 0) return;
+    setAmenities(Array.from(autoSelectedKeys));
+    // Intentionally re-prefill on each purpose change. User edits afterwards
+    // win until they switch purpose again.
+  }, [autoSelectedKeys]);
 
   // Radius slider bounds (mirrors web RadiusSlider: 0.5 → 10km)
   const RADIUS_MIN_KM = 0.5;
@@ -179,32 +203,41 @@ export default function WizardScreen({ onComplete, onSkip }: WizardScreenProps =
         <View style={styles.stepContainer}>
           <Text style={styles.stepTitle}>What's your vibe today?</Text>
           <Text style={styles.stepSubtitle}>Choose one that fits your mood</Text>
-          <ScrollView
-            contentContainerStyle={styles.optionsGrid}
-            showsVerticalScrollIndicator={false}
-            style={{ flex: 1 }}
-          >
-            {WIZARD_PURPOSES.map((p) => (
-              <TouchableOpacity
-                key={p.label}
-                style={[styles.optionCard, purpose === p.label && styles.optionCardActive]}
-                onPress={() => setPurpose(p.label as Purpose)}
-              >
-                <Text style={styles.optionEmoji}>{p.emoji}</Text>
-                <Text
-                  style={[styles.optionLabel, purpose === p.label && styles.optionLabelActive]}
-                >
-                  {p.label}
-                </Text>
-                <Text
-                  style={[styles.optionTagline, purpose === p.label && styles.optionTaglineActive]}
-                  numberOfLines={2}
-                >
-                  {p.tagline}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
+          {purposesQuery.isLoading && purposeList.length === 0 ? (
+            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+              <ActivityIndicator color={colors.accent} />
+            </View>
+          ) : (
+            <ScrollView
+              contentContainerStyle={styles.optionsGrid}
+              showsVerticalScrollIndicator={false}
+              style={{ flex: 1 }}
+            >
+              {purposeList.map((p) => {
+                const active = purposeId === p.id;
+                return (
+                  <TouchableOpacity
+                    key={p.id}
+                    style={[styles.optionCard, active && styles.optionCardActive]}
+                    onPress={() => setPurposeId(p.id)}
+                  >
+                    <Text style={styles.optionEmoji}>{p.icon ?? '📌'}</Text>
+                    <Text style={[styles.optionLabel, active && styles.optionLabelActive]}>
+                      {p.name}
+                    </Text>
+                    {p.description ? (
+                      <Text
+                        style={[styles.optionTagline, active && styles.optionTaglineActive]}
+                        numberOfLines={2}
+                      >
+                        {p.description}
+                      </Text>
+                    ) : null}
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          )}
         </View>
 
         )}
@@ -504,6 +537,7 @@ export default function WizardScreen({ onComplete, onSkip }: WizardScreenProps =
                       <View style={styles.filterChipWrap}>
                         {group.options.map((opt) => {
                           const active = amenities.includes(opt.key);
+                          const autoSelected = autoSelectedKeys.has(opt.key);
                           const icon = FACILITY_ICONS[opt.key];
                           return (
                             <TouchableOpacity
@@ -512,6 +546,7 @@ export default function WizardScreen({ onComplete, onSkip }: WizardScreenProps =
                               style={[
                                 styles.filterChip,
                                 active && styles.filterChipActive,
+                                !active && autoSelected && styles.filterChipAuto,
                               ]}
                             >
                               {active ? (
@@ -520,6 +555,8 @@ export default function WizardScreen({ onComplete, onSkip }: WizardScreenProps =
                                     ✓
                                   </Text>
                                 </View>
+                              ) : autoSelected ? (
+                                <Text style={styles.filterChipIcon}>⭐</Text>
                               ) : icon ? (
                                 <Text style={styles.filterChipIcon}>{icon}</Text>
                               ) : null}
@@ -856,6 +893,10 @@ const styles = StyleSheet.create({
   filterChipActive: {
     backgroundColor: colors.accent,
     borderColor: colors.accent,
+  },
+  filterChipAuto: {
+    borderColor: colors.accent,
+    backgroundColor: '#FDF6EC',
   },
   filterChipCheck: {
     width: 14,

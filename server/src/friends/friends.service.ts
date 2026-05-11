@@ -21,6 +21,20 @@ export class FriendsService {
     private readonly achievementsService: AchievementsService,
   ) {}
 
+  /** Resolve a friend code to minimal public profile info. Powers the "Add"
+   *  flow's preview card so users can confirm the right person before sending
+   *  a request. Returns null if the code is malformed or no user matches. */
+  async lookupByCode(senderId: number, friendCode: string) {
+    const code = (friendCode ?? '').trim();
+    if (!code) return null;
+    const user = await this.userRepo.findOne({
+      where: { friendCode: code },
+      select: ['id', 'name', 'avatarUrl'] as any,
+    });
+    if (!user || user.id === senderId) return null;
+    return { id: user.id, name: user.name, avatarUrl: user.avatarUrl ?? null };
+  }
+
   async sendRequest(senderId: number, friendCode: string) {
     const receiver = await this.userRepo.findOne({ where: { friendCode } });
     if (!receiver) throw new NotFoundException('Kode teman tidak ditemukan');

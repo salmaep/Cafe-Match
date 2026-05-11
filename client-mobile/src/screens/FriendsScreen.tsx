@@ -100,15 +100,23 @@ export default function FriendsScreen() {
           keyExtractor={(f) => String(f.id)}
           contentContainerStyle={styles.list}
           ListEmptyComponent={<Text style={styles.emptyText}>Belum punya teman. Tambahkan lewat kode!</Text>}
-          renderItem={({ item }) => (
-            <View style={styles.friendRow}>
-              <View style={styles.avatar}><Text style={styles.avatarText}>{item.name[0]}</Text></View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.friendName}>{item.name}</Text>
-                <Text style={styles.friendCode}>{item.friendCode}</Text>
+          renderItem={({ item }) => {
+            const displayName = (item.name || '').trim() || 'Unknown';
+            const code = item.friendCode || '';
+            return (
+              <View style={styles.friendRow}>
+                <View style={styles.avatar}>
+                  <Text style={styles.avatarText}>{displayName[0]?.toUpperCase() || '?'}</Text>
+                </View>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={styles.friendName} numberOfLines={1}>{displayName}</Text>
+                  {!!code && (
+                    <Text style={styles.friendCode} numberOfLines={1}>🔖 {code}</Text>
+                  )}
+                </View>
               </View>
-            </View>
-          )}
+            );
+          }}
         />
       ) : tab === 'requests' ? (
         <FlatList
@@ -116,20 +124,38 @@ export default function FriendsScreen() {
           keyExtractor={(r) => String(r.id)}
           contentContainerStyle={styles.list}
           ListEmptyComponent={<Text style={styles.emptyText}>Tidak ada permintaan masuk</Text>}
-          renderItem={({ item }) => (
-            <View style={styles.friendRow}>
-              <View style={styles.avatar}><Text style={styles.avatarText}>{item.sender?.name?.[0] || '?'}</Text></View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.friendName}>{item.sender?.name || 'Unknown'}</Text>
+          renderItem={({ item }) => {
+            // Defensive: server returns the full FriendRequest with `sender`
+            // populated, but if the join ever drops it we still want a
+            // readable row instead of an empty card with just "?". Fall back
+            // to senderId / friendCode so the user knows *something* about
+            // who's asking.
+            const senderName = (item.sender?.name || '').trim();
+            const senderCode = item.sender?.friendCode || '';
+            const displayName =
+              senderName ||
+              senderCode ||
+              (item.senderId ? `User #${item.senderId}` : 'Unknown');
+            return (
+              <View style={styles.friendRow}>
+                <View style={styles.avatar}>
+                  <Text style={styles.avatarText}>{displayName[0]?.toUpperCase() || '?'}</Text>
+                </View>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={styles.friendName} numberOfLines={1}>{displayName}</Text>
+                  {!!senderCode && senderName && (
+                    <Text style={styles.friendCode} numberOfLines={1}>🔖 {senderCode}</Text>
+                  )}
+                </View>
+                <TouchableOpacity style={styles.acceptBtn} onPress={() => handleAccept(item.id)}>
+                  <Text style={styles.acceptText}>Terima</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.rejectBtn} onPress={() => handleReject(item.id)}>
+                  <Text style={styles.rejectText}>Tolak</Text>
+                </TouchableOpacity>
               </View>
-              <TouchableOpacity style={styles.acceptBtn} onPress={() => handleAccept(item.id)}>
-                <Text style={styles.acceptText}>Terima</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.rejectBtn} onPress={() => handleReject(item.id)}>
-                <Text style={styles.rejectText}>Tolak</Text>
-              </TouchableOpacity>
-            </View>
-          )}
+            );
+          }}
         />
       ) : (
         <View style={styles.addSection}>

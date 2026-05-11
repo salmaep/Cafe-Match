@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert, Image, Dimensions,
+  ActivityIndicator,
 } from 'react-native';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -8,30 +9,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { createReview } from '../services/api';
 import { colors, spacing, radius } from '../theme';
+import { usePurposes } from '../queries/purposes/use-purposes';
+import { useCafeFilters } from '../queries/cafes/use-cafe-filters';
+import { FACILITY_ICONS } from '../utils/facilities';
 
 const { width } = Dimensions.get('window');
 
 type RouteParams = { WriteReview: { cafeId: string; cafeName: string } };
-
-// ── Step definitions ───────────────────────────────────────────────────────
-const MOODS = [
-  { key: 'me-time', label: 'Me Time', emoji: '🧘' },
-  { key: 'date', label: 'Date', emoji: '💑' },
-  { key: 'family', label: 'Family Time', emoji: '👨‍👩‍👧' },
-  { key: 'group-work', label: 'Group Study', emoji: '📚' },
-  { key: 'wfc', label: 'WFC', emoji: '💻' },
-];
-
-const FACILITIES = [
-  { key: 'wifi', label: 'WiFi', icon: '📶' },
-  { key: 'power_outlet', label: 'Power Outlet', icon: '🔌' },
-  { key: 'mushola', label: 'Mushola', icon: '🕌' },
-  { key: 'parking', label: 'Parking', icon: '🅿️' },
-  { key: 'kid_friendly', label: 'Kid-Friendly', icon: '👶' },
-  { key: 'quiet_atmosphere', label: 'Quiet', icon: '🤫' },
-  { key: 'large_tables', label: 'Large Tables', icon: '🪑' },
-  { key: 'outdoor_area', label: 'Outdoor', icon: '🌿' },
-];
 
 const TOTAL_STEPS = 5;
 
@@ -42,6 +26,13 @@ export default function WriteReviewScreen() {
   const navigation = useNavigation<StackNavigationProp<any>>();
   const insets = useSafeAreaInsets();
   const { cafeId, cafeName } = route.params;
+
+  // Server-driven facility taxonomy — same source as the wizard, so adding a
+  // new group/option on the server propagates here without code changes.
+  const filtersQuery = useCafeFilters();
+  const filterGroups = filtersQuery.data?.groups ?? [];
+  const purposesQuery = usePurposes();
+  const moodOptions = purposesQuery.data ?? [];
 
   const [step, setStep] = useState(0);
   const [mood, setMood] = useState<string | null>(null);
@@ -179,16 +170,24 @@ export default function WriteReviewScreen() {
             <Text style={styles.stepTitle}>Mood kamu pas di sini?</Text>
             <Text style={styles.stepHint}>Pilih satu yang paling cocok</Text>
             <View style={styles.optionsGrid}>
-              {MOODS.map((m) => (
+              {moodOptions.map((m) => (
                 <TouchableOpacity
-                  key={m.key}
-                  style={[styles.optionCard, mood === m.key && styles.optionCardActive]}
-                  onPress={() => setMood(m.key)}
+                  key={m.slug}
+                  style={[styles.optionCard, mood === m.slug && styles.optionCardActive]}
+                  onPress={() => setMood(m.slug)}
                 >
-                  <Text style={styles.optionEmoji}>{m.emoji}</Text>
-                  <Text style={[styles.optionLabel, mood === m.key && styles.optionLabelActive]}>
-                    {m.label}
+                  <Text style={styles.optionEmoji}>{m.icon ?? '📌'}</Text>
+                  <Text style={[styles.optionLabel, mood === m.slug && styles.optionLabelActive]}>
+                    {m.name}
                   </Text>
+                  {m.description ? (
+                    <Text
+                      style={[styles.optionTagline, mood === m.slug && styles.optionTaglineActive]}
+                      numberOfLines={2}
+                    >
+                      {m.description}
+                    </Text>
+                  ) : null}
                 </TouchableOpacity>
               ))}
             </View>
@@ -200,21 +199,51 @@ export default function WriteReviewScreen() {
           <View style={styles.stepContent}>
             <Text style={styles.stepTitle}>Fasilitas apa yang kamu pake?</Text>
             <Text style={styles.stepHint}>Pilih semua yang relevan</Text>
-            <View style={styles.facilityGrid}>
-              {FACILITIES.map((f) => {
-                const active = facilities.includes(f.key);
+            {filtersQuery.isLoading && filterGroups.length === 0 ? (
+              <View style={styles.loaderRow}>
+                <ActivityIndicator color={colors.accent} />
+              </View>
+            ) : filterGroups.length === 0 ? (
+              <Text style={styles.emptyFilterText}>Fasilitas tidak tersedia.</Text>
+            ) : (
+              filterGroups.map((group) => {
+                const selectedInGroup = group.options.filter((o) =>
+                  facilities.includes(o.key),
+                ).length;
                 return (
-                  <TouchableOpacity
-                    key={f.key}
-                    style={[styles.facChip, active && styles.facChipActive]}
-                    onPress={() => toggleFacility(f.key)}
-                  >
-                    <Text style={styles.facIcon}>{f.icon}</Text>
-                    <Text style={[styles.facLabel, active && styles.facLabelActive]}>{f.label}</Text>
-                  </TouchableOpacity>
+                  <View key={group.key} style={styles.facGroup}>
+                    <View style={styles.facGroupHeader}>
+                      <Text style={styles.facGroupTitle}>
+                        {group.label.toUpperCase()}
+                      </Text>
+                      {selectedInGroup > 0 && (
+                        <View style={styles.facGroupBadge}>
+                          <Text style={styles.facGroupBadgeText}>{selectedInGroup}</Text>
+                        </View>
+                      )}
+                    </View>
+                    <View style={styles.facilityGrid}>
+                      {group.options.map((opt) => {
+                        const active = facilities.includes(opt.key);
+                        const icon = FACILITY_ICONS[opt.key] || '✓';
+                        return (
+                          <TouchableOpacity
+                            key={opt.key}
+                            style={[styles.facChip, active && styles.facChipActive]}
+                            onPress={() => toggleFacility(opt.key)}
+                          >
+                            <Text style={styles.facIcon}>{icon}</Text>
+                            <Text style={[styles.facLabel, active && styles.facLabelActive]}>
+                              {opt.label}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  </View>
                 );
-              })}
-            </View>
+              })
+            )}
           </View>
         );
 
@@ -408,13 +437,55 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     padding: spacing.md,
     alignItems: 'center',
+    justifyContent: 'flex-start',
     borderWidth: 2,
     borderColor: 'transparent',
+    minHeight: 110,
   },
   optionCardActive: { borderColor: colors.accent, backgroundColor: '#FDF6EC' },
-  optionEmoji: { fontSize: 30, marginBottom: 6 },
-  optionLabel: { fontSize: 14, fontWeight: '700', color: colors.primary },
+  optionEmoji: { fontSize: 28, marginBottom: 4 },
+  optionLabel: { fontSize: 13, fontWeight: '700', color: colors.primary, textAlign: 'center' },
   optionLabelActive: { color: colors.accent },
+  optionTagline: {
+    fontSize: 10,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginTop: 4,
+    lineHeight: 13,
+    paddingHorizontal: 2,
+  },
+  optionTaglineActive: { color: colors.accent },
+
+  // Facility groups (server-driven, mirrors wizard's amenity step)
+  facGroup: { marginBottom: spacing.md },
+  facGroupHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 8,
+  },
+  facGroupTitle: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#8A8880',
+    letterSpacing: 1.2,
+  },
+  facGroupBadge: {
+    backgroundColor: colors.accent,
+    borderRadius: 999,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    minWidth: 18,
+    alignItems: 'center',
+  },
+  facGroupBadgeText: { color: colors.white, fontSize: 10, fontWeight: '800' },
+  loaderRow: { paddingVertical: spacing.lg, alignItems: 'center' },
+  emptyFilterText: {
+    fontSize: 13,
+    color: '#8A8880',
+    fontStyle: 'italic',
+    paddingVertical: spacing.md,
+  },
 
   // Facility grid
   facilityGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },

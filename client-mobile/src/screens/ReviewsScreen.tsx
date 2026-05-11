@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator,
   Image, Modal, Dimensions, ScrollView, StatusBar,
@@ -6,8 +6,8 @@ import {
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { fetchReviews, fetchReviewSummary } from '../services/api';
-import { Review, ReviewSummary } from '../types';
+import { useReviews } from '../queries/reviews/use-reviews';
+import { useReviewSummary } from '../queries/reviews/use-review-summary';
 import { colors, spacing, radius } from '../theme';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
@@ -61,9 +61,11 @@ export default function ReviewsScreen() {
   const insets = useSafeAreaInsets();
   const { cafeId, cafeName } = route.params;
 
-  const [reviews, setReviews] = useState<Review[]>([]);
-  const [summary, setSummary] = useState<ReviewSummary[]>([]);
-  const [loading, setLoading] = useState(true);
+  const reviewsQuery = useReviews(cafeId);
+  const summaryQuery = useReviewSummary(cafeId);
+  const reviews = reviewsQuery.data?.reviews ?? [];
+  const summary = summaryQuery.data ?? [];
+  const loading = reviewsQuery.isLoading || summaryQuery.isLoading;
 
   // Zoom modal state for media preview
   const [zoomMedia, setZoomMedia] = useState<
@@ -74,13 +76,6 @@ export default function ReviewsScreen() {
   const starSummary = summary.filter(
     (s) => !s.category.startsWith('mood_') && !s.category.startsWith('facility_'),
   );
-
-  useEffect(() => {
-    Promise.all([
-      fetchReviews(cafeId).then((r) => setReviews(r.reviews)),
-      fetchReviewSummary(cafeId).then(setSummary),
-    ]).finally(() => setLoading(false));
-  }, [cafeId]);
 
   const renderStars = (score: number) => {
     return '★'.repeat(Math.round(score)) + '☆'.repeat(5 - Math.round(score));

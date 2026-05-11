@@ -31,6 +31,7 @@ import { logEvent } from "../utils/analytics";
 import { useCafeDetail } from "../queries/cafes/use-cafe-detail";
 import VoteSection from "../components/cafe/VoteSection";
 import { useReviewSummary } from "../queries/reviews/use-review-summary";
+import { useReviews } from "../queries/reviews/use-reviews";
 import { useLeaderboard } from "../queries/checkins/use-leaderboard";
 import { useQueryClient } from "@tanstack/react-query";
 import { reviewKeys } from "../queries/reviews/keys";
@@ -231,6 +232,11 @@ export default function CafeDetailScreen() {
   // crash — even if the param object is partial.
   const cafeDetailQuery = useCafeDetail(initialCafe?.id);
   const reviewSummaryQuery = useReviewSummary(initialCafe?.id);
+  // Latest reviews preview (first page is enough — we only show 3–4).
+  // Server returns them ordered by created_at DESC, matching the mobile spec:
+  // sort by newest when no helpful-votes feature exists yet.
+  const reviewsListQuery = useReviews(initialCafe?.id);
+  const previewReviews = (reviewsListQuery.data?.reviews ?? []).slice(0, 4);
   const leaderboardQuery = useLeaderboard(initialCafe?.id);
   const qc = useQueryClient();
 
@@ -380,7 +386,13 @@ export default function CafeDetailScreen() {
   );
 
   const openMaps = () => {
-    const url = `https://www.google.com/maps/search/?api=1&query=${cafe.latitude},${cafe.longitude}`;
+    const query = encodeURIComponent(
+      `${cafe.name} ${cafe.address ?? ""}`.trim(),
+    );
+    let url = `https://www.google.com/maps/search/?api=1&query=${query}`;
+    if (cafe.googlePlaceId) {
+      url += `&query_place_id=${encodeURIComponent(cafe.googlePlaceId)}`;
+    }
     Linking.openURL(url);
   };
 
@@ -713,6 +725,86 @@ export default function CafeDetailScreen() {
                   </Text>
                 </View>
               ))}
+
+              {/* Review preview cards — newest 3-4. Tapping any card (or the
+                  "Lihat semua" link above) routes to the full list screen. */}
+              {previewReviews.length > 0 && (
+                <View style={styles.reviewPreviewList}>
+                  {previewReviews.slice(0, 4).map((r: any) => {
+                    const overall = r.ratings?.find(
+                      (rt: { category: string; score: number }) =>
+                        rt.category === 'overall',
+                    );
+                    const stars = overall ? Math.round(overall.score) : 0;
+                    const firstPhoto = r.media?.find(
+                      (m: { mediaType: 'photo' | 'video' }) =>
+                        m.mediaType === 'photo',
+                    );
+                    return (
+                      <TouchableOpacity
+                        key={r.id}
+                        style={styles.reviewPreviewCard}
+                        activeOpacity={0.8}
+                        onPress={() =>
+                          navigation.navigate('Reviews', {
+                            cafeId: cafe.id,
+                            cafeName: cafe.name,
+                          })
+                        }
+                      >
+                        <View style={styles.reviewPreviewHeader}>
+                          <View style={styles.reviewPreviewAvatar}>
+                            <Text style={styles.reviewPreviewAvatarText}>
+                              {r.userName?.[0]?.toUpperCase() || '?'}
+                            </Text>
+                          </View>
+                          <View style={{ flex: 1, minWidth: 0 }}>
+                            <Text
+                              style={styles.reviewPreviewName}
+                              numberOfLines={1}
+                            >
+                              {r.userName}
+                            </Text>
+                            <Text style={styles.reviewPreviewDate}>
+                              {new Date(r.createdAt).toLocaleDateString(
+                                'id-ID',
+                                {
+                                  day: 'numeric',
+                                  month: 'short',
+                                  year: 'numeric',
+                                },
+                              )}
+                            </Text>
+                          </View>
+                          {stars > 0 && (
+                            <Text style={styles.reviewPreviewStars}>
+                              {'★'.repeat(stars)}
+                              <Text style={styles.reviewPreviewStarsDim}>
+                                {'★'.repeat(5 - stars)}
+                              </Text>
+                            </Text>
+                          )}
+                        </View>
+                        {!!r.text && (
+                          <Text
+                            style={styles.reviewPreviewText}
+                            numberOfLines={3}
+                          >
+                            {r.text}
+                          </Text>
+                        )}
+                        {firstPhoto && (
+                          <Image
+                            source={{ uri: firstPhoto.url }}
+                            style={styles.reviewPreviewPhoto}
+                          />
+                        )}
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              )}
+
               <TouchableOpacity
                 style={styles.writeReviewBtn}
                 onPress={() =>
@@ -1541,6 +1633,67 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   writeReviewText: { color: colors.accent, fontWeight: "700", fontSize: 14 },
+
+  // ─── Review preview cards (shown above "Tulis Review" CTA) ────────────
+  reviewPreviewList: {
+    marginTop: spacing.sm,
+    gap: spacing.sm,
+  },
+  reviewPreviewCard: {
+    backgroundColor: colors.white,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: "#F0EDE8",
+    padding: spacing.md,
+  },
+  reviewPreviewHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    marginBottom: 6,
+  },
+  reviewPreviewAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.accent,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  reviewPreviewAvatarText: {
+    color: colors.white,
+    fontWeight: "800",
+    fontSize: 13,
+  },
+  reviewPreviewName: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: colors.primary,
+  },
+  reviewPreviewDate: {
+    fontSize: 11,
+    color: colors.textSecondary,
+  },
+  reviewPreviewStars: {
+    fontSize: 12,
+    color: colors.accent,
+    letterSpacing: 1,
+  },
+  reviewPreviewStarsDim: {
+    color: "#E0DCD3",
+  },
+  reviewPreviewText: {
+    fontSize: 13,
+    color: colors.primary,
+    lineHeight: 18,
+  },
+  reviewPreviewPhoto: {
+    width: "100%",
+    height: 140,
+    borderRadius: radius.sm,
+    marginTop: spacing.sm,
+    backgroundColor: "#F0EDE8",
+  },
 
   // ─── Top check-in leaderboard ─────────────────────────────────────────
   // Loading skeleton — three pulsing pills mimicking row height.

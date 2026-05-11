@@ -2,19 +2,29 @@ import { useState, useEffect, useMemo } from 'react';
 import { reviewsApi } from '../../api/reviews.api';
 import { cafesApi, type FilterGroup } from '../../api/cafes.api';
 import { usePreferences } from '../../context/PreferencesContext';
-import { FACILITY_ICONS } from '../../utils/facilities';
+import {
+  LucideIcon,
+  lucideForFacility,
+  X,
+  ChevronLeft,
+  Camera,
+  Video,
+  Star,
+} from '../../utils/lucideIcon';
 
 const TOTAL_STEPS = 5;
 
 interface MoodOption {
   key: string;
   label: string;
-  emoji: string;
+  /** Lucide icon name from server (purposes.icon). Resolved at render time. */
+  icon: string | null;
 }
 interface FacilityOption {
   key: string;
   label: string;
-  icon: string;
+  /** Lucide icon name resolved from facility key catalog. */
+  icon: string | undefined;
 }
 
 // Module-level cache so we don't re-hit /cafes/filters every time the modal opens.
@@ -69,7 +79,7 @@ export default function WriteReviewModal({
       serverPurposes.map((p) => ({
         key: p.slug,
         label: p.name,
-        emoji: p.icon ?? '⭐',
+        icon: p.icon ?? null,
       })),
     [serverPurposes],
   );
@@ -93,7 +103,7 @@ export default function WriteReviewModal({
       g.options.map((o) => ({
         key: o.key,
         label: o.label,
-        icon: FACILITY_ICONS[o.key] ?? '•',
+        icon: lucideForFacility(o.key),
       })),
     );
   }, [facilityGroups]);
@@ -205,10 +215,10 @@ export default function WriteReviewModal({
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-full hover:bg-[#F0EDE8] text-[#8A8880] text-xl font-bold flex items-center justify-center transition-colors"
+            className="w-8 h-8 rounded-full hover:bg-[#F0EDE8] text-[#8A8880] flex items-center justify-center transition-colors"
             aria-label="Close"
           >
-            ✕
+            <X size={20} strokeWidth={2.25} />
           </button>
           <div className="text-sm font-extrabold text-[#1C1C1A] truncate px-3">
             Review {cafeName}
@@ -247,7 +257,12 @@ export default function WriteReviewModal({
                           : 'border-transparent bg-white hover:border-[#E8E4DD]'
                       }`}
                     >
-                      <span className="text-3xl">{m.emoji}</span>
+                      <LucideIcon
+                        name={m.icon}
+                        size={28}
+                        strokeWidth={1.8}
+                        className={active ? 'text-[#D48B3A]' : 'text-[#1C1C1A]'}
+                      />
                       <span
                         className={`text-sm font-bold ${
                           active ? 'text-[#D48B3A]' : 'text-[#1C1C1A]'
@@ -281,7 +296,12 @@ export default function WriteReviewModal({
                           : 'border-transparent bg-white hover:border-[#E8E4DD]'
                       }`}
                     >
-                      <span className="text-base">{f.icon}</span>
+                      <LucideIcon
+                        name={f.icon}
+                        size={16}
+                        strokeWidth={2}
+                        className={active ? 'text-[#D48B3A]' : 'text-[#5C5A52]'}
+                      />
                       <span
                         className={`text-sm font-semibold ${
                           active ? 'text-[#D48B3A]' : 'text-[#1C1C1A]'
@@ -322,7 +342,7 @@ export default function WriteReviewModal({
             >
               <div className="grid grid-cols-2 gap-3">
                 <label className="flex flex-col items-center justify-center py-5 rounded-2xl bg-white border-[1.5px] border-[#D48B3A]/40 hover:border-[#D48B3A] cursor-pointer transition-colors">
-                  <span className="text-3xl mb-1">📷</span>
+                  <Camera size={28} className="text-[#D48B3A] mb-1.5" strokeWidth={1.8} />
                   <span className="text-sm font-bold text-[#D48B3A]">
                     Foto ({photoCount}/5)
                   </span>
@@ -338,7 +358,7 @@ export default function WriteReviewModal({
                   />
                 </label>
                 <label className="flex flex-col items-center justify-center py-5 rounded-2xl bg-white border-[1.5px] border-[#D48B3A]/40 hover:border-[#D48B3A] cursor-pointer transition-colors">
-                  <span className="text-3xl mb-1">🎥</span>
+                  <Video size={28} className="text-[#D48B3A] mb-1.5" strokeWidth={1.8} />
                   <span className="text-sm font-bold text-[#D48B3A]">
                     Video ({videoCount}/2)
                   </span>
@@ -366,17 +386,17 @@ export default function WriteReviewModal({
                           className="w-20 h-20 rounded-xl object-cover bg-[#F0EDE8]"
                         />
                       ) : (
-                        <div className="w-20 h-20 rounded-xl bg-[#1C1C1A] flex items-center justify-center text-2xl">
-                          🎥
+                        <div className="w-20 h-20 rounded-xl bg-[#1C1C1A] flex items-center justify-center text-white">
+                          <Video size={28} strokeWidth={1.8} />
                         </div>
                       )}
                       <button
                         type="button"
                         onClick={() => removeMedia(i)}
-                        className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full bg-red-500 text-white text-sm font-bold flex items-center justify-center shadow"
+                        className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center shadow"
                         aria-label="Remove"
                       >
-                        ×
+                        <X size={14} strokeWidth={2.5} />
                       </button>
                     </div>
                   ))}
@@ -397,12 +417,16 @@ export default function WriteReviewModal({
                       onClick={() => setRating(s)}
                       onMouseEnter={() => setHoverRating(s)}
                       onMouseLeave={() => setHoverRating(0)}
-                      className={`text-5xl leading-none transition-colors ${
+                      className={`leading-none transition-transform ${
                         filled ? 'text-[#D48B3A]' : 'text-[#E8E4DD]'
-                      } hover:scale-110 transform transition-transform`}
+                      } hover:scale-110`}
                       aria-label={`${s} stars`}
                     >
-                      ★
+                      <Star
+                        size={42}
+                        strokeWidth={1.5}
+                        fill={filled ? 'currentColor' : 'none'}
+                      />
                     </button>
                   );
                 })}
@@ -437,9 +461,10 @@ export default function WriteReviewModal({
             type="button"
             onClick={prev}
             disabled={step === 0}
-            className="flex-1 py-3 rounded-xl bg-[#F0EDE8] text-[#8A8880] font-bold text-sm hover:bg-[#E8E4DD] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="flex-1 py-3 rounded-xl bg-[#F0EDE8] text-[#8A8880] font-bold text-sm hover:bg-[#E8E4DD] disabled:opacity-40 disabled:cursor-not-allowed transition-colors inline-flex items-center justify-center gap-1"
           >
-            ‹ Back
+            <ChevronLeft size={16} strokeWidth={2.25} />
+            Back
           </button>
           <button
             type="button"

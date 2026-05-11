@@ -199,7 +199,9 @@ export default function CafeDetailPage() {
 
   const mapsUrl =
     cafe.googleMapsUrl ||
-    `https://www.google.com/maps/search/?api=1&query=${cafe.latitude},${cafe.longitude}`;
+    `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+      `${cafe.name} ${cafe.address ?? ''}`.trim(),
+    )}`;
 
   const inShortlist = isInShortlist(cafe.id);
 

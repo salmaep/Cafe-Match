@@ -4,11 +4,12 @@ import { useActiveCheckin } from '../../context/ActiveCheckinContext';
 import { cafeUrl } from '../../utils/cafeUrl';
 
 function formatDuration(ms: number): string {
-  const totalMin = Math.floor(ms / 60_000);
-  const hours = Math.floor(totalMin / 60);
-  const minutes = totalMin % 60;
-  if (hours > 0) return `${hours}h ${minutes}m`;
-  return `${minutes}m`;
+  const totalSec = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  return `${pad(h)}:${pad(m)}:${pad(s)}`;
 }
 
 export default function ActiveCheckinBanner() {
@@ -16,10 +17,10 @@ export default function ActiveCheckinBanner() {
   const [now, setNow] = useState(Date.now());
   const [submitting, setSubmitting] = useState(false);
 
-  // Tick every 30s for live duration. Cheap.
+  // Tick every second so the HH:MM:SS counter stays live.
   useEffect(() => {
     if (!active) return;
-    const t = window.setInterval(() => setNow(Date.now()), 30_000);
+    const t = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(t);
   }, [active]);
 
@@ -50,19 +51,21 @@ export default function ActiveCheckinBanner() {
         <span className="relative rounded-full w-2.5 h-2.5 bg-emerald-300" />
       </span>
       <div className="min-w-0 flex-1">
-        <div className="flex items-baseline gap-2 min-w-0">
+        <div className="flex items-center gap-2 min-w-0">
           <span className="text-[10px] font-extrabold tracking-[0.15em] uppercase text-emerald-200 shrink-0">
             Checked In
           </span>
-          <span className="text-[11px] text-white/85 tabular-nums shrink-0">· {duration}</span>
+          <span className="text-sm font-extrabold text-white tabular-nums shrink-0">
+            {duration}
+          </span>
         </div>
-        <div className="text-sm font-bold text-white truncate mt-0.5">{cafeName}</div>
+        <div className="text-xs font-semibold text-white/90 truncate mt-0.5">{cafeName}</div>
       </div>
     </div>
   );
 
   return (
-    <div className="sticky top-0 z-40 bg-gradient-to-r from-emerald-700 via-emerald-600 to-emerald-700 shadow-lg">
+    <div className="sticky top-0 z-50 bg-gradient-to-r from-emerald-700 via-emerald-600 to-emerald-700 shadow-lg">
       <div className="max-w-[88rem] mx-auto px-4 py-2 flex items-center gap-3">
         {detailUrl ? (
           <Link to={detailUrl} className="flex-1 min-w-0 flex items-center gap-2.5 hover:opacity-90 transition-opacity">

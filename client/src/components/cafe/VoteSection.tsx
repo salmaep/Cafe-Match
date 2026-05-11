@@ -3,9 +3,19 @@ import { votesApi } from '../../api/votes.api';
 import { purposesApi } from '../../api/purposes.api';
 import type { Purpose, VoteTally } from '../../types';
 import { useAuth } from '../../context/AuthContext';
+import { getPurposeBySlug } from '@shared/constants/purposes';
 
 interface Props {
   cafeId: number;
+}
+
+// Server's `purpose.icon` is a lucide-style name (e.g. "coffee"). Map to emoji
+// via shared wizard constants so chips render visually instead of as raw text.
+function emojiFor(purpose: { slug?: string; icon?: string | null }): string {
+  const fromShared = purpose.slug ? getPurposeBySlug(purpose.slug)?.emoji : undefined;
+  if (fromShared) return fromShared;
+  if (purpose.icon && !/^[a-z0-9_-]+$/i.test(purpose.icon)) return purpose.icon;
+  return '☕';
 }
 
 export default function VoteSection({ cafeId }: Props) {
@@ -14,9 +24,21 @@ export default function VoteSection({ cafeId }: Props) {
   const [tallies, setTallies] = useState<VoteTally[]>([]);
   const [myVotes, setMyVotes] = useState<number[]>([]);
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+
+  const loadPurposes = () => {
+    setLoading(true);
+    setLoadError(false);
+    purposesApi
+      .getAll()
+      .then((res) => setPurposes(res.data))
+      .catch(() => setLoadError(true))
+      .finally(() => setLoading(false));
+  };
 
   useEffect(() => {
-    purposesApi.getAll().then((res) => setPurposes(res.data));
+    loadPurposes();
     votesApi.getTallies(cafeId).then((res) => setTallies(res.data));
     if (user) {
       votesApi.getMyVotes(cafeId).then((res) => setMyVotes(res.data));
@@ -64,44 +86,64 @@ export default function VoteSection({ cafeId }: Props) {
           : 'Log in to vote'}
       </p>
 
-      <div className="space-y-2">
-        {purposes
-          .sort((a, b) => a.displayOrder - b.displayOrder)
-          .map((purpose) => {
-            const isSelected = myVotes.includes(purpose.id);
-            const count = getCount(purpose.id);
-            const pct = getPercentage(purpose.id);
+      {loading ? (
+        <div className="text-sm text-gray-400 italic py-4 text-center">
+          Memuat kategori…
+        </div>
+      ) : loadError ? (
+        <div className="py-4 text-center space-y-2">
+          <p className="text-sm text-gray-500 italic">Gagal memuat kategori.</p>
+          <button
+            onClick={loadPurposes}
+            className="text-xs font-semibold text-amber-700 hover:text-amber-800 underline"
+          >
+            Coba lagi
+          </button>
+        </div>
+      ) : purposes.length === 0 ? (
+        <div className="text-sm text-gray-400 italic py-4 text-center">
+          Belum ada kategori tersedia.
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {purposes
+            .sort((a, b) => a.displayOrder - b.displayOrder)
+            .map((purpose) => {
+              const isSelected = myVotes.includes(purpose.id);
+              const count = getCount(purpose.id);
+              const pct = getPercentage(purpose.id);
 
-            return (
-              <div key={purpose.id} className="relative">
-                <button
-                  onClick={() => user && togglePurpose(purpose.id)}
-                  disabled={!user || (!isSelected && myVotes.length >= 3)}
-                  className={`relative z-10 w-full text-left px-4 py-2.5 rounded-lg border transition-colors text-sm ${
-                    isSelected
-                      ? 'border-amber-400 bg-amber-50 text-amber-800'
-                      : 'border-gray-200 text-gray-600 hover:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed'
-                  }`}
-                >
-                  <div className="flex justify-between items-center">
-                    <span>
-                      {purpose.icon && <span className="mr-2">{purpose.icon}</span>}
-                      {purpose.name}
-                    </span>
-                    <span className="text-xs text-gray-400">
-                      {count} vote{count !== 1 ? 's' : ''} ({pct}%)
-                    </span>
-                  </div>
-                  {/* Progress bar */}
-                  <div
-                    className="absolute left-0 top-0 bottom-0 rounded-lg bg-amber-100 opacity-30 transition-all"
-                    style={{ width: `${pct}%` }}
-                  />
-                </button>
-              </div>
-            );
-          })}
-      </div>
+              return (
+                <div key={purpose.id} className="relative">
+                  <button
+                    onClick={() => user && togglePurpose(purpose.id)}
+                    disabled={!user || (!isSelected && myVotes.length >= 3)}
+                    className={`relative z-10 w-full text-left px-4 py-2.5 rounded-lg border transition-colors text-sm ${
+                      isSelected
+                        ? 'border-amber-400 bg-amber-50 text-amber-800'
+                        : 'border-gray-200 text-gray-600 hover:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed'
+                    }`}
+                  >
+                    <div className="flex justify-between items-center">
+                      <span>
+                        <span className="mr-2">{emojiFor(purpose)}</span>
+                        {purpose.name}
+                      </span>
+                      <span className="text-xs text-gray-400">
+                        {count} vote{count !== 1 ? 's' : ''} ({pct}%)
+                      </span>
+                    </div>
+                    {/* Progress bar */}
+                    <div
+                      className="absolute left-0 top-0 bottom-0 rounded-lg bg-amber-100 opacity-30 transition-all"
+                      style={{ width: `${pct}%` }}
+                    />
+                  </button>
+                </div>
+              );
+            })}
+        </div>
+      )}
 
       {user && (
         <button

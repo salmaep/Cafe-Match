@@ -13,6 +13,7 @@ import {
   useMyVotes,
   useVoteTallies,
 } from '../../queries/votes/use-votes';
+import { getPurposeBySlug } from '@shared/constants/purposes';
 import { colors, spacing, radius } from '../../theme';
 
 interface Props {
@@ -20,6 +21,18 @@ interface Props {
 }
 
 const MAX_VOTES = 3;
+
+// `purpose.icon` from the server is a lucide-style name (e.g. "coffee", "heart").
+// To render visually we map slug → emoji via the shared wizard constants so the
+// chip stays recognizable even if the server `icon` column is empty/unmapped.
+function emojiFor(purpose: { slug?: string; icon?: string }): string {
+  const fromShared = purpose.slug ? getPurposeBySlug(purpose.slug)?.emoji : undefined;
+  if (fromShared) return fromShared;
+  // Fallback: if `icon` is a single non-letter glyph it's probably already an
+  // emoji, so render it as-is. Otherwise drop it (avoid rendering "coffee").
+  if (purpose.icon && !/^[a-z0-9_-]+$/i.test(purpose.icon)) return purpose.icon;
+  return '☕';
+}
 
 export default function VoteSection({ cafeId }: Props) {
   const { user } = useAuth();
@@ -71,6 +84,17 @@ export default function VoteSection({ cafeId }: Props) {
 
       {purposesQuery.isLoading ? (
         <ActivityIndicator color={colors.accent} style={{ marginVertical: spacing.md }} />
+      ) : purposesQuery.isError ? (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyText}>Gagal memuat kategori.</Text>
+          <Pressable onPress={() => purposesQuery.refetch()} style={styles.retryBtn}>
+            <Text style={styles.retryText}>Coba lagi</Text>
+          </Pressable>
+        </View>
+      ) : sortedPurposes.length === 0 ? (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyText}>Belum ada kategori tersedia.</Text>
+        </View>
       ) : (
         <View style={styles.list}>
           {sortedPurposes.map((purpose) => {
@@ -103,8 +127,7 @@ export default function VoteSection({ cafeId }: Props) {
                       isSelected && styles.rowLabelSelected,
                     ]}
                   >
-                    {purpose.icon ? `${purpose.icon}  ` : ''}
-                    {purpose.name}
+                    {emojiFor(purpose)}  {purpose.name}
                   </Text>
                   <Text style={styles.rowCount}>
                     {count} vote{count !== 1 ? 's' : ''} ({pct}%)
@@ -190,4 +213,17 @@ const styles = StyleSheet.create({
   },
   submitBtnDisabled: { opacity: 0.5 },
   submitText: { color: colors.white, fontWeight: '700', fontSize: 14 },
+  emptyState: {
+    paddingVertical: spacing.md,
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  emptyText: { fontSize: 13, color: colors.textSecondary, fontStyle: 'italic' },
+  retryBtn: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: 6,
+    borderRadius: radius.sm,
+    backgroundColor: colors.surface,
+  },
+  retryText: { fontSize: 12, fontWeight: '700', color: colors.accent },
 });

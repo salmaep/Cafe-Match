@@ -380,7 +380,14 @@ export default function CafeDetailScreen() {
   );
 
   const openMaps = () => {
-    const url = `https://www.google.com/maps/search/?api=1&query=${cafe.latitude},${cafe.longitude}`;
+    if (cafe.googleMapsUrl) {
+      Linking.openURL(cafe.googleMapsUrl);
+      return;
+    }
+    const query = encodeURIComponent(
+      `${cafe.name} ${cafe.address ?? ""}`.trim(),
+    );
+    const url = `https://www.google.com/maps/search/?api=1&query=${query}`;
     Linking.openURL(url);
   };
 

@@ -10,7 +10,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import Swiper from 'react-native-deck-swiper';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -30,24 +30,31 @@ const CARD_W = width * 0.85;
 
 export default function CardSwipeScreen() {
   const navigation = useNavigation<StackNavigationProp<any>>();
+  const route = useRoute();
   const insets = useSafeAreaInsets();
   const { addToShortlist, isInShortlist } = useShortlist();
   const { preferences } = usePreferences();
   const { latitude, longitude } = useLocation();
   const swiperRef = useRef<any>(null);
 
+  // This screen is mounted in two places (see AppNavigator):
+  //   - Stack screen "CardSwipe" — reached from Splash → Wizard on first open,
+  //     standalone with NO bottom nav. Wizard already ran in the previous step
+  //     so the inline wizard gate would be redundant here.
+  //   - Tab "Discover" inside MainTabs — has bottom nav. We want every revisit
+  //     to re-show the wizard (mirrors web DiscoverPage behavior).
+  const isStandalone = route.name === 'CardSwipe';
+
   const [allSwiped, setAllSwiped] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
   const [showToast, setShowToast] = useState(false);
   const [cafes, setCafes] = useState<Cafe[]>([]);
 
-  // Mirror web DiscoverPage: every visit to Discover starts with the wizard.
-  // Reset on every focus so switching tabs and coming back re-shows the wizard.
-  const [showWizard, setShowWizard] = useState(true);
+  const [showWizard, setShowWizard] = useState(!isStandalone);
   useFocusEffect(
     useCallback(() => {
-      setShowWizard(true);
-    }, []),
+      if (!isStandalone) setShowWizard(true);
+    }, [isStandalone]),
   );
 
   // Fix 1: Calculate available height for card centering

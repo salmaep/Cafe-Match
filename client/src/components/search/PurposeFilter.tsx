@@ -49,7 +49,9 @@ export default function PurposeFilter({ selectedPurposeId, onSelect }: Props) {
               <LucideIcon name={p.icon} size={14} strokeWidth={2} />
             ) : wizard?.emoji ? (
               <span className="text-sm leading-none">{wizard.emoji}</span>
-            ) : null}
+            ) : (
+              <LucideIcon size={14} strokeWidth={2} />
+            )}
             <span>{label}</span>
           </button>
         );

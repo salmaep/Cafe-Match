@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { getPurposeBySlug } from "@shared/constants/purposes";
 import { useGeolocation, FALLBACK_LAT, FALLBACK_LNG } from "../hooks/useGeolocation";
 import { cafesApi, type SearchParams } from "../api/cafes.api";
 import { promotionsApi } from "../api/promotions.api";
@@ -858,17 +859,19 @@ function PurposeChips({
         </button>
         {purposes.map((p) => {
           const active = activeId === p.id;
+          const emoji = getPurposeBySlug(p.slug)?.emoji;
           return (
             <button
               key={p.id}
               type="button"
               onClick={() => onSelect(active ? null : p.id)}
-              className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
+              className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
                 active
                   ? 'bg-[#D48B3A] text-white border-[#D48B3A] shadow-sm'
                   : 'bg-white text-[#1C1C1A] border-[#E8E4DD] hover:border-[#D48B3A] hover:text-[#D48B3A]'
               }`}
             >
+              {emoji && <span className="text-sm leading-none">{emoji}</span>}
               {p.name}
             </button>
           );
@@ -935,17 +938,19 @@ function MobileFilterModal({
               </button>
               {purposes.map((p) => {
                 const active = activePurposeId === p.id;
+                const emoji = getPurposeBySlug(p.slug)?.emoji;
                 return (
                   <button
                     key={p.id}
                     type="button"
                     onClick={() => onPurposeSelect(active ? null : p.id)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
+                    className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
                       active
                         ? 'bg-[#D48B3A] text-white border-[#D48B3A]'
                         : 'bg-white text-[#1C1C1A] border-[#E8E4DD]'
                     }`}
                   >
+                    {emoji && <span className="text-sm leading-none">{emoji}</span>}
                     {p.name}
                   </button>
                 );

@@ -127,19 +127,41 @@ export class MeiliCafesService {
   async indexCafe(cafeId: number): Promise<void> {
     const [doc] = await this.buildDocumentsBatch([cafeId]);
     if (!doc) return;
-    await this.meili.getIndex().addDocuments([doc]);
+    // addDocuments() returns once Meili has *enqueued* the task — but the
+    // index isn't yet searchable with the new data. For interactive flows
+    // like bookmark/favorite toggles we want the next search to see the
+    // fresh counts immediately, so wait until the task is processed.
+    await this.waitForTaskSafe(
+      this.meili.getIndex().addDocuments([doc]).waitTask(this.WAIT_OPTS),
+    );
   }
 
   async indexCafes(cafeIds: number[]): Promise<void> {
     if (!cafeIds.length) return;
     const docs = await this.buildDocumentsBatch(cafeIds);
     if (docs.length) {
-      await this.meili.getIndex().addDocuments(docs);
+      await this.waitForTaskSafe(
+        this.meili.getIndex().addDocuments(docs).waitTask(this.WAIT_OPTS),
+      );
     }
   }
 
   async removeCafe(cafeId: number): Promise<void> {
-    await this.meili.getIndex().deleteDocument(cafeId);
+    await this.waitForTaskSafe(
+      this.meili.getIndex().deleteDocument(cafeId).waitTask(this.WAIT_OPTS),
+    );
+  }
+
+  // Swallow Meili task timeouts — we don't want a slow Meili to fail the DB
+  // transaction that triggered the index. The retry queue picks up failures
+  // via `queueFailure` in the entity subscriber.
+  private readonly WAIT_OPTS = { timeout: 2000, interval: 30 };
+  private async waitForTaskSafe(p: Promise<unknown>): Promise<void> {
+    try {
+      await p;
+    } catch (err) {
+      this.logger.warn(`Meili task did not finish in time: ${String(err)}`);
+    }
   }
 
   async reindexAll(): Promise<{ total: number }> {

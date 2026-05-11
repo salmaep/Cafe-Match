@@ -75,6 +75,10 @@ export class MeiliService implements OnModuleInit {
       ],
       typoTolerance: { enabled: true },
       stopWords: ['yang', 'di', 'dan', 'untuk', 'dengan', 'ke', 'dari', 'ini', 'itu'],
+      // Meili defaults to 100 unique values per facet — with ~150 distinct
+      // feature names indexed across all cafes, the default silently drops
+      // the long tail of the `facilities` facet. Bump to keep counts exact.
+      faceting: { maxValuesPerFacet: 1000 },
     });
   }
 

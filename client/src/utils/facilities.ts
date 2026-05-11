@@ -1,4 +1,4 @@
-import type { Cafe, CafeFeature } from '../types';
+import type { Cafe } from '../types';
 import {
   FACILITY_ICONS,
   FACILITY_LABELS,
@@ -27,9 +27,14 @@ export function buildFacilityChips(cafe: Cafe): FacilityChip[] {
     out.push(chipFromKey(key));
   };
 
+  // `cafe.features` from the detail endpoint is the TypeORM CafeFeature[]
+  // row shape — after the master-features migration the actual name lives at
+  // `f.feature.name`, not `f.name`. Older / Meili-mapped shapes used to
+  // expose it directly, so we still check `f.name` as a fallback.
   if (Array.isArray(cafe.features) && cafe.features.length > 0) {
-    cafe.features.forEach((f) => {
-      if (f?.name) push(f.name);
+    cafe.features.forEach((f: any) => {
+      const name = f?.feature?.name ?? f?.name;
+      if (name) push(name);
     });
     return out;
   }
@@ -39,8 +44,9 @@ export function buildFacilityChips(cafe: Cafe): FacilityChip[] {
     if (fac.length > 0 && typeof fac[0] === 'string') {
       (fac as string[]).forEach((name) => push(name));
     } else {
-      (fac as CafeFeature[]).forEach((f) => {
-        if (f?.name) push(f.name);
+      (fac as any[]).forEach((f) => {
+        const name = f?.feature?.name ?? f?.name;
+        if (name) push(name);
       });
     }
   }

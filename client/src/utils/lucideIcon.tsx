@@ -280,15 +280,21 @@ const CATEGORY_FALLBACK: Record<string, string> = {
   space: 'house',
 };
 
+/** Default icon name used when a key was provided but no mapping resolved.
+ *  Keeps chips/buttons visually consistent — a feature row should never render
+ *  blank just because its icon map is missing. */
+const DEFAULT_FACILITY_ICON = 'star';
+
 /** Resolve a feature label / facility key to a lucide icon name. Resolution
  *  order:
  *   1. explicit `FACILITY_TO_LUCIDE` entry (e.g. "Parkir Gratis" → squareparking)
  *   2. direct lucide alias in `ICON_MAP` (e.g. raw "Wifi" → wifi)
  *   3. per-category fallback (e.g. unknown amenity → star, unknown space → house)
- *   4. undefined — caller can render no icon at all
+ *   4. `DEFAULT_FACILITY_ICON` when a key was provided but nothing matched
+ *   5. undefined — only when no key was provided at all
  *
  *  Pass `category` (the server's `features.category` for this option) to
- *  enable step 3; without it the lookup stops at step 2. */
+ *  enable step 3; without it the lookup falls straight to step 4. */
 export function lucideForFacility(
   key: string | null | undefined,
   category?: string | null,
@@ -302,7 +308,7 @@ export function lucideForFacility(
     const c = normalize(category);
     if (CATEGORY_FALLBACK[c]) return CATEGORY_FALLBACK[c];
   }
-  return undefined;
+  return n ? DEFAULT_FACILITY_ICON : undefined;
 }
 
 interface LucideIconProps extends Omit<LucideProps, 'name'> {

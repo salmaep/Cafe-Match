@@ -42,7 +42,7 @@ export default function Navbar() {
     .toUpperCase();
 
   return (
-    <nav className="hidden md:block bg-white/90 backdrop-blur-md border-b border-[#F0EDE8] sticky top-0 z-30">
+    <nav className="hidden md:block bg-white/90 backdrop-blur-md border-b border-[#F0EDE8] sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         <div className="grid grid-cols-[auto_1fr_auto] items-center h-16 gap-6">
           {/* Brand */}
@@ -104,7 +104,7 @@ export default function Navbar() {
               {menuOpen && (
                 <div
                   role="menu"
-                  className="absolute right-0 top-full mt-2 w-56 bg-white rounded-2xl border border-[#F0EDE8] shadow-xl py-1.5 overflow-hidden"
+                  className="absolute right-0 top-full mt-2 w-56 bg-white rounded-2xl border border-[#F0EDE8] shadow-xl py-1.5 overflow-hidden z-60"
                 >
                   <div className="px-4 py-2.5 border-b border-[#F0EDE8] mb-1">
                     <div className="text-sm font-bold text-[#1C1C1A] truncate">

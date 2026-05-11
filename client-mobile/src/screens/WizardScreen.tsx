@@ -20,7 +20,7 @@ import { useLocation } from '../context/LocationContext';
 import { useDestinations } from '../queries/destinations/use-destinations';
 import { useCafeFilters } from '../queries/cafes/use-cafe-filters';
 import { usePurposes } from '../queries/purposes/use-purposes';
-import { FACILITY_ICONS } from '../utils/facilities';
+import { LucideIcon, lucideForFacility } from '../utils/lucideIcon';
 
 const { width } = Dimensions.get('window');
 const TOTAL_STEPS = 4;
@@ -221,7 +221,13 @@ export default function WizardScreen({ onComplete, onSkip }: WizardScreenProps =
                     style={[styles.optionCard, active && styles.optionCardActive]}
                     onPress={() => setPurposeId(p.id)}
                   >
-                    <Text style={styles.optionEmoji}>{p.icon ?? '📌'}</Text>
+                    <LucideIcon
+                      name={p.icon}
+                      size={26}
+                      strokeWidth={1.8}
+                      color={active ? colors.accent : colors.primary}
+                      style={{ marginBottom: 4 }}
+                    />
                     <Text style={[styles.optionLabel, active && styles.optionLabelActive]}>
                       {p.name}
                     </Text>
@@ -538,7 +544,9 @@ export default function WizardScreen({ onComplete, onSkip }: WizardScreenProps =
                         {group.options.map((opt) => {
                           const active = amenities.includes(opt.key);
                           const autoSelected = autoSelectedKeys.has(opt.key);
-                          const icon = FACILITY_ICONS[opt.key];
+                          // Pass group.key so unknown features get a sensible
+                          // category fallback (e.g. unknown space → House).
+                          const iconName = lucideForFacility(opt.key, group.key);
                           return (
                             <TouchableOpacity
                               key={opt.key}
@@ -557,8 +565,13 @@ export default function WizardScreen({ onComplete, onSkip }: WizardScreenProps =
                                 </View>
                               ) : autoSelected ? (
                                 <Text style={styles.filterChipIcon}>⭐</Text>
-                              ) : icon ? (
-                                <Text style={styles.filterChipIcon}>{icon}</Text>
+                              ) : iconName ? (
+                                <LucideIcon
+                                  name={iconName}
+                                  size={14}
+                                  strokeWidth={2}
+                                  color="#5C5A52"
+                                />
                               ) : null}
                               <Text
                                 style={[

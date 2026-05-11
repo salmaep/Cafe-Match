@@ -103,7 +103,9 @@ export default function WriteReviewModal({
       g.options.map((o) => ({
         key: o.key,
         label: o.label,
-        icon: lucideForFacility(o.key),
+        // Pass the group's category so unknown features still get a sensible
+        // category fallback icon instead of the generic <Star>.
+        icon: lucideForFacility(o.key, g.key),
       })),
     );
   }, [facilityGroups]);

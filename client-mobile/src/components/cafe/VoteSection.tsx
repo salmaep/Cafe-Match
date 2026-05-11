@@ -13,7 +13,7 @@ import {
   useMyVotes,
   useVoteTallies,
 } from '../../queries/votes/use-votes';
-import { getPurposeBySlug } from '@shared/constants/purposes';
+import { LucideIcon } from '../../utils/lucideIcon';
 import { colors, spacing, radius } from '../../theme';
 
 interface Props {
@@ -22,17 +22,9 @@ interface Props {
 
 const MAX_VOTES = 3;
 
-// `purpose.icon` from the server is a lucide-style name (e.g. "coffee", "heart").
-// To render visually we map slug → emoji via the shared wizard constants so the
-// chip stays recognizable even if the server `icon` column is empty/unmapped.
-function emojiFor(purpose: { slug?: string; icon?: string }): string {
-  const fromShared = purpose.slug ? getPurposeBySlug(purpose.slug)?.emoji : undefined;
-  if (fromShared) return fromShared;
-  // Fallback: if `icon` is a single non-letter glyph it's probably already an
-  // emoji, so render it as-is. Otherwise drop it (avoid rendering "coffee").
-  if (purpose.icon && !/^[a-z0-9_-]+$/i.test(purpose.icon)) return purpose.icon;
-  return '☕';
-}
+// `purpose.icon` from the server is a lucide-style name (e.g. "coffee",
+// "heart"). LucideIcon resolves it via the shared ICON_MAP and falls back to
+// <Star> if unknown.
 
 export default function VoteSection({ cafeId }: Props) {
   const { user } = useAuth();
@@ -121,14 +113,23 @@ export default function VoteSection({ cafeId }: Props) {
                   style={[styles.progressBar, { width: `${pct}%` }]}
                 />
                 <View style={styles.rowContent}>
-                  <Text
-                    style={[
-                      styles.rowLabel,
-                      isSelected && styles.rowLabelSelected,
-                    ]}
-                  >
-                    {emojiFor(purpose)}  {purpose.name}
-                  </Text>
+                  <View style={styles.rowLabelRow}>
+                    <LucideIcon
+                      name={purpose.icon}
+                      size={16}
+                      strokeWidth={2}
+                      color={isSelected ? colors.accent : colors.primary}
+                      style={{ marginRight: 8 }}
+                    />
+                    <Text
+                      style={[
+                        styles.rowLabel,
+                        isSelected && styles.rowLabelSelected,
+                      ]}
+                    >
+                      {purpose.name}
+                    </Text>
+                  </View>
                   <Text style={styles.rowCount}>
                     {count} vote{count !== 1 ? 's' : ''} ({pct}%)
                   </Text>
@@ -201,7 +202,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  rowLabel: { fontSize: 14, fontWeight: '500', color: colors.primary },
+  rowLabelRow: { flexDirection: 'row', alignItems: 'center', flexShrink: 1 },
+  rowLabel: { fontSize: 14, fontWeight: '500', color: colors.primary, flexShrink: 1 },
   rowLabelSelected: { color: colors.accent, fontWeight: '700' },
   rowCount: { fontSize: 11, color: colors.textSecondary },
   submitBtn: {

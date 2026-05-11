@@ -25,6 +25,8 @@ export interface FilterPanelProps {
   autoSelectedKeys?: string[];
 }
 
+const INITIAL_VISIBLE = 10;
+
 // Module-level cache so the catalog is fetched once across mounts/remounts.
 let catalogCache: FilterGroup[] | null = null;
 let catalogPromise: Promise<FilterGroup[]> | null = null;
@@ -296,13 +298,13 @@ export default function FilterPanel({
                 {header}
                 {isOpen && (
                   <div className="px-4 pb-4 pt-1 flex flex-wrap gap-1.5">
-                    {group.options.map((opt) => {
+                    {group.options.slice(0, INITIAL_VISIBLE).map((opt) => {
                       const checked = facilitySet.has(opt.key);
                       return (
                         <Chip
                           key={opt.key}
                           label={opt.label}
-                          icon={lucideForFacility(opt.key)}
+                          icon={lucideForFacility(opt.key, group.key)}
                           active={checked}
                           autoSelected={autoSet.has(opt.key)}
                           onClick={() => toggleFacility(opt.key)}

@@ -1,20 +1,22 @@
 /**
- * Server-driven icon name → Lucide React component.
+ * Server-driven icon name → Lucide React Native component.
  *
- * The server's GET /cafes/filters returns each feature's display label as
- * `feature.name` (e.g. "Wifi", "Parkir Gratis", "Wheelchair Parking"). The
- * client resolves that label → lucide name locally because the API doesn't
- * ship icon hints with features.
+ * Mirrors `client/src/utils/lucideIcon.tsx` (web) so both clients resolve
+ * feature labels the same way. Both sides of the lookup are normalized
+ * (lowercase, strip spaces/dashes/underscores).
  *
- * Both sides of the lookup are normalized (lowercase, strip spaces/dashes/
- * underscores) so "Parkir Gratis" → `parkirgratis` matches a map entry like
- * `parkirgratis: 'squareparking'`. Snake_case legacy seed keys (`strong_wifi`,
- * `power_outlet`) work via the same normalization.
+ * Resolution order in `lucideForFacility(key, category?)`:
+ *   1. explicit FACILITY_TO_LUCIDE entry (e.g. "Parkir Gratis" → squareparking)
+ *   2. direct lucide alias in ICON_MAP (e.g. raw "Wifi" → wifi)
+ *   3. per-category fallback (e.g. unknown space feature → house)
+ *   4. undefined — caller can render no icon at all
  *
  * If you add a new feature to the `features` table, add its normalized key
- * here too — otherwise the chip renders the `<Star>` fallback.
+ * here too — otherwise the chip falls back to the category default (or to
+ * the LucideIcon `fallback` prop, which defaults to Star).
  */
-import type { LucideProps, LucideIcon as LucideIconType } from 'lucide-react';
+import React from 'react';
+import type { LucideIcon as LucideIconType, LucideProps } from 'lucide-react-native';
 import {
   Accessibility, Apple, Armchair, Award, Baby, Backpack, Banknote, Bath, Beef,
   Beer, Bell, Bike, Bone, Book, BookMarked, Bookmark, BookOpen, Briefcase,
@@ -30,27 +32,24 @@ import {
   Theater, ThumbsUp, Ticket, Timer, Toilet, TreePine, Trees, Trophy, Truck,
   User, Users, Utensils, UtensilsCrossed, Vegan, Video, Volume2, VolumeX,
   Wallet, Wifi, Wind, Wine, X, Zap,
-} from 'lucide-react';
+} from 'lucide-react-native';
 
 function normalize(name?: string | null): string {
   return (name ?? '').toLowerCase().replace(/[-_\s]/g, '');
 }
 
-/** Canonical icon-name keys (normalized) → lucide component. Each key is a
- *  lowercase, space/dash/underscore-stripped form of either:
- *   - a server purpose icon hint ("coffee", "heart"),
- *   - a server feature `name` label ("parkir gratis", "wheelchair parking"),
- *   - or a lucide alias the codebase already uses ("squareparking").
- *  Pre-normalized so the lookup function can normalize the caller's input
- *  the same way and produce a single match. */
+/** Canonical icon-name keys (normalized) → lucide component. Keys are the
+ *  normalized form of either a server purpose icon hint ("coffee"), a feature
+ *  `name` label ("parkir gratis"), or a lucide alias the codebase already
+ *  uses ("squareparking"). */
 const ICON_MAP: Record<string, LucideIconType> = {
-  // ── Purposes (server purposes.icon: lucide names) ──────────────────────────
+  // Purposes (server purposes.icon)
   coffee: Coffee, heart: Heart, users: Users, bookopen: BookOpen, laptop: Laptop,
   briefcase: Briefcase, lightbulb: Lightbulb, coffeecup: Coffee, book: Book,
   bookmark: BookMarked, party: PartyPopper, partypopper: PartyPopper, zap: Zap,
   camera: Camera,
 
-  // ── Lucide-name aliases (used directly from facility-catalog.ts hints) ─────
+  // Direct lucide aliases
   wifi: Wifi, building2: Building2, squareparking: SquareParking, trees: Trees,
   armchair: Armchair, volumex: VolumeX, lamp: Lamp, volume2: Volume2,
   maximize2: Maximize2, table2: Table2, presentation: Presentation,
@@ -75,19 +74,18 @@ const ICON_MAP: Record<string, LucideIconType> = {
   timer: Timer, receipt: Receipt, user: User, award: Award, handcoins: HandCoins,
   backpack: Backpack,
 
-  // ── Action icons ───────────────────────────────────────────────────────────
+  // Action icons
   thumbsup: ThumbsUp, x: X, chevronleft: ChevronLeft, video: Video, star: Star,
   share2: Share2, navigation: Navigation, phone: Phone, mappin: MapPin,
   flame: Flame, smile: Smile, frown: Frown, meh: Meh, plus: Plus,
   messagesquare: MessageSquare,
 };
 
-/** Feature label / facility key → icon-name (key in ICON_MAP).
- *  Covers every row in the `features` table — categories: accessibility,
- *  ambience, amenity, audience, payment, service, space, plus legacy
- *  snake_case keys from old seed data. */
+/** Feature label / facility key → icon-name (key in ICON_MAP). Covers every
+ *  row in the `features` table — accessibility, ambience, amenity, audience,
+ *  payment, service, space — plus legacy snake_case keys from old seed data. */
 const FACILITY_TO_LUCIDE: Record<string, string> = {
-  // ── Legacy snake_case (kept for old wizard/seed flows) ─────────────────────
+  // Legacy snake_case (kept for old wizard/seed flows)
   ambientlighting: 'lamp',
   bookablespace: 'calendarcheck',
   cozyseating: 'armchair',
@@ -105,14 +103,14 @@ const FACILITY_TO_LUCIDE: Record<string, string> = {
   smokingarea: 'cigarette',
   biasanyamenunggu: 'clock',
 
-  // ── Accessibility ──────────────────────────────────────────────────────────
+  // Accessibility
   hearingloop: 'ear',
   wheelchairentrance: 'accessibility',
   wheelchairparking: 'accessibility',
   wheelchairrestroom: 'accessibility',
   wheelchairseating: 'accessibility',
 
-  // ── Ambience (Suasana) ─────────────────────────────────────────────────────
+  // Ambience (Suasana)
   aesthetic: 'palette',
   affordable: 'piggybank',
   casual: 'smile',
@@ -132,7 +130,7 @@ const FACILITY_TO_LUCIDE: Record<string, string> = {
   vintage: 'disc',
   spacious: 'maximize2',
 
-  // ── Amenity (Fasilitas) ────────────────────────────────────────────────────
+  // Amenity (Fasilitas)
   ac: 'snowflake',
   alkohol: 'wine',
   aquascape: 'fish',
@@ -166,7 +164,7 @@ const FACILITY_TO_LUCIDE: Record<string, string> = {
   wifiberbayar: 'wifi',
   whiteboard: 'presentation',
 
-  // ── Audience (Cocok Untuk) ─────────────────────────────────────────────────
+  // Audience (Cocok Untuk)
   groupfriendly: 'users',
   kidbirthdayparty: 'cake',
   solofriendly: 'user',
@@ -175,7 +173,7 @@ const FACILITY_TO_LUCIDE: Record<string, string> = {
   wfc: 'laptop',
   womenowned: 'crown',
 
-  // ── Payment ────────────────────────────────────────────────────────────────
+  // Payment
   cash: 'banknote',
   cashonly: 'banknote',
   creditcard: 'creditcard',
@@ -184,7 +182,7 @@ const FACILITY_TO_LUCIDE: Record<string, string> = {
   nfc: 'smartphone',
   qris: 'qrcode',
 
-  // ── Service (food + service types) ─────────────────────────────────────────
+  // Service (food + service types)
   ambilditoko: 'shoppingbag',
   ayambakar: 'drumstick',
   ayamgeprek: 'drumstick',
@@ -232,7 +230,6 @@ const FACILITY_TO_LUCIDE: Record<string, string> = {
   mexicanfood: 'utensilscrossed',
   mie: 'soup',
   nasirefill: 'cupsoda',
-  ordeatcounter: 'receipt',
   orderatcounter: 'receipt',
   orderattable: 'utensilscrossed',
   pesanantar: 'truck',
@@ -260,16 +257,14 @@ const FACILITY_TO_LUCIDE: Record<string, string> = {
   veganoptions: 'vegan',
   vegetarianoptions: 'sprout',
 
-  // ── Space (Ruang) ──────────────────────────────────────────────────────────
+  // Space (Ruang)
   multilevel: 'layers',
   privateroom: 'doorclosed',
   rooftop: 'sun',
 };
 
 /** Per-category fallback for features that have no explicit icon mapping.
- *  Keeps the chip visually meaningful even when a new feature gets added to
- *  the DB before the icon map is updated. Category strings match
- *  `features.category` values returned by the server. */
+ *  Strings match `features.category` values returned by GET /cafes/filters. */
 const CATEGORY_FALLBACK: Record<string, string> = {
   accessibility: 'accessibility',
   ambience: 'sparkles',
@@ -280,15 +275,8 @@ const CATEGORY_FALLBACK: Record<string, string> = {
   space: 'house',
 };
 
-/** Resolve a feature label / facility key to a lucide icon name. Resolution
- *  order:
- *   1. explicit `FACILITY_TO_LUCIDE` entry (e.g. "Parkir Gratis" → squareparking)
- *   2. direct lucide alias in `ICON_MAP` (e.g. raw "Wifi" → wifi)
- *   3. per-category fallback (e.g. unknown amenity → star, unknown space → house)
- *   4. undefined — caller can render no icon at all
- *
- *  Pass `category` (the server's `features.category` for this option) to
- *  enable step 3; without it the lookup stops at step 2. */
+/** Resolve a feature label / facility key to a lucide icon name. See file
+ *  docstring for the resolution order. */
 export function lucideForFacility(
   key: string | null | undefined,
   category?: string | null,

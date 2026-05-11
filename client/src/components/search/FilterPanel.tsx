@@ -25,6 +25,8 @@ export interface FilterPanelProps {
   autoSelectedKeys?: string[];
 }
 
+const INITIAL_VISIBLE = 10;
+
 // Module-level cache so the catalog is fetched once across mounts/remounts.
 let catalogCache: FilterGroup[] | null = null;
 let catalogPromise: Promise<FilterGroup[]> | null = null;
@@ -126,6 +128,8 @@ export default function FilterPanel({
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
     amenity: true,
   });
+  // Track which groups have "show all" expanded beyond INITIAL_VISIBLE.
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (catalogCache) {
@@ -294,23 +298,50 @@ export default function FilterPanel({
             return (
               <div key={group.key} className="border-b border-[#F0EDE8]">
                 {header}
-                {isOpen && (
-                  <div className="px-4 pb-4 pt-1 flex flex-wrap gap-1.5">
-                    {group.options.map((opt) => {
-                      const checked = facilitySet.has(opt.key);
-                      return (
-                        <Chip
-                          key={opt.key}
-                          label={opt.label}
-                          icon={lucideForFacility(opt.key, group.key)}
-                          active={checked}
-                          autoSelected={autoSet.has(opt.key)}
-                          onClick={() => toggleFacility(opt.key)}
-                        />
-                      );
-                    })}
-                  </div>
-                )}
+                {isOpen && (() => {
+                  const allExpanded = expandedGroups[group.key] ?? false;
+                  const visibleOptions = allExpanded
+                    ? group.options
+                    : group.options.slice(0, INITIAL_VISIBLE);
+                  const hiddenCount = group.options.length - INITIAL_VISIBLE;
+                  return (
+                    <div className="px-4 pb-4 pt-1 flex flex-wrap gap-1.5">
+                      {visibleOptions.map((opt) => {
+                        const checked = facilitySet.has(opt.key);
+                        return (
+                          <Chip
+                            key={opt.key}
+                            label={opt.label}
+                            icon={lucideForFacility(opt.key, group.key)}
+                            active={checked}
+                            autoSelected={autoSet.has(opt.key)}
+                            onClick={() => toggleFacility(opt.key)}
+                          />
+                        );
+                      })}
+                      {!allExpanded && hiddenCount > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setExpandedGroups((prev) => ({ ...prev, [group.key]: true }))}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold text-[#D48B3A] border border-dashed border-[#D48B3A] hover:bg-[#FDF6EC] transition-colors whitespace-nowrap"
+                        >
+                          <ChevronDown size={12} strokeWidth={2.5} />
+                          {hiddenCount} lainnya
+                        </button>
+                      )}
+                      {allExpanded && hiddenCount > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setExpandedGroups((prev) => ({ ...prev, [group.key]: false }))}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold text-[#8A8880] border border-dashed border-[#E8E4DD] hover:bg-[#FAF9F6] transition-colors whitespace-nowrap"
+                        >
+                          <ChevronDown size={12} strokeWidth={2.5} className="rotate-180" />
+                          Tampilkan lebih sedikit
+                        </button>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             );
           })}

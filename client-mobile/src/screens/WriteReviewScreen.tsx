@@ -11,7 +11,7 @@ import { createReview } from '../services/api';
 import { colors, spacing, radius } from '../theme';
 import { usePurposes } from '../queries/purposes/use-purposes';
 import { useCafeFilters } from '../queries/cafes/use-cafe-filters';
-import { FACILITY_ICONS } from '../utils/facilities';
+import { LucideIcon, lucideForFacility } from '../utils/lucideIcon';
 
 const { width } = Dimensions.get('window');
 
@@ -170,26 +170,35 @@ export default function WriteReviewScreen() {
             <Text style={styles.stepTitle}>Mood kamu pas di sini?</Text>
             <Text style={styles.stepHint}>Pilih satu yang paling cocok</Text>
             <View style={styles.optionsGrid}>
-              {moodOptions.map((m) => (
+              {moodOptions.map((m) => {
+                const active = mood === m.slug;
+                return (
                 <TouchableOpacity
                   key={m.slug}
-                  style={[styles.optionCard, mood === m.slug && styles.optionCardActive]}
+                  style={[styles.optionCard, active && styles.optionCardActive]}
                   onPress={() => setMood(m.slug)}
                 >
-                  <Text style={styles.optionEmoji}>{m.icon ?? '📌'}</Text>
-                  <Text style={[styles.optionLabel, mood === m.slug && styles.optionLabelActive]}>
+                  <LucideIcon
+                    name={m.icon}
+                    size={26}
+                    strokeWidth={1.8}
+                    color={active ? colors.accent : colors.primary}
+                    style={{ marginBottom: 4 }}
+                  />
+                  <Text style={[styles.optionLabel, active && styles.optionLabelActive]}>
                     {m.name}
                   </Text>
                   {m.description ? (
                     <Text
-                      style={[styles.optionTagline, mood === m.slug && styles.optionTaglineActive]}
+                      style={[styles.optionTagline, active && styles.optionTaglineActive]}
                       numberOfLines={2}
                     >
                       {m.description}
                     </Text>
                   ) : null}
                 </TouchableOpacity>
-              ))}
+                );
+              })}
             </View>
           </View>
         );
@@ -225,14 +234,22 @@ export default function WriteReviewScreen() {
                     <View style={styles.facilityGrid}>
                       {group.options.map((opt) => {
                         const active = facilities.includes(opt.key);
-                        const icon = FACILITY_ICONS[opt.key] || '✓';
+                        const iconName = lucideForFacility(opt.key, group.key);
                         return (
                           <TouchableOpacity
                             key={opt.key}
                             style={[styles.facChip, active && styles.facChipActive]}
                             onPress={() => toggleFacility(opt.key)}
                           >
-                            <Text style={styles.facIcon}>{icon}</Text>
+                            {iconName ? (
+                              <LucideIcon
+                                name={iconName}
+                                size={14}
+                                strokeWidth={2}
+                                color={active ? '#FFFFFF' : '#5C5A52'}
+                                style={{ marginRight: 6 }}
+                              />
+                            ) : null}
                             <Text style={[styles.facLabel, active && styles.facLabelActive]}>
                               {opt.label}
                             </Text>

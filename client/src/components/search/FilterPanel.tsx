@@ -302,7 +302,7 @@ export default function FilterPanel({
                         <Chip
                           key={opt.key}
                           label={opt.label}
-                          icon={lucideForFacility(opt.key)}
+                          icon={lucideForFacility(opt.key, group.key)}
                           active={checked}
                           autoSelected={autoSet.has(opt.key)}
                           onClick={() => toggleFacility(opt.key)}

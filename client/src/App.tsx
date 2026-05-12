@@ -21,6 +21,7 @@ import PaymentPage from './pages/owner/PaymentPage';
 import PaymentSuccessPage from './pages/owner/PaymentSuccessPage';
 import PaymentFailedPage from './pages/owner/PaymentFailedPage';
 import DiscoverPage from './pages/DiscoverPage';
+import DiscoverSwipePage from './pages/DiscoverSwipePage';
 import TrendingPage from './pages/TrendingPage';
 import AuthCallbackPage from './pages/AuthCallbackPage';
 import ProfilePage from './pages/ProfilePage';
@@ -74,6 +75,7 @@ function App() {
           <Route path="/shortlist" element={<ShortlistPage />} />
           <Route path="/favorites" element={<FavoritesPage />} />
           <Route path="/discover" element={<DiscoverPage />} />
+          <Route path="/discover/swipe" element={<DiscoverSwipePage />} />
           <Route path="/trending" element={<TrendingPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/friends" element={<FriendsPage />} />

@@ -33,7 +33,8 @@ export default function SwipeCard({ cafe }: Props) {
   return (
     <div
       onClick={() => navigate(cafeUrl(cafe))}
-      className="relative w-full aspect-[3/4] max-w-md max-h-[calc(100dvh-220px)] mx-auto bg-[#F0EDE8] rounded-2xl overflow-hidden cursor-pointer shadow-xl"
+      className="relative aspect-[3/4] mx-auto bg-[#F0EDE8] rounded-2xl overflow-hidden cursor-pointer shadow-xl"
+      style={{ width: 'min(100%, 28rem, calc((100dvh - 220px) * 0.75))' }}
     >
       <img
         src={photo}

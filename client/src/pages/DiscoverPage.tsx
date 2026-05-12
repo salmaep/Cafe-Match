@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useNavigationType } from 'react-router-dom';
 import { cafesApi } from '../api/cafes.api';
 import type { Cafe } from '../types';
 import { usePreferences } from '../context/PreferencesContext';
@@ -13,12 +13,13 @@ const SWIPE_THRESHOLD = 120;
 
 export default function DiscoverPage() {
   const navigate = useNavigate();
-  const { preferences, getPurposeId } = usePreferences();
+  const navType = useNavigationType();
+  const { preferences, getPurposeId, wizardCompleted } = usePreferences();
   const { addToShortlist, shortlist } = useShortlist();
 
-  // Wizard always shows first when entering Discover. Each visit re-mounts this
-  // component and resets `showWizard` to true.
-  const [showWizard, setShowWizard] = useState(true);
+  const [showWizard, setShowWizard] = useState(
+    () => !wizardCompleted || navType !== 'POP',
+  );
 
   const [cafes, setCafes] = useState<Cafe[]>([]);
   const [index, setIndex] = useState(0);
@@ -70,7 +71,6 @@ export default function DiscoverPage() {
     return () => clearTimeout(t);
   }, [allDone, navigate, showWizard]);
 
-  // Wizard always shown first on every visit to Discover.
   if (showWizard) {
     return (
       <Wizard

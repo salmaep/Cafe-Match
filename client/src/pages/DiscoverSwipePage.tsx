@@ -45,8 +45,8 @@ export default function DiscoverSwipePage() {
     setIndex(0);
 
     cafesApi
-      .search({ lat, lng, radius, limit: 5, purposeId, facilities, priceRange })
-      .then((res) => setCafes(res.data?.data ?? []))
+      .discover({ lat, lng, radius, limit: 50, purposeId, facilities, priceRange })
+      .then((res) => setCafes(res.data ?? []))
       .catch(() => setCafes([]))
       .finally(() => setLoading(false));
   }, [preferences, getPurposeId]);

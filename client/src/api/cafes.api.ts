@@ -90,10 +90,23 @@ function normalizeHit(hit: MeiliCafeHit): Cafe {
   };
 }
 
+export interface DiscoverParams {
+  lat?: number;
+  lng?: number;
+  radius?: number;
+  purposeId?: number;
+  priceRange?: string;
+  facilities?: string[];
+  limit?: number;
+}
+
+export interface DiscoverResult {
+  data: Cafe[];
+  meta: { total: number };
+}
+
 export const cafesApi = {
   search: async (params: SearchParams) => {
-    // Backend accepts ?facilities=key1,key2 (CSV). Drop the empty array so we
-    // don't send `?facilities=` and accidentally widen the result set.
     const { facilities, ...rest } = params;
     const queryParams: Record<string, unknown> = { ...rest };
     if (facilities && facilities.length > 0) {
@@ -108,6 +121,20 @@ export const cafesApi = {
         ...res.data,
         data: (res.data?.data ?? []).map(normalizeHit),
       } as PaginatedResponse<Cafe>,
+    };
+  },
+
+  discover: async (params: DiscoverParams): Promise<DiscoverResult> => {
+    const { facilities, ...rest } = params;
+    const queryParams: Record<string, unknown> = { ...rest };
+    if (facilities && facilities.length > 0) {
+      queryParams.facilities = facilities.join(',');
+    }
+    const res = await apiClient.get<any>('/cafes/discover', { params: queryParams });
+    const cafes = (res.data?.data ?? []).map((c: MeiliCafeHit) => normalizeHit(c));
+    return {
+      data: cafes,
+      meta: res.data?.meta ?? { total: cafes.length },
     };
   },
 

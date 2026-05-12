@@ -156,14 +156,14 @@ export default function DiscoverSwipePage() {
   const passOverlayOpacity = Math.max(0, Math.min(1, -dragX / SWIPE_THRESHOLD));
 
   return (
-    <div className="h-[calc(100vh-64px)] bg-[#FAF9F6] flex flex-col relative overflow-hidden">
+    <div className="h-[calc(100dvh-128px)] md:h-[calc(100dvh-64px)] bg-[#FAF9F6] flex flex-col relative overflow-hidden">
       <Seo
         title="Discover cafes"
         description="Swipe through cafes that match your preferences and shortlist the ones you love."
       />
 
-      {/* Hint banner */}
-      <div className="shrink-0 px-4 pt-3 pb-1 max-w-md mx-auto w-full">
+      {/* Hint banner — desktop only */}
+      <div className="hidden md:block shrink-0 px-4 pt-3 pb-1 max-w-md mx-auto w-full">
         <div className="flex items-center justify-between gap-2 bg-white border border-[#F0EDE8] rounded-full px-3 py-1.5 text-[11px] font-semibold text-[#5C5A52] shadow-sm">
           <span className="flex items-center gap-1 text-red-500">
             <span className="text-sm">←</span> Geser kiri = <span className="font-bold">Skip</span>
@@ -178,7 +178,7 @@ export default function DiscoverSwipePage() {
       <div className="flex-1 min-h-0 flex items-center justify-center px-4 py-2 overflow-hidden">
         <div
           className="relative w-full max-w-sm"
-          style={{ height: 'min(560px, calc(100vh - 215px))' }}
+          style={{ height: 'min(560px, calc(100dvh - 230px))' }}
         >
           <div
             onPointerDown={onPointerDown}

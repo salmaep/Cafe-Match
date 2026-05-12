@@ -4,6 +4,7 @@ import { cafesApi } from '../api/cafes.api';
 import type { Cafe } from '../types';
 import { usePreferences } from '../context/PreferencesContext';
 import { useShortlist } from '../context/ShortlistContext';
+import { useAuth } from '../context/AuthContext';
 import SwipeCard from '../components/discover/SwipeCard';
 import { cafeUrl } from '../utils/cafeUrl';
 import Seo from '../components/seo/Seo';
@@ -14,11 +15,11 @@ export default function DiscoverSwipePage() {
   const navigate = useNavigate();
   const { preferences, getPurposeId } = usePreferences();
   const { addToShortlist, shortlist } = useShortlist();
+  const { user } = useAuth();
 
   const [cafes, setCafes] = useState<Cafe[]>([]);
   const [index, setIndex] = useState(0);
   const [loading, setLoading] = useState(true);
-
   const [dragX, setDragX] = useState(0);
   const [dragging, setDragging] = useState(false);
   const [exitDir, setExitDir] = useState<'left' | 'right' | null>(null);
@@ -26,22 +27,22 @@ export default function DiscoverSwipePage() {
   const startXRef = useRef(0);
   const pointerIdRef = useRef<number | null>(null);
 
-  // Redirect to wizard if no preferences stored
-  if (!preferences) {
-    return <Navigate to="/discover" replace />;
-  }
-
+  // All useEffects must come before any conditional returns (rules of hooks)
   useEffect(() => {
-    const lat = preferences?.location?.latitude ?? -6.9175;
-    const lng = preferences?.location?.longitude ?? 107.6191;
+    if (!preferences) return;
+    const lat = preferences.location?.latitude ?? -6.9175;
+    const lng = preferences.location?.longitude ?? 107.6191;
     const radius = 9999 * 1000;
-
-    const purposeId = getPurposeId(preferences?.purpose) ?? undefined;
+    const purposeId = getPurposeId(preferences.purpose) ?? undefined;
     const facilities =
-      preferences?.amenities && preferences.amenities.length > 0
+      preferences.amenities && preferences.amenities.length > 0
         ? preferences.amenities
         : undefined;
-    const priceRange = preferences?.priceRange || undefined;
+    const priceRange = preferences.priceRange || undefined;
+
+    setLoading(true);
+    setCafes([]);
+    setIndex(0);
 
     cafesApi
       .search({ lat, lng, radius, limit: 5, purposeId, facilities, priceRange })
@@ -59,14 +60,23 @@ export default function DiscoverSwipePage() {
   const current = cafes[index];
   const allDone = !loading && (cafes.length === 0 || index >= cafes.length);
 
-  // After all cafes swiped → back to wizard so user can search again
   useEffect(() => {
-    if (!allDone) return;
+    if (!allDone || !preferences) return;
     const t = setTimeout(() => navigate('/discover', { replace: true }), 1200);
     return () => clearTimeout(t);
-  }, [allDone, navigate]);
+  }, [allDone, navigate, preferences]);
+
+  // Conditional returns only after all hooks
+  if (!preferences) {
+    return <Navigate to="/discover" replace />;
+  }
 
   const triggerSwipe = (dir: 'left' | 'right') => {
+    // Guard: require login before adding to shortlist — redirect back here after login
+    if (dir === 'right' && !user) {
+      navigate('/login?redirect=/discover/swipe');
+      return;
+    }
     if (dir === 'right' && current) {
       const cafe = current;
       addToShortlist(cafe).then((added) => {

@@ -178,14 +178,14 @@ export default function DiscoverPage() {
         </div>
       </div>
 
-      <div className="flex-1 flex items-start justify-center px-4 pt-[2vh] md:pt-4 lg:pt-6 pb-3 select-none min-h-0">
-        <div className="relative w-full max-w-sm md:max-w-md lg:max-w-lg">
+      <div className="flex-1 flex items-center justify-center px-4 pt-[2vh] md:pt-4 lg:pt-6 pb-3 select-none min-h-0">
+        <div className="relative w-full max-w-sm md:max-w-md lg:max-w-lg h-full flex items-center justify-center">
           <div
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}
             onPointerCancel={onPointerUp}
-            className="touch-none cursor-grab active:cursor-grabbing w-full"
+            className="touch-none cursor-grab active:cursor-grabbing w-full h-full flex items-center justify-center"
             style={{
               transform: `translateX(${translateX}px) rotate(${rotate}deg)`,
               opacity,
@@ -193,7 +193,7 @@ export default function DiscoverPage() {
             }}
           >
             {current && (
-              <div className="relative">
+              <div className="relative h-full max-h-full flex items-center justify-center">
                 <SwipeCard cafe={current} />
                 <div
                   className="absolute top-8 left-8 -rotate-12 px-4 py-2 border-4 border-[#D48B3A] rounded-lg pointer-events-none"

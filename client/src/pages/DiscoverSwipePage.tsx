@@ -220,7 +220,7 @@ export default function DiscoverSwipePage() {
       {/* Shortlist FAB */}
       <button
         onClick={() => navigate('/shortlist')}
-        className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-[#D48B3A] text-white shadow-xl flex items-center justify-center hover:bg-[#b87528] transition-colors z-30"
+        className="hidden md:flex fixed bottom-6 right-6 w-14 h-14 rounded-full bg-[#D48B3A] text-white shadow-xl items-center justify-center hover:bg-[#b87528] transition-colors z-30"
         title="View Shortlist"
       >
         <span className="text-2xl leading-none">★</span>

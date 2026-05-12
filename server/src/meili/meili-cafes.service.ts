@@ -63,6 +63,7 @@ export interface SearchCafesQuery {
   facilities?: string[];
   priceRange?: string;
   purposeId?: number;
+  excludeIds?: number[];
   page?: number;
   limit?: number;
   sort?: string;
@@ -274,6 +275,7 @@ export class MeiliCafesService {
       facilities,
       priceRange,
       purposeId,
+      excludeIds,
       page = 1,
       limit = 50,
       sort: sortMode,
@@ -297,6 +299,10 @@ export class MeiliCafesService {
     if (purposeId) {
       const slug = await this.resolvePurposeSlug(purposeId);
       if (slug) filters.push(`purposes = "${slug}"`);
+    }
+
+    if (excludeIds && excludeIds.length > 0) {
+      filters.push(`NOT id IN [${excludeIds.join(', ')}]`);
     }
 
     const sort: string[] = [];

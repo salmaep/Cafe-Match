@@ -5,6 +5,7 @@ import { Cafe } from './entities/cafe.entity';
 import { CafeFeature } from './entities/cafe-feature.entity';
 import { PurposeRequirement } from '../purposes/entities/purpose-requirement.entity';
 import { SearchCafesDto } from './dto/search-cafes.dto';
+import { DiscoverCafesDto } from './dto/discover-cafes.dto';
 import { CreateCafeDto } from './dto/create-cafe.dto';
 import { MeiliCafesService } from '../meili/meili-cafes.service';
 import { buildCafeSlug, cafeSlugOrFallback } from '../common/utils/slug.util';
@@ -140,6 +141,67 @@ export class CafesService {
       detectedFacilities: featureNames,
       matchScore,
       reviewsSummary,
+    };
+  }
+
+  // ── Discover deck (Meilisearch + shortlist exclusion + promo injection) ────
+
+  async findDiscoverDeck(userId: number | null, dto: DiscoverCafesDto) {
+    const targetSize = dto.limit ?? 7;
+
+    let excludeIds: number[] = [];
+    if (userId != null) {
+      const rows = await this.dataSource.query<{ cafe_id: number }[]>(
+        `SELECT cafe_id FROM shortlists WHERE user_id = ?`,
+        [userId],
+      );
+      excludeIds = rows.map((r) => Number(r.cafe_id));
+    }
+
+    const searchResult = await this.meiliCafes.searchCafes({
+      lat: dto.lat,
+      lng: dto.lng,
+      radius: dto.radius,
+      facilities: dto.facilities,
+      priceRange: dto.priceRange,
+      purposeId: dto.purposeId,
+      excludeIds,
+      page: 1,
+      limit: targetSize,
+      sort: 'distance',
+    });
+
+    const regular = searchResult.data;
+
+    if (regular.length === 0) {
+      return {
+        data: [],
+        meta: { total: 0 },
+      };
+    }
+
+    const excludeSet = new Set(excludeIds);
+    const promoted = await this.findPromotedCafes();
+    const promoA = promoted.find(
+      (c: any) =>
+        c.activePromotionType === 'new_cafe' && !excludeSet.has(c.id),
+    );
+    const promoB = promoted.find(
+      (c: any) =>
+        c.activePromotionType === 'featured_promo' && !excludeSet.has(c.id),
+    );
+
+    const deck: any[] = [...regular];
+    const insertAt = (cafe: any) => {
+      const pos = Math.min(deck.length, 1 + Math.floor(Math.random() * 3));
+      deck.splice(pos, 0, cafe);
+    };
+    if (promoA) insertAt(promoA);
+    if (promoB) insertAt(promoB);
+
+    return {
+      data: deck,
+      meta: { total: deck.length },
     };
   }
 

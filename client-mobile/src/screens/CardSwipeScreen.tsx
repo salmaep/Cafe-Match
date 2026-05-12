@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, useCallback } from 'react';
+import React, { useRef, useState, useCallback, useMemo, useEffect } from 'react';
 import WizardScreen from './WizardScreen';
 import {
   View,
@@ -9,18 +9,25 @@ import {
   Dimensions,
   ActivityIndicator,
 } from 'react-native';
-import Swiper from 'react-native-deck-swiper';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  runOnJS,
+  interpolate,
+  Extrapolation,
+} from 'react-native-reanimated';
 import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useAuth } from '../context/AuthContext';
 import { useShortlist } from '../context/ShortlistContext';
 import { usePreferences } from '../context/PreferencesContext';
 import { useLocation } from '../context/LocationContext';
-import { useSearchCafes } from '../queries/cafes/use-search-cafes';
-import { usePromotedCafes } from '../queries/cafes/use-promoted-cafes';
-import { hitsToCafes } from '../queries/cafes/api';
-import { PURPOSE_SLUG_MAP } from '../constant/purpose';
+import { useDiscoverDeck } from '../queries/cafes/use-discover-deck';
+import { usePurposeId } from '../queries/purposes/use-purpose-id';
 import { Cafe } from '../types';
 import { colors, spacing, radius } from '../theme';
 import Toast from '../components/Toast';
@@ -32,23 +39,18 @@ export default function CardSwipeScreen() {
   const navigation = useNavigation<StackNavigationProp<any>>();
   const route = useRoute();
   const insets = useSafeAreaInsets();
+  const { user } = useAuth();
   const { addToShortlist, isInShortlist } = useShortlist();
   const { preferences } = usePreferences();
   const { latitude, longitude } = useLocation();
-  const swiperRef = useRef<any>(null);
-
-  // This screen is mounted in two places (see AppNavigator):
-  //   - Stack screen "CardSwipe" — reached from Splash → Wizard on first open,
-  //     standalone with NO bottom nav. Wizard already ran in the previous step
-  //     so the inline wizard gate would be redundant here.
-  //   - Tab "Discover" inside MainTabs — has bottom nav. We want every revisit
-  //     to re-show the wizard (mirrors web DiscoverPage behavior).
+  const purposeId = usePurposeId(preferences?.purpose);
   const isStandalone = route.name === 'CardSwipe';
 
   const [allSwiped, setAllSwiped] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
   const [showToast, setShowToast] = useState(false);
-  const [cafes, setCafes] = useState<Cafe[]>([]);
+  const [sessionId, setSessionId] = useState(0);
+  const [index, setIndex] = useState(0);
 
   const [showWizard, setShowWizard] = useState(!isStandalone);
   useFocusEffect(
@@ -57,156 +59,128 @@ export default function CardSwipeScreen() {
     }, [isStandalone]),
   );
 
-  // Fix 1: Calculate available height for card centering
-  const HEADER_H = insets.top + 72; // status bar + header row
-  const BOTTOM_H = insets.bottom + 72; // FAB + bottom safe area
+  const dismissWizard = useCallback(() => {
+    setShowWizard(false);
+    setAllSwiped(false);
+    setIndex(0);
+    setSessionId((s) => s + 1);
+  }, []);
+
+  const HEADER_H = insets.top + 72;
+  const BOTTOM_H = insets.bottom + 72;
   const availableH = height - HEADER_H - BOTTOM_H;
   const CARD_H = Math.min(availableH * 0.88, height * 0.68);
-
-  // Position cards exactly in center of available area
   const cardTop = Math.max(0, (availableH - CARD_H) / 2);
   const cardLeft = (width - CARD_W) / 2;
 
-  // ─── Cafe data via TanStack Query + Meilisearch ─────────────────────────
   const lat = preferences?.location?.latitude ?? latitude;
   const lng = preferences?.location?.longitude ?? longitude;
   const radKm = preferences?.radius ?? 2;
 
-  const cafesQuery = useSearchCafes({
-    lat: lat ?? undefined,
-    lng: lng ?? undefined,
-    radius: Math.min(radKm * 1000, 50_000_000),
-    limit: 50,
-  });
-  const promotedQuery = usePromotedCafes();
+  const priceRangeParam = (['$', '$$', '$$$'] as const).includes(
+    preferences?.priceRange as any,
+  )
+    ? (preferences?.priceRange as '$' | '$$' | '$$$')
+    : undefined;
 
-  // Show loading ONLY when there is no data at all (initial fetch).
-  // Background refetches keep the existing deck visible to avoid blanking.
-  const hasAnyData =
-    (cafesQuery.data?.pages?.[0]?.data?.length ?? 0) > 0 ||
-    (promotedQuery.data?.length ?? 0) > 0 ||
-    cafes.length > 0;
-  const loading =
-    (cafesQuery.isLoading || promotedQuery.isLoading) && !hasAnyData;
+  const purposeReady = preferences?.purpose == null || purposeId != null;
 
-  // Build the swipe deck from server data only.
-  // Server (Meilisearch) filters by geo radius + amenities + purposeId; this
-  // effect just ranks + interleaves promos for display order.
+  const deckQuery = useDiscoverDeck(
+    {
+      lat: lat ?? undefined,
+      lng: lng ?? undefined,
+      radius: Math.min(radKm * 1000, 50_000_000),
+      purposeId,
+      facilities:
+        preferences?.amenities && preferences.amenities.length > 0
+          ? preferences.amenities
+          : undefined,
+      priceRange: priceRangeParam,
+      limit: 7,
+    },
+    { enabled: purposeReady },
+  );
+
+  const cafes: Cafe[] = useMemo(() => {
+    const raw = deckQuery.data?.data ?? [];
+    return raw.filter((c) => !isInShortlist(c.id));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deckQuery.data]);
+  const loading = deckQuery.isPending || deckQuery.isFetching;
+
   useEffect(() => {
-    // NOTE: don't gate on isFetching — that ping-pongs the deck on every
-    // background refetch (focus, tab switch, etc) and triggers blank flashes.
-
-    const allCafes: Cafe[] = cafesQuery.data
-      ? cafesQuery.data.pages.flatMap((p) =>
-          hitsToCafes(p, lat ?? undefined, lng ?? undefined),
-        )
-      : [];
-    const promotedCafes: Cafe[] = promotedQuery.data ?? [];
-
-    // Don't blank an existing deck when a refetch returns nothing transiently.
-    // Only commit empty if we genuinely have no data AND aren't fetching.
-    if (allCafes.length === 0 && promotedCafes.length === 0) {
-      if (!cafesQuery.isFetching && !promotedQuery.isFetching) {
-        setCafes((prev) => (prev.length === 0 ? prev : []));
-      }
-      return;
-    }
-
-    const wizardPurpose = preferences?.purpose;
-    const wantedSlug = wizardPurpose ? PURPOSE_SLUG_MAP[wizardPurpose] : null;
-
-    const sorted = wantedSlug
-      ? [...allCafes].sort(
-          (a, b) =>
-            (b.purposeScores?.[wantedSlug] || b.matchScore || 0) -
-            (a.purposeScores?.[wantedSlug] || a.matchScore || 0),
-        )
-      : allCafes;
-
-    const regular = sorted.filter((c) => !c.promotionType).slice(0, 5);
-
-    const promoA = promotedCafes.find(
-      (c) => c.promotionType === 'A' || c.activePromotionType === 'new_cafe',
-    );
-    const promoB = promotedCafes.find(
-      (c) => c.promotionType === 'B' || c.activePromotionType === 'featured_promo',
-    );
-
-    const deck: Cafe[] = [...regular];
-    const insertAt = (cafe: Cafe) => {
-      const pos = Math.min(deck.length, 1 + Math.floor(Math.random() * 3));
-      deck.splice(pos, 0, cafe);
-    };
-    if (promoA) insertAt(promoA);
-    if (promoB) insertAt(promoB);
-
-    // Skip if the deck is unchanged (same length + same first id) to avoid
-    // remounting Swiper and resetting swipe progress on every refetch.
-    setCafes((prev) => {
-      if (
-        prev.length === deck.length &&
-        prev[0]?.id === deck[0]?.id &&
-        prev[prev.length - 1]?.id === deck[deck.length - 1]?.id
-      ) {
-        return prev;
-      }
-      return deck;
+    const upcoming = cafes.slice(index, index + 3);
+    upcoming.forEach((cafe) => {
+      const url =
+        cafe.promotionContent?.promoPhoto ||
+        cafe.newCafeContent?.promoPhoto ||
+        cafe.photos?.[0];
+      if (url) Image.prefetch(url);
     });
-  }, [
-    cafesQuery.data,
-    promotedQuery.data,
-    cafesQuery.isFetching,
-    promotedQuery.isFetching,
-    preferences?.purpose,
-    lat,
-    lng,
-  ]);
+  }, [cafes, index]);
 
-  // Reset "all swiped" state when the screen regains focus so coming back to
-  // the Discover tab doesn't strand the user on the empty state.
+  const isInShortlistRef = useRef(isInShortlist);
+  isInShortlistRef.current = isInShortlist;
+  const addToShortlistRef = useRef(addToShortlist);
+  addToShortlistRef.current = addToShortlist;
+  const cafesRef = useRef(cafes);
+  cafesRef.current = cafes;
+  const userRef = useRef(user);
+  userRef.current = user;
+
+  const promptLoginRef = useRef<() => void>(() => {});
+  promptLoginRef.current = () => navigation.navigate('AuthModal');
+
+  const heartNativeGesture = useMemo(() => Gesture.Native(), []);
+
   useFocusEffect(
     useCallback(() => {
       setAllSwiped(false);
     }, []),
   );
 
-  const handleSwipedRight = (cardIndex: number) => {
-    const cafe = cafes[cardIndex];
-    if (!cafe || isInShortlist(cafe.id)) return;
-    // Defer state updates well past the swipe animation (~250ms). Touching
-    // ShortlistContext or toast state too early re-renders the parent while
-    // Swiper is still settling its internal stack — known cause of blank
-    // next/last cards in react-native-deck-swiper.
-    setTimeout(() => {
-      addToShortlist(cafe);
-      setToastMsg(`Added "${cafe.name}" to Shortlist!`);
-      setShowToast(true);
-    }, 350);
-  };
+  const indexRef = useRef(0);
+  indexRef.current = index;
 
-  const handleSwipedAll = () => {
-    setAllSwiped(true);
-    // Briefly show "No match?" then auto-navigate to the Explore (map) tab
-    // so the user is never stranded on the empty state. Works both when
-    // CardSwipe is reached via wizard (stack) and when it's the Discover tab.
-    setTimeout(() => {
-      navigation.navigate('MainTabs', { screen: 'Explore' });
-    }, 1200);
-  };
+  const advanceIndex = useCallback((dir: 'left' | 'right') => {
+    const i = indexRef.current;
+    const cafe = cafesRef.current[i];
+    if (dir === 'right' && cafe && !isInShortlistRef.current(cafe.id)) {
+      if (!userRef.current) {
+        promptLoginRef.current();
+      } else {
+        addToShortlistRef.current(cafe);
+        setToastMsg(`Added "${cafe.name}" to Shortlist!`);
+        setShowToast(true);
+      }
+    }
+    const next = i + 1;
+    const total = cafesRef.current.length;
+    if (next >= total) {
+      setAllSwiped(true);
+      setTimeout(() => {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'MainTabs', params: { screen: 'Explore' } }],
+        });
+      }, 1200);
+    }
+    setIndex(next);
+  }, [navigation]);
+
+  const handleTapCard = useCallback(() => {
+    const cafe = cafesRef.current[indexRef.current];
+    if (cafe) navigation.navigate('CafeDetail', { cafe });
+  }, [navigation]);
 
   const openShortlist = () => navigation.navigate('ShortlistModal');
 
-  // Memoized so its identity is stable across re-renders. Without this,
-  // every parent re-render (Toast state, ShortlistContext, etc) gives Swiper
-  // a new renderCard reference, which can confuse its internal stack and
-  // cause blank/missing cards.
   const renderCard = useCallback((cafe: Cafe) => {
-    if (!cafe) return null;
-    const saved = isInShortlist(cafe.id);
+    if (!cafe) return <View />;
+    const saved = isInShortlistRef.current(cafe.id);
     const isTypeA = cafe.promotionType === 'A' || cafe.activePromotionType === 'new_cafe';
     const isTypeB = cafe.promotionType === 'B' || cafe.activePromotionType === 'featured_promo';
 
-    // Pick background photo: promo photo if provided, else cafe photo, else placeholder
     const bgPhoto =
       (isTypeB && (cafe.promotionContent?.promoPhoto || cafe.promoPhoto)) ||
       (isTypeA && cafe.newCafeContent?.promoPhoto) ||
@@ -217,26 +191,22 @@ export default function CardSwipeScreen() {
     const newCafe = cafe.newCafeContent;
 
     return (
-      <TouchableOpacity
-        activeOpacity={0.95}
+      <View
         style={[
           styles.card,
           { width: CARD_W, height: CARD_H },
           isTypeA && styles.cardTypeA,
           isTypeB && styles.cardTypeB,
         ]}
-        onPress={() => navigation.navigate('CafeDetail', { cafe })}
       >
         <Image source={{ uri: bgPhoto }} style={styles.cardImage} />
 
-        {/* Taller gradient for promo cards so rich text stays readable */}
         <LinearGradient
           colors={['transparent', 'rgba(0,0,0,0.55)', 'rgba(0,0,0,0.92)']}
           locations={[0, 0.4, 1]}
           style={[styles.gradient, (isTypeA || isTypeB) && styles.gradientPromo]}
         />
 
-        {/* Promo badge — top left */}
         {isTypeA && (
           <View style={[styles.promoBadgeLeft, styles.promoBadgeNew]}>
             <Text style={styles.promoBadgeText}>NEW!</Text>
@@ -248,7 +218,6 @@ export default function CardSwipeScreen() {
           </View>
         )}
 
-        {/* Match score badge — top right (only non-promo cards) */}
         {cafe.matchScore != null && !isTypeA && !isTypeB && (
           <View style={styles.matchBadge}>
             <Text style={styles.matchText}>{cafe.matchScore}%</Text>
@@ -256,35 +225,36 @@ export default function CardSwipeScreen() {
           </View>
         )}
 
-        {/* Distance badge — top right for promo cards */}
         {(isTypeA || isTypeB) && (
           <View style={styles.distanceBadge}>
             <Text style={styles.distanceBadgeText}>{cafe.distance} km</Text>
           </View>
         )}
 
-        {/* Shortlist heart — top left (non-promo) or below badge (promo) */}
-        <TouchableOpacity
-          style={[
-            styles.heartBtn,
-            saved && styles.heartBtnActive,
-            (isTypeA || isTypeB) && styles.heartBtnPromo,
-          ]}
-          onPress={() => {
-            addToShortlist(cafe);
-            setToastMsg(`Added "${cafe.name}" to Shortlist!`);
-            setShowToast(true);
-          }}
-        >
-          <Text style={styles.heartIcon}>{saved ? '★' : '☆'}</Text>
-        </TouchableOpacity>
+        <GestureDetector gesture={heartNativeGesture}>
+          <TouchableOpacity
+            style={[
+              styles.heartBtn,
+              saved && styles.heartBtnActive,
+              (isTypeA || isTypeB) && styles.heartBtnPromo,
+            ]}
+            onPress={() => {
+              if (!userRef.current) {
+                promptLoginRef.current();
+                return;
+              }
+              addToShortlistRef.current(cafe);
+              setToastMsg(`Added "${cafe.name}" to Shortlist!`);
+              setShowToast(true);
+            }}
+          >
+            <Text style={styles.heartIcon}>{saved ? '★' : '☆'}</Text>
+          </TouchableOpacity>
+        </GestureDetector>
 
-        {/* Bottom content stack */}
         <View style={styles.cardBottom}>
-          {/* ── Type A: New Cafe rich content ──────────────────────────── */}
           {isTypeA && (
             <>
-              {/* Grand opening offer banner — amber strip */}
               {newCafe?.promoOffer ? (
                 <View style={styles.newCafeOfferBanner}>
                   <Text style={styles.newCafeOfferText} numberOfLines={2}>
@@ -302,7 +272,6 @@ export default function CardSwipeScreen() {
                 ) : (
                   <Text style={styles.cafeDistance}>{cafe.distance} km away</Text>
                 )}
-                {/* Keunggulan pills row */}
                 {newCafe?.keunggulan && newCafe.keunggulan.length > 0 && (
                   <View style={styles.tagsRow}>
                     {newCafe.keunggulan.slice(0, 3).map((k) => (
@@ -312,7 +281,6 @@ export default function CardSwipeScreen() {
                     ))}
                   </View>
                 )}
-                {/* Fallback: show purposes if no keunggulan */}
                 {(!newCafe?.keunggulan || newCafe.keunggulan.length === 0) && (
                   <View style={styles.tagsRow}>
                     {(cafe.purposes ?? []).slice(0, 2).map((p) => (
@@ -326,7 +294,6 @@ export default function CardSwipeScreen() {
             </>
           )}
 
-          {/* ── Type B: Featured Promo rich content ────────────────────── */}
           {isTypeB && (
             <>
               <View style={styles.promoBannerTall}>
@@ -339,7 +306,6 @@ export default function CardSwipeScreen() {
                   </Text>
                 ) : null}
 
-                {/* Valid hours chip */}
                 {(promoContent?.validHours || promoContent?.validDays) && (
                   <View style={styles.validHoursRowPromo}>
                     <View style={styles.validHoursChipWhite}>
@@ -367,7 +333,6 @@ export default function CardSwipeScreen() {
             </>
           )}
 
-          {/* ── Regular card ───────────────────────────────────────────── */}
           {!isTypeA && !isTypeB && (
             <View style={styles.cardInfo}>
               <Text style={styles.cafeName} numberOfLines={1}>{cafe.name}</Text>
@@ -387,9 +352,24 @@ export default function CardSwipeScreen() {
             </View>
           )}
         </View>
-      </TouchableOpacity>
+      </View>
     );
-  }, [navigation, addToShortlist, isInShortlist]);
+  }, []);
+
+  const goExplore = () =>
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'MainTabs', params: { screen: 'Explore' } }],
+    });
+
+  if (showWizard) {
+    return (
+      <WizardScreen
+        onComplete={dismissWizard}
+        onSkip={dismissWizard}
+      />
+    );
+  }
 
   if (allSwiped) {
     return (
@@ -400,9 +380,6 @@ export default function CardSwipeScreen() {
       </View>
     );
   }
-
-  const goExplore = () =>
-    navigation.navigate('MainTabs', { screen: 'Explore' });
 
   if (loading) {
     return (
@@ -427,7 +404,7 @@ export default function CardSwipeScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.emptySecondaryBtn}
-            onPress={() => cafesQuery.refetch()}
+            onPress={() => deckQuery.refetch()}
           >
             <Text style={styles.emptySecondaryBtnText}>↻ Coba Lagi</Text>
           </TouchableOpacity>
@@ -436,108 +413,54 @@ export default function CardSwipeScreen() {
     );
   }
 
-  // Gate behind wizard — every Discover visit starts here. After complete or
-  // skip, the wizard hides and the swipe deck below renders.
-  if (showWizard) {
-    return (
-      <WizardScreen
-        onComplete={() => setShowWizard(false)}
-        onSkip={() => setShowWizard(false)}
-      />
-    );
-  }
-
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
         <Text style={styles.headerTitle}>
           Cafe<Text style={{ color: colors.accent }}>Match</Text>
         </Text>
       </View>
 
-      {/* Absolute container spans full available area; cardStyle centers the card.
-          `key` is tied to deck identity (length + first id) so background
-          refetches that don't actually change the deck don't remount Swiper
-          (which would reset swipe progress). */}
-      <Swiper
-        key={`${cafes.length}-${cafes[0]?.id ?? 'empty'}`}
-        ref={swiperRef}
-        cards={cafes}
-        renderCard={renderCard}
-        onSwipedRight={handleSwipedRight}
-        onSwipedAll={handleSwipedAll}
-        cardIndex={0}
-        backgroundColor="transparent"
-        // stackSize=2 + no opacity animation: empirically prevents the
-        // last-card blank bug in react-native-deck-swiper. With stackSize=3
-        // and animateCardOpacity enabled, the final card was rendering
-        // transparent because the lib expects 3 cards to compute fade.
-        stackSize={2}
-        stackSeparation={12}
-        stackScale={4}
-        animateOverlayLabelsOpacity
-        disableTopSwipe
-        disableBottomSwipe
-        overlayLabels={{
-          left: {
-            title: 'NOPE',
-            style: {
-              label: {
-                backgroundColor: colors.error,
-                color: colors.white,
-                fontSize: 16,
-                fontWeight: '700',
-                borderRadius: 8,
-                padding: 8,
-              },
-              wrapper: {
-                flexDirection: 'column',
-                alignItems: 'flex-end',
-                justifyContent: 'flex-start',
-                marginTop: 40,
-                marginLeft: -20,
-              },
-            },
-          },
-          right: {
-            title: 'SHORTLIST ★',
-            style: {
-              label: {
-                backgroundColor: colors.accent,
-                color: colors.white,
-                fontSize: 16,
-                fontWeight: '700',
-                borderRadius: 8,
-                padding: 8,
-              },
-              wrapper: {
-                flexDirection: 'column',
-                alignItems: 'flex-start',
-                justifyContent: 'flex-start',
-                marginTop: 40,
-                marginLeft: 20,
-              },
-            },
-          },
-        }}
-        containerStyle={{
+      <View
+        style={{
           position: 'absolute',
           top: HEADER_H,
           left: 0,
           right: 0,
           bottom: BOTTOM_H,
-          backgroundColor: 'transparent',
         }}
-        cardStyle={{
-          top: cardTop,
-          left: cardLeft,
-          width: CARD_W,
-          height: CARD_H,
-        }}
-      />
+      >
+        {cafes[index + 1] && (
+          <View
+            style={{
+              position: 'absolute',
+              top: cardTop,
+              left: cardLeft,
+              width: CARD_W,
+              height: CARD_H,
+            }}
+            pointerEvents="none"
+          >
+            {renderCard(cafes[index + 1])}
+          </View>
+        )}
 
-      {/* Shortlist FAB */}
+        {cafes[index] && (
+          <SwipeableCard
+            key={`${sessionId}-${index}`}
+            top={cardTop}
+            left={cardLeft}
+            width={CARD_W}
+            height={CARD_H}
+            onSwipeComplete={advanceIndex}
+            onTap={handleTapCard}
+            tapFailGesture={heartNativeGesture}
+          >
+            {renderCard(cafes[index])}
+          </SwipeableCard>
+        )}
+      </View>
+
       <TouchableOpacity
         style={[styles.fab, { bottom: insets.bottom + 24 }]}
         onPress={openShortlist}
@@ -547,6 +470,129 @@ export default function CardSwipeScreen() {
 
       <Toast message={toastMsg} visible={showToast} onHide={() => setShowToast(false)} />
     </View>
+  );
+}
+
+const SWIPE_THRESHOLD = 120;
+const SWIPE_OUT_X = width * 1.5;
+const SPRING_OUT = { damping: 20, stiffness: 90, mass: 1, overshootClamping: true };
+const SPRING_BACK = { damping: 15, stiffness: 150, mass: 0.7 };
+
+type SwipeableCardProps = {
+  top: number;
+  left: number;
+  width: number;
+  height: number;
+  onSwipeComplete: (dir: 'left' | 'right') => void;
+  onTap: () => void;
+  tapFailGesture?: ReturnType<typeof Gesture.Native>;
+  children: React.ReactNode;
+};
+
+function SwipeableCard({
+  top,
+  left,
+  width: cardW,
+  height: cardH,
+  onSwipeComplete,
+  onTap,
+  tapFailGesture,
+  children,
+}: SwipeableCardProps) {
+  const translateX = useSharedValue(0);
+  const translateY = useSharedValue(0);
+
+  const pan = Gesture.Pan()
+    .onUpdate((e) => {
+      translateX.value = e.translationX;
+      translateY.value = e.translationY;
+    })
+    .onEnd((e) => {
+      if (e.translationX > SWIPE_THRESHOLD) {
+        translateX.value = withSpring(SWIPE_OUT_X, SPRING_OUT);
+        runOnJS(onSwipeComplete)('right');
+      } else if (e.translationX < -SWIPE_THRESHOLD) {
+        translateX.value = withSpring(-SWIPE_OUT_X, SPRING_OUT);
+        runOnJS(onSwipeComplete)('left');
+      } else {
+        translateX.value = withSpring(0, SPRING_BACK);
+        translateY.value = withSpring(0, SPRING_BACK);
+      }
+    });
+
+  const baseTap = Gesture.Tap().maxDistance(10).onEnd((_e, success) => {
+    if (success) runOnJS(onTap)();
+  });
+  const tap = tapFailGesture
+    ? baseTap.requireExternalGestureToFail(tapFailGesture)
+    : baseTap;
+
+  const composedGesture = Gesture.Exclusive(pan, tap);
+
+  const animatedCardStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: translateX.value },
+      { translateY: translateY.value },
+      {
+        rotate: `${interpolate(
+          translateX.value,
+          [-width, 0, width],
+          [-8, 0, 8],
+          Extrapolation.CLAMP,
+        )}deg`,
+      },
+    ],
+  }));
+
+  const nopeOverlayStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(
+      translateX.value,
+      [-SWIPE_THRESHOLD, 0],
+      [1, 0],
+      Extrapolation.CLAMP,
+    ),
+  }));
+
+  const likeOverlayStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(
+      translateX.value,
+      [0, SWIPE_THRESHOLD],
+      [0, 1],
+      Extrapolation.CLAMP,
+    ),
+  }));
+
+  return (
+    <GestureDetector gesture={composedGesture}>
+      <Animated.View
+        style={[
+          {
+            position: 'absolute',
+            top,
+            left,
+            width: cardW,
+            height: cardH,
+          },
+          animatedCardStyle,
+        ]}
+      >
+        {children}
+
+        <Animated.View
+          pointerEvents="none"
+          style={[styles.overlayLeftWrapper, nopeOverlayStyle]}
+        >
+          <Text style={styles.overlayLabelNope}>NOPE</Text>
+        </Animated.View>
+
+        <Animated.View
+          pointerEvents="none"
+          style={[styles.overlayRightWrapper, likeOverlayStyle]}
+        >
+          <Text style={styles.overlayLabelLike}>SHORTLIST ★</Text>
+        </Animated.View>
+      </Animated.View>
+    </GestureDetector>
   );
 }
 
@@ -651,7 +697,6 @@ const styles = StyleSheet.create({
   heartBtnPromo: {
     left: undefined,
     right: spacing.md,
-    // Position heart below the distance badge on promo cards
     top: spacing.md + 42,
   },
 
@@ -682,7 +727,6 @@ const styles = StyleSheet.create({
   heartBtnActive: { backgroundColor: colors.accent },
   heartIcon: { fontSize: 22, color: colors.white },
 
-  // Fix 2: Single stacked bottom container
   cardBottom: {
     position: 'absolute',
     bottom: 0,
@@ -704,7 +748,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 2,
   },
-  // Type B: tall rich promo banner
   promoBannerTall: {
     backgroundColor: 'rgba(212, 139, 58, 0.95)',
     paddingHorizontal: spacing.md,
@@ -742,7 +785,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
-  // Type A: new cafe offer banner
   newCafeOfferBanner: {
     backgroundColor: 'rgba(232, 89, 60, 0.95)',
     paddingHorizontal: spacing.md,
@@ -862,5 +904,43 @@ const styles = StyleSheet.create({
     color: colors.accent,
     fontSize: 14,
     fontWeight: '700',
+  },
+
+  cardStackBehind: {
+    position: 'absolute',
+  },
+  overlayLeftWrapper: {
+    position: 'absolute',
+    top: 32,
+    right: 24,
+    transform: [{ rotate: '20deg' }],
+  },
+  overlayRightWrapper: {
+    position: 'absolute',
+    top: 32,
+    left: 24,
+    transform: [{ rotate: '-20deg' }],
+  },
+  overlayLabelNope: {
+    backgroundColor: colors.error,
+    color: colors.white,
+    fontSize: 18,
+    fontWeight: '800',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    letterSpacing: 1,
+    overflow: 'hidden',
+  },
+  overlayLabelLike: {
+    backgroundColor: colors.accent,
+    color: colors.white,
+    fontSize: 18,
+    fontWeight: '800',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    letterSpacing: 1,
+    overflow: 'hidden',
   },
 });

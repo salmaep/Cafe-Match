@@ -17,6 +17,7 @@ import {
   Keyboard,
   ActivityIndicator,
   Animated,
+  InteractionManager,
 } from "react-native";
 import CafePhoto from "../components/CafePhoto";
 import CafeListItem from "../components/cafe/CafeListItem";
@@ -24,7 +25,6 @@ import MobileFilterModal from "../components/cafe/MobileFilterModal";
 import { usePurposes } from "../queries/purposes/use-purposes";
 import Swiper from "react-native-deck-swiper";
 import MapView, { Marker, Circle } from "react-native-maps";
-import Svg, { Path, Circle as SvgCircle, Defs, LinearGradient, Stop } from "react-native-svg";
 import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import { ScrollView as GHScrollView } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -141,6 +141,19 @@ export default function MapScreen() {
   const [showCafePins, setShowCafePins] = useState(true);
   const [showFriendPins, setShowFriendPins] = useState(true);
 
+  const [manualCenter, setManualCenter] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
+
+  const [pinsReady, setPinsReady] = useState(false);
+  useEffect(() => {
+    const task = InteractionManager.runAfterInteractions(() => {
+      setPinsReady(true);
+    });
+    return () => task.cancel();
+  }, []);
+
   // Group friends by cafe (for count badges)
   const friendsByCafe = useMemo(() => {
     const map = new Map<number, any[]>();
@@ -216,7 +229,7 @@ export default function MapScreen() {
   const isNewCafePromo = (cafe: Cafe) =>
     cafe.activePromotionType === "new_cafe" || cafe.promotionType === "A";
 
-  const center = {
+  const center = manualCenter ?? {
     latitude: preferences?.location?.latitude ?? userLat,
     longitude: preferences?.location?.longitude ?? userLng,
   };
@@ -243,7 +256,7 @@ export default function MapScreen() {
     lng: center.longitude,
     radius: radiusMeters,
     q: activeQ,
-    limit: 1000,
+    limit: 200,
   });
 
   const listQuery = useSearchCafes({
@@ -262,20 +275,17 @@ export default function MapScreen() {
   const promotedQuery = usePromotedCafes("featured_promo");
 
   // Derived data — pure useMemo, no useState/useEffect bridging.
+  // NOTE: intentionally not depending on `center` — backend already provides
+  // `distanceMeters` per cafe, and re-mapping on every tap-to-move would
+  // create new Cafe object identities and force all 200 markers to re-render.
   const displayCafes: Cafe[] = useMemo(
-    () =>
-      mapPinsQuery.data?.pages.flatMap((p) =>
-        hitsToCafes(p, center.latitude, center.longitude),
-      ) ?? [],
-    [mapPinsQuery.data, center.latitude, center.longitude],
+    () => mapPinsQuery.data?.pages.flatMap((p) => hitsToCafes(p)) ?? [],
+    [mapPinsQuery.data],
   );
 
   const listCafes: Cafe[] = useMemo(
-    () =>
-      listQuery.data?.pages.flatMap((p) =>
-        hitsToCafes(p, center.latitude, center.longitude),
-      ) ?? [],
-    [listQuery.data, center.latitude, center.longitude],
+    () => listQuery.data?.pages.flatMap((p) => hitsToCafes(p)) ?? [],
+    [listQuery.data],
   );
 
   const featuredCafes: Cafe[] = promotedQuery.data ?? [];
@@ -501,6 +511,11 @@ export default function MapScreen() {
           longitudeDelta: 0.24,
         }}
         showsUserLocation
+        onPress={(e) => {
+          const c = e.nativeEvent.coordinate;
+          if (!c) return;
+          setManualCenter({ latitude: c.latitude, longitude: c.longitude });
+        }}
       >
         <Circle
           center={center}
@@ -524,7 +539,7 @@ export default function MapScreen() {
         </Marker>
         {/* Cafe pins (togglable). Single round amber chip with white ring +
             ☕ glyph centered. */}
-        {showCafePins && displayCafes.map((cafe) => {
+        {pinsReady && showCafePins && displayCafes.map((cafe) => {
           const friendCount = friendsByCafe.get(Number(cafe.id))?.length || 0;
           const isPromoted = isNewCafePromo(cafe);
           return (
@@ -564,6 +579,15 @@ export default function MapScreen() {
           ) : null,
         )}
       </MapView>
+
+      {mapPinsQuery.isFetching && (
+        <View style={styles.mapLoadingOverlay}>
+          <View style={styles.mapLoadingBox}>
+            <ActivityIndicator size="large" color={colors.accent} />
+            <Text style={styles.mapLoadingBoxText}>Memuat…</Text>
+          </View>
+        </View>
+      )}
 
       {/* Pin layer toggles — match web MapContainer (top-right, two
           separate round buttons stacked vertically, amber when active /
@@ -1157,19 +1181,12 @@ const CafeMarker = React.memo(function CafeMarker({
     <Marker
       coordinate={{ latitude: cafe.latitude, longitude: cafe.longitude }}
       onPress={onPress}
-      // Anchor at bottom-center because the SVG teardrop's point is at y=38.
-      anchor={{ x: 0.5, y: 1 }}
+      anchor={{ x: 0.5, y: 0.5 }}
+      centerOffset={{ x: 0, y: 0 }}
       tracksViewChanges={tracking}
       zIndex={isPromoted ? 1000 : undefined}
     >
-      <View
-        style={[
-          styles.cafePinContainer,
-          // Slight transparency on regular pins thins out dense clusters.
-          // Promoted stay full opacity so the NEW! variant pops.
-          !isPromoted && styles.cafePinRegularOpacity,
-        ]}
-      >
+      <View style={styles.cafeDotContainer}>
         {isPromoted && (
           <Animated.View
             style={[
@@ -1188,22 +1205,12 @@ const CafeMarker = React.memo(function CafeMarker({
           </View>
         )}
         <View
-          style={
-            isPromoted ? styles.cafePinSvgWrapPromoted : styles.cafePinSvgWrap
-          }
+          style={[
+            styles.cafeDot,
+            isPromoted ? styles.cafeDotPromoted : styles.cafeDotRegular,
+          ]}
         >
-          <CafePinSvg promoted={isPromoted} />
-          {/* ☕ overlay — react-native-svg's <Text> doesn't render emoji
-              glyphs reliably across platforms, so we layer a plain RN Text
-              positioned over the white circle inside the SVG. */}
-          <Text
-            style={[
-              isPromoted
-                ? styles.cafePinIconOverlayPromoted
-                : styles.cafePinIconOverlay,
-              { color: isPromoted ? '#DC2626' : '#D97706' },
-            ]}
-          >
+          <Text style={isPromoted ? styles.cafeDotIconPromoted : styles.cafeDotIcon}>
             ☕
           </Text>
         </View>
@@ -1211,44 +1218,6 @@ const CafeMarker = React.memo(function CafeMarker({
     </Marker>
   );
 });
-
-// Compact teardrop pin (~64% of original) so dense areas don't read as
-// trypophobia clusters. Promoted variant stays slightly larger + brighter to
-// remain visually distinct. ViewBox is preserved so path coords stay valid —
-// only the rendered width/height shrinks.
-const PIN_W = 18;
-const PIN_H = 24;
-const PROMOTED_PIN_W = 22;
-const PROMOTED_PIN_H = 30;
-
-function CafePinSvg({ promoted }: { promoted: boolean }) {
-  if (promoted) {
-    return (
-      <Svg width={PROMOTED_PIN_W} height={PROMOTED_PIN_H} viewBox="0 0 28 38">
-        <Defs>
-          <LinearGradient id="cmNewGrad" x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0" stopColor="#F87171" />
-            <Stop offset="1" stopColor="#DC2626" />
-          </LinearGradient>
-        </Defs>
-        <Path
-          d="M14 0C6.27 0 0 6.27 0 14c0 10.5 14 24 14 24s14-13.5 14-24C28 6.27 21.73 0 14 0z"
-          fill="url(#cmNewGrad)"
-        />
-        <SvgCircle cx={14} cy={13} r={7} fill="#FFFFFF" />
-      </Svg>
-    );
-  }
-  return (
-    <Svg width={PIN_W} height={PIN_H} viewBox="0 0 28 38">
-      <Path
-        d="M14 0C6.27 0 0 6.27 0 14c0 10.5 14 24 14 24s14-13.5 14-24C28 6.27 21.73 0 14 0z"
-        fill="#D97706"
-      />
-      <SvgCircle cx={14} cy={13} r={7} fill="#FFFFFF" />
-    </Svg>
-  );
-}
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
@@ -1992,6 +1961,32 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     gap: 8,
   },
+  mapLoadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 50,
+  },
+  mapLoadingBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: colors.white,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderRadius: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  mapLoadingBoxText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.primary,
+  },
   pinToggleBtn: {
     width: 44,
     height: 44,
@@ -2090,47 +2085,36 @@ const styles = StyleSheet.create({
   // outer amber/red teardrop path + inner white circle (cx=14, cy=13, r=7).
   // The ☕ glyph is layered as a plain RN Text over the SVG because
   // react-native-svg's <Text> doesn't render emoji reliably.
-  cafePinContainer: {
+  cafeDotContainer: {
     alignItems: "center",
+    justifyContent: "center",
   },
-  // Regular pin (smaller) — soft opacity so dense areas don't read as a
-  // visual cluster of dots.
-  cafePinRegularOpacity: {
-    opacity: 0.92,
+  cafeDot: {
+    borderWidth: 1.5,
+    borderColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  cafePinSvgWrap: {
-    width: 18,
-    height: 24,
-    position: "relative",
-  },
-  cafePinSvgWrapPromoted: {
+  cafeDotRegular: {
     width: 22,
-    height: 30,
-    position: "relative",
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: "#D97706",
   },
-  // Coffee glyph overlay positioned over the white inner circle of the SVG.
-  // SVG viewBox is 28×38 with circle at (14, 13, r=7). When the SVG is
-  // rendered at 18×24 (scale ≈ 0.643), the circle is at (~9, ~8.4).
-  // For a 9pt glyph (line-height 11), top ≈ 4 - 5 = ~3, left ≈ 9 - 4.5 = ~4.5.
-  cafePinIconOverlay: {
-    position: "absolute",
-    top: 2,
-    left: 4,
-    width: 10,
-    height: 10,
-    fontSize: 8,
-    lineHeight: 10,
+  cafeDotPromoted: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: "#DC2626",
+  },
+  cafeDotIcon: {
+    fontSize: 11,
+    lineHeight: 13,
     textAlign: "center",
   },
-  // Promoted pin renders at 22×30 (scale ≈ 0.786). Circle center ≈ (11, 10.2).
-  cafePinIconOverlayPromoted: {
-    position: "absolute",
-    top: 3,
-    left: 5,
-    width: 12,
-    height: 12,
-    fontSize: 10,
-    lineHeight: 12,
+  cafeDotIconPromoted: {
+    fontSize: 13,
+    lineHeight: 15,
     textAlign: "center",
   },
   cafePinNewBadge: {

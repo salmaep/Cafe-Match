@@ -86,6 +86,51 @@ export async function fetchPromotedCafes(type?: string): Promise<Cafe[]> {
   return data.map((c: any) => mapBackendCafe(c));
 }
 
+export interface DiscoverDeckParams {
+  lat?: number;
+  lng?: number;
+  radius?: number;
+  purposeId?: number;
+  priceRange?: '$' | '$$' | '$$$';
+  facilities?: string[];
+  limit?: number;
+}
+
+export interface DiscoverDeckResult {
+  data: Cafe[];
+  meta: { total: number };
+}
+
+export async function fetchDiscoverDeck(
+  params: DiscoverDeckParams,
+): Promise<DiscoverDeckResult> {
+  const query: Record<string, unknown> = {
+    lat: params.lat,
+    lng: params.lng,
+    radius: params.radius,
+    purposeId: params.purposeId,
+    priceRange: params.priceRange,
+    limit: params.limit,
+  };
+  if (params.facilities && params.facilities.length > 0) {
+    query.facilities = params.facilities.join(',');
+  }
+  const { data } = await http.get('/cafes/discover', { params: query });
+  const cafes = (data?.data ?? []).map((c: any) => {
+    const lat = c._geo?.lat ?? c.latitude;
+    const lng = c._geo?.lng ?? c.longitude;
+    return mapBackendCafe({
+      ...c,
+      latitude: typeof lat === 'number' ? lat : Number(lat),
+      longitude: typeof lng === 'number' ? lng : Number(lng),
+    });
+  });
+  return {
+    data: cafes,
+    meta: data?.meta ?? { total: cafes.length },
+  };
+}
+
 export async function toggleBookmarkApi(cafeId: string): Promise<boolean> {
   const { data } = await http.post(API_PATHS.bookmarkToggle(cafeId));
   return data.bookmarked;

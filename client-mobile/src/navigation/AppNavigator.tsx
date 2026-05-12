@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { createStackNavigator, TransitionPresets } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Alert, BackHandler } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { useShortlist } from '../context/ShortlistContext';
 import { colors } from '../theme';
 
@@ -51,6 +52,24 @@ function TabIcon({ label, focused }: { label: string; focused: boolean }) {
 
 function MainTabs() {
   const { shortlist } = useShortlist();
+
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        Alert.alert(
+          'Keluar Aplikasi?',
+          'Yakin mau keluar dari CafeMatch?',
+          [
+            { text: 'Batal', style: 'cancel' },
+            { text: 'Keluar', style: 'destructive', onPress: () => BackHandler.exitApp() },
+          ],
+        );
+        return true;
+      };
+      const sub = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () => sub.remove();
+    }, []),
+  );
 
   return (
     <Tab.Navigator

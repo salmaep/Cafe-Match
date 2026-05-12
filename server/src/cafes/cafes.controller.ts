@@ -10,13 +10,16 @@ import {
   ParseIntPipe,
   HttpCode,
   HttpStatus,
+  Request,
 } from '@nestjs/common';
 import { CafesService } from './cafes.service';
 import { SearchCafesDto } from './dto/search-cafes.dto';
+import { DiscoverCafesDto } from './dto/discover-cafes.dto';
 import { CreateCafeDto } from './dto/create-cafe.dto';
 import { Public } from '../common/decorators/public.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from '../common/guards/optional-jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 
 @Controller('cafes')
@@ -33,6 +36,14 @@ export class CafesController {
   @Get('promoted')
   getPromoted(@Query('type') type?: string) {
     return this.cafesService.findPromotedCafes(type);
+  }
+
+  @Public()
+  @UseGuards(OptionalJwtAuthGuard)
+  @Get('discover')
+  discover(@Request() req: any, @Query() dto: DiscoverCafesDto) {
+    const userId = req.user?.id ?? null;
+    return this.cafesService.findDiscoverDeck(userId, dto);
   }
 
   // Returns the facility catalog grouped by category with per-option counts.

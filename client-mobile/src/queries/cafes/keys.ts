@@ -11,4 +11,6 @@ export const cafeKeys = {
   bookmarks: () => ['bookmarks'] as const,
   favorites: () => ['favorites'] as const,
   filters: () => [...cafeKeys.all, 'filters'] as const,
+  discover: (params: Record<string, unknown>) =>
+    [...cafeKeys.all, 'discover', params] as const,
 };

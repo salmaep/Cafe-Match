@@ -23,7 +23,6 @@ import { formatRating } from '../utils/rating';
 import { cleanAddress } from '../utils/address';
 import CheckInButton from '../components/checkin/CheckInButton';
 import CafeLeaderboard from '../components/checkin/CafeLeaderboard';
-import VoteSection from '../components/cafe/VoteSection';
 import { Bookmark, Heart, MapPin, Phone, Navigation } from '../utils/lucideIcon';
 
 const REVIEW_CATEGORY_LABELS: Record<string, string> = {
@@ -640,90 +639,86 @@ export default function CafeDetailPage() {
           <Section
             title="Reviews"
             action={
-              starSummary.length > 0 ? (
+              reviewTotal > 0 ? (
                 <Link
                   to={`${cafeUrl(cafe)}/reviews`}
                   className="text-sm font-semibold text-[#D48B3A] hover:underline"
                 >
-                  Lihat semua →
+                  Lihat semua ({reviewTotal}) →
                 </Link>
               ) : null
             }
           >
-            {starSummary.length > 0 ? (
-              <>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2.5">
-                  {starSummary.slice(0, 6).map((s) => (
-                    <div key={s.category} className="flex items-center gap-3">
-                      <span className="w-28 text-xs font-semibold text-[#8A8880] truncate">
-                        {prettyReviewCategory(s.category)}
-                      </span>
-                      <div className="flex-1 h-1.5 bg-[#F0EDE8] rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-[#D48B3A] rounded-full transition-all"
-                          style={{ width: `${(s.avgScore / 5) * 100}%` }}
-                        />
-                      </div>
-                      <span className="w-8 text-right text-sm font-bold text-[#1C1C1A]">
-                        {s.avgScore.toFixed(1)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Review previews — top 3 by helpful, clickable to full list */}
-                {reviewPreviews.length > 0 && (
-                  <div className="mt-4 space-y-3">
-                    {reviewPreviews.map((r) => (
-                      <ReviewCard
-                        key={r.id}
-                        review={r}
-                        votedByMe={reviewVotedSet.has(r.id)}
-                        variant="preview"
-                        onClick={() => navigate(`${cafeUrl(cafe)}/reviews`)}
+            {/* Rating bars — only when review data exists */}
+            {starSummary.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2.5 mb-5">
+                {starSummary.slice(0, 6).map((s) => (
+                  <div key={s.category} className="flex items-center gap-3">
+                    <span className="w-28 text-xs font-semibold text-[#8A8880] truncate">
+                      {prettyReviewCategory(s.category)}
+                    </span>
+                    <div className="flex-1 h-1.5 bg-[#F0EDE8] rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-[#D48B3A] rounded-full transition-all"
+                        style={{ width: `${(s.avgScore / 5) * 100}%` }}
                       />
-                    ))}
-                    {reviewTotal > reviewPreviews.length && (
-                      <Link
-                        to={`${cafeUrl(cafe)}/reviews`}
-                        className="block text-center text-sm font-semibold text-[#D48B3A] hover:underline py-2"
-                      >
-                        Lihat semua {reviewTotal} review →
-                      </Link>
-                    )}
+                    </div>
+                    <span className="w-8 text-right text-sm font-bold text-[#1C1C1A]">
+                      {s.avgScore.toFixed(1)}
+                    </span>
                   </div>
-                )}
-
-                <button
-                  type="button"
-                  onClick={handleWriteReview}
-                  className="w-full md:w-auto mt-4 px-5 border-[1.5px] border-[#D48B3A] text-[#D48B3A] font-bold text-sm py-2.5 rounded-xl hover:bg-[#FDF6EC] transition-colors"
-                >
-                  + Tulis Review
-                </button>
-              </>
-            ) : (
-              <button
-                type="button"
-                onClick={handleWriteReview}
-                className="w-full md:w-auto md:px-6 border-[1.5px] border-[#D48B3A] text-[#D48B3A] font-bold text-sm py-2.5 rounded-xl hover:bg-[#FDF6EC] transition-colors"
-              >
-                Jadi yang pertama review!
-              </button>
+                ))}
+              </div>
             )}
-          </Section>
 
-          {/* Vote section — community vote for which purposes this cafe fits */}
-          <VoteSection cafeId={cafe.id} />
+            {/* Preview cards — top 3 by helpful */}
+            {reviewPreviews.length > 0 ? (
+              <div className="space-y-3">
+                {reviewPreviews.map((r) => (
+                  <ReviewCard
+                    key={r.id}
+                    review={r}
+                    votedByMe={reviewVotedSet.has(r.id)}
+                    variant="preview"
+                    onClick={() => navigate(`${cafeUrl(cafe)}/reviews`)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 bg-white rounded-2xl border border-[#F0EDE8]">
+                <p className="text-3xl mb-2">✍️</p>
+                <p className="text-sm font-semibold text-[#1C1C1A]">Belum ada ulasan</p>
+                <p className="text-xs text-[#8A8880] mt-1">Jadi yang pertama berbagi pengalaman!</p>
+              </div>
+            )}
+
+            {/* More reviews button */}
+            {reviewTotal > reviewPreviews.length && (
+              <Link
+                to={`${cafeUrl(cafe)}/reviews`}
+                className="mt-3 flex items-center justify-center gap-1.5 w-full py-2.5 rounded-xl border border-[#E8E4DD] text-sm font-semibold text-[#5C5A52] hover:border-[#D48B3A] hover:text-[#D48B3A] transition-colors"
+              >
+                Lihat semua {reviewTotal} review →
+              </Link>
+            )}
+
+            <button
+              type="button"
+              onClick={handleWriteReview}
+              className="w-full mt-3 py-2.5 rounded-xl border-[1.5px] border-[#D48B3A] text-[#D48B3A] font-bold text-sm hover:bg-[#FDF6EC] transition-colors"
+            >
+              {reviewPreviews.length === 0 ? '✍️ Tulis ulasan pertama' : '+ Tulis Review'}
+            </button>
+          </Section>
 
           {/* Leaderboard — top check-in users at this cafe */}
           <Section title="🏆 Top Check-in">
             <CafeLeaderboard cafeId={cafe.id} />
           </Section>
 
-          {/* Atmosphere — read-only mood chips aggregated from reviews + scraping */}
+          {/* Vibes — read-only mood chips aggregated from reviews + scraping */}
           {moodChips.length > 0 && (
-            <Section title="Atmosphere according to visitors">
+            <Section title="Vibes">
               <div className="flex flex-wrap gap-2">
                 {moodChips.map((m) => (
                   <span

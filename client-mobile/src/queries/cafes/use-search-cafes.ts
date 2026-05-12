@@ -1,4 +1,4 @@
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, keepPreviousData } from '@tanstack/react-query';
 import { useDebouncedValue } from '../../lib/use-debounced-value';
 import { cafeKeys } from './keys';
 import { searchCafesApi } from './api';
@@ -21,5 +21,6 @@ export function useSearchCafes(params: SearchCafesParams) {
     },
     enabled: debounced.lat != null && debounced.lng != null,
     staleTime: 60_000,
+    placeholderData: keepPreviousData,
   });
 }

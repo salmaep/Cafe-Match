@@ -2,15 +2,9 @@ import { useState, useEffect, useMemo } from 'react';
 import { reviewsApi } from '../../api/reviews.api';
 import { cafesApi, type FilterGroup } from '../../api/cafes.api';
 import { usePreferences } from '../../context/PreferencesContext';
-import {
-  LucideIcon,
-  lucideForFacility,
-  X,
-  ChevronLeft,
-  Camera,
-  Video,
-  Star,
-} from '../../utils/lucideIcon';
+import { X, ChevronLeft, Camera, Video, Star } from '../../utils/lucideIcon';
+import { getPurposeBySlug } from '@shared/constants/purposes';
+import { chipFromFacilityKey } from '@shared/constants/facilities';
 
 const TOTAL_STEPS = 5;
 
@@ -23,8 +17,7 @@ interface MoodOption {
 interface FacilityOption {
   key: string;
   label: string;
-  /** Lucide icon name resolved from facility key catalog. */
-  icon: string | undefined;
+  icon: string;
 }
 
 // Module-level cache so we don't re-hit /cafes/filters every time the modal opens.
@@ -103,9 +96,7 @@ export default function WriteReviewModal({
       g.options.map((o) => ({
         key: o.key,
         label: o.label,
-        // Pass the group's category so unknown features still get a sensible
-        // category fallback icon instead of the generic <Star>.
-        icon: lucideForFacility(o.key, g.key),
+        icon: chipFromFacilityKey(o.key).icon,
       })),
     );
   }, [facilityGroups]);
@@ -248,6 +239,7 @@ export default function WriteReviewModal({
               <div className="grid grid-cols-2 gap-3">
                 {moodOptions.map((m) => {
                   const active = mood === m.key;
+                  const emoji = getPurposeBySlug(m.key)?.emoji ?? '✨';
                   return (
                     <button
                       key={m.key}
@@ -259,12 +251,7 @@ export default function WriteReviewModal({
                           : 'border-transparent bg-white hover:border-[#E8E4DD]'
                       }`}
                     >
-                      <LucideIcon
-                        name={m.icon}
-                        size={28}
-                        strokeWidth={1.8}
-                        className={active ? 'text-[#D48B3A]' : 'text-[#1C1C1A]'}
-                      />
+                      <span className="text-3xl leading-none">{emoji}</span>
                       <span
                         className={`text-sm font-bold ${
                           active ? 'text-[#D48B3A]' : 'text-[#1C1C1A]'
@@ -298,12 +285,7 @@ export default function WriteReviewModal({
                           : 'border-transparent bg-white hover:border-[#E8E4DD]'
                       }`}
                     >
-                      <LucideIcon
-                        name={f.icon}
-                        size={16}
-                        strokeWidth={2}
-                        className={active ? 'text-[#D48B3A]' : 'text-[#5C5A52]'}
-                      />
+                      <span className="text-sm leading-none">{f.icon}</span>
                       <span
                         className={`text-sm font-semibold ${
                           active ? 'text-[#D48B3A]' : 'text-[#1C1C1A]'

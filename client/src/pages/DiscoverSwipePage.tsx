@@ -26,26 +26,39 @@ export default function DiscoverSwipePage() {
   const startXRef = useRef(0);
   const pointerIdRef = useRef<number | null>(null);
 
-  // Redirect to wizard if no preferences stored
-  if (!preferences) {
-    return <Navigate to="/discover" replace />;
-  }
-
+  // All hooks must come before any conditional returns (rules of hooks)
   useEffect(() => {
-    const lat = preferences?.location?.latitude ?? -6.9175;
-    const lng = preferences?.location?.longitude ?? 107.6191;
-    const radius = 9999 * 1000;
+    if (!preferences) return;
 
-    const purposeId = getPurposeId(preferences?.purpose) ?? undefined;
+    const lat = preferences.location?.latitude ?? -6.9175;
+    const lng = preferences.location?.longitude ?? 107.6191;
+    const radius = preferences.radius != null ? preferences.radius * 1000 : 9999 * 1000;
+    const purposeId = getPurposeId(preferences.purpose) ?? undefined;
     const facilities =
-      preferences?.amenities && preferences.amenities.length > 0
+      preferences.amenities && preferences.amenities.length > 0
         ? preferences.amenities
         : undefined;
-    const priceRange = preferences?.priceRange || undefined;
+    const priceRange = preferences.priceRange || undefined;
+
+    setLoading(true);
+    setCafes([]);
+    setIndex(0);
+
+    const baseParams = { lat, lng, radius, limit: 20, purposeId, priceRange };
 
     cafesApi
-      .search({ lat, lng, radius, limit: 5, purposeId, facilities, priceRange })
-      .then((res) => setCafes(res.data?.data ?? []))
+      .discover({ ...baseParams, facilities })
+      .then((res) => {
+        if (res.data.length > 0) return res;
+        // Fallback 1: drop facilities (too restrictive when auto-preselected from purpose)
+        return cafesApi.discover(baseParams);
+      })
+      .then((res) => {
+        if (res.data.length > 0) return res;
+        // Fallback 2: drop purposeId too, just location + radius
+        return cafesApi.discover({ lat, lng, radius, limit: 20 });
+      })
+      .then((res) => setCafes(res.data ?? []))
       .catch(() => setCafes([]))
       .finally(() => setLoading(false));
   }, [preferences, getPurposeId]);
@@ -59,12 +72,16 @@ export default function DiscoverSwipePage() {
   const current = cafes[index];
   const allDone = !loading && (cafes.length === 0 || index >= cafes.length);
 
-  // After all cafes swiped → back to wizard so user can search again
   useEffect(() => {
-    if (!allDone) return;
-    const t = setTimeout(() => navigate('/discover', { replace: true }), 1200);
+    if (!allDone || !preferences) return;
+    const t = setTimeout(() => navigate('/', { replace: true }), 1200);
     return () => clearTimeout(t);
-  }, [allDone, navigate]);
+  }, [allDone, navigate, preferences]);
+
+  // Conditional returns only after all hooks
+  if (!preferences) {
+    return <Navigate to="/discover" replace />;
+  }
 
   const triggerSwipe = (dir: 'left' | 'right') => {
     if (dir === 'right' && current) {
@@ -101,7 +118,7 @@ export default function DiscoverSwipePage() {
     else if (dragX < -SWIPE_THRESHOLD) triggerSwipe('left');
     else {
       if (Math.abs(dragX) < 8 && current) {
-        navigate(cafeUrl(current));
+        navigate(cafeUrl(current), { state: { backLabel: 'Discover' } });
       }
       setDragX(0);
     }
@@ -120,8 +137,15 @@ export default function DiscoverSwipePage() {
     return (
       <div className="min-h-[80vh] flex flex-col items-center justify-center bg-[#FAF9F6] p-8 text-center">
         <span className="text-6xl mb-4">🗺️</span>
-        <h2 className="text-2xl font-bold text-[#1C1C1A] mb-1">No match?</h2>
-        <p className="text-[#8A8880]">Let's explore the map!</p>
+        <h2 className="text-2xl font-bold text-[#1C1C1A] mb-1">Semua sudah dilihat!</h2>
+        <p className="text-[#8A8880] mb-6">Yuk jelajahi lebih banyak cafe di halaman Explore</p>
+        <button
+          type="button"
+          onClick={() => navigate('/', { replace: true })}
+          className="px-6 py-3 bg-[#D48B3A] text-white font-bold rounded-xl hover:bg-[#b87528] transition-colors"
+        >
+          Buka Explore 🗺️
+        </button>
       </div>
     );
   }

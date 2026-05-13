@@ -90,10 +90,39 @@ function normalizeHit(hit: MeiliCafeHit): Cafe {
   };
 }
 
+export interface DiscoverParams {
+  lat?: number;
+  lng?: number;
+  radius?: number;
+  purposeId?: number;
+  priceRange?: string;
+  facilities?: string[];
+  limit?: number;
+}
+
+export interface DiscoverResult {
+  data: Cafe[];
+  meta: { total: number };
+}
+
+export interface GoogleReview {
+  id: number;
+  cafeId: number;
+  guestName: string;
+  guestAvatar: string | null;
+  rating: number;
+  comment: string | null;
+  photoUrl: string | null;
+  scrapedAt: string;
+}
+
+export interface PaginatedGoogleReviews {
+  data: GoogleReview[];
+  meta: { page: number; limit: number; total: number };
+}
+
 export const cafesApi = {
   search: async (params: SearchParams) => {
-    // Backend accepts ?facilities=key1,key2 (CSV). Drop the empty array so we
-    // don't send `?facilities=` and accidentally widen the result set.
     const { facilities, ...rest } = params;
     const queryParams: Record<string, unknown> = { ...rest };
     if (facilities && facilities.length > 0) {
@@ -111,7 +140,24 @@ export const cafesApi = {
     };
   },
 
+  discover: async (params: DiscoverParams): Promise<DiscoverResult> => {
+    const { facilities, ...rest } = params;
+    const queryParams: Record<string, unknown> = { ...rest };
+    if (facilities && facilities.length > 0) {
+      queryParams.facilities = facilities.join(',');
+    }
+    const res = await apiClient.get<any>('/cafes/discover', { params: queryParams });
+    const cafes = (res.data?.data ?? []).map((c: MeiliCafeHit) => normalizeHit(c));
+    return {
+      data: cafes,
+      meta: res.data?.meta ?? { total: cafes.length },
+    };
+  },
+
   getById: (id: number) => apiClient.get<Cafe>(`/cafes/${id}`),
+
+  getGoogleReviews: (id: number, params: { page?: number; limit?: number } = {}) =>
+    apiClient.get<PaginatedGoogleReviews>(`/cafes/${id}/google-reviews`, { params }),
 
   getFilters: async () => {
     const res = await apiClient.get<any>('/cafes/filters');

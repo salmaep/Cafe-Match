@@ -4,6 +4,7 @@ import { Repository, DataSource } from 'typeorm';
 import { Cafe } from './entities/cafe.entity';
 import { CafeFeature } from './entities/cafe-feature.entity';
 import { PurposeRequirement } from '../purposes/entities/purpose-requirement.entity';
+import { CafeGoogleReview } from '../scraper-sync/entities/cafe-google-review.entity';
 import { SearchCafesDto } from './dto/search-cafes.dto';
 import { DiscoverCafesDto } from './dto/discover-cafes.dto';
 import { CreateCafeDto } from './dto/create-cafe.dto';
@@ -27,6 +28,8 @@ export class CafesService {
     private readonly featuresRepository: Repository<CafeFeature>,
     @InjectRepository(PurposeRequirement)
     private readonly requirementsRepository: Repository<PurposeRequirement>,
+    @InjectRepository(CafeGoogleReview)
+    private readonly googleReviewsRepository: Repository<CafeGoogleReview>,
     private readonly dataSource: DataSource,
     private readonly meiliCafes: MeiliCafesService,
   ) {}
@@ -142,6 +145,19 @@ export class CafesService {
       matchScore,
       reviewsSummary,
     };
+  }
+
+  // ── Google reviews (scraped from Maps) ─────────────────────────────────────
+
+  async getGoogleReviews(cafeId: number, page = 1, limit = 5) {
+    const skip = (page - 1) * limit;
+    const [data, total] = await this.googleReviewsRepository.findAndCount({
+      where: { cafeId },
+      order: { rating: 'DESC', scrapedAt: 'DESC' },
+      skip,
+      take: limit,
+    });
+    return { data, meta: { page, limit, total } };
   }
 
   // ── Discover deck (Meilisearch + shortlist exclusion + promo injection) ────

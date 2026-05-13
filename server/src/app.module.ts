@@ -33,6 +33,7 @@ import { MeiliModule } from './meili/meili.module';
 import { SeoModule } from './seo/seo.module';
 import { HealthModule } from './health/health.module';
 import { DestinationsModule } from './destinations/destinations.module';
+import { SemanticSearchModule } from './semantic-search/semantic-search.module';
 
 @Module({
   imports: [
@@ -161,6 +162,7 @@ import { DestinationsModule } from './destinations/destinations.module';
     SeoModule,
     HealthModule,
     DestinationsModule,
+    SemanticSearchModule,
   ],
   providers: [
     {

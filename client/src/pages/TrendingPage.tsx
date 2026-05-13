@@ -184,7 +184,7 @@ export default function TrendingPage() {
             {/* Top 3 podium — Winner full-width, runners-up below as 2-col grid */}
             {top1 && (
               <div className="trending-fade-in">
-                <WinnerCard cafe={top1} onClick={() => navigate(cafeUrl(top1))} />
+                <WinnerCard cafe={top1} onClick={() => navigate(cafeUrl(top1), { state: { backLabel: 'Trending' } })} />
               </div>
             )}
             {(top2 || top3) && (
@@ -196,14 +196,14 @@ export default function TrendingPage() {
                   <RunnerUpCard
                     cafe={top2}
                     rank={2}
-                    onClick={() => navigate(cafeUrl(top2))}
+                    onClick={() => navigate(cafeUrl(top2), { state: { backLabel: 'Trending' } })}
                   />
                 )}
                 {top3 && (
                   <RunnerUpCard
                     cafe={top3}
                     rank={3}
-                    onClick={() => navigate(cafeUrl(top3))}
+                    onClick={() => navigate(cafeUrl(top3), { state: { backLabel: 'Trending' } })}
                   />
                 )}
               </div>
@@ -236,7 +236,7 @@ export default function TrendingPage() {
                         cafe={cafe}
                         rank={rank}
                         maxFavorites={top1?.favoritesCount ?? 1}
-                        onClick={() => navigate(cafeUrl(cafe))}
+                        onClick={() => navigate(cafeUrl(cafe), { state: { backLabel: 'Trending' } })}
                       />
                     </div>,
                   );
@@ -356,13 +356,13 @@ function WinnerCard({ cafe, onClick }: { cafe: Cafe; onClick: () => void }) {
   const overflow = allChips.length - visibleChips.length;
 
   return (
-    <div className="relative h-full p-[2px] rounded-3xl bg-gradient-to-br from-[#FBBF24] via-[#F97316] to-[#EA580C] shadow-xl shadow-orange-500/15">
+    <div className="relative h-full overflow-hidden p-[2px] rounded-3xl bg-gradient-to-br from-[#FBBF24] via-[#F97316] to-[#EA580C] shadow-xl shadow-orange-500/15">
       <button
         type="button"
         onClick={onClick}
         className="group relative flex flex-col h-full w-full overflow-hidden rounded-[calc(1.5rem-2px)] bg-white hover:shadow-2xl transition-all text-left"
       >
-        <div className="relative aspect-[4/3] sm:aspect-[16/9] lg:aspect-[21/9] flex-1">
+        <div className="relative aspect-[4/3] sm:aspect-[16/9] lg:aspect-[21/9] flex-1 overflow-hidden">
           <img
             src={photo}
             alt={cafe.name}
@@ -499,7 +499,7 @@ function RunnerUpCard({
 
   return (
     <div
-      className={`relative h-full p-[1.5px] rounded-2xl bg-gradient-to-br ${borderGradient} shadow-md`}
+      className={`relative h-full overflow-hidden p-[1.5px] rounded-2xl bg-gradient-to-br ${borderGradient} shadow-md`}
     >
       <button
         type="button"
@@ -507,7 +507,7 @@ function RunnerUpCard({
         className="group relative flex h-full w-full flex-col overflow-hidden rounded-[calc(1rem-1.5px)] bg-gradient-to-br from-[#FFF8EC] to-white hover:shadow-lg transition-shadow text-left"
       >
         {/* Photo — full-width tile on top */}
-        <div className="relative aspect-[4/3]">
+        <div className="relative aspect-[4/3] overflow-hidden">
           <img
             src={photo}
             alt={cafe.name}

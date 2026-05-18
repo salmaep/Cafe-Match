@@ -32,7 +32,12 @@ export class AdvertisementPackage {
   @Column({ name: 'session_frequency', length: 100 })
   sessionFrequency: string;
 
-  @Column({ name: 'display_order', type: 'smallint', unsigned: true, default: 0 })
+  @Column({
+    name: 'display_order',
+    type: 'smallint',
+    unsigned: true,
+    default: 0,
+  })
   displayOrder: number;
 
   @Column({ type: 'json', nullable: true })

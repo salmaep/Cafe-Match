@@ -1,15 +1,21 @@
-import { useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useQueryStates, parseAsInteger, parseAsFloat, parseAsString, parseAsArrayOf } from 'nuqs';
-import type { WizardPreferences } from '../../types/wizard';
-import type { PurposeSlug } from '../../constants/purposes';
-import { usePreferences } from '../../context/PreferencesContext';
-import { useGeolocation } from '../../hooks/useGeolocation';
-import { TOTAL_STEPS } from './wizardData';
-import StepPurpose from './StepPurpose';
-import StepLocation from './StepLocation';
-import StepRadius from './StepRadius';
-import StepAmenities from './StepAmenities';
+import { useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  useQueryStates,
+  parseAsInteger,
+  parseAsFloat,
+  parseAsString,
+  parseAsArrayOf,
+} from "nuqs";
+import type { WizardPreferences } from "../../types/wizard";
+import type { PurposeSlug } from "../../constants/purposes";
+import { usePreferences } from "../../context/PreferencesContext";
+import { useGeolocation } from "../../hooks/useGeolocation";
+import { TOTAL_STEPS } from "./wizardData";
+import StepPurpose from "./StepPurpose";
+import StepLocation from "./StepLocation";
+import StepRadius from "./StepRadius";
+import StepAmenities from "./StepAmenities";
 
 interface Props {
   onComplete?: () => void;
@@ -18,25 +24,26 @@ interface Props {
 
 export default function Wizard({ onComplete, onSkip }: Props = {}) {
   const navigate = useNavigate();
-  const { setPreferences, setWizardCompleted, serverPurposes } = usePreferences();
+  const { setPreferences, setWizardCompleted, serverPurposes } =
+    usePreferences();
   const { latitude: userLat, longitude: userLng } = useGeolocation();
 
   // URL: /discover?step=0&vibe=date&lat=-6.9175&lng=107.6191&r=3&f=Romantic,Quiet&price=$$
   const [params, setParams] = useQueryStates(
     {
-      step:  parseAsInteger.withDefault(0),
-      vibe:  parseAsString.withDefault(''),
-      lat:   parseAsFloat,
-      lng:   parseAsFloat,
-      r:     parseAsInteger.withDefault(1),
-      f:     parseAsArrayOf(parseAsString).withDefault([]),
-      price: parseAsString.withDefault(''),
+      step: parseAsInteger.withDefault(0),
+      vibe: parseAsString.withDefault(""),
+      lat: parseAsFloat,
+      lng: parseAsFloat,
+      r: parseAsInteger.withDefault(1),
+      f: parseAsArrayOf(parseAsString).withDefault([]),
+      price: parseAsString.withDefault(""),
     },
-    { history: 'push' },
+    { history: "push" },
   );
 
   const purpose = (params.vibe || undefined) as PurposeSlug | undefined;
-  const step    = params.step;
+  const step = params.step;
 
   const preselectedFromPurpose = useMemo<string[]>(() => {
     if (!purpose) return [];
@@ -44,7 +51,7 @@ export default function Wizard({ onComplete, onSkip }: Props = {}) {
     if (!found?.requirements) return [];
     return found.requirements
       .map((r) => r.feature?.name)
-      .filter((n): n is string => typeof n === 'string' && n.length > 0);
+      .filter((n): n is string => typeof n === "string" && n.length > 0);
   }, [purpose, serverPurposes]);
 
   useEffect(() => {
@@ -64,7 +71,7 @@ export default function Wizard({ onComplete, onSkip }: Props = {}) {
     setPreferences(null);
     setWizardCompleted(true);
     if (onSkip) onSkip();
-    else navigate('/', { replace: true });
+    else navigate("/", { replace: true });
   };
 
   const handleFinish = () => {
@@ -73,10 +80,13 @@ export default function Wizard({ onComplete, onSkip }: Props = {}) {
     const prefs: WizardPreferences = {
       purpose,
       location: {
-        type: params.lat != null ? 'custom' : 'current',
+        type: params.lat != null ? "custom" : "current",
         latitude: lat,
         longitude: lng,
-        label: params.lat != null ? `${lat?.toFixed(4)}, ${lng?.toFixed(4)}` : 'Current Location',
+        label:
+          params.lat != null
+            ? `${lat?.toFixed(4)}, ${lng?.toFixed(4)}`
+            : "Current Location",
       },
       radius: params.r,
       amenities: params.f.length > 0 ? params.f : undefined,
@@ -85,12 +95,15 @@ export default function Wizard({ onComplete, onSkip }: Props = {}) {
     setPreferences(prefs);
     setWizardCompleted(true);
     if (onComplete) onComplete();
-    else navigate('/discover', { replace: true });
+    else navigate("/discover", { replace: true });
   };
 
   // Block Next on step 1 only when lat/lng completely missing (no geolocation either)
   const isNextDisabled =
-    step === 1 && params.lat === null && params.lng === null && userLat === null;
+    step === 1 &&
+    params.lat === null &&
+    params.lng === null &&
+    userLat === null;
 
   return (
     <div className="flex flex-col bg-[#FAF9F6] min-h-screen md:min-h-[calc(100vh-4rem)]">
@@ -112,10 +125,10 @@ export default function Wizard({ onComplete, onSkip }: Props = {}) {
               key={i}
               className={`h-2 rounded-full transition-all ${
                 i === step
-                  ? 'bg-amber-600 w-6'
+                  ? "bg-amber-600 w-6"
                   : i < step
-                    ? 'bg-amber-600 w-2'
-                    : 'bg-gray-200 w-2'
+                    ? "bg-amber-600 w-2"
+                    : "bg-gray-200 w-2"
               }`}
             />
           ))}
@@ -171,7 +184,7 @@ export default function Wizard({ onComplete, onSkip }: Props = {}) {
           disabled={isNextDisabled}
           className="w-full py-4 bg-[#1C1C1A] hover:bg-black text-white font-bold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#1C1C1A]"
         >
-          {step === TOTAL_STEPS - 1 ? 'Find My Cafe' : 'Next'}
+          {step === TOTAL_STEPS - 1 ? "Find My Cafe" : "Next"}
         </button>
       </footer>
     </div>

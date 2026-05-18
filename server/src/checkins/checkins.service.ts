@@ -1,4 +1,10 @@
-import { Injectable, BadRequestException, NotFoundException, Inject, forwardRef } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, IsNull } from 'typeorm';
 import { Checkin } from './entities/checkin.entity';
@@ -30,15 +36,19 @@ export class CheckinsService {
 
   async checkIn(userId: number, dto: CheckInDto) {
     // 1. Verify cafe exists
-    const cafe = await this.cafeRepo.findOne({ where: { id: dto.cafeId, isActive: true } });
+    const cafe = await this.cafeRepo.findOne({
+      where: { id: dto.cafeId, isActive: true },
+    });
     if (!cafe) throw new NotFoundException('Cafe tidak ditemukan');
 
     // 2. GPS distance check (100m)
     // DEV TOGGLE: set CHECKIN_SKIP_GPS=true in .env to bypass this check for testing.
     // Revert to production: remove the env var or set it to false.
     const distance = this.haversineMeters(
-      dto.latitude, dto.longitude,
-      Number(cafe.latitude), Number(cafe.longitude),
+      dto.latitude,
+      dto.longitude,
+      Number(cafe.latitude),
+      Number(cafe.longitude),
     );
     const skipGps = process.env.CHECKIN_SKIP_GPS === 'true';
     if (!skipGps && distance > 100) {
@@ -81,7 +91,8 @@ export class CheckinsService {
       if (togetherWith.length > 0) {
         for (const friend of togetherWith) {
           // Increment together_counts for this pair at this cafe
-          const [a, b] = userId < friend.id ? [userId, friend.id] : [friend.id, userId];
+          const [a, b] =
+            userId < friend.id ? [userId, friend.id] : [friend.id, userId];
           await this.dataSource.query(
             `INSERT INTO together_counts (user_a_id, user_b_id, cafe_id, count)
              VALUES (?, ?, ?, 1)
@@ -148,7 +159,9 @@ export class CheckinsService {
   async checkOut(userId: number, dto: CheckOutDto) {
     let checkin: Checkin | null = null;
     if (dto.checkinId) {
-      checkin = await this.checkinRepo.findOne({ where: { id: dto.checkinId, userId } });
+      checkin = await this.checkinRepo.findOne({
+        where: { id: dto.checkinId, userId },
+      });
     } else if (dto.cafeId) {
       checkin = await this.checkinRepo.findOne({
         where: { userId, cafeId: dto.cafeId, checkOutAt: IsNull() },
@@ -164,7 +177,8 @@ export class CheckinsService {
 
   private async performCheckout(checkin: Checkin) {
     checkin.checkOutAt = new Date();
-    const diff = checkin.checkOutAt.getTime() - new Date(checkin.checkInAt).getTime();
+    const diff =
+      checkin.checkOutAt.getTime() - new Date(checkin.checkInAt).getTime();
     checkin.durationMinutes = Math.round(diff / 60000);
     return this.checkinRepo.save(checkin);
   }
@@ -328,13 +342,19 @@ export class CheckinsService {
         lastCheckinDate: today,
       });
     } else {
-      const days = this.daysBetween(new Date(streak.lastCheckinDate), new Date(today));
+      const days = this.daysBetween(
+        new Date(streak.lastCheckinDate),
+        new Date(today),
+      );
       if (days === 0) {
         // Same day — no increment
         return this.streakRepo.save(streak);
       } else if (days <= 7) {
         streak.currentStreak += 1;
-        streak.longestStreak = Math.max(streak.longestStreak, streak.currentStreak);
+        streak.longestStreak = Math.max(
+          streak.longestStreak,
+          streak.currentStreak,
+        );
       } else if (days > 14) {
         streak.currentStreak = 1; // reset
       }
@@ -349,7 +369,12 @@ export class CheckinsService {
     return Math.floor(Math.abs(b.getTime() - a.getTime()) / msPerDay);
   }
 
-  private haversineMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  private haversineMeters(
+    lat1: number,
+    lon1: number,
+    lat2: number,
+    lon2: number,
+  ): number {
     const R = 6371000;
     const dLat = ((lat2 - lat1) * Math.PI) / 180;
     const dLon = ((lon2 - lon1) * Math.PI) / 180;

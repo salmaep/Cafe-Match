@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
-import { votesApi } from '../../api/votes.api';
-import { purposesApi } from '../../api/purposes.api';
-import type { Purpose, VoteTally } from '../../types';
-import { useAuth } from '../../context/AuthContext';
-import { getPurposeBySlug } from '@shared/constants/purposes';
+import { useState, useEffect } from "react";
+import { votesApi } from "../../api/votes.api";
+import { purposesApi } from "../../api/purposes.api";
+import type { Purpose, VoteTally } from "../../types";
+import { useAuth } from "../../context/AuthContext";
+import { getPurposeBySlug } from "@shared/constants/purposes";
 
 interface Props {
   cafeId: number;
@@ -12,10 +12,12 @@ interface Props {
 // Server's `purpose.icon` is a lucide-style name (e.g. "coffee"). Map to emoji
 // via shared wizard constants so chips render visually instead of as raw text.
 function emojiFor(purpose: { slug?: string; icon?: string | null }): string {
-  const fromShared = purpose.slug ? getPurposeBySlug(purpose.slug)?.emoji : undefined;
+  const fromShared = purpose.slug
+    ? getPurposeBySlug(purpose.slug)?.emoji
+    : undefined;
   if (fromShared) return fromShared;
   if (purpose.icon && !/^[a-z0-9_-]+$/i.test(purpose.icon)) return purpose.icon;
-  return '☕';
+  return "☕";
 }
 
 export default function VoteSection({ cafeId }: Props) {
@@ -83,7 +85,7 @@ export default function VoteSection({ cafeId }: Props) {
       <p className="text-xs text-gray-400 mb-4">
         {user
           ? `Select up to 3 categories (${myVotes.length}/3 selected)`
-          : 'Log in to vote'}
+          : "Log in to vote"}
       </p>
 
       {loading ? (
@@ -120,8 +122,8 @@ export default function VoteSection({ cafeId }: Props) {
                     disabled={!user || (!isSelected && myVotes.length >= 3)}
                     className={`relative z-10 w-full text-left px-4 py-2.5 rounded-lg border transition-colors text-sm ${
                       isSelected
-                        ? 'border-amber-400 bg-amber-50 text-amber-800'
-                        : 'border-gray-200 text-gray-600 hover:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed'
+                        ? "border-amber-400 bg-amber-50 text-amber-800"
+                        : "border-gray-200 text-gray-600 hover:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
                     }`}
                   >
                     <div className="flex justify-between items-center">
@@ -130,7 +132,7 @@ export default function VoteSection({ cafeId }: Props) {
                         {purpose.name}
                       </span>
                       <span className="text-xs text-gray-400">
-                        {count} vote{count !== 1 ? 's' : ''} ({pct}%)
+                        {count} vote{count !== 1 ? "s" : ""} ({pct}%)
                       </span>
                     </div>
                     {/* Progress bar */}
@@ -151,7 +153,7 @@ export default function VoteSection({ cafeId }: Props) {
           disabled={saving || myVotes.length === 0}
           className="mt-4 px-5 py-2 bg-amber-600 text-white rounded-lg text-sm hover:bg-amber-700 disabled:opacity-50 transition-colors"
         >
-          {saving ? 'Saving...' : 'Submit Vote'}
+          {saving ? "Saving..." : "Submit Vote"}
         </button>
       )}
     </div>

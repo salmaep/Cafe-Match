@@ -15,9 +15,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  *   3. Add cafe_features.feature_id, populate, drop old name/category
  *   4. Add purpose_requirements.feature_id, populate, drop old feature_name
  */
-export class AddFeaturesMasterTable1715400000000
-  implements MigrationInterface
-{
+export class AddFeaturesMasterTable1715400000000 implements MigrationInterface {
   async up(queryRunner: QueryRunner): Promise<void> {
     // 1) Master features table
     await queryRunner.query(`
@@ -53,9 +51,15 @@ export class AddFeaturesMasterTable1715400000000
       SET cf.feature_id = f.id
     `);
     // Drop old unique + columns, add new unique + FK
-    await queryRunner.query(`ALTER TABLE \`cafe_features\` DROP INDEX \`UQ_cafe_feature_name\``);
-    await queryRunner.query(`ALTER TABLE \`cafe_features\` DROP COLUMN \`name\``);
-    await queryRunner.query(`ALTER TABLE \`cafe_features\` DROP COLUMN \`category\``);
+    await queryRunner.query(
+      `ALTER TABLE \`cafe_features\` DROP INDEX \`UQ_cafe_feature_name\``,
+    );
+    await queryRunner.query(
+      `ALTER TABLE \`cafe_features\` DROP COLUMN \`name\``,
+    );
+    await queryRunner.query(
+      `ALTER TABLE \`cafe_features\` DROP COLUMN \`category\``,
+    );
     await queryRunner.query(`
       ALTER TABLE \`cafe_features\`
         MODIFY \`feature_id\` INT UNSIGNED NOT NULL,
@@ -75,7 +79,9 @@ export class AddFeaturesMasterTable1715400000000
       SET pr.feature_id = f.id
     `);
     // Best-effort: any pr.feature_name not in master gets dropped
-    await queryRunner.query(`DELETE FROM \`purpose_requirements\` WHERE feature_id IS NULL`);
+    await queryRunner.query(
+      `DELETE FROM \`purpose_requirements\` WHERE feature_id IS NULL`,
+    );
     // Before dropping idx_purpose_facility, give the FK on purpose_id an
     // alternate backing index — otherwise MySQL rejects the DROP with
     // ER_DROP_INDEX_FK (1553) because idx_purpose_facility is the only index
@@ -93,7 +99,9 @@ export class AddFeaturesMasterTable1715400000000
       ALTER TABLE \`purpose_requirements\`
         DROP INDEX \`idx_purpose_facility\`
     `);
-    await queryRunner.query(`ALTER TABLE \`purpose_requirements\` DROP COLUMN \`feature_name\``);
+    await queryRunner.query(
+      `ALTER TABLE \`purpose_requirements\` DROP COLUMN \`feature_name\``,
+    );
     await queryRunner.query(`
       ALTER TABLE \`purpose_requirements\`
         MODIFY \`feature_id\` INT UNSIGNED NOT NULL,
@@ -123,7 +131,9 @@ export class AddFeaturesMasterTable1715400000000
       JOIN \`features\` f ON f.id = pr.feature_id
       SET pr.feature_name = f.name
     `);
-    await queryRunner.query(`ALTER TABLE \`purpose_requirements\` DROP COLUMN \`feature_id\``);
+    await queryRunner.query(
+      `ALTER TABLE \`purpose_requirements\` DROP COLUMN \`feature_id\``,
+    );
     await queryRunner.query(`
       ALTER TABLE \`purpose_requirements\`
         ALTER COLUMN \`feature_name\` DROP DEFAULT,
@@ -144,7 +154,9 @@ export class AddFeaturesMasterTable1715400000000
       JOIN \`features\` f ON f.id = cf.feature_id
       SET cf.name = f.name, cf.category = f.category
     `);
-    await queryRunner.query(`ALTER TABLE \`cafe_features\` DROP COLUMN \`feature_id\``);
+    await queryRunner.query(
+      `ALTER TABLE \`cafe_features\` DROP COLUMN \`feature_id\``,
+    );
     await queryRunner.query(`
       ALTER TABLE \`cafe_features\`
         ALTER COLUMN \`name\` DROP DEFAULT,

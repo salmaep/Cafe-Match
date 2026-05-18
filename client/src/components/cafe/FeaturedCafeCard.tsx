@@ -1,7 +1,7 @@
-import { Link } from 'react-router-dom';
-import { analyticsApi } from '../../api/analytics.api';
-import { placeholderImage } from '../../utils/cafeImage';
-import { cafeUrl } from '../../utils/cafeUrl';
+import { Link } from "react-router-dom";
+import { analyticsApi } from "../../api/analytics.api";
+import { placeholderImage } from "../../utils/cafeImage";
+import { cafeUrl } from "../../utils/cafeUrl";
 
 interface Props {
   cafe: {
@@ -24,7 +24,7 @@ export default function FeaturedCafeCard({ cafe, promotion }: Props) {
   const imgSrc = promotion?.content_photo_url || fallback;
 
   const handleClick = () => {
-    analyticsApi.track(cafe.id, 'click').catch(() => {});
+    analyticsApi.track(cafe.id, "click").catch(() => {});
   };
 
   return (
@@ -44,7 +44,9 @@ export default function FeaturedCafeCard({ cafe, promotion }: Props) {
         }}
       />
       <div className="p-3">
-        <h3 className="font-semibold text-gray-800 text-sm truncate">{cafe.name}</h3>
+        <h3 className="font-semibold text-gray-800 text-sm truncate">
+          {cafe.name}
+        </h3>
         {promotion?.content_title && (
           <p className="text-xs text-amber-700 font-medium mt-1 truncate">
             {promotion.content_title}

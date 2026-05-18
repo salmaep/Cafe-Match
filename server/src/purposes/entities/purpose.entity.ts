@@ -1,9 +1,4 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  OneToMany,
-} from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
 import { PurposeRequirement } from './purpose-requirement.entity';
 
 @Entity('purposes')
@@ -23,7 +18,12 @@ export class Purpose {
   @Column({ length: 50, nullable: true })
   icon: string;
 
-  @Column({ name: 'display_order', type: 'smallint', unsigned: true, default: 0 })
+  @Column({
+    name: 'display_order',
+    type: 'smallint',
+    unsigned: true,
+    default: 0,
+  })
   displayOrder: number;
 
   @OneToMany(() => PurposeRequirement, (req) => req.purpose, { cascade: true })

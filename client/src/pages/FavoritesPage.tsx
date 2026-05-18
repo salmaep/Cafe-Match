@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { favoritesApi } from '../api/favorites.api';
-import type { Favorite } from '../types';
-import CafeCard from '../components/cafe/CafeCard';
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { favoritesApi } from "../api/favorites.api";
+import type { Favorite } from "../types";
+import CafeCard from "../components/cafe/CafeCard";
 
 export default function FavoritesPage() {
   const [favorites, setFavorites] = useState<Favorite[]>([]);
@@ -29,7 +29,10 @@ export default function FavoritesPage() {
       {favorites.length === 0 ? (
         <div className="text-center py-12">
           <p className="text-gray-400">No favorites yet</p>
-          <Link to="/" className="text-amber-600 hover:underline text-sm mt-2 inline-block">
+          <Link
+            to="/"
+            className="text-amber-600 hover:underline text-sm mt-2 inline-block"
+          >
             Explore cafes
           </Link>
         </div>

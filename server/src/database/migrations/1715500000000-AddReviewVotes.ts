@@ -26,8 +26,12 @@ export class AddReviewVotes1715500000000 implements MigrationInterface {
   }
 
   async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`ALTER TABLE \`reviews\` DROP INDEX \`IDX_reviews_helpful_created\``);
-    await queryRunner.query(`ALTER TABLE \`reviews\` DROP COLUMN \`helpful_count\``);
+    await queryRunner.query(
+      `ALTER TABLE \`reviews\` DROP INDEX \`IDX_reviews_helpful_created\``,
+    );
+    await queryRunner.query(
+      `ALTER TABLE \`reviews\` DROP COLUMN \`helpful_count\``,
+    );
     await queryRunner.query(`DROP TABLE IF EXISTS \`review_votes\``);
   }
 }

@@ -37,6 +37,9 @@ export class AnalyticsController {
     @Param('cafeId', ParseIntPipe) cafeId: number,
     @Query('days') days?: string,
   ) {
-    return this.analyticsService.getSummary(cafeId, days ? parseInt(days, 10) : 30);
+    return this.analyticsService.getSummary(
+      cafeId,
+      days ? parseInt(days, 10) : 30,
+    );
   }
 }

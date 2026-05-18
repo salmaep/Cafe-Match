@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
-import type { Purpose } from '../../types';
-import { purposesApi } from '../../api/purposes.api';
-import { getPurposeBySlug } from '../../constants/purposes';
-import { LucideIcon } from '../../utils/lucideIcon';
+import { useState, useEffect } from "react";
+import type { Purpose } from "../../types";
+import { purposesApi } from "../../api/purposes.api";
+import { getPurposeBySlug } from "../../constants/purposes";
+import { LucideIcon } from "../../utils/lucideIcon";
 
 interface Props {
   selectedPurposeId: number | null;
@@ -22,8 +22,8 @@ export default function PurposeFilter({ selectedPurposeId, onSelect }: Props) {
         onClick={() => onSelect(null)}
         className={`px-4 py-2 rounded-full text-sm whitespace-nowrap border transition-colors ${
           selectedPurposeId === null
-            ? 'bg-amber-600 text-white border-amber-600'
-            : 'bg-white text-gray-600 border-gray-300 hover:border-amber-400'
+            ? "bg-amber-600 text-white border-amber-600"
+            : "bg-white text-gray-600 border-gray-300 hover:border-amber-400"
         }`}
       >
         All Cafes
@@ -41,8 +41,8 @@ export default function PurposeFilter({ selectedPurposeId, onSelect }: Props) {
             onClick={() => onSelect(p.id)}
             className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm whitespace-nowrap border transition-colors ${
               active
-                ? 'bg-amber-600 text-white border-amber-600'
-                : 'bg-white text-gray-600 border-gray-300 hover:border-amber-400'
+                ? "bg-amber-600 text-white border-amber-600"
+                : "bg-white text-gray-600 border-gray-300 hover:border-amber-400"
             }`}
           >
             {p.icon ? (

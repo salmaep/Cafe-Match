@@ -1,11 +1,18 @@
 import {
-  Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, Index,
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  Index,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Cafe } from '../../cafes/entities/cafe.entity';
 
 @Entity('user_streaks')
-@Index('idx_streak_user_cafe', ['userId', 'cafeId', 'streakType'], { unique: true })
+@Index('idx_streak_user_cafe', ['userId', 'cafeId', 'streakType'], {
+  unique: true,
+})
 export class UserStreak {
   @PrimaryGeneratedColumn({ unsigned: true })
   id: number;
@@ -16,7 +23,12 @@ export class UserStreak {
   @Column({ name: 'cafe_id', unsigned: true, nullable: true })
   cafeId: number;
 
-  @Column({ name: 'streak_type', type: 'enum', enum: ['cafe', 'global'], default: 'global' })
+  @Column({
+    name: 'streak_type',
+    type: 'enum',
+    enum: ['cafe', 'global'],
+    default: 'global',
+  })
   streakType: string;
 
   @Column({ name: 'current_streak', unsigned: true, default: 0 })

@@ -1,18 +1,18 @@
-import { useState, type FormEvent } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { ownerApi } from '../../api/owner.api';
+import { useState, type FormEvent } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { ownerApi } from "../../api/owner.api";
 
 export default function OwnerRegisterPage() {
   const [form, setForm] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    cafeName: '',
-    cafeAddress: '',
-    phone: '',
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    cafeName: "",
+    cafeAddress: "",
+    phone: "",
   });
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -21,13 +21,19 @@ export default function OwnerRegisterPage() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setError('');
-    if (!form.name || !form.email || !form.password || !form.cafeName || !form.cafeAddress) {
-      setError('Please fill in all required fields');
+    setError("");
+    if (
+      !form.name ||
+      !form.email ||
+      !form.password ||
+      !form.cafeName ||
+      !form.cafeAddress
+    ) {
+      setError("Please fill in all required fields");
       return;
     }
     if (form.password !== form.confirmPassword) {
-      setError('Passwords do not match');
+      setError("Passwords do not match");
       return;
     }
     setLoading(true);
@@ -40,9 +46,9 @@ export default function OwnerRegisterPage() {
         cafeAddress: form.cafeAddress,
         phone: form.phone || undefined,
       });
-      navigate('/owner/login');
+      navigate("/owner/login");
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Registration failed');
+      setError(err.response?.data?.message || "Registration failed");
     } finally {
       setLoading(false);
     }
@@ -90,7 +96,7 @@ export default function OwnerRegisterPage() {
             <FieldLabel>Full Name *</FieldLabel>
             <Input
               value={form.name}
-              onChange={(v) => set('name', v)}
+              onChange={(v) => set("name", v)}
               placeholder="Your full name"
               autoComplete="name"
               required
@@ -99,7 +105,7 @@ export default function OwnerRegisterPage() {
             <Input
               type="email"
               value={form.email}
-              onChange={(v) => set('email', v)}
+              onChange={(v) => set("email", v)}
               placeholder="owner@mycafe.com"
               autoComplete="email"
               required
@@ -110,7 +116,7 @@ export default function OwnerRegisterPage() {
                 <Input
                   type="password"
                   value={form.password}
-                  onChange={(v) => set('password', v)}
+                  onChange={(v) => set("password", v)}
                   placeholder="Min. 6 characters"
                   autoComplete="new-password"
                   minLength={6}
@@ -122,7 +128,7 @@ export default function OwnerRegisterPage() {
                 <Input
                   type="password"
                   value={form.confirmPassword}
-                  onChange={(v) => set('confirmPassword', v)}
+                  onChange={(v) => set("confirmPassword", v)}
                   placeholder="Re-enter password"
                   autoComplete="new-password"
                   minLength={6}
@@ -146,14 +152,14 @@ export default function OwnerRegisterPage() {
             <FieldLabel>Cafe Name *</FieldLabel>
             <Input
               value={form.cafeName}
-              onChange={(v) => set('cafeName', v)}
+              onChange={(v) => set("cafeName", v)}
               placeholder="e.g. Kopi Kenangan Sudirman"
               required
             />
             <FieldLabel>Cafe Address *</FieldLabel>
             <textarea
               value={form.cafeAddress}
-              onChange={(e) => set('cafeAddress', e.target.value)}
+              onChange={(e) => set("cafeAddress", e.target.value)}
               placeholder="Full address of your cafe"
               rows={3}
               required
@@ -164,7 +170,7 @@ export default function OwnerRegisterPage() {
               type="tel"
               value={form.phone}
               // Allow digits, spaces, hyphens, parentheses, and a leading "+"
-              onChange={(v) => set('phone', v.replace(/[^\d+\s\-()]/g, ''))}
+              onChange={(v) => set("phone", v.replace(/[^\d+\s\-()]/g, ""))}
               placeholder="+62 812 3456 7890"
               inputMode="tel"
               autoComplete="tel"
@@ -177,12 +183,12 @@ export default function OwnerRegisterPage() {
             disabled={loading}
             className="w-full mt-8 py-3 bg-[#1C1C1A] text-white rounded-xl font-bold text-base hover:bg-black disabled:opacity-60 transition-colors"
           >
-            {loading ? 'Registering…' : 'Create Owner Account'}
+            {loading ? "Registering…" : "Create Owner Account"}
           </button>
         </form>
 
         <div className="text-center text-sm text-[#8A8880] mt-5">
-          Already have an owner account?{' '}
+          Already have an owner account?{" "}
           <Link
             to="/owner/login"
             className="text-[#D48B3A] font-semibold hover:underline"
@@ -204,7 +210,7 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
 }
 
 function Input({
-  type = 'text',
+  type = "text",
   value,
   onChange,
   placeholder,
@@ -224,7 +230,14 @@ function Input({
   maxLength?: number;
   autoComplete?: string;
   invalid?: boolean;
-  inputMode?: 'text' | 'tel' | 'email' | 'numeric' | 'decimal' | 'search' | 'url';
+  inputMode?:
+    | "text"
+    | "tel"
+    | "email"
+    | "numeric"
+    | "decimal"
+    | "search"
+    | "url";
 }) {
   return (
     <input
@@ -239,8 +252,8 @@ function Input({
       inputMode={inputMode}
       className={`w-full px-4 py-3 rounded-xl text-[15px] text-[#1C1C1A] placeholder:text-[#8A8880] outline-none transition-all ${
         invalid
-          ? 'bg-red-50 ring-2 ring-red-300 focus:ring-red-400'
-          : 'bg-[#F0EDE8] border-none focus:bg-white focus:ring-2 focus:ring-[#D48B3A]/30'
+          ? "bg-red-50 ring-2 ring-red-300 focus:ring-red-400"
+          : "bg-[#F0EDE8] border-none focus:bg-white focus:ring-2 focus:ring-[#D48B3A]/30"
       }`}
     />
   );

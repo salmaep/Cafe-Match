@@ -17,7 +17,12 @@ export class Destination {
   @Column({ type: 'decimal', precision: 10, scale: 7 })
   longitude: number;
 
-  @Column({ name: 'display_order', type: 'smallint', unsigned: true, default: 0 })
+  @Column({
+    name: 'display_order',
+    type: 'smallint',
+    unsigned: true,
+    default: 0,
+  })
   displayOrder: number;
 
   @Column({ name: 'is_active', type: 'tinyint', width: 1, default: 1 })

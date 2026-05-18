@@ -17,9 +17,15 @@ export class AddScraperSyncFields1713100000000 implements MigrationInterface {
         ADD COLUMN scraper_source  VARCHAR(50)   NOT NULL DEFAULT 'manual' AFTER last_scraped_at
     `);
 
-    await queryRunner.query(`ALTER TABLE cafes ADD INDEX idx_cafes_city (city)`);
-    await queryRunner.query(`ALTER TABLE cafes ADD INDEX idx_cafes_district (district)`);
-    await queryRunner.query(`ALTER TABLE cafes ADD INDEX idx_cafes_category (category)`);
+    await queryRunner.query(
+      `ALTER TABLE cafes ADD INDEX idx_cafes_city (city)`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE cafes ADD INDEX idx_cafes_district (district)`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE cafes ADD INDEX idx_cafes_category (category)`,
+    );
 
     // Create cafe_google_reviews table
     await queryRunner.query(`

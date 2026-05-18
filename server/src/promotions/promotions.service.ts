@@ -10,7 +10,10 @@ import { Promotion } from './entities/promotion.entity';
 import { AdvertisementPackage } from './entities/advertisement-package.entity';
 import { PromotionSlot } from './entities/promotion-slot.entity';
 import { Cafe } from '../cafes/entities/cafe.entity';
-import { CreatePromotionDto, UpdatePromotionContentDto } from './dto/create-promotion.dto';
+import {
+  CreatePromotionDto,
+  UpdatePromotionContentDto,
+} from './dto/create-promotion.dto';
 
 @Injectable()
 export class PromotionsService {
@@ -81,7 +84,9 @@ export class PromotionsService {
       );
     }
 
-    const pkg = await this.packagesRepo.findOne({ where: { id: dto.packageId } });
+    const pkg = await this.packagesRepo.findOne({
+      where: { id: dto.packageId },
+    });
     if (!pkg) throw new NotFoundException('Package not found');
 
     const promotion = this.promotionsRepo.create({
@@ -122,7 +127,11 @@ export class PromotionsService {
     return promotion;
   }
 
-  async updateContent(id: number, userId: number, dto: UpdatePromotionContentDto) {
+  async updateContent(
+    id: number,
+    userId: number,
+    dto: UpdatePromotionContentDto,
+  ) {
     const promotion = await this.getPromotionById(id, userId);
     Object.assign(promotion, dto);
     return this.promotionsRepo.save(promotion);
@@ -135,8 +144,13 @@ export class PromotionsService {
       relations: ['package'],
     });
     if (!promotion) throw new NotFoundException('Promotion not found');
-    if (promotion.status !== 'pending_payment' && promotion.status !== 'pending_review') {
-      throw new BadRequestException('Promotion cannot be activated from current status');
+    if (
+      promotion.status !== 'pending_payment' &&
+      promotion.status !== 'pending_review'
+    ) {
+      throw new BadRequestException(
+        'Promotion cannot be activated from current status',
+      );
     }
 
     // Check slot availability
@@ -162,7 +176,9 @@ export class PromotionsService {
     }
 
     if (slot.usedSlots >= slot.totalSlots) {
-      throw new BadRequestException('No available slots for this package/period');
+      throw new BadRequestException(
+        'No available slots for this package/period',
+      );
     }
 
     // Reserve slot
@@ -189,7 +205,9 @@ export class PromotionsService {
   }
 
   async rejectPromotion(promotionId: number, reason: string) {
-    const promotion = await this.promotionsRepo.findOne({ where: { id: promotionId } });
+    const promotion = await this.promotionsRepo.findOne({
+      where: { id: promotionId },
+    });
     if (!promotion) throw new NotFoundException('Promotion not found');
 
     promotion.status = 'rejected';
@@ -210,8 +228,7 @@ export class PromotionsService {
       qb.andWhere('p.type = :type', { type });
     }
 
-    qb.orderBy('pkg.display_order', 'DESC')
-      .addOrderBy('p.started_at', 'ASC');
+    qb.orderBy('pkg.display_order', 'DESC').addOrderBy('p.started_at', 'ASC');
 
     return qb.getMany();
   }

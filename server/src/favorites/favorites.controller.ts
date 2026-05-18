@@ -17,10 +17,7 @@ export class FavoritesController {
   constructor(private readonly favoritesService: FavoritesService) {}
 
   @Post(':cafeId')
-  toggle(
-    @Request() req: any,
-    @Param('cafeId', ParseIntPipe) cafeId: number,
-  ) {
+  toggle(@Request() req: any, @Param('cafeId', ParseIntPipe) cafeId: number) {
     return this.favoritesService.toggle(req.user.id, cafeId);
   }
 

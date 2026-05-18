@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { DESTINATION_SUGGESTIONS } from './wizardData';
-import { parseCoords } from '../../utils/parseCoords';
+import { useState } from "react";
+import { DESTINATION_SUGGESTIONS } from "./wizardData";
+import { parseCoords } from "../../utils/parseCoords";
 
 interface Props {
   lat: number | null;
@@ -10,21 +10,27 @@ interface Props {
   onChange: (lat: number | null, lng: number | null) => void;
 }
 
-export default function StepLocation({ lat, lng, userLat, userLng, onChange }: Props) {
+export default function StepLocation({
+  lat,
+  lng,
+  userLat,
+  userLng,
+  onChange,
+}: Props) {
   // UI-only: which input mode is active. Not persisted to URL.
-  const [mode, setMode] = useState<'current' | 'custom'>(
-    lat !== null && lat !== userLat ? 'custom' : 'current',
+  const [mode, setMode] = useState<"current" | "custom">(
+    lat !== null && lat !== userLat ? "custom" : "current",
   );
-  const [address, setAddress] = useState('');
+  const [address, setAddress] = useState("");
 
   const selectCurrent = () => {
-    setMode('current');
-    setAddress('');
+    setMode("current");
+    setAddress("");
     onChange(userLat, userLng);
   };
 
   const selectCustom = () => {
-    setMode('custom');
+    setMode("custom");
     onChange(null, null);
   };
 
@@ -34,18 +40,23 @@ export default function StepLocation({ lat, lng, userLat, userLng, onChange }: P
     onChange(coords?.lat ?? null, coords?.lng ?? null);
   };
 
-  const handleSuggestionPick = (s: (typeof DESTINATION_SUGGESTIONS)[number]) => {
-    setMode('custom');
+  const handleSuggestionPick = (
+    s: (typeof DESTINATION_SUGGESTIONS)[number],
+  ) => {
+    setMode("custom");
     setAddress(s.label);
     onChange(s.latitude, s.longitude);
   };
 
-  const showWarn = mode === 'custom' && address.length > 0 && (lat === null || lng === null);
-  const showOk   = mode === 'custom' && lat !== null && lng !== null;
+  const showWarn =
+    mode === "custom" && address.length > 0 && (lat === null || lng === null);
+  const showOk = mode === "custom" && lat !== null && lng !== null;
 
   return (
     <div className="w-full px-6 pt-8">
-      <h2 className="text-3xl font-bold text-[#1C1C1A] mb-1">Where are you heading?</h2>
+      <h2 className="text-3xl font-bold text-[#1C1C1A] mb-1">
+        Where are you heading?
+      </h2>
       <p className="text-base text-[#8A8880] mb-8">We'll find cafes near you</p>
 
       <div className="flex flex-col gap-2">
@@ -53,17 +64,19 @@ export default function StepLocation({ lat, lng, userLat, userLng, onChange }: P
           type="button"
           onClick={selectCurrent}
           className={`flex items-center gap-4 p-5 rounded-xl border-2 transition-colors text-left ${
-            mode === 'current'
-              ? 'border-[#D48B3A] bg-[#FDF6EC]'
-              : 'border-transparent bg-[#F0EDE8] hover:bg-[#E8E4DD]'
+            mode === "current"
+              ? "border-[#D48B3A] bg-[#FDF6EC]"
+              : "border-transparent bg-[#F0EDE8] hover:bg-[#E8E4DD]"
           }`}
         >
           <span className="text-2xl">📍</span>
           <div>
-            <span className={`text-base font-semibold ${mode === 'current' ? 'text-[#D48B3A]' : 'text-[#1C1C1A]'}`}>
+            <span
+              className={`text-base font-semibold ${mode === "current" ? "text-[#D48B3A]" : "text-[#1C1C1A]"}`}
+            >
               Use my current location
             </span>
-            {mode === 'current' && userLat !== null && (
+            {mode === "current" && userLat !== null && (
               <p className="text-xs text-[#2F8F4E] font-medium mt-0.5">
                 ✓ {userLat.toFixed(4)}, {userLng?.toFixed(4)}
               </p>
@@ -75,19 +88,21 @@ export default function StepLocation({ lat, lng, userLat, userLng, onChange }: P
           type="button"
           onClick={selectCustom}
           className={`flex items-center gap-4 p-5 rounded-xl border-2 transition-colors text-left ${
-            mode === 'custom'
-              ? 'border-[#D48B3A] bg-[#FDF6EC]'
-              : 'border-transparent bg-[#F0EDE8] hover:bg-[#E8E4DD]'
+            mode === "custom"
+              ? "border-[#D48B3A] bg-[#FDF6EC]"
+              : "border-transparent bg-[#F0EDE8] hover:bg-[#E8E4DD]"
           }`}
         >
           <span className="text-2xl">🔍</span>
-          <span className={`text-base font-semibold ${mode === 'custom' ? 'text-[#D48B3A]' : 'text-[#1C1C1A]'}`}>
+          <span
+            className={`text-base font-semibold ${mode === "custom" ? "text-[#D48B3A]" : "text-[#1C1C1A]"}`}
+          >
             Enter a destination
           </span>
         </button>
       </div>
 
-      {mode === 'custom' && (
+      {mode === "custom" && (
         <div className="mt-4">
           <input
             type="text"
@@ -119,12 +134,16 @@ export default function StepLocation({ lat, lng, userLat, userLng, onChange }: P
                   onClick={() => handleSuggestionPick(s)}
                   className={`flex flex-col items-center px-4 py-2 rounded-xl border-2 transition-colors ${
                     active
-                      ? 'border-[#D48B3A] bg-[#FDF6EC]'
-                      : 'border-transparent bg-[#F0EDE8] hover:bg-[#E8E4DD]'
+                      ? "border-[#D48B3A] bg-[#FDF6EC]"
+                      : "border-transparent bg-[#F0EDE8] hover:bg-[#E8E4DD]"
                   }`}
                 >
-                  <span className="text-sm font-bold text-[#1C1C1A]">{s.label}</span>
-                  <span className="text-[11px] text-[#8A8880] mt-0.5">{s.sublabel}</span>
+                  <span className="text-sm font-bold text-[#1C1C1A]">
+                    {s.label}
+                  </span>
+                  <span className="text-[11px] text-[#8A8880] mt-0.5">
+                    {s.sublabel}
+                  </span>
                 </button>
               );
             })}

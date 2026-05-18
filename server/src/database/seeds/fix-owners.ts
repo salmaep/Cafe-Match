@@ -19,16 +19,34 @@ async function run() {
   const hash = await bcrypt.hash('password123', 10);
 
   const cafes = [
-    { id: 1, ownerEmail: 'owner.gormeteria@demo.id', ownerName: 'Owner Gormeteria' },
-    { id: 2, ownerEmail: 'owner.herbspice@demo.id', ownerName: 'Owner Herb Spice' },
-    { id: 3, ownerEmail: 'owner.cremelin@demo.id', ownerName: 'Owner Cremelin' },
-    { id: 4, ownerEmail: 'owner.studio69@demo.id', ownerName: 'Owner Studio69' },
+    {
+      id: 1,
+      ownerEmail: 'owner.gormeteria@demo.id',
+      ownerName: 'Owner Gormeteria',
+    },
+    {
+      id: 2,
+      ownerEmail: 'owner.herbspice@demo.id',
+      ownerName: 'Owner Herb Spice',
+    },
+    {
+      id: 3,
+      ownerEmail: 'owner.cremelin@demo.id',
+      ownerName: 'Owner Cremelin',
+    },
+    {
+      id: 4,
+      ownerEmail: 'owner.studio69@demo.id',
+      ownerName: 'Owner Studio69',
+    },
     { id: 5, ownerEmail: 'owner.kalika@demo.id', ownerName: 'Owner Kalika' },
     { id: 6, ownerEmail: 'owner.paskal@demo.id', ownerName: 'Owner Paskal' },
   ];
 
   for (const c of cafes) {
-    const [existing] = await ds.query('SELECT id FROM users WHERE email = ?', [c.ownerEmail]);
+    const [existing] = await ds.query('SELECT id FROM users WHERE email = ?', [
+      c.ownerEmail,
+    ]);
     let ownerId: number;
 
     if (existing) {
@@ -42,7 +60,10 @@ async function run() {
       console.log(`Created user ${c.ownerName} (id=${ownerId})`);
     }
 
-    await ds.query('UPDATE cafes SET owner_id = ? WHERE id = ?', [ownerId, c.id]);
+    await ds.query('UPDATE cafes SET owner_id = ? WHERE id = ?', [
+      ownerId,
+      c.id,
+    ]);
     console.log(`Cafe ${c.id} -> owner ${ownerId} (${c.ownerName})`);
   }
 

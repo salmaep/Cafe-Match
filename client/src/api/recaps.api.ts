@@ -1,4 +1,4 @@
-import apiClient from './client';
+import apiClient from "./client";
 
 export interface RecapTopCafe {
   cafeId: number;
@@ -32,5 +32,6 @@ export interface UserRecap {
 
 export const recapsApi = {
   get: (year: number) => apiClient.get<UserRecap | null>(`/recaps/${year}`),
-  generate: (year: number) => apiClient.post<RecapData>('/recaps/generate', { year }),
+  generate: (year: number) =>
+    apiClient.post<RecapData>("/recaps/generate", { year }),
 };

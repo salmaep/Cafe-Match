@@ -413,12 +413,7 @@ const cafes: CafeSeed[] = [
       sun: '07:00-22:00',
     },
     priceRange: '$',
-    facilities: [
-      'strong_wifi',
-      'power_outlets',
-      'cozy_seating',
-      'parking',
-    ],
+    facilities: ['strong_wifi', 'power_outlets', 'cozy_seating', 'parking'],
   },
   {
     name: 'Northside Coffee',
@@ -506,7 +501,7 @@ const cafes: CafeSeed[] = [
     description:
       'Cafe dengan konsep co-working space. Meja besar, kursi ergonomis, stop kontak di setiap meja. Ideal untuk freelancer dan startup.',
     address: 'Jl. Dr. Djunjunan No.55, Pasteur, Sukajadi, Kota Bandung',
-    latitude: -6.8870,
+    latitude: -6.887,
     longitude: 107.5848,
     phone: null,
     wifiAvailable: true,
@@ -560,7 +555,7 @@ const cafes: CafeSeed[] = [
       'Cafe rooftop dengan pemandangan sunset. Suasana romantis di sore hari, menu kopi dan cocktail mocktail. Live acoustic setiap Jumat malam.',
     address: 'Jl. Pasteur No.65, Pasteur, Sukajadi, Kota Bandung',
     latitude: -6.8852,
-    longitude: 107.5830,
+    longitude: 107.583,
     phone: '022-2041789',
     wifiAvailable: false,
     wifiSpeedMbps: null,
@@ -655,7 +650,7 @@ const cafes: CafeSeed[] = [
       'Cafe bergaya rumahan dengan teras luas. Menu Indonesia dan kopi nusantara. Area bermain anak tersedia, cocok untuk keluarga.',
     address: 'Jl. Sukajadi No.178, Sukajadi, Kota Bandung',
     latitude: -6.8928,
-    longitude: 107.5900,
+    longitude: 107.59,
     phone: null,
     wifiAvailable: true,
     wifiSpeedMbps: 10,
@@ -971,7 +966,7 @@ const cafes: CafeSeed[] = [
       'Coffee lab eksperimental dengan menu kopi unik. Nitrogen cold brew, kopi charcoal, dan tonic espresso. Tempat seru untuk eksplorasi rasa.',
     address: 'Jl. Sukagalih No.130, Sukagalih, Sukajadi, Kota Bandung',
     latitude: -6.8882,
-    longitude: 107.5920,
+    longitude: 107.592,
     phone: null,
     wifiAvailable: false,
     wifiSpeedMbps: null,
@@ -986,11 +981,7 @@ const cafes: CafeSeed[] = [
       sun: '10:00-22:00',
     },
     priceRange: '$$$',
-    facilities: [
-      'cozy_seating',
-      'ambient_lighting',
-      'quiet_atmosphere',
-    ],
+    facilities: ['cozy_seating', 'ambient_lighting', 'quiet_atmosphere'],
   },
 
   // ============================================================
@@ -1027,7 +1018,7 @@ const cafes: CafeSeed[] = [
     ],
   },
   {
-    name: 'Noah\'s Barn Setiabudhi',
+    name: "Noah's Barn Setiabudhi",
     description:
       'Cafe ala peternakan modern dengan interior kayu rustic. Menu brunch dan kopi premium. Suasana instagramable dengan dekorasi barn.',
     address: 'Jl. Dr. Setiabudhi No.172, Isola, Sukasari, Kota Bandung',
@@ -1207,7 +1198,7 @@ const cafes: CafeSeed[] = [
       'Cafe komunitas dengan area event dan galeri seni lokal. Harga terjangkau, suasana kreatif. Sering ada pameran dan workshop.',
     address: 'Jl. Dr. Setiabudhi No.67, Gegerkalong, Sukasari, Kota Bandung',
     latitude: -6.8638,
-    longitude: 107.5960,
+    longitude: 107.596,
     phone: null,
     wifiAvailable: true,
     wifiSpeedMbps: 20,
@@ -1268,7 +1259,7 @@ const cafes: CafeSeed[] = [
     description:
       'Laboratory-style coffee shop dengan peralatan brewing premium. Cupping session tersedia setiap minggu. Tempat belajar kopi terbaik di Bandung.',
     address: 'Jl. Ir. H. Juanda No.85, Dago, Coblong, Kota Bandung',
-    latitude: -6.8790,
+    latitude: -6.879,
     longitude: 107.6155,
     phone: null,
     wifiAvailable: true,
@@ -1327,7 +1318,7 @@ const cafes: CafeSeed[] = [
       'Cafe chain premium dengan standar kopi tinggi. Interior luas dan modern, cocok untuk meeting bisnis dan kerja remote.',
     address: 'Jl. Ir. H. Juanda No.62, Dago, Coblong, Kota Bandung',
     latitude: -6.8798,
-    longitude: 107.6160,
+    longitude: 107.616,
     phone: '022-2504567',
     wifiAvailable: true,
     wifiSpeedMbps: 50,
@@ -1430,12 +1421,7 @@ const cafes: CafeSeed[] = [
       sun: '10:00-23:00',
     },
     priceRange: '$$$',
-    facilities: [
-      'ambient_lighting',
-      'intimate_seating',
-      'spacious',
-      'parking',
-    ],
+    facilities: ['ambient_lighting', 'intimate_seating', 'spacious', 'parking'],
   },
   {
     name: 'Morning Glory Cafe Dago',
@@ -1458,12 +1444,7 @@ const cafes: CafeSeed[] = [
       sun: '06:00-16:00',
     },
     priceRange: '$$',
-    facilities: [
-      'cozy_seating',
-      'outdoor_seating',
-      'kid_friendly',
-      'parking',
-    ],
+    facilities: ['cozy_seating', 'outdoor_seating', 'kid_friendly', 'parking'],
   },
   {
     name: 'Kopi Nalar Dago',
@@ -1471,7 +1452,7 @@ const cafes: CafeSeed[] = [
       'Cafe diskusi dan literasi. Rak buku besar mengelilingi ruangan, sering ada bedah buku dan diskusi publik. Suasana intelektual.',
     address: 'Jl. Ir. H. Juanda No.250, Dago, Coblong, Kota Bandung',
     latitude: -6.8748,
-    longitude: 107.6140,
+    longitude: 107.614,
     phone: null,
     wifiAvailable: true,
     wifiSpeedMbps: 15,
@@ -1527,7 +1508,7 @@ const cafes: CafeSeed[] = [
       'Cafe dan bakery di atas bukit Dago dengan pemandangan kota. Roti artisan dan pastry premium. Spot foto dengan latar kota Bandung.',
     address: 'Jl. Bukit Dago Utara No.33, Dago, Coblong, Kota Bandung',
     latitude: -6.8742,
-    longitude: 107.6170,
+    longitude: 107.617,
     phone: '022-2507890',
     wifiAvailable: false,
     wifiSpeedMbps: null,
@@ -1542,12 +1523,7 @@ const cafes: CafeSeed[] = [
       sun: '08:00-21:00',
     },
     priceRange: '$$$',
-    facilities: [
-      'outdoor_seating',
-      'spacious',
-      'kid_friendly',
-      'parking',
-    ],
+    facilities: ['outdoor_seating', 'spacious', 'kid_friendly', 'parking'],
   },
 
   // ============================================================
@@ -1616,7 +1592,7 @@ const cafes: CafeSeed[] = [
       'Cafe dalam rumah Belanda yang direstorasi. Ruang-ruang kecil terpisah memberi privasi. Menu Indonesian comfort food dan kopi susu.',
     address: 'Jl. RE Martadinata No.78, Citarum, Bandung Wetan, Kota Bandung',
     latitude: -6.9058,
-    longitude: 107.6140,
+    longitude: 107.614,
     phone: null,
     wifiAvailable: true,
     wifiSpeedMbps: 20,
@@ -1717,11 +1693,7 @@ const cafes: CafeSeed[] = [
       sun: '09:00-20:00',
     },
     priceRange: '$',
-    facilities: [
-      'quiet_atmosphere',
-      'cozy_seating',
-      'intimate_seating',
-    ],
+    facilities: ['quiet_atmosphere', 'cozy_seating', 'intimate_seating'],
   },
   {
     name: 'Selaras Coffee Riau',
@@ -1759,7 +1731,7 @@ const cafes: CafeSeed[] = [
       'Cafe dan microbrewery dengan menu craft coffee dan kombucha. Interior industrial raw, musik indie lokal diputar sepanjang hari.',
     address: 'Jl. RE Martadinata No.180, Citarum, Bandung Wetan, Kota Bandung',
     latitude: -6.9032,
-    longitude: 107.6160,
+    longitude: 107.616,
     phone: null,
     wifiAvailable: false,
     wifiSpeedMbps: null,
@@ -1834,12 +1806,7 @@ const cafes: CafeSeed[] = [
       sun: '08:00-22:00',
     },
     priceRange: '$$$',
-    facilities: [
-      'spacious',
-      'ambient_lighting',
-      'cozy_seating',
-      'parking',
-    ],
+    facilities: ['spacious', 'ambient_lighting', 'cozy_seating', 'parking'],
   },
   {
     name: 'Kopi Braga',
@@ -1960,7 +1927,7 @@ const cafes: CafeSeed[] = [
       'Kedai kopi tradisional di area Braga. Kopi luwak dan kopi item Preanger. Harga terjangkau dengan suasana otentik kota tua.',
     address: 'Jl. Braga No.135, Braga, Sumur Bandung, Kota Bandung',
     latitude: -6.9148,
-    longitude: 107.6080,
+    longitude: 107.608,
     phone: null,
     wifiAvailable: false,
     wifiSpeedMbps: null,
@@ -2030,7 +1997,12 @@ const cafes: CafeSeed[] = [
       sun: '07:00-22:00',
     },
     priceRange: '$',
-    facilities: ['noise_tolerant', 'smoking_area', 'outdoor_seating', 'parking'],
+    facilities: [
+      'noise_tolerant',
+      'smoking_area',
+      'outdoor_seating',
+      'parking',
+    ],
   },
   {
     name: 'Contrast Coffee Buah Batu',
@@ -2067,7 +2039,7 @@ const cafes: CafeSeed[] = [
       'Cafe bertema perjalanan dengan peta dan suvenir dari berbagai negara. Menu kopi dari berbagai belahan dunia, suasana worldly.',
     address: 'Jl. Buah Batu No.200, Turangga, Lengkong, Kota Bandung',
     latitude: -6.9335,
-    longitude: 107.6340,
+    longitude: 107.634,
     phone: '022-7315678',
     wifiAvailable: true,
     wifiSpeedMbps: 20,
@@ -2096,7 +2068,7 @@ const cafes: CafeSeed[] = [
       'Grab-and-go coffee chain dengan harga bersahabat. Avocado coffee dan boba coffee jadi menu hits. Cocok untuk anak muda.',
     address: 'Jl. Buah Batu No.55, Turangga, Lengkong, Kota Bandung',
     latitude: -6.9365,
-    longitude: 107.6360,
+    longitude: 107.636,
     phone: null,
     wifiAvailable: false,
     wifiSpeedMbps: null,
@@ -2118,7 +2090,7 @@ const cafes: CafeSeed[] = [
     description:
       'Cafe dengan 7 ruangan bertema berbeda. Dari ruang baca, ruang meeting, hingga ruang santai. Pengalaman cafe yang unik dan personal.',
     address: 'Jl. Buah Batu No.168, Turangga, Lengkong, Kota Bandung',
-    latitude: -6.9340,
+    latitude: -6.934,
     longitude: 107.6338,
     phone: '022-7318901',
     wifiAvailable: true,
@@ -2321,7 +2293,7 @@ const cafes: CafeSeed[] = [
     description:
       'Cafe tersembunyi di balik deretan toko jeans Cihampelas. Interior Scandinavian minimalis, menu Nordic-inspired coffee dan pastry.',
     address: 'Jl. Cihampelas No.188, Cipaganti, Coblong, Kota Bandung',
-    latitude: -6.8920,
+    latitude: -6.892,
     longitude: 107.6062,
     phone: null,
     wifiAvailable: true,
@@ -2436,7 +2408,7 @@ const cafes: CafeSeed[] = [
     description:
       'Cafe dengan tema nostalgia. Foto-foto jadul Bandung menghiasi dinding. Menu kopi dan makanan tradisional Sunda. Suasana hangat dan familiar.',
     address: 'Jl. Cipaganti No.155, Cipaganti, Coblong, Kota Bandung',
-    latitude: -6.8870,
+    latitude: -6.887,
     longitude: 107.6012,
     phone: null,
     wifiAvailable: true,
@@ -2556,7 +2528,7 @@ const cafes: CafeSeed[] = [
     description:
       'Roastery cafe di Pasteur dengan mesin roasting terlihat dari meja. Fresh roasted beans dan menu espresso tonic yang unik.',
     address: 'Jl. Dr. Djunjunan No.135, Pasteur, Sukajadi, Kota Bandung',
-    latitude: -6.8840,
+    latitude: -6.884,
     longitude: 107.5858,
     phone: null,
     wifiAvailable: true,
@@ -2572,11 +2544,7 @@ const cafes: CafeSeed[] = [
       sun: '09:00-21:00',
     },
     priceRange: '$$',
-    facilities: [
-      'quiet_atmosphere',
-      'cozy_seating',
-      'power_outlets',
-    ],
+    facilities: ['quiet_atmosphere', 'cozy_seating', 'power_outlets'],
   },
   {
     name: 'Otten Coffee Dago',
@@ -2612,7 +2580,7 @@ const cafes: CafeSeed[] = [
       'Brewpub cafe dengan menu craft coffee dan kombucha house-made. Interior rustic dan cozy, live acoustic setiap weekend.',
     address: 'Jl. Dr. Setiabudhi No.120, Gegerkalong, Sukasari, Kota Bandung',
     latitude: -6.8628,
-    longitude: 107.5940,
+    longitude: 107.594,
     phone: null,
     wifiAvailable: false,
     wifiSpeedMbps: null,
@@ -2640,7 +2608,7 @@ const cafes: CafeSeed[] = [
     description:
       'Japanese-Indonesian fusion cafe. Matcha latte dan kopi susu gula aren sama-sama populer. Dekorasi kawaii yang cute.',
     address: 'Jl. Cihampelas No.55, Cipaganti, Coblong, Kota Bandung',
-    latitude: -6.8950,
+    latitude: -6.895,
     longitude: 107.6038,
     phone: null,
     wifiAvailable: true,
@@ -2656,11 +2624,7 @@ const cafes: CafeSeed[] = [
       sun: '10:00-21:00',
     },
     priceRange: '$',
-    facilities: [
-      'cozy_seating',
-      'ambient_lighting',
-      'quiet_atmosphere',
-    ],
+    facilities: ['cozy_seating', 'ambient_lighting', 'quiet_atmosphere'],
   },
   {
     name: 'Kopi Lain Hati Braga',
@@ -2719,8 +2683,8 @@ const cafes: CafeSeed[] = [
     description:
       'Kedai kopi dengan biji dari perkebunan Malabar Pangalengan. Single origin premium, roasting medium. Suasana minimalis dan fokus pada rasa.',
     address: 'Jl. Sukawarna No.72, Sukawarna, Sukajadi, Kota Bandung',
-    latitude: -6.8930,
-    longitude: 107.5880,
+    latitude: -6.893,
+    longitude: 107.588,
     phone: null,
     wifiAvailable: false,
     wifiSpeedMbps: null,
@@ -2735,18 +2699,14 @@ const cafes: CafeSeed[] = [
       sun: '09:00-20:00',
     },
     priceRange: '$',
-    facilities: [
-      'quiet_atmosphere',
-      'intimate_seating',
-      'cozy_seating',
-    ],
+    facilities: ['quiet_atmosphere', 'intimate_seating', 'cozy_seating'],
   },
   {
     name: 'Grind House Sukagalih',
     description:
       'Cafe dengan tema grinding culture. Kopi digiling segar untuk setiap cup. Area skateboard mini di halaman, suasana urban dan energik.',
     address: 'Jl. Sukagalih No.88, Sukagalih, Sukajadi, Kota Bandung',
-    latitude: -6.8900,
+    latitude: -6.89,
     longitude: 107.5905,
     phone: null,
     wifiAvailable: true,
@@ -2854,7 +2814,7 @@ const cafes: CafeSeed[] = [
       'Kedai roti panggang dan kopi susu. Menu simpel tapi favorit mahasiswa ITB. Buka pagi-malam, harga super terjangkau.',
     address: 'Jl. Cipaganti No.210, Cipaganti, Coblong, Kota Bandung',
     latitude: -6.8858,
-    longitude: 107.6010,
+    longitude: 107.601,
     phone: null,
     wifiAvailable: false,
     wifiSpeedMbps: null,
@@ -2911,9 +2871,21 @@ const cafes: CafeSeed[] = [
       'https://picsum.photos/seed/morningside3/800/600',
     ],
     menus: [
-      { category: 'Signature Drinks', itemName: 'Morning Blend Filter', price: 38000 },
-      { category: 'Signature Drinks', itemName: 'Morningside Latte', price: 40000 },
-      { category: 'Signature Drinks', itemName: 'Sunrise Cold Brew', price: 36000 },
+      {
+        category: 'Signature Drinks',
+        itemName: 'Morning Blend Filter',
+        price: 38000,
+      },
+      {
+        category: 'Signature Drinks',
+        itemName: 'Morningside Latte',
+        price: 40000,
+      },
+      {
+        category: 'Signature Drinks',
+        itemName: 'Sunrise Cold Brew',
+        price: 36000,
+      },
       { category: 'Breakfast', itemName: 'Avocado Toast', price: 48000 },
       { category: 'Breakfast', itemName: 'Granola Bowl', price: 40000 },
     ],
@@ -3011,7 +2983,8 @@ const cafes: CafeSeed[] = [
     activePromotionType: 'featured_promo',
     promotionContent: {
       title: 'Buy 1 Get 1 Croissant',
-      description: 'Every day 8PM–10PM, dine in only. Valid for all croissant orders.',
+      description:
+        'Every day 8PM–10PM, dine in only. Valid for all croissant orders.',
       validHours: '8PM – 10PM',
       validDays: 'Daily',
       promoPhoto: 'https://picsum.photos/seed/dagoraya-promo/800/600',
@@ -3145,24 +3118,56 @@ const cafes: CafeSeed[] = [
 // Slug is now built from cafe id after insert via the shared util — see seedCafes loop.
 
 function slugSeedForUrl(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '')
-    .slice(0, 20) || 'cafe';
+  return (
+    name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '')
+      .slice(0, 20) || 'cafe'
+  );
 }
 
 // Rich default menus used when a cafe doesn't provide explicit menus.
 // Designed so every detail page has a plausible full menu even for placeholder cafes.
 const DEFAULT_MENUS: CafeMenuSeed[] = [
-  { category: 'Coffee', itemName: 'Americano', price: 28000, description: 'Bold espresso with hot water' },
-  { category: 'Coffee', itemName: 'Cappuccino', price: 32000, description: 'Espresso + steamed milk + foam' },
-  { category: 'Coffee', itemName: 'Cafe Latte', price: 35000, description: 'Smooth espresso with milk' },
-  { category: 'Coffee', itemName: 'Kopi Susu Gula Aren', price: 25000, description: 'Local favorite with palm sugar' },
-  { category: 'Non-Coffee', itemName: 'Matcha Latte', price: 38000, description: 'Premium ceremonial matcha' },
+  {
+    category: 'Coffee',
+    itemName: 'Americano',
+    price: 28000,
+    description: 'Bold espresso with hot water',
+  },
+  {
+    category: 'Coffee',
+    itemName: 'Cappuccino',
+    price: 32000,
+    description: 'Espresso + steamed milk + foam',
+  },
+  {
+    category: 'Coffee',
+    itemName: 'Cafe Latte',
+    price: 35000,
+    description: 'Smooth espresso with milk',
+  },
+  {
+    category: 'Coffee',
+    itemName: 'Kopi Susu Gula Aren',
+    price: 25000,
+    description: 'Local favorite with palm sugar',
+  },
+  {
+    category: 'Non-Coffee',
+    itemName: 'Matcha Latte',
+    price: 38000,
+    description: 'Premium ceremonial matcha',
+  },
   { category: 'Non-Coffee', itemName: 'Hot Chocolate', price: 32000 },
   { category: 'Snacks', itemName: 'Butter Croissant', price: 25000 },
   { category: 'Snacks', itemName: 'Banana Bread', price: 22000 },
-  { category: 'Food', itemName: 'Nasi Goreng Kampung', price: 38000, description: 'Traditional Indonesian fried rice' },
+  {
+    category: 'Food',
+    itemName: 'Nasi Goreng Kampung',
+    price: 38000,
+    description: 'Traditional Indonesian fried rice',
+  },
   { category: 'Food', itemName: 'Chicken Rice Bowl', price: 42000 },
 ];
 
@@ -3210,7 +3215,10 @@ export async function seedCafes(dataSource: DataSource): Promise<void> {
 
     const cafeId = result.insertId;
     const slug = buildCafeSlug(cafe.name, cafeId);
-    await dataSource.query('UPDATE cafes SET slug = ? WHERE id = ?', [slug, cafeId]);
+    await dataSource.query('UPDATE cafes SET slug = ? WHERE id = ?', [
+      slug,
+      cafeId,
+    ]);
 
     // Insert features (via master features lookup)
     for (const name of cafe.facilities) {
@@ -3250,12 +3258,19 @@ export async function seedCafes(dataSource: DataSource): Promise<void> {
     }
 
     // Insert menus — use explicit list OR fallback default menus
-    const menus = cafe.menus && cafe.menus.length > 0 ? cafe.menus : DEFAULT_MENUS;
+    const menus =
+      cafe.menus && cafe.menus.length > 0 ? cafe.menus : DEFAULT_MENUS;
     for (const menu of menus) {
       await dataSource.query(
         `INSERT INTO cafe_menus (cafe_id, category, item_name, price, description, is_available)
          VALUES (?, ?, ?, ?, ?, TRUE)`,
-        [cafeId, menu.category, menu.itemName, menu.price, menu.description ?? null],
+        [
+          cafeId,
+          menu.category,
+          menu.itemName,
+          menu.price,
+          menu.description ?? null,
+        ],
       );
     }
 
@@ -3265,7 +3280,8 @@ export async function seedCafes(dataSource: DataSource): Promise<void> {
   // ── BACKFILL: enrich existing cafes that were seeded before photos/menus were tracked ──
 
   // 1. Photos — find cafes with no photo rows and generate 3 picsum placeholders
-  const cafesWithoutPhotos: { id: number; name: string }[] = await dataSource.query(`
+  const cafesWithoutPhotos: { id: number; name: string }[] =
+    await dataSource.query(`
     SELECT c.id, c.name
     FROM cafes c
     LEFT JOIN cafe_photos p ON p.cafe_id = c.id
@@ -3288,11 +3304,14 @@ export async function seedCafes(dataSource: DataSource): Promise<void> {
     }
   }
   if (cafesWithoutPhotos.length > 0) {
-    console.log(`Backfilled photos for ${cafesWithoutPhotos.length} existing cafes`);
+    console.log(
+      `Backfilled photos for ${cafesWithoutPhotos.length} existing cafes`,
+    );
   }
 
   // 2. Menus — find cafes with no menu rows and insert the rich default menu
-  const cafesWithoutMenus: { id: number; name: string }[] = await dataSource.query(`
+  const cafesWithoutMenus: { id: number; name: string }[] =
+    await dataSource.query(`
     SELECT c.id, c.name
     FROM cafes c
     LEFT JOIN cafe_menus m ON m.cafe_id = c.id
@@ -3304,12 +3323,20 @@ export async function seedCafes(dataSource: DataSource): Promise<void> {
       await dataSource.query(
         `INSERT INTO cafe_menus (cafe_id, category, item_name, price, description, is_available)
          VALUES (?, ?, ?, ?, ?, TRUE)`,
-        [cafe.id, menu.category, menu.itemName, menu.price, menu.description ?? null],
+        [
+          cafe.id,
+          menu.category,
+          menu.itemName,
+          menu.price,
+          menu.description ?? null,
+        ],
       );
     }
   }
   if (cafesWithoutMenus.length > 0) {
-    console.log(`Backfilled menus for ${cafesWithoutMenus.length} existing cafes`);
+    console.log(
+      `Backfilled menus for ${cafesWithoutMenus.length} existing cafes`,
+    );
   }
 
   console.log('\nAll cafes seeded successfully!');

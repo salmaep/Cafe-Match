@@ -4,7 +4,7 @@ import {
   useEffect,
   useCallback,
   type ReactNode,
-} from 'react';
+} from "react";
 
 interface Props {
   /** Snap points as fraction of available height [0..1], from smallest peek to largest open */
@@ -32,14 +32,14 @@ export default function BottomSheet({
   snapPoints = [0.15, 0.55, 0.92],
   initialSnap = 1,
   bottomOffset = 0,
-  className = '',
+  className = "",
   children,
 }: Props) {
   const [snapIndex, setSnapIndex] = useState(initialSnap);
   const [dragOffset, setDragOffset] = useState(0); // additional pixels during drag
   const [dragging, setDragging] = useState(false);
   const [vh, setVh] = useState(() =>
-    typeof window === 'undefined' ? 800 : window.innerHeight,
+    typeof window === "undefined" ? 800 : window.innerHeight,
   );
 
   const startYRef = useRef(0);
@@ -49,8 +49,8 @@ export default function BottomSheet({
 
   useEffect(() => {
     const onResize = () => setVh(window.innerHeight);
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
   }, []);
 
   const sheetHeight = vh - bottomOffset;
@@ -132,12 +132,12 @@ export default function BottomSheet({
       style={{
         height: sheetHeight,
         bottom: bottomOffset,
-        top: 'auto',
+        top: "auto",
         transform: `translateY(${translateY}px)`,
         transition: dragging
-          ? 'none'
-          : 'transform 320ms cubic-bezier(0.32, 0.72, 0, 1)',
-        touchAction: 'none',
+          ? "none"
+          : "transform 320ms cubic-bezier(0.32, 0.72, 0, 1)",
+        touchAction: "none",
       }}
     >
       {/* Drag handle area */}
@@ -160,7 +160,7 @@ export default function BottomSheet({
         onPointerUp={onContentUp}
         onPointerCancel={onContentUp}
         className="flex-1 overflow-y-auto overscroll-contain"
-        style={{ touchAction: 'pan-y' }}
+        style={{ touchAction: "pan-y" }}
       >
         {children}
       </div>

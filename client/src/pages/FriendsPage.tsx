@@ -1,31 +1,35 @@
-import { useEffect, useState, type FormEvent } from 'react';
-import { Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useEffect, useState, type FormEvent } from "react";
+import { Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import {
   friendsApi,
   type Friend,
   type FriendRequest,
   type FriendPreview,
-} from '../api/friends.api';
+} from "../api/friends.api";
 import {
   getHiddenFriends,
   hideFriend,
   unhideFriend,
-} from '../utils/hiddenFriends';
+} from "../utils/hiddenFriends";
 
-type Tab = 'friends' | 'requests' | 'add';
+type Tab = "friends" | "requests" | "add";
 
 export default function FriendsPage() {
   const { user } = useAuth();
-  const [tab, setTab] = useState<Tab>('friends');
+  const [tab, setTab] = useState<Tab>("friends");
   const [friends, setFriends] = useState<Friend[]>([]);
   const [requests, setRequests] = useState<FriendRequest[]>([]);
-  const [code, setCode] = useState('');
+  const [code, setCode] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  const [msg, setMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
+  const [msg, setMsg] = useState<{ type: "ok" | "err"; text: string } | null>(
+    null,
+  );
   const [preview, setPreview] = useState<FriendPreview | null>(null);
-  const [lookupState, setLookupState] = useState<'idle' | 'loading' | 'notfound'>('idle');
+  const [lookupState, setLookupState] = useState<
+    "idle" | "loading" | "notfound"
+  >("idle");
   const [copied, setCopied] = useState(false);
   const [hidden, setHidden] = useState<Set<number>>(() => getHiddenFriends());
 
@@ -65,10 +69,10 @@ export default function FriendsPage() {
   useEffect(() => {
     if (code.length < 8) {
       setPreview(null);
-      setLookupState('idle');
+      setLookupState("idle");
       return;
     }
-    setLookupState('loading');
+    setLookupState("loading");
     setPreview(null);
     const timer = setTimeout(() => {
       friendsApi
@@ -76,15 +80,15 @@ export default function FriendsPage() {
         .then((res) => {
           if (res.data) {
             setPreview(res.data);
-            setLookupState('idle');
+            setLookupState("idle");
           } else {
             setPreview(null);
-            setLookupState('notfound');
+            setLookupState("notfound");
           }
         })
         .catch(() => {
           setPreview(null);
-          setLookupState('notfound');
+          setLookupState("notfound");
         });
     }, 300);
     return () => clearTimeout(timer);
@@ -97,12 +101,15 @@ export default function FriendsPage() {
     setMsg(null);
     try {
       await friendsApi.sendRequest(code.trim().toUpperCase());
-      setMsg({ type: 'ok', text: 'Permintaan pertemanan terkirim!' });
-      setCode('');
+      setMsg({ type: "ok", text: "Permintaan pertemanan terkirim!" });
+      setCode("");
       setPreview(null);
-      setLookupState('idle');
+      setLookupState("idle");
     } catch (err: any) {
-      setMsg({ type: 'err', text: err?.response?.data?.message || 'Gagal mengirim permintaan' });
+      setMsg({
+        type: "err",
+        text: err?.response?.data?.message || "Gagal mengirim permintaan",
+      });
     } finally {
       setSending(false);
     }
@@ -122,9 +129,9 @@ export default function FriendsPage() {
     } catch {}
   };
 
-  const myCode = (user as any)?.friendCode || '—';
+  const myCode = (user as any)?.friendCode || "—";
   const copyCode = async () => {
-    if (!myCode || myCode === '—') return;
+    if (!myCode || myCode === "—") return;
     try {
       await navigator.clipboard.writeText(myCode);
       setCopied(true);
@@ -136,7 +143,9 @@ export default function FriendsPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#FAF9F6] px-4">
         <div className="bg-white rounded-2xl p-8 max-w-md w-full text-center border border-[#F0EDE8]">
-          <p className="text-[#8A8880] mb-4">Login dulu untuk akses fitur Teman</p>
+          <p className="text-[#8A8880] mb-4">
+            Login dulu untuk akses fitur Teman
+          </p>
           <Link
             to="/login"
             className="inline-block px-6 py-2.5 bg-[#1C1C1A] text-white rounded-xl font-bold"
@@ -153,37 +162,48 @@ export default function FriendsPage() {
       <div className="bg-white border-b border-[#F0EDE8]">
         <div className="max-w-3xl mx-auto px-4 py-5">
           <h1 className="text-2xl font-extrabold text-[#1C1C1A]">Teman</h1>
-          <p className="text-sm text-[#8A8880] mt-1">Connect dengan teman, share cafe favorit</p>
+          <p className="text-sm text-[#8A8880] mt-1">
+            Connect dengan teman, share cafe favorit
+          </p>
         </div>
       </div>
 
       <div className="max-w-3xl mx-auto px-4 pt-5">
         {/* My friend code */}
         <div className="bg-gradient-to-br from-[#FB923C] to-[#EA580C] rounded-2xl p-5 mb-5 text-white shadow-md">
-          <p className="text-xs font-bold tracking-wider uppercase opacity-90">Kode Pertemananmu</p>
+          <p className="text-xs font-bold tracking-wider uppercase opacity-90">
+            Kode Pertemananmu
+          </p>
           <div className="mt-2 flex items-center gap-3">
-            <span className="text-3xl font-extrabold tracking-wider tabular-nums">{myCode}</span>
+            <span className="text-3xl font-extrabold tracking-wider tabular-nums">
+              {myCode}
+            </span>
             <button
               type="button"
               onClick={copyCode}
-              disabled={myCode === '—'}
+              disabled={myCode === "—"}
               className="ml-auto px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-sm text-white text-xs font-bold hover:bg-white/30 transition-colors disabled:opacity-40"
             >
-              {copied ? '✓ Disalin' : '📋 Salin'}
+              {copied ? "✓ Disalin" : "📋 Salin"}
             </button>
           </div>
-          <p className="mt-2 text-xs text-white/90">Bagikan kode ini ke teman untuk add friend</p>
+          <p className="mt-2 text-xs text-white/90">
+            Bagikan kode ini ke teman untuk add friend
+          </p>
         </div>
 
         {/* Tabs */}
         <div className="flex gap-2 mb-4">
-          <TabBtn active={tab === 'friends'} onClick={() => setTab('friends')}>
+          <TabBtn active={tab === "friends"} onClick={() => setTab("friends")}>
             Teman ({friends.length})
           </TabBtn>
-          <TabBtn active={tab === 'requests'} onClick={() => setTab('requests')}>
+          <TabBtn
+            active={tab === "requests"}
+            onClick={() => setTab("requests")}
+          >
             Permintaan ({requests.length})
           </TabBtn>
-          <TabBtn active={tab === 'add'} onClick={() => setTab('add')}>
+          <TabBtn active={tab === "add"} onClick={() => setTab("add")}>
             + Tambah
           </TabBtn>
         </div>
@@ -192,7 +212,7 @@ export default function FriendsPage() {
           <div className="flex items-center justify-center py-20">
             <div className="w-8 h-8 border-4 border-[#D48B3A] border-t-transparent rounded-full animate-spin" />
           </div>
-        ) : tab === 'friends' ? (
+        ) : tab === "friends" ? (
           <div className="space-y-2">
             {friends.length === 0 ? (
               <Empty
@@ -208,15 +228,15 @@ export default function FriendsPage() {
                     key={f.id}
                     className={`flex items-center gap-3 bg-white rounded-2xl p-3 border transition-colors ${
                       isHidden
-                        ? 'border-[#E0DCD3] opacity-60'
-                        : 'border-[#F0EDE8]'
+                        ? "border-[#E0DCD3] opacity-60"
+                        : "border-[#F0EDE8]"
                     }`}
                   >
                     <div
                       className={`w-12 h-12 rounded-full font-extrabold flex items-center justify-center ${
                         isHidden
-                          ? 'bg-[#9CA3AF] text-white'
-                          : 'bg-[#D48B3A] text-white'
+                          ? "bg-[#9CA3AF] text-white"
+                          : "bg-[#D48B3A] text-white"
                       }`}
                     >
                       {f.name[0]?.toUpperCase()}
@@ -230,29 +250,35 @@ export default function FriendsPage() {
                           </span>
                         )}
                       </p>
-                      <p className="text-xs text-[#8A8880] truncate">🎫 {f.friendCode}</p>
+                      <p className="text-xs text-[#8A8880] truncate">
+                        🎫 {f.friendCode}
+                      </p>
                     </div>
                     <button
                       type="button"
                       onClick={() => toggleHidden(f.id)}
                       title={
                         isHidden
-                          ? 'Tampilkan kembali di profil'
-                          : 'Sembunyikan dari profil saya'
+                          ? "Tampilkan kembali di profil"
+                          : "Sembunyikan dari profil saya"
                       }
                       className="px-3 py-1.5 rounded-full text-xs font-bold border border-[#E8E4DD] text-[#5C5A52] hover:border-[#D48B3A] hover:text-[#D48B3A] transition-colors"
                     >
-                      {isHidden ? '👁 Tampilkan' : '🚫 Sembunyikan'}
+                      {isHidden ? "👁 Tampilkan" : "🚫 Sembunyikan"}
                     </button>
                   </div>
                 );
               })
             )}
           </div>
-        ) : tab === 'requests' ? (
+        ) : tab === "requests" ? (
           <div className="space-y-2">
             {requests.length === 0 ? (
-              <Empty icon="📭" title="Tidak ada permintaan masuk" subtitle="—" />
+              <Empty
+                icon="📭"
+                title="Tidak ada permintaan masuk"
+                subtitle="—"
+              />
             ) : (
               requests.map((r) => (
                 <div
@@ -260,11 +286,15 @@ export default function FriendsPage() {
                   className="flex items-center gap-3 bg-white rounded-2xl p-3 border border-[#F0EDE8]"
                 >
                   <div className="w-12 h-12 rounded-full bg-[#D48B3A] text-white font-extrabold flex items-center justify-center">
-                    {r.fromUser?.name?.[0]?.toUpperCase() ?? '?'}
+                    {r.fromUser?.name?.[0]?.toUpperCase() ?? "?"}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-[#1C1C1A] truncate">{r.fromUser?.name}</p>
-                    <p className="text-xs text-[#8A8880] truncate">🎫 {r.fromUser?.friendCode}</p>
+                    <p className="font-bold text-[#1C1C1A] truncate">
+                      {r.fromUser?.name}
+                    </p>
+                    <p className="text-xs text-[#8A8880] truncate">
+                      🎫 {r.fromUser?.friendCode}
+                    </p>
                   </div>
                   <button
                     onClick={() => accept(r.id)}
@@ -293,14 +323,21 @@ export default function FriendsPage() {
               <input
                 type="text"
                 value={code}
-                onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8))}
+                onChange={(e) =>
+                  setCode(
+                    e.target.value
+                      .toUpperCase()
+                      .replace(/[^A-Z0-9]/g, "")
+                      .slice(0, 8),
+                  )
+                }
                 placeholder="ABCD1234"
                 className="w-full px-4 py-3 bg-[#F0EDE8] rounded-xl text-[15px] font-bold tracking-widest focus:bg-white focus:ring-2 focus:ring-[#D48B3A]/30 outline-none border-none"
               />
 
               {/* Preview card — shows the resolved name + avatar so the user
                   confirms the right person before sending the request. */}
-              {lookupState === 'loading' && (
+              {lookupState === "loading" && (
                 <div className="flex items-center gap-3 p-3 bg-[#FAF9F6] border border-[#F0EDE8] rounded-xl">
                   <div className="w-10 h-10 rounded-full bg-[#F0EDE8] animate-pulse" />
                   <div className="flex-1 space-y-1.5">
@@ -309,7 +346,7 @@ export default function FriendsPage() {
                   </div>
                 </div>
               )}
-              {lookupState === 'notfound' && (
+              {lookupState === "notfound" && (
                 <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-3 py-2">
                   Kode tidak ditemukan
                 </p>
@@ -343,13 +380,13 @@ export default function FriendsPage() {
                 disabled={sending || !preview}
                 className="w-full px-5 py-3 bg-[#1C1C1A] text-white rounded-xl font-bold disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {sending ? 'Mengirim…' : 'Kirim Permintaan'}
+                {sending ? "Mengirim…" : "Kirim Permintaan"}
               </button>
             </form>
             {msg && (
               <p
                 className={`mt-3 text-sm font-semibold ${
-                  msg.type === 'ok' ? 'text-green-600' : 'text-red-600'
+                  msg.type === "ok" ? "text-green-600" : "text-red-600"
                 }`}
               >
                 {msg.text}
@@ -376,7 +413,9 @@ function TabBtn({
       type="button"
       onClick={onClick}
       className={`flex-1 py-2 rounded-full text-xs font-bold transition-colors ${
-        active ? 'bg-[#1C1C1A] text-white' : 'bg-white text-[#1C1C1A] border border-[#E8E4DD]'
+        active
+          ? "bg-[#1C1C1A] text-white"
+          : "bg-white text-[#1C1C1A] border border-[#E8E4DD]"
       }`}
     >
       {children}
@@ -384,7 +423,15 @@ function TabBtn({
   );
 }
 
-function Empty({ icon, title, subtitle }: { icon: string; title: string; subtitle: string }) {
+function Empty({
+  icon,
+  title,
+  subtitle,
+}: {
+  icon: string;
+  title: string;
+  subtitle: string;
+}) {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
       <span className="text-5xl mb-3">{icon}</span>

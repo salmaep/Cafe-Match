@@ -10,7 +10,9 @@ export class AlterUsersAvatarUrlText1715000000000 implements MigrationInterface 
   name = 'AlterUsersAvatarUrlText1715000000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`ALTER TABLE users MODIFY COLUMN avatar_url TEXT NULL`);
+    await queryRunner.query(
+      `ALTER TABLE users MODIFY COLUMN avatar_url TEXT NULL`,
+    );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {

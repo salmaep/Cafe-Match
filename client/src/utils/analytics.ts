@@ -6,8 +6,8 @@
  * react-router doesn't fire a real page load.
  */
 
-import { useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useEffect } from "react";
+import { useLocation } from "react-router-dom";
 
 declare global {
   interface Window {
@@ -16,15 +16,16 @@ declare global {
   }
 }
 
-const measurementId: string | undefined = import.meta.env.VITE_GA_MEASUREMENT_ID;
+const measurementId: string | undefined = import.meta.env
+  .VITE_GA_MEASUREMENT_ID;
 let initialized = false;
 
 export function initGA(): void {
   if (initialized) return;
   if (!measurementId) return;
-  if (typeof window === 'undefined') return;
+  if (typeof window === "undefined") return;
 
-  const script = document.createElement('script');
+  const script = document.createElement("script");
   script.async = true;
   script.src = `https://www.googletagmanager.com/gtag/js?id=${measurementId}`;
   document.head.appendChild(script);
@@ -35,27 +36,30 @@ export function initGA(): void {
   }
   window.gtag = gtag;
 
-  gtag('js', new Date());
+  gtag("js", new Date());
   // send_page_view: false — we send page_view manually on route change so SPA navigations register.
-  gtag('config', measurementId, { send_page_view: false });
+  gtag("config", measurementId, { send_page_view: false });
 
   initialized = true;
 }
 
 export function trackPageView(path: string, title?: string): void {
   if (!measurementId) return;
-  if (typeof window === 'undefined' || !window.gtag) return;
-  window.gtag('event', 'page_view', {
+  if (typeof window === "undefined" || !window.gtag) return;
+  window.gtag("event", "page_view", {
     page_path: path,
     page_title: title ?? document.title,
     page_location: window.location.href,
   });
 }
 
-export function trackEvent(name: string, params?: Record<string, unknown>): void {
+export function trackEvent(
+  name: string,
+  params?: Record<string, unknown>,
+): void {
   if (!measurementId) return;
-  if (typeof window === 'undefined' || !window.gtag) return;
-  window.gtag('event', name, params);
+  if (typeof window === "undefined" || !window.gtag) return;
+  window.gtag("event", name, params);
 }
 
 export function useTrackPageView(): void {

@@ -1,34 +1,34 @@
-import { useState, type FormEvent } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import { useState, type FormEvent } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 export default function RegisterForm() {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState('');
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
     if (!name || !email || !password) {
-      setError('Please fill in all fields');
+      setError("Please fill in all fields");
       return;
     }
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      setError("Passwords do not match");
       return;
     }
     setLoading(true);
     try {
       await register(email, password, name);
-      navigate('/login?next=wizard');
+      navigate("/login?next=wizard");
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Registration failed');
+      setError(err.response?.data?.message || "Registration failed");
     } finally {
       setLoading(false);
     }
@@ -92,8 +92,8 @@ export default function RegisterForm() {
               autoComplete="new-password"
               className={`w-full px-4 py-3 rounded-xl text-[15px] text-[#1C1C1A] placeholder:text-[#8A8880] outline-none transition-all ${
                 passwordMismatch
-                  ? 'bg-red-50 ring-2 ring-red-300 focus:ring-red-400'
-                  : 'bg-[#F0EDE8] border-none focus:bg-white focus:ring-2 focus:ring-[#D48B3A]/30'
+                  ? "bg-red-50 ring-2 ring-red-300 focus:ring-red-400"
+                  : "bg-[#F0EDE8] border-none focus:bg-white focus:ring-2 focus:ring-[#D48B3A]/30"
               }`}
             />
             {passwordMismatch && (
@@ -107,13 +107,16 @@ export default function RegisterForm() {
             disabled={loading}
             className="w-full py-3 bg-[#1C1C1A] text-white rounded-xl font-bold text-base hover:bg-black disabled:opacity-60 transition-colors mt-2"
           >
-            {loading ? 'Creating account…' : 'Register'}
+            {loading ? "Creating account…" : "Register"}
           </button>
         </form>
 
         <div className="text-center text-sm text-[#8A8880] mt-4">
-          Already have an account?{' '}
-          <Link to="/login" className="text-[#D48B3A] font-semibold hover:underline">
+          Already have an account?{" "}
+          <Link
+            to="/login"
+            className="text-[#D48B3A] font-semibold hover:underline"
+          >
             Login
           </Link>
         </div>

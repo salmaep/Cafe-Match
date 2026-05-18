@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useActiveCheckin } from '../../context/ActiveCheckinContext';
-import { cafeUrl } from '../../utils/cafeUrl';
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { useActiveCheckin } from "../../context/ActiveCheckinContext";
+import { cafeUrl } from "../../utils/cafeUrl";
 
 function pad2(n: number): string {
   return n < 10 ? `0${n}` : `${n}`;
@@ -40,7 +40,7 @@ export default function ActiveCheckinBanner() {
   const startedAt = startedDate.getTime();
   const startedClock = formatClockHHMMSS(startedDate);
   const duration = formatDurationHHMMSS(now - startedAt);
-  const cafeName = active.cafeName || active.cafe?.name || 'Cafe';
+  const cafeName = active.cafeName || active.cafe?.name || "Cafe";
   const detailUrl = active.cafe ? cafeUrl(active.cafe) : null;
 
   const handleCheckOut = async () => {
@@ -50,7 +50,7 @@ export default function ActiveCheckinBanner() {
     try {
       await checkOut();
     } catch (err: any) {
-      alert(err?.response?.data?.message || 'Gagal check out. Coba lagi.');
+      alert(err?.response?.data?.message || "Gagal check out. Coba lagi.");
     } finally {
       setSubmitting(false);
     }
@@ -70,9 +70,13 @@ export default function ActiveCheckinBanner() {
           <span className="text-[11px] text-white/85 tabular-nums shrink-0">
             · Durasi {duration}
           </span>
-          <span className="text-[11px] text-white/85 tabular-nums shrink-0">· {duration}</span>
+          <span className="text-[11px] text-white/85 tabular-nums shrink-0">
+            · {duration}
+          </span>
         </div>
-        <div className="text-xs font-semibold text-white/90 truncate mt-0.5">{cafeName}</div>
+        <div className="text-xs font-semibold text-white/90 truncate mt-0.5">
+          {cafeName}
+        </div>
       </div>
     </div>
   );
@@ -81,7 +85,10 @@ export default function ActiveCheckinBanner() {
     <div className="sticky top-0 z-50 bg-gradient-to-r from-emerald-700 via-emerald-600 to-emerald-700 shadow-lg">
       <div className="max-w-[88rem] mx-auto px-4 py-2 flex items-center gap-3">
         {detailUrl ? (
-          <Link to={detailUrl} className="flex-1 min-w-0 flex items-center gap-2.5 hover:opacity-90 transition-opacity">
+          <Link
+            to={detailUrl}
+            className="flex-1 min-w-0 flex items-center gap-2.5 hover:opacity-90 transition-opacity"
+          >
             {Pill}
           </Link>
         ) : (
@@ -93,7 +100,7 @@ export default function ActiveCheckinBanner() {
           disabled={submitting}
           className="shrink-0 inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full bg-white text-emerald-700 text-xs font-extrabold hover:bg-emerald-50 transition-colors disabled:opacity-50 shadow-sm"
         >
-          {submitting ? 'Checking out…' : '✕ Check Out'}
+          {submitting ? "Checking out…" : "✕ Check Out"}
         </button>
       </div>
     </div>

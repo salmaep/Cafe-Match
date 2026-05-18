@@ -1,4 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  Index,
+} from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 
 @Entity('user_recaps')
@@ -16,7 +23,11 @@ export class UserRecap {
   @Column({ name: 'recap_data', type: 'json' })
   recapData: any;
 
-  @Column({ name: 'generated_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @Column({
+    name: 'generated_at',
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
   generatedAt: Date;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })

@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from "react-router-dom";
 
 export default function PaymentSuccessPage() {
   return (
@@ -7,9 +7,12 @@ export default function PaymentSuccessPage() {
         <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <span className="text-3xl text-green-600">&#10003;</span>
         </div>
-        <h1 className="text-2xl font-bold text-gray-800 mb-2">Payment Successful!</h1>
+        <h1 className="text-2xl font-bold text-gray-800 mb-2">
+          Payment Successful!
+        </h1>
         <p className="text-gray-500 mb-6">
-          Your promotion is now active! Your cafe will be highlighted to users immediately.
+          Your promotion is now active! Your cafe will be highlighted to users
+          immediately.
         </p>
         <div className="flex gap-3 justify-center">
           <Link

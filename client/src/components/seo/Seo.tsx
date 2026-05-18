@@ -1,18 +1,18 @@
-import { Helmet } from 'react-helmet-async';
+import { Helmet } from "react-helmet-async";
 
 interface Props {
   title?: string;
   description?: string;
   canonical?: string;
   image?: string;
-  type?: 'website' | 'article' | 'profile';
+  type?: "website" | "article" | "profile";
   jsonLd?: Record<string, unknown> | Record<string, unknown>[];
 }
 
-const SITE_NAME = 'CafeMatch';
-const DEFAULT_TITLE = 'CafeMatch — Find your next favourite cafe';
+const SITE_NAME = "CafeMatch";
+const DEFAULT_TITLE = "CafeMatch — Find your next favourite cafe";
 const DEFAULT_DESCRIPTION =
-  'Discover cafes that match how you want to spend your time — work-from-cafe, dates, family time, group study, or me-time.';
+  "Discover cafes that match how you want to spend your time — work-from-cafe, dates, family time, group study, or me-time.";
 
 /**
  * Lightweight SEO wrapper around react-helmet-async. Renders OpenGraph, Twitter,
@@ -24,12 +24,14 @@ export default function Seo({
   description,
   canonical,
   image,
-  type = 'website',
+  type = "website",
   jsonLd,
 }: Props) {
   const fullTitle = title ? `${title} · ${SITE_NAME}` : DEFAULT_TITLE;
   const desc = description ?? DEFAULT_DESCRIPTION;
-  const url = canonical ?? (typeof window !== 'undefined' ? window.location.href : undefined);
+  const url =
+    canonical ??
+    (typeof window !== "undefined" ? window.location.href : undefined);
 
   return (
     <Helmet>
@@ -44,15 +46,16 @@ export default function Seo({
       {url && <meta property="og:url" content={url} />}
       {image && <meta property="og:image" content={image} />}
 
-      <meta name="twitter:card" content={image ? 'summary_large_image' : 'summary'} />
+      <meta
+        name="twitter:card"
+        content={image ? "summary_large_image" : "summary"}
+      />
       <meta name="twitter:title" content={fullTitle} />
       <meta name="twitter:description" content={desc} />
       {image && <meta name="twitter:image" content={image} />}
 
       {jsonLd && (
-        <script type="application/ld+json">
-          {JSON.stringify(jsonLd)}
-        </script>
+        <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
       )}
     </Helmet>
   );

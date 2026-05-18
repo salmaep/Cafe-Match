@@ -3,7 +3,10 @@
  * Example: "Jl. Cihapit No.21, Cihapit, Bandung Wetan, Bandung City, West Java 40114"
  * → { city: 'Bandung', district: 'Bandung Wetan' }
  */
-export function parseAddressParts(address: string): { city: string | null; district: string | null } {
+export function parseAddressParts(address: string): {
+  city: string | null;
+  district: string | null;
+} {
   if (!address) return { city: null, district: null };
 
   const parts = address
@@ -20,8 +23,17 @@ export function parseAddressParts(address: string): { city: string | null; distr
 
   for (const part of parts) {
     const lower = part.toLowerCase();
-    if (lower.includes('city') || lower.includes('kota') || lower.includes('kabupaten')) {
-      city = part.replace(/city/i, '').replace(/kota/i, '').replace(/kabupaten/i, '').replace(/\d+/g, '').trim();
+    if (
+      lower.includes('city') ||
+      lower.includes('kota') ||
+      lower.includes('kabupaten')
+    ) {
+      city = part
+        .replace(/city/i, '')
+        .replace(/kota/i, '')
+        .replace(/kabupaten/i, '')
+        .replace(/\d+/g, '')
+        .trim();
       break;
     }
   }

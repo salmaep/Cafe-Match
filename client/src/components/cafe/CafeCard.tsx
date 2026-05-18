@@ -1,12 +1,12 @@
-import { Link } from 'react-router-dom';
-import type { Cafe } from '../../types';
-import { formatDistance } from '../../utils/haversine';
-import { getCafeImage, placeholderImage } from '../../utils/cafeImage';
-import { cafeUrl } from '../../utils/cafeUrl';
-import { getOpenStatus } from '../../utils/openingHours';
-import { buildFacilityChips } from '../../utils/facilities';
-import { formatRating } from '../../utils/rating';
-import { cleanAddress } from '../../utils/address';
+import { Link } from "react-router-dom";
+import type { Cafe } from "../../types";
+import { formatDistance } from "../../utils/haversine";
+import { getCafeImage, placeholderImage } from "../../utils/cafeImage";
+import { cafeUrl } from "../../utils/cafeUrl";
+import { getOpenStatus } from "../../utils/openingHours";
+import { buildFacilityChips } from "../../utils/facilities";
+import { formatRating } from "../../utils/rating";
+import { cleanAddress } from "../../utils/address";
 
 interface Props {
   cafe: Cafe;
@@ -16,7 +16,7 @@ const VISIBLE_CHIPS = 5;
 
 export default function CafeCard({ cafe }: Props) {
   const open = getOpenStatus(cafe.openingHours);
-  const locality = cleanAddress(cafe.district || cafe.city || '');
+  const locality = cleanAddress(cafe.district || cafe.city || "");
   const allChips = buildFacilityChips(cafe);
   const visibleChips = allChips.slice(0, VISIBLE_CHIPS);
   const overflow = allChips.length - visibleChips.length;
@@ -34,29 +34,31 @@ export default function CafeCard({ cafe }: Props) {
           referrerPolicy="no-referrer"
           className="w-full h-44 object-cover"
           onError={(e) => {
-            (e.currentTarget as HTMLImageElement).src = placeholderImage(cafe.id);
+            (e.currentTarget as HTMLImageElement).src = placeholderImage(
+              cafe.id,
+            );
           }}
         />
         {cafe.activePromotionType && (
           <span
             className={`absolute top-2.5 left-2.5 text-white text-[11px] font-bold rounded px-2 py-0.5 ${
-              cafe.activePromotionType === 'new_cafe'
-                ? 'bg-[#E94B4B]'
-                : 'bg-[#D48B3A]'
+              cafe.activePromotionType === "new_cafe"
+                ? "bg-[#E94B4B]"
+                : "bg-[#D48B3A]"
             }`}
           >
-            {cafe.activePromotionType === 'new_cafe' ? 'NEW' : 'Featured'}
+            {cafe.activePromotionType === "new_cafe" ? "NEW" : "Featured"}
           </span>
         )}
         {open && (
           <span
             className={`absolute top-2.5 right-2.5 text-[11px] font-bold rounded px-2 py-0.5 ${
               open.isOpen
-                ? 'bg-emerald-500 text-white'
-                : 'bg-gray-700/80 text-white'
+                ? "bg-emerald-500 text-white"
+                : "bg-gray-700/80 text-white"
             }`}
           >
-            {open.isOpen ? 'Open' : 'Closed'}
+            {open.isOpen ? "Open" : "Closed"}
           </span>
         )}
       </div>
@@ -68,13 +70,13 @@ export default function CafeCard({ cafe }: Props) {
               {cafe.name}
             </h3>
             <p className="text-[12px] text-gray-400 truncate mt-0.5 min-h-[16px]">
-              {locality || ' '}
+              {locality || " "}
             </p>
             <p className="text-[13px] text-gray-500 truncate mt-0.5 flex items-center gap-1 min-h-[18px]">
               {address && (
                 <span className="text-[#D48B3A] shrink-0 text-[11px]">📍</span>
               )}
-              <span className="truncate">{address || ' '}</span>
+              <span className="truncate">{address || " "}</span>
             </p>
           </div>
           {cafe.distanceMeters != null && (
@@ -131,7 +133,8 @@ export default function CafeCard({ cafe }: Props) {
             <span className="whitespace-nowrap">🔖 {cafe.bookmarksCount}</span>
             {open && !open.isOpen && open.opensAt && (
               <span className="text-amber-600 font-medium whitespace-nowrap ml-auto">
-                Buka {open.nextOpenDay === 'today' ? '' : `${open.nextOpenDay} `}
+                Buka{" "}
+                {open.nextOpenDay === "today" ? "" : `${open.nextOpenDay} `}
                 {open.opensAt}
               </span>
             )}
@@ -148,7 +151,10 @@ export default function CafeCard({ cafe }: Props) {
               <p className="text-[12px] text-[#5C5A52] leading-snug line-clamp-2 italic">
                 "{cafe.topReviewText}"
                 {cafe.topReviewAuthor && (
-                  <span className="not-italic text-[#A8A59C]"> — {cafe.topReviewAuthor}</span>
+                  <span className="not-italic text-[#A8A59C]">
+                    {" "}
+                    — {cafe.topReviewAuthor}
+                  </span>
                 )}
               </p>
             ) : (

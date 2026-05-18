@@ -28,8 +28,11 @@ export class PaymentsService {
     private readonly promotionsService: PromotionsService,
     private readonly configService: ConfigService,
   ) {
-    this.serverKey = this.configService.get<string>('MIDTRANS_SERVER_KEY') || 'SB-Mid-server-xxx';
-    this.isProduction = this.configService.get<string>('MIDTRANS_IS_PRODUCTION') === 'true';
+    this.serverKey =
+      this.configService.get<string>('MIDTRANS_SERVER_KEY') ||
+      'SB-Mid-server-xxx';
+    this.isProduction =
+      this.configService.get<string>('MIDTRANS_IS_PRODUCTION') === 'true';
   }
 
   private get baseUrl(): string {
@@ -48,7 +51,9 @@ export class PaymentsService {
       throw new ForbiddenException('Not your promotion');
     }
     if (promotion.status !== 'pending_payment') {
-      throw new BadRequestException('Promotion is not in pending_payment status');
+      throw new BadRequestException(
+        'Promotion is not in pending_payment status',
+      );
     }
 
     const amount =
@@ -92,7 +97,10 @@ export class PaymentsService {
       throw new BadRequestException(`Midtrans error: ${errorBody}`);
     }
 
-    const snapData = await response.json() as { token: string; redirect_url: string };
+    const snapData = (await response.json()) as {
+      token: string;
+      redirect_url: string;
+    };
 
     // Save transaction
     const transaction = this.transactionsRepo.create({
@@ -115,7 +123,15 @@ export class PaymentsService {
 
   async handleWebhookNotification(body: any) {
     // Verify signature
-    const { order_id, status_code, gross_amount, signature_key, transaction_status, payment_type, transaction_id } = body;
+    const {
+      order_id,
+      status_code,
+      gross_amount,
+      signature_key,
+      transaction_status,
+      payment_type,
+      transaction_id,
+    } = body;
 
     const expectedSignature = createHash('sha512')
       .update(`${order_id}${status_code}${gross_amount}${this.serverKey}`)
@@ -134,7 +150,10 @@ export class PaymentsService {
     transaction.midtransTransactionId = transaction_id;
     transaction.paymentType = payment_type;
 
-    if (transaction_status === 'capture' || transaction_status === 'settlement') {
+    if (
+      transaction_status === 'capture' ||
+      transaction_status === 'settlement'
+    ) {
       transaction.status = 'success';
       transaction.paidAt = new Date();
       await this.transactionsRepo.save(transaction);

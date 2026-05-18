@@ -45,9 +45,17 @@ export class AddSoftDeleteAndMeiliQueue1713200000000 implements MigrationInterfa
   public async down(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`DROP TABLE IF EXISTS meili_sync_failures`);
 
-    await queryRunner.query(`ALTER TABLE cafe_photos DROP INDEX idx_cafe_photos_deleted_at, DROP COLUMN deleted_at`);
-    await queryRunner.query(`ALTER TABLE cafe_menus  DROP INDEX idx_cafe_menus_deleted_at,  DROP COLUMN deleted_at`);
-    await queryRunner.query(`ALTER TABLE reviews      DROP INDEX idx_reviews_deleted_at,     DROP COLUMN deleted_at`);
-    await queryRunner.query(`ALTER TABLE cafes        DROP INDEX idx_cafes_deleted_at,       DROP COLUMN deleted_at`);
+    await queryRunner.query(
+      `ALTER TABLE cafe_photos DROP INDEX idx_cafe_photos_deleted_at, DROP COLUMN deleted_at`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE cafe_menus  DROP INDEX idx_cafe_menus_deleted_at,  DROP COLUMN deleted_at`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE reviews      DROP INDEX idx_reviews_deleted_at,     DROP COLUMN deleted_at`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE cafes        DROP INDEX idx_cafes_deleted_at,       DROP COLUMN deleted_at`,
+    );
   }
 }

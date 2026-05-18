@@ -1,47 +1,60 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { cafesApi } from '../api/cafes.api';
-import { bookmarksApi } from '../api/bookmarks.api';
-import { favoritesApi } from '../api/favorites.api';
-import type { Cafe } from '../types';
-import { useAuth } from '../context/AuthContext';
-import { useGeolocation } from '../hooks/useGeolocation';
-import { haversineDistance, formatDistance } from '../utils/haversine';
-import { analyticsApi } from '../api/analytics.api';
-import { reviewsApi, type ReviewSummary, type Review } from '../api/reviews.api';
-import ReviewCard from '../components/review/ReviewCard';
-import { useShortlist } from '../context/ShortlistContext';
-import { placeholderImage } from '../utils/cafeImage';
-import { extractCafeIdFromSlug, cafeUrl } from '../utils/cafeUrl';
-import Seo from '../components/seo/Seo';
-import PhotoLightbox from '../components/cafe/PhotoLightbox';
-import PhotoSlider from '../components/cafe/PhotoSlider';
-import WriteReviewModal from '../components/cafe/WriteReviewModal';
-import { getOpenStatus, formatHoursTable } from '../utils/openingHours';
-import { buildFacilityChips } from '../utils/facilities';
-import { formatRating } from '../utils/rating';
-import { cleanAddress } from '../utils/address';
-import CheckInButton from '../components/checkin/CheckInButton';
-import CafeLeaderboard from '../components/checkin/CafeLeaderboard';
-import { Bookmark, Heart, MapPin, Phone, Navigation } from '../utils/lucideIcon';
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
+import { cafesApi, type GoogleReview } from "../api/cafes.api";
+import { bookmarksApi } from "../api/bookmarks.api";
+import { favoritesApi } from "../api/favorites.api";
+import type { Cafe } from "../types";
+import { useAuth } from "../context/AuthContext";
+import { useGeolocation } from "../hooks/useGeolocation";
+import { haversineDistance, formatDistance } from "../utils/haversine";
+import { analyticsApi } from "../api/analytics.api";
+import {
+  reviewsApi,
+  type ReviewSummary,
+  type Review,
+} from "../api/reviews.api";
+import ReviewCard from "../components/review/ReviewCard";
+import { useShortlist } from "../context/ShortlistContext";
+import { placeholderImage } from "../utils/cafeImage";
+import { extractCafeIdFromSlug, cafeUrl } from "../utils/cafeUrl";
+import Seo from "../components/seo/Seo";
+import PhotoLightbox from "../components/cafe/PhotoLightbox";
+import PhotoSlider from "../components/cafe/PhotoSlider";
+import WriteReviewModal from "../components/cafe/WriteReviewModal";
+import { getOpenStatus, formatHoursTable } from "../utils/openingHours";
+import { buildFacilityChips } from "../utils/facilities";
+import { formatRating } from "../utils/rating";
+import { cleanAddress } from "../utils/address";
+import CheckInButton from "../components/checkin/CheckInButton";
+import CafeLeaderboard from "../components/checkin/CafeLeaderboard";
+import {
+  Bookmark,
+  Heart,
+  MapPin,
+  Phone,
+  Navigation,
+} from "../utils/lucideIcon";
 
 const REVIEW_CATEGORY_LABELS: Record<string, string> = {
-  overall: '⭐ Rating',
-  ambiance: '🎨 Ambiance',
-  wfc: '💻 WFC',
-  food_quality: '🍽️ Food',
-  service: '🛎️ Service',
-  value_for_money: '💰 Value',
-  kid_friendly: '👶 Kid-friendly',
+  overall: "⭐ Rating",
+  ambiance: "🎨 Ambiance",
+  wfc: "💻 WFC",
+  food_quality: "🍽️ Food",
+  service: "🛎️ Service",
+  value_for_money: "💰 Value",
+  kid_friendly: "👶 Kid-friendly",
 };
 function prettyReviewCategory(k: string) {
   if (REVIEW_CATEGORY_LABELS[k]) return REVIEW_CATEGORY_LABELS[k];
-  return k.replace(/^(mood_|facility_)/, '').replace(/[_-]/g, ' ');
+  return k.replace(/^(mood_|facility_)/, "").replace(/[_-]/g, " ");
 }
 
 export default function CafeDetailPage() {
   const { slug } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const backLabel =
+    (location.state as { backLabel?: string } | null)?.backLabel ?? "Back";
   const { user } = useAuth();
   const geo = useGeolocation();
   const { addToShortlist, removeFromShortlist, isInShortlist } = useShortlist();
@@ -58,6 +71,8 @@ export default function CafeDetailPage() {
   const [reviewTotal, setReviewTotal] = useState(0);
   const [reviewVotedSet, setReviewVotedSet] = useState<Set<number>>(new Set());
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [googleReviews, setGoogleReviews] = useState<GoogleReview[]>([]);
+  const [googleReviewTotal, setGoogleReviewTotal] = useState(0);
 
   useEffect(() => {
     if (cafeId == null) {
@@ -70,7 +85,7 @@ export default function CafeDetailPage() {
       .getById(cafeId)
       .then((res) => {
         setCafe(res.data);
-        analyticsApi.track(cafeId, 'view').catch(() => {});
+        analyticsApi.track(cafeId, "view").catch(() => {});
       })
       .catch(() => setCafe(null))
       .finally(() => setLoading(false));
@@ -79,7 +94,7 @@ export default function CafeDetailPage() {
       .then((res) => setReviewSummary(res.data ?? []))
       .catch(() => setReviewSummary([]));
     reviewsApi
-      .listByCafe(cafeId, { page: 1, limit: 3, sort: 'helpful' })
+      .listByCafe(cafeId, { page: 1, limit: 3, sort: "helpful" })
       .then((res) => {
         setReviewPreviews(res.data?.data ?? []);
         setReviewTotal(res.data?.meta?.total ?? 0);
@@ -87,6 +102,16 @@ export default function CafeDetailPage() {
       .catch(() => {
         setReviewPreviews([]);
         setReviewTotal(0);
+      });
+    cafesApi
+      .getGoogleReviews(cafeId, { page: 1, limit: 5 })
+      .then((res) => {
+        setGoogleReviews(res.data?.data ?? []);
+        setGoogleReviewTotal(res.data?.meta?.total ?? 0);
+      })
+      .catch(() => {
+        setGoogleReviews([]);
+        setGoogleReviewTotal(0);
       });
   }, [cafeId]);
 
@@ -134,10 +159,10 @@ export default function CafeDetailPage() {
     () =>
       (cafe?.photos ?? []).filter((p) => {
         const url = p?.url;
-        if (typeof url !== 'string' || url.length === 0) return false;
+        if (typeof url !== "string" || url.length === 0) return false;
         // Drop Unsplash stock photos — those are placeholder fallbacks the
         // scraper sometimes inserted, not real cafe photos.
-        if (url.includes('images.unsplash.com')) return false;
+        if (url.includes("images.unsplash.com")) return false;
         // Drop photos we already saw fail at runtime — better to reshape the
         // mosaic with fewer real photos than to fill broken slots with dummy.
         if (failedPhotoIds.has(p.id)) return false;
@@ -148,20 +173,29 @@ export default function CafeDetailPage() {
 
   const distance =
     cafe && geo.latitude && geo.longitude
-      ? haversineDistance(geo.latitude, geo.longitude, cafe.latitude, cafe.longitude)
+      ? haversineDistance(
+          geo.latitude,
+          geo.longitude,
+          cafe.latitude,
+          cafe.longitude,
+        )
       : null;
 
   const handleBookmark = async () => {
     if (!cafe) return;
     if (!user) {
-      navigate('/login');
+      navigate("/login");
       return;
     }
     const res = await bookmarksApi.toggle(cafe.id);
     setBookmarked(res.data.bookmarked);
     setCafe((prev) =>
       prev
-        ? { ...prev, bookmarksCount: prev.bookmarksCount + (res.data.bookmarked ? 1 : -1) }
+        ? {
+            ...prev,
+            bookmarksCount:
+              prev.bookmarksCount + (res.data.bookmarked ? 1 : -1),
+          }
         : prev,
     );
   };
@@ -169,14 +203,17 @@ export default function CafeDetailPage() {
   const handleFavorite = async () => {
     if (!cafe) return;
     if (!user) {
-      navigate('/login');
+      navigate("/login");
       return;
     }
     const res = await favoritesApi.toggle(cafe.id);
     setFavorited(res.data.favorited);
     setCafe((prev) =>
       prev
-        ? { ...prev, favoritesCount: prev.favoritesCount + (res.data.favorited ? 1 : -1) }
+        ? {
+            ...prev,
+            favoritesCount: prev.favoritesCount + (res.data.favorited ? 1 : -1),
+          }
         : prev,
     );
   };
@@ -199,7 +236,10 @@ export default function CafeDetailPage() {
     return (
       <div className="text-center py-20 bg-[#FAF9F6] min-h-[80vh]">
         <p className="text-[#8A8880]">Cafe not found</p>
-        <Link to="/" className="text-[#D48B3A] hover:underline mt-2 inline-block">
+        <Link
+          to="/"
+          className="text-[#D48B3A] hover:underline mt-2 inline-block"
+        >
           Back to map
         </Link>
       </div>
@@ -207,14 +247,13 @@ export default function CafeDetailPage() {
   }
 
   type CafeMenuItem = NonNullable<typeof cafe.menus>[number];
-  const menusByCategory: Record<string, CafeMenuItem[]> = (cafe.menus || []).reduce(
-    (acc: Record<string, CafeMenuItem[]>, item) => {
-      if (!acc[item.category]) acc[item.category] = [];
-      acc[item.category].push(item);
-      return acc;
-    },
-    {},
-  );
+  const menusByCategory: Record<string, CafeMenuItem[]> = (
+    cafe.menus || []
+  ).reduce((acc: Record<string, CafeMenuItem[]>, item) => {
+    if (!acc[item.category]) acc[item.category] = [];
+    acc[item.category].push(item);
+    return acc;
+  }, {});
 
   // When NO real photo loads successfully, fall back to a single deterministic
   // Unsplash placeholder. Using getCafeImage(cafe) here would just hand back
@@ -228,7 +267,7 @@ export default function CafeDetailPage() {
   const mapsUrl =
     cafe.googleMapsUrl ||
     `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-      `${cafe.name} ${cafe.address ?? ''}`.trim(),
+      `${cafe.name} ${cafe.address ?? ""}`.trim(),
     )}`;
 
   const inShortlist = isInShortlist(cafe.id);
@@ -236,8 +275,13 @@ export default function CafeDetailPage() {
   const facilityChips = buildFacilityChips(cafe);
 
   const starSummary = reviewSummary.filter(
-    (s) => !s.category.startsWith('mood_') && !s.category.startsWith('facility_'),
+    (s) =>
+      !s.category.startsWith("mood_") && !s.category.startsWith("facility_"),
   );
+
+  const overallEntry = reviewSummary.find((s) => s.category === "overall");
+  const appRating = overallEntry ? overallEntry.avgScore : null;
+  const appRatingCount = overallEntry ? overallEntry.count : 0;
 
   // Mood chips — merged from 3 sources (matches mobile logic):
   //  1. cafe.purposes (scraped name array) → +1 each
@@ -245,21 +289,21 @@ export default function CafeDetailPage() {
   //  3. reviewSummary mood_* votes → real vote count
   const moodChips: { label: string; count: number }[] = (() => {
     const slugToLabel: Record<string, string> = {
-      'me-time': '🧘 Me Time',
-      date: '💑 Date',
-      family: '👨‍👩‍👧 Family',
-      'group-work': '📚 Group Study',
-      wfc: '💻 WFC',
+      "me-time": "🧘 Me Time",
+      date: "💑 Date",
+      family: "👨‍👩‍👧 Family",
+      "group-work": "📚 Group Study",
+      wfc: "💻 WFC",
     };
     const nameToSlug: Record<string, string> = {
-      'Me Time': 'me-time',
-      Date: 'date',
-      'Family Time': 'family',
-      Family: 'family',
-      'Group Study': 'group-work',
-      'Group Work / Study': 'group-work',
-      WFC: 'wfc',
-      'Work from Cafe': 'wfc',
+      "Me Time": "me-time",
+      Date: "date",
+      "Family Time": "family",
+      Family: "family",
+      "Group Study": "group-work",
+      "Group Work / Study": "group-work",
+      WFC: "wfc",
+      "Work from Cafe": "wfc",
     };
     const combined = new Map<string, { label: string; count: number }>();
     const bump = (slug: string, delta: number) => {
@@ -277,15 +321,17 @@ export default function CafeDetailPage() {
     for (const [slug, score] of Object.entries(ps)) {
       if (Number(score) >= 40) bump(slug, 1);
     }
-    for (const s of reviewSummary.filter((x) => x.category.startsWith('mood_'))) {
-      const raw = s.category.replace(/^mood_/, '');
+    for (const s of reviewSummary.filter((x) =>
+      x.category.startsWith("mood_"),
+    )) {
+      const raw = s.category.replace(/^mood_/, "");
       const normSlug =
-        raw === 'me_time'
-          ? 'me-time'
-          : raw === 'group_study'
-            ? 'group-work'
-            : raw === 'family_time'
-              ? 'family'
+        raw === "me_time"
+          ? "me-time"
+          : raw === "group_study"
+            ? "group-work"
+            : raw === "family_time"
+              ? "family"
               : raw;
       bump(normSlug, s.count);
     }
@@ -295,18 +341,18 @@ export default function CafeDetailPage() {
     // DUMMY PREVIEW — remove when real data flows through
     if (result.length === 0) {
       return [
-        { label: '💻 WFC', count: 24 },
-        { label: '🧘 Me Time', count: 18 },
-        { label: '💑 Date', count: 12 },
-        { label: '📚 Group Study', count: 7 },
-        { label: '👨‍👩‍👧 Family', count: 3 },
+        { label: "💻 WFC", count: 24 },
+        { label: "🧘 Me Time", count: 18 },
+        { label: "💑 Date", count: 12 },
+        { label: "📚 Group Study", count: 7 },
+        { label: "👨‍👩‍👧 Family", count: 3 },
       ];
     }
     return result;
   })();
   const handleWriteReview = () => {
     if (!user) {
-      navigate('/login');
+      navigate("/login");
       return;
     }
     setReviewModalOpen(true);
@@ -324,26 +370,26 @@ export default function CafeDetailPage() {
   const seoDescription =
     cafe.description ??
     `${cafe.name} — ${cafe.address}. ${
-      cafe.priceRange ? `Price range ${cafe.priceRange}.` : ''
+      cafe.priceRange ? `Price range ${cafe.priceRange}.` : ""
     }`.trim();
   const jsonLd: Record<string, unknown> = {
-    '@context': 'https://schema.org',
-    '@type': 'CafeOrCoffeeShop',
+    "@context": "https://schema.org",
+    "@type": "CafeOrCoffeeShop",
     name: cafe.name,
     image: seoImage,
     address: cafe.address,
     geo: {
-      '@type': 'GeoCoordinates',
+      "@type": "GeoCoordinates",
       latitude: cafe.latitude,
       longitude: cafe.longitude,
     },
     telephone: cafe.phone ?? undefined,
-    url: typeof window !== 'undefined' ? window.location.href : undefined,
+    url: typeof window !== "undefined" ? window.location.href : undefined,
     priceRange: cafe.priceRange,
     ...(cafe.googleRating != null && cafe.totalGoogleReviews
       ? {
           aggregateRating: {
-            '@type': 'AggregateRating',
+            "@type": "AggregateRating",
             ratingValue: cafe.googleRating,
             reviewCount: cafe.totalGoogleReviews,
           },
@@ -368,7 +414,7 @@ export default function CafeDetailPage() {
           className="inline-flex items-center gap-2 text-sm text-[#8A8880] hover:text-[#1C1C1A] transition-colors"
         >
           <span className="text-base">←</span>
-          <span>Back to discover</span>
+          <span>{backLabel}</span>
         </button>
       </div>
 
@@ -380,7 +426,9 @@ export default function CafeDetailPage() {
             photos={heroPhotos}
             cafeId={cafe.id}
             cafeName={cafe.name}
-            onClickPhoto={validPhotos.length > 0 ? (i) => setLightboxIndex(i) : undefined}
+            onClickPhoto={
+              validPhotos.length > 0 ? (i) => setLightboxIndex(i) : undefined
+            }
             fullBleed
           />
           <button
@@ -415,17 +463,34 @@ export default function CafeDetailPage() {
               {cafe.name}
             </h1>
 
-            {(cafe.googleRating != null || cafe.priceRange) && (
-              <div className="flex items-center gap-2 mt-2 text-sm">
-                {formatRating(cafe.googleRating) && (
+            {(appRating != null ||
+              cafe.googleRating != null ||
+              cafe.priceRange) && (
+              <div className="flex items-center gap-2 mt-2 text-sm flex-wrap">
+                {appRating != null && (
                   <span className="inline-flex items-center gap-1">
                     <span className="text-amber-500">★</span>
                     <span className="font-bold text-[#1C1C1A]">
+                      {appRating.toFixed(1)}
+                    </span>
+                    <span className="text-[#8A8880]">
+                      ({appRatingCount} ulasan)
+                    </span>
+                  </span>
+                )}
+                {appRating != null &&
+                  (cafe.googleRating != null || cafe.priceRange) && (
+                    <span className="text-[#E0DCD3]">·</span>
+                  )}
+                {formatRating(cafe.googleRating) && (
+                  <span className="inline-flex items-center gap-1 text-[#8A8880]">
+                    <span className="text-amber-400 text-xs">G★</span>
+                    <span className="text-xs">
                       {formatRating(cafe.googleRating)}
                     </span>
                     {cafe.totalGoogleReviews != null && (
-                      <span className="text-[#8A8880]">
-                        ({cafe.totalGoogleReviews.toLocaleString()} reviews)
+                      <span className="text-xs">
+                        ({cafe.totalGoogleReviews.toLocaleString()})
                       </span>
                     )}
                   </span>
@@ -434,7 +499,9 @@ export default function CafeDetailPage() {
                   <span className="text-[#E0DCD3]">·</span>
                 )}
                 {cafe.priceRange && (
-                  <span className="font-semibold text-[#5C5A52]">{cafe.priceRange}</span>
+                  <span className="font-semibold text-[#5C5A52]">
+                    {cafe.priceRange}
+                  </span>
                 )}
               </div>
             )}
@@ -446,30 +513,32 @@ export default function CafeDetailPage() {
                 return (
                   <span
                     className={`font-semibold ${
-                      open.isOpen ? 'text-emerald-600' : 'text-red-500'
+                      open.isOpen ? "text-emerald-600" : "text-red-500"
                     }`}
                   >
                     {open.isOpen
-                      ? `● Buka${open.closesAt ? ` · tutup ${open.closesAt}` : ''}`
+                      ? `● Buka${open.closesAt ? ` · tutup ${open.closesAt}` : ""}`
                       : `● Tutup${
                           open.opensAt
                             ? ` · buka ${
-                                open.nextOpenDay === 'today' ? '' : `${open.nextOpenDay} `
+                                open.nextOpenDay === "today"
+                                  ? ""
+                                  : `${open.nextOpenDay} `
                               }${open.opensAt}`
-                            : ''
+                            : ""
                         }`}
                   </span>
                 );
               })()}
               {(() => {
                 const parts = [cafe.district, cafe.city]
-                  .map((p) => cleanAddress(p || ''))
+                  .map((p) => cleanAddress(p || ""))
                   .filter(Boolean);
                 if (parts.length === 0) return null;
                 return (
                   <>
                     <span className="text-[#E0DCD3]">·</span>
-                    <span>{parts.join(', ')}</span>
+                    <span>{parts.join(", ")}</span>
                   </>
                 );
               })()}
@@ -494,14 +563,14 @@ export default function CafeDetailPage() {
                 <span className="text-2xl">🎉</span>
                 <div className="flex-1 min-w-0">
                   <div className="text-xs font-semibold text-[#D48B3A] uppercase tracking-wider">
-                    {cafe.activePromotionType === 'new_cafe'
-                      ? 'Cafe Baru'
-                      : 'Promo Aktif'}
+                    {cafe.activePromotionType === "new_cafe"
+                      ? "Cafe Baru"
+                      : "Promo Aktif"}
                   </div>
                   <div className="text-sm text-[#5C5A52] mt-0.5">
-                    {cafe.activePromotionType === 'new_cafe'
-                      ? 'Cafe baru bergabung — yuk jadi yang pertama berkunjung!'
-                      : 'Cafe ini sedang ada promo. Cek di tempat untuk detail.'}
+                    {cafe.activePromotionType === "new_cafe"
+                      ? "Cafe baru bergabung — yuk jadi yang pertama berkunjung!"
+                      : "Cafe ini sedang ada promo. Cek di tempat untuk detail."}
                   </div>
                 </div>
               </div>
@@ -569,41 +638,66 @@ export default function CafeDetailPage() {
               <div className="bg-white border border-[#F0EDE8] rounded-2xl overflow-hidden">
                 {(() => {
                   const today = new Date().getDay();
-                  const todayKey = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][
-                    today
-                  ];
-                  return formatHoursTable(cafe.openingHours, 'id').map((row, i) => {
-                    const isToday =
-                      row.day ===
-                      { mon: 'Sen', tue: 'Sel', wed: 'Rab', thu: 'Kam', fri: 'Jum', sat: 'Sab', sun: 'Min' }[
-                        todayKey as 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'
-                      ];
-                    const closed = row.hours === 'Tutup';
-                    return (
-                      <div
-                        key={row.day}
-                        className={`flex items-center justify-between px-4 lg:px-5 py-2.5 text-sm ${
-                          i > 0 ? 'border-t border-[#F0EDE8]' : ''
-                        } ${isToday ? 'bg-[#FDF6EC]' : ''}`}
-                      >
-                        <span
-                          className={`font-semibold ${
-                            isToday ? 'text-[#D48B3A]' : 'text-[#5C5A52]'
-                          }`}
+                  const todayKey = [
+                    "sun",
+                    "mon",
+                    "tue",
+                    "wed",
+                    "thu",
+                    "fri",
+                    "sat",
+                  ][today];
+                  return formatHoursTable(cafe.openingHours, "id").map(
+                    (row, i) => {
+                      const isToday =
+                        row.day ===
+                        {
+                          mon: "Sen",
+                          tue: "Sel",
+                          wed: "Rab",
+                          thu: "Kam",
+                          fri: "Jum",
+                          sat: "Sab",
+                          sun: "Min",
+                        }[
+                          todayKey as
+                            | "mon"
+                            | "tue"
+                            | "wed"
+                            | "thu"
+                            | "fri"
+                            | "sat"
+                            | "sun"
+                        ];
+                      const closed = row.hours === "Tutup";
+                      return (
+                        <div
+                          key={row.day}
+                          className={`flex items-center justify-between px-4 lg:px-5 py-2.5 text-sm ${
+                            i > 0 ? "border-t border-[#F0EDE8]" : ""
+                          } ${isToday ? "bg-[#FDF6EC]" : ""}`}
                         >
-                          {row.day}
-                          {isToday && <span className="ml-2 text-xs">(Hari ini)</span>}
-                        </span>
-                        <span
-                          className={`tabular-nums ${
-                            closed ? 'text-red-500' : 'text-[#1C1C1A]'
-                          }`}
-                        >
-                          {row.hours}
-                        </span>
-                      </div>
-                    );
-                  });
+                          <span
+                            className={`font-semibold ${
+                              isToday ? "text-[#D48B3A]" : "text-[#5C5A52]"
+                            }`}
+                          >
+                            {row.day}
+                            {isToday && (
+                              <span className="ml-2 text-xs">(Hari ini)</span>
+                            )}
+                          </span>
+                          <span
+                            className={`tabular-nums ${
+                              closed ? "text-red-500" : "text-[#1C1C1A]"
+                            }`}
+                          >
+                            {row.hours}
+                          </span>
+                        </div>
+                      );
+                    },
+                  );
                 })()}
               </div>
             </Section>
@@ -617,7 +711,11 @@ export default function CafeDetailPage() {
             {cafe.matchScore != null && (
               <>
                 <div className="w-px h-8 bg-[#F0EDE8]" />
-                <SidebarStat value={`${cafe.matchScore}%`} label="Match" accent />
+                <SidebarStat
+                  value={`${cafe.matchScore}%`}
+                  label="Match"
+                  accent
+                />
               </>
             )}
           </div>
@@ -627,7 +725,11 @@ export default function CafeDetailPage() {
             {facilityChips.length > 0 ? (
               <div className="flex flex-wrap gap-2">
                 {facilityChips.map((f, i) => (
-                  <FacilityChip key={`${f.label}-${i}`} icon={f.icon} label={f.label} />
+                  <FacilityChip
+                    key={`${f.label}-${i}`}
+                    icon={f.icon}
+                    label={f.label}
+                  />
                 ))}
               </div>
             ) : (
@@ -671,7 +773,7 @@ export default function CafeDetailPage() {
               </div>
             )}
 
-            {/* Preview cards — top 3 by helpful */}
+            {/* App reviews — top 3 by helpful */}
             {reviewPreviews.length > 0 ? (
               <div className="space-y-3">
                 {reviewPreviews.map((r) => (
@@ -687,12 +789,16 @@ export default function CafeDetailPage() {
             ) : (
               <div className="text-center py-8 bg-white rounded-2xl border border-[#F0EDE8]">
                 <p className="text-3xl mb-2">✍️</p>
-                <p className="text-sm font-semibold text-[#1C1C1A]">Belum ada ulasan</p>
-                <p className="text-xs text-[#8A8880] mt-1">Jadi yang pertama berbagi pengalaman!</p>
+                <p className="text-sm font-semibold text-[#1C1C1A]">
+                  Belum ada ulasan
+                </p>
+                <p className="text-xs text-[#8A8880] mt-1">
+                  Jadi yang pertama berbagi pengalaman!
+                </p>
               </div>
             )}
 
-            {/* More reviews button */}
+            {/* More app reviews button */}
             {reviewTotal > reviewPreviews.length && (
               <Link
                 to={`${cafeUrl(cafe)}/reviews`}
@@ -707,8 +813,63 @@ export default function CafeDetailPage() {
               onClick={handleWriteReview}
               className="w-full mt-3 py-2.5 rounded-xl border-[1.5px] border-[#D48B3A] text-[#D48B3A] font-bold text-sm hover:bg-[#FDF6EC] transition-colors"
             >
-              {reviewPreviews.length === 0 ? '✍️ Tulis ulasan pertama' : '+ Tulis Review'}
+              {reviewPreviews.length === 0
+                ? "✍️ Tulis ulasan pertama"
+                : "+ Tulis Review"}
             </button>
+
+            {/* Google Maps Reviews */}
+            {googleReviews.length > 0 && (
+              <div className="mt-6">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="flex items-center gap-1.5 bg-[#F8F9FF] border border-[#E8E4F0] rounded-full px-3 py-1">
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                        fill="#4285F4"
+                      />
+                      <path
+                        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                        fill="#34A853"
+                      />
+                      <path
+                        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                        fill="#FBBC05"
+                      />
+                      <path
+                        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                        fill="#EA4335"
+                      />
+                    </svg>
+                    <span className="text-xs font-semibold text-[#5C5A52]">
+                      Google Maps Reviews
+                    </span>
+                    <span className="text-xs text-[#8A8880]">
+                      ({googleReviewTotal})
+                    </span>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  {googleReviews.map((gr) => (
+                    <GoogleReviewCard key={gr.id} review={gr} />
+                  ))}
+                </div>
+                {googleReviewTotal > googleReviews.length && (
+                  <Link
+                    to={`${cafeUrl(cafe)}/reviews?source=google`}
+                    className="mt-3 flex items-center justify-center gap-1.5 w-full py-2.5 rounded-xl border border-[#E8E4DD] text-sm font-semibold text-[#5C5A52] hover:border-[#4285F4] hover:text-[#4285F4] transition-colors"
+                  >
+                    Lihat semua {googleReviewTotal} Google review →
+                  </Link>
+                )}
+              </div>
+            )}
           </Section>
 
           {/* Leaderboard — top check-in users at this cafe */}
@@ -738,29 +899,30 @@ export default function CafeDetailPage() {
           {/* Photo grid — mobile/tablet only (desktop shows mosaic + "Show all" above) */}
           {validPhotos.length > 0 && (
             <div className="lg:hidden">
-            <Section title="Photos">
-              <div className="grid grid-cols-3 gap-2">
-                {validPhotos.map((photo, i) => (
-                  <button
-                    key={photo.id}
-                    type="button"
-                    onClick={() => setLightboxIndex(i)}
-                    className="relative aspect-square overflow-hidden rounded-xl bg-[#F0EDE8] group"
-                  >
-                    <img
-                      src={photo.url}
-                      alt={photo.caption || cafe.name}
-                      referrerPolicy="no-referrer"
-                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                      loading="lazy"
-                      onError={(e) => {
-                        (e.currentTarget as HTMLImageElement).src = placeholderImage(cafe.id);
-                      }}
-                    />
-                  </button>
-                ))}
-              </div>
-            </Section>
+              <Section title="Photos">
+                <div className="grid grid-cols-3 gap-2">
+                  {validPhotos.map((photo, i) => (
+                    <button
+                      key={photo.id}
+                      type="button"
+                      onClick={() => setLightboxIndex(i)}
+                      className="relative aspect-square overflow-hidden rounded-xl bg-[#F0EDE8] group"
+                    >
+                      <img
+                        src={photo.url}
+                        alt={photo.caption || cafe.name}
+                        referrerPolicy="no-referrer"
+                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        loading="lazy"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src =
+                            placeholderImage(cafe.id);
+                        }}
+                      />
+                    </button>
+                  ))}
+                </div>
+              </Section>
             </div>
           )}
 
@@ -791,7 +953,7 @@ export default function CafeDetailPage() {
                               )}
                             </div>
                             <span className="text-[15px] text-[#D48B3A] font-semibold whitespace-nowrap">
-                              Rp {Number(item.price).toLocaleString('id-ID')}
+                              Rp {Number(item.price).toLocaleString("id-ID")}
                             </span>
                           </div>
                         ))}
@@ -832,11 +994,11 @@ export default function CafeDetailPage() {
                 onClick={handleShortlist}
                 className={`w-full py-3 rounded-xl font-bold text-sm transition-colors ${
                   inShortlist
-                    ? 'bg-[#D48B3A] text-white hover:bg-[#B97726]'
-                    : 'bg-[#1C1C1A] text-white hover:bg-black'
+                    ? "bg-[#D48B3A] text-white hover:bg-[#B97726]"
+                    : "bg-[#1C1C1A] text-white hover:bg-black"
                 }`}
               >
-                {inShortlist ? 'Added to Shortlist ✓' : 'Add to Shortlist'}
+                {inShortlist ? "Added to Shortlist ✓" : "Add to Shortlist"}
               </button>
 
               {/* Secondary actions */}
@@ -848,8 +1010,8 @@ export default function CafeDetailPage() {
                 >
                   <Heart
                     size={18}
-                    className={favorited ? 'text-red-500' : 'text-[#5C5A52]'}
-                    fill={favorited ? 'currentColor' : 'none'}
+                    className={favorited ? "text-red-500" : "text-[#5C5A52]"}
+                    fill={favorited ? "currentColor" : "none"}
                   />
                   <span className="text-sm font-semibold text-[#1C1C1A]">
                     Favorite
@@ -862,8 +1024,8 @@ export default function CafeDetailPage() {
                 >
                   <Bookmark
                     size={18}
-                    className={bookmarked ? 'text-[#D48B3A]' : 'text-[#5C5A52]'}
-                    fill={bookmarked ? 'currentColor' : 'none'}
+                    className={bookmarked ? "text-[#D48B3A]" : "text-[#5C5A52]"}
+                    fill={bookmarked ? "currentColor" : "none"}
                   />
                   <span className="text-sm font-semibold text-[#1C1C1A]">
                     Bookmark
@@ -887,8 +1049,8 @@ export default function CafeDetailPage() {
 
             {/* Help text */}
             <p className="text-xs text-[#8A8880] text-center px-2">
-              Shortlist menyimpan kafe ini untuk dikunjungi nanti. Kamu bisa lihat
-              semua di halaman Shortlist.
+              Shortlist menyimpan kafe ini untuk dikunjungi nanti. Kamu bisa
+              lihat semua di halaman Shortlist.
             </p>
           </div>
         </aside>
@@ -905,8 +1067,8 @@ export default function CafeDetailPage() {
           >
             <Heart
               size={24}
-              className={favorited ? 'text-red-500' : 'text-[#5C5A52]'}
-              fill={favorited ? 'currentColor' : 'none'}
+              className={favorited ? "text-red-500" : "text-[#5C5A52]"}
+              fill={favorited ? "currentColor" : "none"}
             />
             <span className="text-[10px] text-[#8A8880] mt-0.5">Favorite</span>
           </button>
@@ -917,8 +1079,8 @@ export default function CafeDetailPage() {
           >
             <Bookmark
               size={24}
-              className={bookmarked ? 'text-[#D48B3A]' : 'text-[#5C5A52]'}
-              fill={bookmarked ? 'currentColor' : 'none'}
+              className={bookmarked ? "text-[#D48B3A]" : "text-[#5C5A52]"}
+              fill={bookmarked ? "currentColor" : "none"}
             />
             <span className="text-[10px] text-[#8A8880] mt-0.5">Bookmark</span>
           </button>
@@ -927,11 +1089,11 @@ export default function CafeDetailPage() {
             onClick={handleShortlist}
             className={`flex-1 py-3 rounded-xl font-bold text-sm transition-colors ${
               inShortlist
-                ? 'bg-[#D48B3A] text-white'
-                : 'bg-[#1C1C1A] text-white hover:bg-black'
+                ? "bg-[#D48B3A] text-white"
+                : "bg-[#1C1C1A] text-white hover:bg-black"
             }`}
           >
-            {inShortlist ? 'Added ✓' : 'Add to Shortlist'}
+            {inShortlist ? "Added ✓" : "Add to Shortlist"}
           </button>
         </div>
       </div>
@@ -951,6 +1113,92 @@ export default function CafeDetailPage() {
           index={lightboxIndex}
           onClose={() => setLightboxIndex(null)}
           onChange={setLightboxIndex}
+        />
+      )}
+    </div>
+  );
+}
+
+function GoogleReviewCard({ review }: { review: GoogleReview }) {
+  const initials = review.guestName.charAt(0).toUpperCase();
+  const stars = Array.from({ length: 5 }, (_, i) => i < review.rating);
+  const date = new Date(review.scrapedAt).toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+
+  return (
+    <div className="bg-white rounded-xl border border-[#F0EDE8] p-4">
+      <div className="flex items-start gap-3 mb-2">
+        {review.guestAvatar ? (
+          <img
+            src={review.guestAvatar}
+            alt={review.guestName}
+            referrerPolicy="no-referrer"
+            className="w-9 h-9 rounded-full object-cover shrink-0"
+          />
+        ) : (
+          <div className="w-9 h-9 rounded-full bg-[#4285F4] text-white text-sm font-bold flex items-center justify-center shrink-0">
+            {initials}
+          </div>
+        )}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-semibold text-[#1C1C1A] text-sm truncate">
+              {review.guestName}
+            </span>
+            <span className="inline-flex items-center gap-0.5">
+              {stars.map((filled, i) => (
+                <svg
+                  key={i}
+                  width="11"
+                  height="11"
+                  viewBox="0 0 24 24"
+                  fill={filled ? "#FBBC05" : "#E8E4DD"}
+                >
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                </svg>
+              ))}
+            </span>
+            <span className="inline-flex items-center gap-1 bg-[#F0F4FF] border border-[#C7D3F5] rounded-full px-2 py-0.5">
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                  fill="#4285F4"
+                />
+                <path
+                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                  fill="#34A853"
+                />
+                <path
+                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                  fill="#FBBC05"
+                />
+                <path
+                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                  fill="#EA4335"
+                />
+              </svg>
+              <span className="text-[10px] font-semibold text-[#4285F4]">
+                Google Maps
+              </span>
+            </span>
+          </div>
+          <div className="text-[11px] text-[#8A8880]">{date}</div>
+        </div>
+      </div>
+      {review.comment && (
+        <p className="text-sm text-[#1C1C1A] leading-relaxed line-clamp-3">
+          {review.comment}
+        </p>
+      )}
+      {review.photoUrl && (
+        <img
+          src={review.photoUrl}
+          alt=""
+          referrerPolicy="no-referrer"
+          className="mt-2 w-full max-h-40 object-cover rounded-lg"
         />
       )}
     </div>
@@ -998,7 +1246,7 @@ function SidebarStat({
   return (
     <div className="flex-1 flex flex-col items-center">
       <span
-        className={`text-xl font-bold ${accent ? 'text-[#D48B3A]' : 'text-[#1C1C1A]'}`}
+        className={`text-xl font-bold ${accent ? "text-[#D48B3A]" : "text-[#1C1C1A]"}`}
       >
         {value}
       </span>
@@ -1045,7 +1293,7 @@ function HeroMosaic({
         key={p.id}
         type="button"
         onClick={() => onOpen(index)}
-        className={`relative overflow-hidden bg-[#F0EDE8] group ${extra ?? ''}`}
+        className={`relative overflow-hidden bg-[#F0EDE8] group ${extra ?? ""}`}
       >
         {/* Skeleton shimmer — visible until the image fires onLoad */}
         {!isLoaded && (
@@ -1062,9 +1310,9 @@ function HeroMosaic({
           // when the Referer points to a different domain.
           referrerPolicy="no-referrer"
           className={`absolute inset-0 w-full h-full object-cover transition-all duration-500 group-hover:scale-[1.03] ${
-            isLoaded ? 'opacity-100' : 'opacity-0'
+            isLoaded ? "opacity-100" : "opacity-0"
           }`}
-          loading={index === 0 ? 'eager' : 'lazy'}
+          loading={index === 0 ? "eager" : "lazy"}
           onLoad={() => markLoaded(index)}
           onError={() => {
             // Don't inject a placeholder per slot — let the parent know so it
@@ -1094,7 +1342,7 @@ function HeroMosaic({
   if (photos.length === 1) {
     return (
       <div className="relative h-[480px] rounded-3xl overflow-hidden">
-        {tile(photos[0], 0, 'block w-full h-full')}
+        {tile(photos[0], 0, "block w-full h-full")}
       </div>
     );
   }
@@ -1103,8 +1351,8 @@ function HeroMosaic({
   if (photos.length === 2) {
     return (
       <div className="relative grid grid-cols-2 gap-3 h-[480px] rounded-3xl overflow-hidden">
-        {tile(photos[0], 0, 'h-full')}
-        {tile(photos[1], 1, 'h-full')}
+        {tile(photos[0], 0, "h-full")}
+        {tile(photos[1], 1, "h-full")}
         {showAllBtn}
       </div>
     );
@@ -1114,7 +1362,7 @@ function HeroMosaic({
   if (photos.length === 3) {
     return (
       <div className="relative grid grid-cols-2 gap-3 h-[480px] rounded-3xl overflow-hidden">
-        {tile(photos[0], 0, 'h-full')}
+        {tile(photos[0], 0, "h-full")}
         <div className="grid grid-rows-2 gap-3 h-full">
           {tile(photos[1], 1)}
           {tile(photos[2], 2)}
@@ -1128,7 +1376,7 @@ function HeroMosaic({
   if (photos.length === 4) {
     return (
       <div className="relative grid grid-cols-2 gap-3 h-[480px] rounded-3xl overflow-hidden">
-        {tile(photos[0], 0, 'h-full')}
+        {tile(photos[0], 0, "h-full")}
         <div className="grid grid-rows-3 gap-3 h-full">
           {tile(photos[1], 1)}
           {tile(photos[2], 2)}
@@ -1142,7 +1390,7 @@ function HeroMosaic({
   // 5+ photos — Airbnb-style 1 large + 2x2 grid
   return (
     <div className="relative grid grid-cols-2 gap-3 h-[480px] rounded-3xl overflow-hidden">
-      {tile(photos[0], 0, 'h-full')}
+      {tile(photos[0], 0, "h-full")}
       <div className="grid grid-cols-2 grid-rows-2 gap-3 h-full">
         {tile(photos[1], 1)}
         {tile(photos[2], 2)}

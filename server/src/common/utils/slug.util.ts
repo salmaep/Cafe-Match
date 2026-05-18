@@ -22,6 +22,12 @@ export function buildCafeSlug(name: string, id: number | string): string {
   return `${slugifyName(name)}-${id}`;
 }
 
-export function cafeSlugOrFallback(cafe: { id: number; name: string; slug?: string | null }): string {
-  return cafe.slug && cafe.slug.length > 0 ? cafe.slug : buildCafeSlug(cafe.name, cafe.id);
+export function cafeSlugOrFallback(cafe: {
+  id: number;
+  name: string;
+  slug?: string | null;
+}): string {
+  return cafe.slug && cafe.slug.length > 0
+    ? cafe.slug
+    : buildCafeSlug(cafe.name, cafe.id);
 }

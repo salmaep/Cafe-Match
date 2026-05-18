@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  ConflictException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { Cafe } from '../cafes/entities/cafe.entity';
@@ -7,7 +12,11 @@ import { CafePhoto } from '../photos/entities/cafe-photo.entity';
 import { CafeFeature } from '../cafes/entities/cafe-feature.entity';
 import { Promotion } from '../promotions/entities/promotion.entity';
 import { CafeAnalytics } from '../analytics/entities/cafe-analytics.entity';
-import { UpdateCafeDto, CreateOwnerCafeDto, UpdateMenuItemDto } from './dto/update-cafe.dto';
+import {
+  UpdateCafeDto,
+  CreateOwnerCafeDto,
+  UpdateMenuItemDto,
+} from './dto/update-cafe.dto';
 
 @Injectable()
 export class OwnerService {
@@ -66,17 +75,22 @@ export class OwnerService {
   }
 
   async createCafe(userId: number, dto: CreateOwnerCafeDto): Promise<Cafe> {
-    const existing = await this.cafesRepo.findOne({ where: { ownerId: userId } });
+    const existing = await this.cafesRepo.findOne({
+      where: { ownerId: userId },
+    });
     if (existing) {
       throw new ConflictException('You already have a cafe registered');
     }
 
-    const slug = dto.name
-      .toLowerCase()
-      .replace(/[^a-z0-9\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      .trim() + '-' + Date.now().toString(36);
+    const slug =
+      dto.name
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+        .trim() +
+      '-' +
+      Date.now().toString(36);
 
     const lat = dto.latitude ?? -6.9175;
     const lng = dto.longitude ?? 107.6191;
@@ -133,7 +147,10 @@ export class OwnerService {
     return saved;
   }
 
-  async updateMenus(userId: number, items: UpdateMenuItemDto[]): Promise<CafeMenu[]> {
+  async updateMenus(
+    userId: number,
+    items: UpdateMenuItemDto[],
+  ): Promise<CafeMenu[]> {
     const cafe = await this.requireOwnerCafe(userId);
 
     // Delete existing menus and replace
@@ -225,7 +242,14 @@ export class OwnerService {
             packageName: activePromotion.package?.name,
             expiresAt: activePromotion.expiresAt,
             daysRemaining: activePromotion.expiresAt
-              ? Math.max(0, Math.ceil((new Date(activePromotion.expiresAt).getTime() - Date.now()) / 86400000))
+              ? Math.max(
+                  0,
+                  Math.ceil(
+                    (new Date(activePromotion.expiresAt).getTime() -
+                      Date.now()) /
+                      86400000,
+                  ),
+                )
               : null,
             status: activePromotion.status,
           }
@@ -237,7 +261,9 @@ export class OwnerService {
   private async requireOwnerCafe(userId: number): Promise<Cafe> {
     const cafe = await this.cafesRepo.findOne({ where: { ownerId: userId } });
     if (!cafe) {
-      throw new NotFoundException('No cafe found. Please register your cafe first.');
+      throw new NotFoundException(
+        'No cafe found. Please register your cafe first.',
+      );
     }
     return cafe;
   }

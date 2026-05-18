@@ -1,13 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
-import { useNavigate, Navigate } from 'react-router-dom';
-import { cafesApi } from '../api/cafes.api';
-import type { Cafe } from '../types';
-import { usePreferences } from '../context/PreferencesContext';
-import { useShortlist } from '../context/ShortlistContext';
-import { useAuth } from '../context/AuthContext';
-import SwipeCard from '../components/discover/SwipeCard';
-import { cafeUrl } from '../utils/cafeUrl';
-import Seo from '../components/seo/Seo';
+import { useEffect, useRef, useState } from "react";
+import { useNavigate, Navigate } from "react-router-dom";
+import { cafesApi } from "../api/cafes.api";
+import type { Cafe } from "../types";
+import { usePreferences } from "../context/PreferencesContext";
+import { useShortlist } from "../context/ShortlistContext";
+import SwipeCard from "../components/discover/SwipeCard";
+import { cafeUrl } from "../utils/cafeUrl";
+import Seo from "../components/seo/Seo";
 
 const SWIPE_THRESHOLD = 120;
 
@@ -22,17 +21,19 @@ export default function DiscoverSwipePage() {
   const [loading, setLoading] = useState(true);
   const [dragX, setDragX] = useState(0);
   const [dragging, setDragging] = useState(false);
-  const [exitDir, setExitDir] = useState<'left' | 'right' | null>(null);
+  const [exitDir, setExitDir] = useState<"left" | "right" | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const startXRef = useRef(0);
   const pointerIdRef = useRef<number | null>(null);
 
-  // All useEffects must come before any conditional returns (rules of hooks)
+  // All hooks must come before any conditional returns (rules of hooks)
   useEffect(() => {
     if (!preferences) return;
+
     const lat = preferences.location?.latitude ?? -6.9175;
     const lng = preferences.location?.longitude ?? 107.6191;
-    const radius = 9999 * 1000;
+    const radius =
+      preferences.radius != null ? preferences.radius * 1000 : 9999 * 1000;
     const purposeId = getPurposeId(preferences.purpose) ?? undefined;
     const facilities =
       preferences.amenities && preferences.amenities.length > 0
@@ -44,8 +45,20 @@ export default function DiscoverSwipePage() {
     setCafes([]);
     setIndex(0);
 
+    const baseParams = { lat, lng, radius, limit: 20, purposeId, priceRange };
+
     cafesApi
-      .discover({ lat, lng, radius, limit: 50, purposeId, facilities, priceRange })
+      .discover({ ...baseParams, facilities })
+      .then((res) => {
+        if (res.data.length > 0) return res;
+        // Fallback 1: drop facilities (too restrictive when auto-preselected from purpose)
+        return cafesApi.discover(baseParams);
+      })
+      .then((res) => {
+        if (res.data.length > 0) return res;
+        // Fallback 2: drop purposeId too, just location + radius
+        return cafesApi.discover({ lat, lng, radius, limit: 20 });
+      })
       .then((res) => setCafes(res.data ?? []))
       .catch(() => setCafes([]))
       .finally(() => setLoading(false));
@@ -62,7 +75,7 @@ export default function DiscoverSwipePage() {
 
   useEffect(() => {
     if (!allDone || !preferences) return;
-    const t = setTimeout(() => navigate('/discover', { replace: true }), 1200);
+    const t = setTimeout(() => navigate("/", { replace: true }), 1200);
     return () => clearTimeout(t);
   }, [allDone, navigate, preferences]);
 
@@ -71,13 +84,8 @@ export default function DiscoverSwipePage() {
     return <Navigate to="/discover" replace />;
   }
 
-  const triggerSwipe = (dir: 'left' | 'right') => {
-    // Guard: require login before adding to shortlist — redirect back here after login
-    if (dir === 'right' && !user) {
-      navigate('/login?redirect=/discover/swipe');
-      return;
-    }
-    if (dir === 'right' && current) {
+  const triggerSwipe = (dir: "left" | "right") => {
+    if (dir === "right" && current) {
       const cafe = current;
       addToShortlist(cafe).then((added) => {
         if (added) setToast(`Added "${cafe.name}" to Shortlist!`);
@@ -107,11 +115,11 @@ export default function DiscoverSwipePage() {
     if (pointerIdRef.current !== e.pointerId) return;
     pointerIdRef.current = null;
     setDragging(false);
-    if (dragX > SWIPE_THRESHOLD) triggerSwipe('right');
-    else if (dragX < -SWIPE_THRESHOLD) triggerSwipe('left');
+    if (dragX > SWIPE_THRESHOLD) triggerSwipe("right");
+    else if (dragX < -SWIPE_THRESHOLD) triggerSwipe("left");
     else {
       if (Math.abs(dragX) < 8 && current) {
-        navigate(cafeUrl(current));
+        navigate(cafeUrl(current), { state: { backLabel: "Discover" } });
       }
       setDragX(0);
     }
@@ -130,8 +138,19 @@ export default function DiscoverSwipePage() {
     return (
       <div className="min-h-[80vh] flex flex-col items-center justify-center bg-[#FAF9F6] p-8 text-center">
         <span className="text-6xl mb-4">🗺️</span>
-        <h2 className="text-2xl font-bold text-[#1C1C1A] mb-1">No match?</h2>
-        <p className="text-[#8A8880]">Let's explore the map!</p>
+        <h2 className="text-2xl font-bold text-[#1C1C1A] mb-1">
+          Semua sudah dilihat!
+        </h2>
+        <p className="text-[#8A8880] mb-6">
+          Yuk jelajahi lebih banyak cafe di halaman Explore
+        </p>
+        <button
+          type="button"
+          onClick={() => navigate("/", { replace: true })}
+          className="px-6 py-3 bg-[#D48B3A] text-white font-bold rounded-xl hover:bg-[#b87528] transition-colors"
+        >
+          Buka Explore 🗺️
+        </button>
       </div>
     );
   }
@@ -140,12 +159,12 @@ export default function DiscoverSwipePage() {
   let rotate = dragX / 20;
   let opacity = 1;
   let useTransition = !dragging;
-  if (exitDir === 'right') {
+  if (exitDir === "right") {
     translateX = window.innerWidth;
     rotate = 25;
     opacity = 0;
     useTransition = true;
-  } else if (exitDir === 'left') {
+  } else if (exitDir === "left") {
     translateX = -window.innerWidth;
     rotate = -25;
     opacity = 0;
@@ -166,10 +185,12 @@ export default function DiscoverSwipePage() {
       <div className="hidden md:block shrink-0 px-4 pt-3 pb-1 max-w-md mx-auto w-full">
         <div className="flex items-center justify-between gap-2 bg-white border border-[#F0EDE8] rounded-full px-3 py-1.5 text-[11px] font-semibold text-[#5C5A52] shadow-sm">
           <span className="flex items-center gap-1 text-red-500">
-            <span className="text-sm">←</span> Geser kiri = <span className="font-bold">Skip</span>
+            <span className="text-sm">←</span> Geser kiri ={" "}
+            <span className="font-bold">Skip</span>
           </span>
           <span className="flex items-center gap-1 text-[#D48B3A]">
-            <span className="font-bold">Shortlist</span> = Geser kanan <span className="text-sm">→</span>
+            <span className="font-bold">Shortlist</span> = Geser kanan{" "}
+            <span className="text-sm">→</span>
           </span>
         </div>
       </div>
@@ -178,7 +199,7 @@ export default function DiscoverSwipePage() {
       <div className="flex-1 min-h-0 flex items-center justify-center px-4 py-2 overflow-hidden">
         <div
           className="relative w-full max-w-sm"
-          style={{ height: 'min(560px, calc(100dvh - 230px))' }}
+          style={{ height: "min(560px, calc(100vh - 215px))" }}
         >
           <div
             onPointerDown={onPointerDown}
@@ -189,7 +210,9 @@ export default function DiscoverSwipePage() {
             style={{
               transform: `translateX(${translateX}px) rotate(${rotate}deg)`,
               opacity,
-              transition: useTransition ? 'transform 0.3s ease-out, opacity 0.3s ease-out' : 'none',
+              transition: useTransition
+                ? "transform 0.3s ease-out, opacity 0.3s ease-out"
+                : "none",
             }}
           >
             {current && (
@@ -219,8 +242,8 @@ export default function DiscoverSwipePage() {
 
       {/* Shortlist FAB */}
       <button
-        onClick={() => navigate('/shortlist')}
-        className="hidden md:flex fixed bottom-6 right-6 w-14 h-14 rounded-full bg-[#D48B3A] text-white shadow-xl items-center justify-center hover:bg-[#b87528] transition-colors z-30"
+        onClick={() => navigate("/shortlist")}
+        className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-[#D48B3A] text-white shadow-xl flex items-center justify-center hover:bg-[#b87528] transition-colors z-30"
         title="View Shortlist"
       >
         <span className="text-2xl leading-none">★</span>
@@ -234,7 +257,7 @@ export default function DiscoverSwipePage() {
       {/* Footer action buttons */}
       <footer className="shrink-0 flex px-6 pb-6 pt-2 max-w-md w-full mx-auto items-center justify-center gap-10 relative z-20">
         <button
-          onClick={() => triggerSwipe('left')}
+          onClick={() => triggerSwipe("left")}
           disabled={!!exitDir}
           className="w-16 h-16 rounded-full bg-white shadow-lg flex items-center justify-center text-2xl text-red-500 hover:bg-red-50 transition-colors border-2 border-red-200 disabled:opacity-50"
           title="Skip / Nope"
@@ -242,7 +265,7 @@ export default function DiscoverSwipePage() {
           ✕
         </button>
         <button
-          onClick={() => triggerSwipe('right')}
+          onClick={() => triggerSwipe("right")}
           disabled={!!exitDir}
           className="w-16 h-16 rounded-full bg-[#D48B3A] shadow-lg flex items-center justify-center text-3xl text-white hover:bg-[#b87528] transition-colors disabled:opacity-50"
           title="Add to Shortlist"

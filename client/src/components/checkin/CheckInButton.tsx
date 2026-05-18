@@ -1,8 +1,8 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useActiveCheckin } from '../../context/ActiveCheckinContext';
-import { useAuth } from '../../context/AuthContext';
-import type { Cafe } from '../../types';
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { useActiveCheckin } from "../../context/ActiveCheckinContext";
+import { useAuth } from "../../context/AuthContext";
+import type { Cafe } from "../../types";
 
 interface Props {
   cafe: Cafe;
@@ -16,7 +16,7 @@ interface Props {
  *   - Active here         → "✓ Sudah Check-In" (disabled, shows duration)
  *   - Idle, can check in  → "Check In Sekarang" (primary CTA)
  */
-export default function CheckInButton({ cafe, className = '' }: Props) {
+export default function CheckInButton({ cafe, className = "" }: Props) {
   const { user } = useAuth();
   const { active, checkIn } = useActiveCheckin();
   const [submitting, setSubmitting] = useState(false);
@@ -46,11 +46,9 @@ export default function CheckInButton({ cafe, className = '' }: Props) {
 
   // Active at a different cafe
   if (active && active.cafeId !== cafe.id) {
-    const otherName = active.cafeName || active.cafe?.name || 'cafe lain';
+    const otherName = active.cafeName || active.cafe?.name || "cafe lain";
     return (
-      <div
-        className={`flex flex-col items-stretch gap-1 ${className}`}
-      >
+      <div className={`flex flex-col items-stretch gap-1 ${className}`}>
         <div className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-amber-50 text-amber-800 font-bold text-sm ring-1 ring-amber-200">
           ⚠️ Check out dulu dari {otherName}
         </div>
@@ -65,7 +63,7 @@ export default function CheckInButton({ cafe, className = '' }: Props) {
 
     // Get current location
     if (!navigator.geolocation) {
-      setError('Browser tidak support GPS');
+      setError("Browser tidak support GPS");
       setSubmitting(false);
       return;
     }
@@ -79,7 +77,7 @@ export default function CheckInButton({ cafe, className = '' }: Props) {
             longitude: pos.coords.longitude,
           });
         } catch (err: any) {
-          setError(err?.response?.data?.message || 'Gagal check-in');
+          setError(err?.response?.data?.message || "Gagal check-in");
         } finally {
           setSubmitting(false);
         }
@@ -87,11 +85,11 @@ export default function CheckInButton({ cafe, className = '' }: Props) {
       (geoErr) => {
         setSubmitting(false);
         if (geoErr.code === geoErr.PERMISSION_DENIED) {
-          setError('Izin lokasi ditolak. Aktifkan GPS untuk check-in.');
+          setError("Izin lokasi ditolak. Aktifkan GPS untuk check-in.");
         } else if (geoErr.code === geoErr.POSITION_UNAVAILABLE) {
-          setError('Lokasi tidak tersedia. Coba lagi di luar ruangan.');
+          setError("Lokasi tidak tersedia. Coba lagi di luar ruangan.");
         } else {
-          setError('Gagal dapat lokasi. Coba lagi.');
+          setError("Gagal dapat lokasi. Coba lagi.");
         }
       },
       { enableHighAccuracy: true, timeout: 10_000 },
@@ -112,7 +110,7 @@ export default function CheckInButton({ cafe, className = '' }: Props) {
             Check In…
           </>
         ) : (
-          '📍 Check In Sekarang'
+          "📍 Check In Sekarang"
         )}
       </button>
       {error && (

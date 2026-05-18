@@ -1,15 +1,28 @@
-import { useEffect, useState } from 'react';
-import { checkinsApi, type LeaderboardEntry } from '../../api/checkins.api';
+import { useEffect, useState } from "react";
+import { checkinsApi, type LeaderboardEntry } from "../../api/checkins.api";
 
 interface Props {
   cafeId: number;
 }
 
-const RANK_STYLE: Record<number, { bg: string; text: string; emoji: string }> = {
-  1: { bg: 'bg-gradient-to-br from-[#FBBF24] to-[#F59E0B]', text: 'text-white', emoji: '👑' },
-  2: { bg: 'bg-gradient-to-br from-[#E5E7EB] to-[#9CA3AF]', text: 'text-white', emoji: '🥈' },
-  3: { bg: 'bg-gradient-to-br from-[#FCD34D] to-[#B45309]', text: 'text-white', emoji: '🥉' },
-};
+const RANK_STYLE: Record<number, { bg: string; text: string; emoji: string }> =
+  {
+    1: {
+      bg: "bg-gradient-to-br from-[#FBBF24] to-[#F59E0B]",
+      text: "text-white",
+      emoji: "👑",
+    },
+    2: {
+      bg: "bg-gradient-to-br from-[#E5E7EB] to-[#9CA3AF]",
+      text: "text-white",
+      emoji: "🥈",
+    },
+    3: {
+      bg: "bg-gradient-to-br from-[#FCD34D] to-[#B45309]",
+      text: "text-white",
+      emoji: "🥉",
+    },
+  };
 
 function formatTotalDuration(minutes?: number): string | null {
   if (!minutes || minutes < 1) return null;
@@ -50,7 +63,9 @@ export default function CafeLeaderboard({ cafeId }: Props) {
     return (
       <div className="bg-white border border-dashed border-[#E0DCD3] rounded-xl px-4 py-6 text-center">
         <span className="text-3xl mb-2 inline-block">🏆</span>
-        <p className="text-sm text-[#5C5A52] font-semibold">Belum ada yang check-in</p>
+        <p className="text-sm text-[#5C5A52] font-semibold">
+          Belum ada yang check-in
+        </p>
         <p className="text-[12px] text-[#8A8880] mt-1">
           Jadi yang pertama, tunjukkan namamu di leaderboard!
         </p>
@@ -67,8 +82,8 @@ export default function CafeLeaderboard({ cafeId }: Props) {
           <div
             key={`${entry.userId}-${entry.rank}`}
             className={`flex items-center gap-3 px-4 py-3 ${
-              idx > 0 ? 'border-t border-[#F0EDE8]' : ''
-            } ${entry.rank <= 3 ? 'bg-gradient-to-r from-[#FFFBF3] to-white' : ''}`}
+              idx > 0 ? "border-t border-[#F0EDE8]" : ""
+            } ${entry.rank <= 3 ? "bg-gradient-to-r from-[#FFFBF3] to-white" : ""}`}
           >
             {/* Rank badge */}
             <div className="shrink-0">

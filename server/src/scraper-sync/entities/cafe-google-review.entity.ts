@@ -1,4 +1,11 @@
-import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  Index,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { Cafe } from '../../cafes/entities/cafe.entity';
 
 @Entity('cafe_google_reviews')
@@ -14,7 +21,12 @@ export class CafeGoogleReview {
   @Column({ name: 'guest_name', length: 150 })
   guestName: string;
 
-  @Column({ name: 'guest_avatar', type: 'varchar', length: 1000, nullable: true })
+  @Column({
+    name: 'guest_avatar',
+    type: 'varchar',
+    length: 1000,
+    nullable: true,
+  })
   guestAvatar: string | null;
 
   @Column({ type: 'tinyint', unsigned: true })
@@ -29,7 +41,11 @@ export class CafeGoogleReview {
   @Column({ name: 'external_hash', type: 'char', length: 64 })
   externalHash: string;
 
-  @Column({ name: 'scraped_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @Column({
+    name: 'scraped_at',
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
   scrapedAt: Date;
 
   @ManyToOne(() => Cafe, { onDelete: 'CASCADE' })

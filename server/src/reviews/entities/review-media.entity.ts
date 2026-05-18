@@ -1,4 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { Review } from './review.entity';
 
 @Entity('review_media')
@@ -15,10 +21,19 @@ export class ReviewMedia {
   @Column({ length: 1000 })
   url: string;
 
-  @Column({ name: 'display_order', type: 'smallint', unsigned: true, default: 0 })
+  @Column({
+    name: 'display_order',
+    type: 'smallint',
+    unsigned: true,
+    default: 0,
+  })
   displayOrder: number;
 
-  @Column({ name: 'created_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @Column({
+    name: 'created_at',
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
   createdAt: Date;
 
   @ManyToOne(() => Review, { onDelete: 'CASCADE' })

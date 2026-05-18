@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { notificationsApi } from '../api/notifications.api';
-import { APP_VERSION } from '../config/version';
-import EditProfileModal from '../components/profile/EditProfileModal';
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { notificationsApi } from "../api/notifications.api";
+import { APP_VERSION } from "../config/version";
+import EditProfileModal from "../components/profile/EditProfileModal";
 
 export default function ProfilePage() {
   const { user, logout, isLoading } = useAuth();
@@ -17,7 +17,10 @@ export default function ProfilePage() {
     notificationsApi
       .unreadCount()
       .then((res) => {
-        const c = typeof res.data === 'number' ? res.data : (res.data as any).count ?? 0;
+        const c =
+          typeof res.data === "number"
+            ? res.data
+            : ((res.data as any).count ?? 0);
         setUnread(c);
       })
       .catch(() => setUnread(0));
@@ -36,7 +39,9 @@ export default function ProfilePage() {
       <div className="min-h-screen bg-[#FAF9F6] flex items-center justify-center px-4">
         <div className="bg-white rounded-2xl shadow-sm border border-[#F0EDE8] p-8 max-w-md w-full text-center">
           <span className="text-5xl mb-4 inline-block">☕</span>
-          <h1 className="text-2xl font-extrabold text-[#1C1C1A]">Welcome to CafeMatch</h1>
+          <h1 className="text-2xl font-extrabold text-[#1C1C1A]">
+            Welcome to CafeMatch
+          </h1>
           <p className="text-sm text-[#8A8880] mt-2 mb-6">
             Login to access your profile and saved cafes
           </p>
@@ -51,19 +56,19 @@ export default function ProfilePage() {
     );
   }
 
-  const initials = (user.name || user.email || '?')
+  const initials = (user.name || user.email || "?")
     .split(/\s+/)
     .map((s) => s[0])
     .slice(0, 2)
-    .join('')
+    .join("")
     .toUpperCase();
 
   const friendCode = (user as any).friendCode as string | undefined;
 
   const handleLogout = () => {
-    if (!confirm('Yakin mau logout?')) return;
+    if (!confirm("Yakin mau logout?")) return;
     logout();
-    navigate('/');
+    navigate("/");
   };
 
   const copyCode = async () => {
@@ -78,7 +83,7 @@ export default function ProfilePage() {
   const shareWhatsApp = () => {
     if (!friendCode) return;
     const text = `Yuk gabung CafeMatch! Pakai friend code ku: ${friendCode}\n\nDownload di salma.imola.ai`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
   };
 
   const shareNative = async () => {
@@ -86,9 +91,9 @@ export default function ProfilePage() {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'CafeMatch',
+          title: "CafeMatch",
           text: `Friend code ku di CafeMatch: ${friendCode}`,
-          url: 'https://salma.imola.ai',
+          url: "https://salma.imola.ai",
         });
       } catch {}
     } else {
@@ -173,7 +178,7 @@ export default function ProfilePage() {
                 className="shrink-0 px-3 py-2.5 rounded-lg bg-[#FAF9F6] hover:bg-[#F0EDE8] border border-[#F0EDE8] text-[#1C1C1A] text-xs font-semibold transition-colors min-h-[60px] min-w-[56px]"
                 title="Copy code"
               >
-                {copied ? '✓ Copied' : '📋 Copy'}
+                {copied ? "✓ Copied" : "📋 Copy"}
               </button>
             </div>
 
@@ -216,9 +221,24 @@ export default function ProfilePage() {
 
         {/* My Lists */}
         <Section title="Cafe Saya">
-          <MenuItem to="/favorites" icon="❤️" label="My Favorites" subtitle="Cafe yang kamu suka" />
-          <MenuItem to="/bookmarks" icon="🔖" label="My Bookmarks" subtitle="Untuk dikunjungi nanti" />
-          <MenuItem to="/shortlist" icon="⭐" label="Shortlist" subtitle="Hasil swipe Discover" />
+          <MenuItem
+            to="/favorites"
+            icon="❤️"
+            label="My Favorites"
+            subtitle="Cafe yang kamu suka"
+          />
+          <MenuItem
+            to="/bookmarks"
+            icon="🔖"
+            label="My Bookmarks"
+            subtitle="Untuk dikunjungi nanti"
+          />
+          <MenuItem
+            to="/shortlist"
+            icon="⭐"
+            label="Shortlist"
+            subtitle="Hasil swipe Discover"
+          />
         </Section>
 
         {/* Account */}
@@ -230,8 +250,12 @@ export default function ProfilePage() {
           >
             <span className="text-lg w-7 text-center">⚙️</span>
             <div className="flex-1 min-w-0">
-              <div className="font-semibold text-sm text-[#1C1C1A]">Edit Profil</div>
-              <div className="text-[11px] text-[#A8A59C]">Nama, foto, password</div>
+              <div className="font-semibold text-sm text-[#1C1C1A]">
+                Edit Profil
+              </div>
+              <div className="text-[11px] text-[#A8A59C]">
+                Nama, foto, password
+              </div>
             </div>
             <span className="text-[#8A8880]">›</span>
           </button>
@@ -258,7 +282,13 @@ export default function ProfilePage() {
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
   return (
     <div>
       <h3 className="text-[11px] font-bold text-[#8A8880] uppercase tracking-wider px-1 mb-1.5">
@@ -291,7 +321,9 @@ function MenuItem({
     >
       <span className="text-lg w-7 text-center">{icon}</span>
       <div className="flex-1 min-w-0">
-        <div className="font-semibold text-sm text-[#1C1C1A] truncate">{label}</div>
+        <div className="font-semibold text-sm text-[#1C1C1A] truncate">
+          {label}
+        </div>
         {subtitle && (
           <div className="text-[11px] text-[#A8A59C] truncate">{subtitle}</div>
         )}

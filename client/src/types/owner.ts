@@ -1,4 +1,4 @@
-import type { Cafe } from './index';
+import type { Cafe } from "./index";
 
 export interface AdvertisementPackage {
   id: number;
@@ -14,9 +14,14 @@ export interface AdvertisementPackage {
   isActive: boolean;
 }
 
-export type PromotionType = 'new_cafe' | 'featured_promo';
-export type PromotionStatus = 'pending_payment' | 'pending_review' | 'active' | 'rejected' | 'expired';
-export type BillingCycle = 'monthly' | 'annual';
+export type PromotionType = "new_cafe" | "featured_promo";
+export type PromotionStatus =
+  | "pending_payment"
+  | "pending_review"
+  | "active"
+  | "rejected"
+  | "expired";
+export type BillingCycle = "monthly" | "annual";
 
 export interface Promotion {
   id: number;
@@ -44,7 +49,7 @@ export interface Transaction {
   midtransOrderId: string;
   midtransSnapToken: string | null;
   amount: number;
-  status: 'pending' | 'success' | 'failed' | 'refunded';
+  status: "pending" | "success" | "failed" | "refunded";
   paidAt: string | null;
   createdAt: string;
   promotion?: Promotion;

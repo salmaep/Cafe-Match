@@ -64,7 +64,15 @@ interface ChipProps {
   onClick: () => void;
 }
 
-function Chip({ label, active, count, disabled, icon, autoSelected, onClick }: ChipProps) {
+function Chip({
+  label,
+  active,
+  count,
+  disabled,
+  icon,
+  autoSelected,
+  onClick,
+}: ChipProps) {
   return (
     <button
       type="button"
@@ -79,7 +87,12 @@ function Chip({ label, active, count, disabled, icon, autoSelected, onClick }: C
       }`}
     >
       {autoSelected ? (
-        <span className="text-[11px] leading-none shrink-0" aria-label="Direkomendasikan">⭐</span>
+        <span
+          className="text-[11px] leading-none shrink-0"
+          aria-label="Direkomendasikan"
+        >
+          ⭐
+        </span>
       ) : active ? (
         <span className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-white text-[#D48B3A] text-[9px] font-extrabold shrink-0">
           ✓
@@ -213,7 +226,11 @@ export default function FilterPanel({
         </div>
       )}
 
-      <div className={isModal ? "flex-1 min-h-0 overflow-y-auto overscroll-contain" : ""}>
+      <div
+        className={
+          isModal ? "flex-1 min-h-0 overflow-y-auto overscroll-contain" : ""
+        }
+      >
         {!hidePrice && (
           <div className="px-4 py-3 border-b border-[#F0EDE8]">
             <div className="text-[11px] font-bold text-[#8A8880] uppercase tracking-wider mb-2">

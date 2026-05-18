@@ -1,8 +1,15 @@
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
-import { useNavigate } from 'react-router-dom';
-import type { Cafe } from '../types';
-import { useAuth } from './AuthContext';
-import { shortlistsApi } from '../api/shortlists.api';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from "react";
+import { useNavigate } from "react-router-dom";
+import type { Cafe } from "../types";
+import { useAuth } from "./AuthContext";
+import { shortlistsApi } from "../api/shortlists.api";
 
 interface ShortlistContextType {
   shortlist: Cafe[];
@@ -48,7 +55,9 @@ export function ShortlistProvider({ children }: { children: ReactNode }) {
   const addToShortlist = useCallback(
     async (c: Cafe): Promise<boolean> => {
       if (!requireAuth()) return false;
-      setShortlist((prev) => (prev.some((x) => x.id === c.id) ? prev : [c, ...prev]));
+      setShortlist((prev) =>
+        prev.some((x) => x.id === c.id) ? prev : [c, ...prev],
+      );
       try {
         await shortlistsApi.add(c.id);
         return true;
@@ -108,6 +117,7 @@ export function ShortlistProvider({ children }: { children: ReactNode }) {
 
 export function useShortlist() {
   const ctx = useContext(ShortlistContext);
-  if (!ctx) throw new Error('useShortlist must be used within a ShortlistProvider');
+  if (!ctx)
+    throw new Error("useShortlist must be used within a ShortlistProvider");
   return ctx;
 }

@@ -1,6 +1,14 @@
 import {
-  Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany,
-  JoinColumn, CreateDateColumn, UpdateDateColumn, DeleteDateColumn, Index,
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  OneToMany,
+  JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  DeleteDateColumn,
+  Index,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Cafe } from '../../cafes/entities/cafe.entity';
@@ -42,7 +50,10 @@ export class Review {
   @JoinColumn({ name: 'cafe_id' })
   cafe: Cafe;
 
-  @OneToMany(() => ReviewRating, (r) => r.review, { cascade: true, eager: true })
+  @OneToMany(() => ReviewRating, (r) => r.review, {
+    cascade: true,
+    eager: true,
+  })
   ratings: ReviewRating[];
 
   @OneToMany(() => ReviewMedia, (m) => m.review, { cascade: true, eager: true })

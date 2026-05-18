@@ -16,8 +16,14 @@ import { AdminApiKeyGuard } from '../common/guards/admin-api-key.guard';
 @Module({
   imports: [
     TypeOrmModule.forFeature([
-      Cafe, CafePhoto, CafeFeature, Feature, CafeMenu, CafeGoogleReview,
-      Purpose, PurposeRequirement,
+      Cafe,
+      CafePhoto,
+      CafeFeature,
+      Feature,
+      CafeMenu,
+      CafeGoogleReview,
+      Purpose,
+      PurposeRequirement,
     ]),
     MeiliModule,
   ],

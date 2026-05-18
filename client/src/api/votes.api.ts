@@ -1,5 +1,5 @@
-import apiClient from './client';
-import type { VoteTally } from '../types';
+import apiClient from "./client";
+import type { VoteTally } from "../types";
 
 export const votesApi = {
   castVote: (cafeId: number, purposeIds: number[]) =>

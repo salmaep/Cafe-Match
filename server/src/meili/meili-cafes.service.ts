@@ -307,7 +307,11 @@ export class MeiliCafesService {
 
     const sort: string[] = [];
     if (sortMode === 'trending') {
-      sort.push('favoritesCount:desc', 'bookmarksCount:desc', 'googleRating:desc');
+      sort.push(
+        'favoritesCount:desc',
+        'bookmarksCount:desc',
+        'googleRating:desc',
+      );
     } else if (sortMode === 'rating') {
       sort.push('googleRating:desc', 'favoritesCount:desc');
     } else if (sortMode === 'newest') {
@@ -375,7 +379,8 @@ export class MeiliCafesService {
         filter: 'isActive = true',
         limit: 0,
       });
-      const dist = (result.facetDistribution?.facilities as Record<string, number>) ?? {};
+      const dist =
+        (result.facetDistribution?.facilities as Record<string, number>) ?? {};
       this.facilityCountsCache = dist;
       this.facilityCountsCacheAt = now;
       return dist;

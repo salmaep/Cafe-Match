@@ -1,5 +1,5 @@
-import apiClient from './client';
-import type { Cafe } from '../types';
+import apiClient from "./client";
+import type { Cafe } from "../types";
 
 export interface Checkin {
   id: number;
@@ -39,7 +39,7 @@ export interface GlobalLeaderboardEntry {
   badge?: string | null;
 }
 
-export type LeaderboardPeriod = 'month' | 'all';
+export type LeaderboardPeriod = "month" | "all";
 
 export interface StreakInfo {
   current: number;
@@ -50,24 +50,25 @@ export interface StreakInfo {
 
 export const checkinsApi = {
   checkIn: (data: { cafeId: number; latitude: number; longitude: number }) =>
-    apiClient.post<Checkin>('/checkins/in', data),
+    apiClient.post<Checkin>("/checkins/in", data),
 
   checkOut: (data: { checkinId?: number; cafeId?: number } = {}) =>
-    apiClient.post<Checkin>('/checkins/out', data),
+    apiClient.post<Checkin>("/checkins/out", data),
 
-  getActive: () => apiClient.get<Checkin | null>('/checkins/active'),
+  getActive: () => apiClient.get<Checkin | null>("/checkins/active"),
 
   history: (page = 1, limit = 20) =>
-    apiClient.get<{ data: Checkin[]; meta: { page: number; limit: number; total: number } }>(
-      `/checkins/history?page=${page}&limit=${limit}`,
-    ),
+    apiClient.get<{
+      data: Checkin[];
+      meta: { page: number; limit: number; total: number };
+    }>(`/checkins/history?page=${page}&limit=${limit}`),
 
   leaderboard: (cafeId: number) =>
     apiClient.get<LeaderboardEntry[]>(`/checkins/cafe/${cafeId}/leaderboard`),
 
-  streak: () => apiClient.get<StreakInfo>('/checkins/streak'),
+  streak: () => apiClient.get<StreakInfo>("/checkins/streak"),
 
-  globalLeaderboard: (period: LeaderboardPeriod = 'all') =>
+  globalLeaderboard: (period: LeaderboardPeriod = "all") =>
     apiClient.get<GlobalLeaderboardEntry[]>(
       `/checkins/global-leaderboard?period=${period}`,
     ),

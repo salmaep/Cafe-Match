@@ -1,10 +1,10 @@
-import type { Cafe } from '../types';
+import type { Cafe } from "../types";
 import {
   FACILITY_ICONS,
   FACILITY_LABELS,
   chipFromFacilityKey,
   type FacilityChip,
-} from '@shared/constants/facilities';
+} from "@shared/constants/facilities";
 
 export { FACILITY_ICONS, FACILITY_LABELS, type FacilityChip };
 
@@ -41,7 +41,7 @@ export function buildFacilityChips(cafe: Cafe): FacilityChip[] {
 
   const fac = cafe.facilities;
   if (Array.isArray(fac)) {
-    if (fac.length > 0 && typeof fac[0] === 'string') {
+    if (fac.length > 0 && typeof fac[0] === "string") {
       (fac as string[]).forEach((name) => push(name));
     } else {
       (fac as any[]).forEach((f) => {

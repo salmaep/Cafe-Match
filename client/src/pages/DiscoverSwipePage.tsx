@@ -14,7 +14,6 @@ export default function DiscoverSwipePage() {
   const navigate = useNavigate();
   const { preferences, getPurposeId } = usePreferences();
   const { addToShortlist, shortlist } = useShortlist();
-  const { user } = useAuth();
 
   const [cafes, setCafes] = useState<Cafe[]>([]);
   const [index, setIndex] = useState(0);

@@ -23,6 +23,7 @@ import { useLocation } from '../context/LocationContext';
 import { useSearchCafes } from '../queries/cafes/use-search-cafes';
 import { hitsToCafes } from '../queries/cafes/api';
 import { usePurposes } from '../queries/purposes/use-purposes';
+import { getPurposeBySlug } from '@shared/constants/purposes';
 import { Cafe } from '../types';
 import { colors, spacing, radius } from '../theme';
 import NativeAdCard from '../components/NativeAdCard';
@@ -249,6 +250,7 @@ export default function TrendingScreen() {
               </TouchableOpacity>
               {purposes.map((p) => {
                 const active = purposeId === p.id;
+                const emoji = getPurposeBySlug(p.slug)?.emoji ?? p.icon;
                 return (
                   <TouchableOpacity
                     key={p.id}
@@ -256,7 +258,7 @@ export default function TrendingScreen() {
                     style={[styles.purposeChip, active && styles.purposeChipActive]}
                   >
                     <Text style={[styles.purposeChipText, active && styles.purposeChipTextActive]}>
-                      {p.icon ? `${p.icon} ` : ''}{p.name}
+                      {emoji ? `${emoji} ` : ''}{p.name}
                     </Text>
                   </TouchableOpacity>
                 );

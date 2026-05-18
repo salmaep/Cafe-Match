@@ -23,8 +23,9 @@ import CafePhoto from "../components/CafePhoto";
 import CafeListItem from "../components/cafe/CafeListItem";
 import MobileFilterModal from "../components/cafe/MobileFilterModal";
 import { usePurposes } from "../queries/purposes/use-purposes";
-import Swiper from "react-native-deck-swiper";
-import MapView, { Marker, Circle } from "react-native-maps";
+import SwipeableCard from "../components/SwipeableCard";
+import MapView, { Marker, Circle, Region } from "react-native-maps";
+import Supercluster from "supercluster";
 import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import { ScrollView as GHScrollView } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -47,6 +48,17 @@ import NativeAdCard from "../components/NativeAdCard";
 import { interleaveAds } from "../utils/adInterleave";
 
 const { width, height } = Dimensions.get("window");
+
+const CLUSTER_THRESHOLD = 50;
+type CafeMarkerItem = { kind: "cafe"; cafe: Cafe };
+type ClusterMarkerItem = {
+  kind: "cluster";
+  id: number;
+  count: number;
+  lat: number;
+  lng: number;
+};
+type MarkerItem = CafeMarkerItem | ClusterMarkerItem;
 
 /** Format seconds as HH:MM:SS or MM:SS for short durations */
 function formatDuration(totalSec: number): string {
@@ -170,10 +182,10 @@ export default function MapScreen() {
   const [searchPopupVisible, setSearchPopupVisible] = useState(false);
   const [searchResults, setSearchResults] = useState<Cafe[]>([]);
   const [popupCardIndex, setPopupCardIndex] = useState(0);
+  const [popupCardSize, setPopupCardSize] = useState({ w: 0, h: 0 });
   const [toastMsg, setToastMsg] = useState("");
   const [showToast, setShowToast] = useState(false);
   const popupSlide = useRef(new Animated.Value(height)).current;
-  const popupSwiperRef = useRef<any>(null);
 
   const showSearchPopup = (results: Cafe[]) => {
     setSearchResults(results);
@@ -256,7 +268,7 @@ export default function MapScreen() {
     lng: center.longitude,
     radius: radiusMeters,
     q: activeQ,
-    limit: 200,
+    limit: 2000,
   });
 
   const listQuery = useSearchCafes({
@@ -283,10 +295,109 @@ export default function MapScreen() {
     [mapPinsQuery.data],
   );
 
+  const [region, setRegion] = useState<Region>({
+    latitude: 0,
+    longitude: 0,
+    latitudeDelta: 0.24,
+    longitudeDelta: 0.24,
+  });
+
+  const [clusterZoom, setClusterZoom] = useState(11);
+  useEffect(() => {
+    const lonDelta =
+      Number.isFinite(region.longitudeDelta) && region.longitudeDelta > 0
+        ? region.longitudeDelta
+        : 0.24;
+    const z = Math.max(
+      0,
+      Math.min(20, Math.round(Math.log2(360 / Math.max(lonDelta, 1e-6)))),
+    );
+    setClusterZoom((prev) => (prev === z ? prev : z));
+  }, [region.longitudeDelta]);
+
+  const clusterIndex = useMemo(() => {
+    if (displayCafes.length <= CLUSTER_THRESHOLD) return null;
+    try {
+      const idx = new Supercluster({
+        radius: 40,
+        maxZoom: 18,
+        minPoints: 2,
+      });
+      idx.load(
+        displayCafes
+          .filter(
+            (c) => Number.isFinite(c.latitude) && Number.isFinite(c.longitude),
+          )
+          .map((c) => ({
+            type: "Feature" as const,
+            properties: { cafeId: String(c.id), cafe: c } as any,
+            geometry: {
+              type: "Point" as const,
+              coordinates: [c.longitude, c.latitude],
+            },
+          })),
+      );
+      return idx;
+    } catch {
+      return null;
+    }
+  }, [displayCafes]);
+
+  const markerItems: MarkerItem[] = useMemo(() => {
+    if (!clusterIndex) {
+      return displayCafes.map((cafe) => ({ kind: "cafe", cafe }));
+    }
+    try {
+      const result = clusterIndex.getClusters([-180, -85, 180, 85], clusterZoom);
+      if (result.length === 0) {
+        return displayCafes.map((cafe) => ({ kind: "cafe", cafe }));
+      }
+      return result.map<MarkerItem>((point) => {
+        const props: any = point.properties;
+        if (props.cluster) {
+          const [lng, lat] = point.geometry.coordinates;
+          return {
+            kind: "cluster",
+            id: point.id as number,
+            count: props.point_count as number,
+            lat,
+            lng,
+          };
+        }
+        return { kind: "cafe", cafe: props.cafe as Cafe };
+      });
+    } catch {
+      return displayCafes.map((cafe) => ({ kind: "cafe", cafe }));
+    }
+  }, [clusterIndex, displayCafes, clusterZoom]);
+
+  const handleClusterPress = useCallback(
+    (lat: number, lng: number, clusterId: number) => {
+      if (!clusterIndex) return;
+      const expansionZoom = Math.min(
+        clusterIndex.getClusterExpansionZoom(clusterId),
+        18,
+      );
+      const newDelta = 360 / Math.pow(2, expansionZoom);
+      mapRef.current?.animateToRegion(
+        {
+          latitude: lat,
+          longitude: lng,
+          latitudeDelta: newDelta,
+          longitudeDelta: newDelta,
+        },
+        300,
+      );
+    },
+    [clusterIndex],
+  );
+
   const listCafes: Cafe[] = useMemo(
     () => listQuery.data?.pages.flatMap((p) => hitsToCafes(p)) ?? [],
     [listQuery.data],
   );
+
+  const listTotal = listQuery.data?.pages[0]?.meta.total ?? listCafes.length;
 
   const featuredCafes: Cafe[] = promotedQuery.data ?? [];
 
@@ -439,6 +550,48 @@ export default function MapScreen() {
     </View>
   );
 
+  const renderSearchCard = (cafe: Cafe) => (
+    <View style={styles.searchSwipeCard}>
+      <CafePhoto
+        photos={cafe.photos}
+        name={cafe.name}
+        style={styles.searchSwipeImage}
+      />
+      <View style={styles.searchSwipeInfo}>
+        <View style={styles.searchSwipeTopRow}>
+          <Text style={styles.searchSwipeName} numberOfLines={1}>
+            {cafe.name}
+          </Text>
+          {cafe.promotionType === 'A' && (
+            <View style={styles.searchSwipeNewBadge}>
+              <Text style={styles.searchSwipeNewBadgeText}>NEW</Text>
+            </View>
+          )}
+        </View>
+        <Text style={styles.searchSwipeDist}>
+          {cafe.distance} km · {cafe.address}
+        </Text>
+        <View style={styles.searchSwipeTags}>
+          {cafe.purposes.slice(0, 3).map((p) => (
+            <View key={p} style={styles.searchSwipeTag}>
+              <Text style={styles.searchSwipeTagText}>{p}</Text>
+            </View>
+          ))}
+        </View>
+        <View style={styles.searchSwipeFacilities}>
+          {cafe.facilities.slice(0, 4).map((f) => (
+            <Text key={f} style={styles.searchSwipeFacility}>
+              • {f}
+            </Text>
+          ))}
+        </View>
+        <View style={styles.searchSwipeHint}>
+          <Text style={styles.searchSwipeHintText}>← Skip | Shortlist →</Text>
+        </View>
+      </View>
+    </View>
+  );
+
   return (
     <View style={styles.container}>
       {/* Search bar + filter button — always above map */}
@@ -511,6 +664,7 @@ export default function MapScreen() {
           longitudeDelta: 0.24,
         }}
         showsUserLocation
+        onRegionChangeComplete={setRegion}
         onPress={(e) => {
           const c = e.nativeEvent.coordinate;
           if (!c) return;
@@ -539,7 +693,19 @@ export default function MapScreen() {
         </Marker>
         {/* Cafe pins (togglable). Single round amber chip with white ring +
             ☕ glyph centered. */}
-        {pinsReady && showCafePins && displayCafes.map((cafe) => {
+        {pinsReady && showCafePins && markerItems.map((item) => {
+          if (item.kind === "cluster") {
+            return (
+              <ClusterMarker
+                key={`cluster-${item.id}-${item.count}`}
+                lat={item.lat}
+                lng={item.lng}
+                count={item.count}
+                onPress={() => handleClusterPress(item.lat, item.lng, item.id)}
+              />
+            );
+          }
+          const cafe = item.cafe;
           const friendCount = friendsByCafe.get(Number(cafe.id))?.length || 0;
           const isPromoted = isNewCafePromo(cafe);
           return (
@@ -650,115 +816,61 @@ export default function MapScreen() {
             </View>
           </View>
 
-          {/* Swipeable cards */}
-          <View style={styles.searchSwiperContainer}>
-            {searchResults.length > 0 ? (
-              <Swiper
-                ref={popupSwiperRef}
-                cards={searchResults}
-                cardIndex={popupCardIndex}
-                onSwipedRight={(i) => {
-                  const cafe = searchResults[i];
-                  if (!isInShortlist(cafe.id)) {
-                    addToShortlist(cafe);
-                    triggerToast(`${cafe.name} added to shortlist ✓`);
-                  }
-                }}
-                onSwipedLeft={() => {}}
-                onSwipedAll={() => dismissSearchPopup(true)}
-                containerStyle={styles.swiperContainer}
-                cardStyle={styles.swiperCard}
-                backgroundColor="transparent"
-                stackSize={3}
-                stackSeparation={8}
-                overlayLabels={{
-                  left: {
-                    title: "SKIP",
-                    style: {
-                      label: {
-                        backgroundColor: colors.textSecondary,
-                        color: colors.white,
-                        fontSize: 20,
-                        borderRadius: 8,
-                      },
-                      wrapper: {
-                        flexDirection: "column",
-                        alignItems: "flex-end",
-                        justifyContent: "flex-start",
-                        marginTop: 20,
-                        marginLeft: -20,
-                      },
-                    },
-                  },
-                  right: {
-                    title: "SHORTLIST",
-                    style: {
-                      label: {
-                        backgroundColor: colors.success,
-                        color: colors.white,
-                        fontSize: 18,
-                        borderRadius: 8,
-                      },
-                      wrapper: {
-                        flexDirection: "column",
-                        alignItems: "flex-start",
-                        justifyContent: "flex-start",
-                        marginTop: 20,
-                        marginLeft: 20,
-                      },
-                    },
-                  },
-                }}
-                renderCard={(cafe: Cafe) => (
-                  <TouchableOpacity
-                    activeOpacity={0.92}
-                    style={styles.searchSwipeCard}
-                    onPress={() => navigation.navigate("CafeDetail", { cafe })}
+          {/* Swipeable cards — same flow as Discover (CardSwipeScreen):
+              gesture-handler + reanimated, NOPE / SHORTLIST overlays. */}
+          <View style={styles.searchSwiperContainer}
+            onLayout={(e) => setPopupCardSize({
+              w: e.nativeEvent.layout.width,
+              h: e.nativeEvent.layout.height,
+            })}
+          >
+            {searchResults.length > 0 && popupCardSize.w > 0 ? (
+              <>
+                {searchResults[popupCardIndex + 1] && (
+                  <View
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: popupCardSize.w,
+                      height: popupCardSize.h,
+                    }}
+                    pointerEvents="none"
                   >
-                    <CafePhoto
-                      photos={cafe.photos}
-                      name={cafe.name}
-                      style={styles.searchSwipeImage}
-                    />
-                    <View style={styles.searchSwipeInfo}>
-                      <View style={styles.searchSwipeTopRow}>
-                        <Text style={styles.searchSwipeName} numberOfLines={1}>
-                          {cafe.name}
-                        </Text>
-                        {cafe.promotionType === "A" && (
-                          <View style={styles.searchSwipeNewBadge}>
-                            <Text style={styles.searchSwipeNewBadgeText}>
-                              NEW
-                            </Text>
-                          </View>
-                        )}
-                      </View>
-                      <Text style={styles.searchSwipeDist}>
-                        {cafe.distance} km · {cafe.address}
-                      </Text>
-                      <View style={styles.searchSwipeTags}>
-                        {cafe.purposes.slice(0, 3).map((p) => (
-                          <View key={p} style={styles.searchSwipeTag}>
-                            <Text style={styles.searchSwipeTagText}>{p}</Text>
-                          </View>
-                        ))}
-                      </View>
-                      <View style={styles.searchSwipeFacilities}>
-                        {cafe.facilities.slice(0, 4).map((f) => (
-                          <Text key={f} style={styles.searchSwipeFacility}>
-                            • {f}
-                          </Text>
-                        ))}
-                      </View>
-                      <View style={styles.searchSwipeHint}>
-                        <Text style={styles.searchSwipeHintText}>
-                          ← Skip | Shortlist →
-                        </Text>
-                      </View>
-                    </View>
-                  </TouchableOpacity>
+                    {renderSearchCard(searchResults[popupCardIndex + 1])}
+                  </View>
                 )}
-              />
+                {searchResults[popupCardIndex] && (
+                  <SwipeableCard
+                    key={`search-${popupCardIndex}`}
+                    top={0}
+                    left={0}
+                    width={popupCardSize.w}
+                    height={popupCardSize.h}
+                    leftLabel="SKIP"
+                    rightLabel="SHORTLIST ★"
+                    onTap={() =>
+                      navigation.navigate('CafeDetail', {
+                        cafe: searchResults[popupCardIndex],
+                      })
+                    }
+                    onSwipeComplete={(dir: 'left' | 'right') => {
+                      const cafe = searchResults[popupCardIndex];
+                      if (dir === 'right' && cafe && !isInShortlist(cafe.id)) {
+                        addToShortlist(cafe);
+                        triggerToast(`${cafe.name} added to shortlist ✓`);
+                      }
+                      if (popupCardIndex + 1 >= searchResults.length) {
+                        dismissSearchPopup(true);
+                      } else {
+                        setPopupCardIndex(popupCardIndex + 1);
+                      }
+                    }}
+                  >
+                    {renderSearchCard(searchResults[popupCardIndex])}
+                  </SwipeableCard>
+                )}
+              </>
             ) : (
               <View style={styles.searchPopupEmpty}>
                 <Text style={styles.searchPopupEmptyText}>
@@ -860,9 +972,6 @@ export default function MapScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
           onScroll={handleSheetScroll}
-          // 16ms ≈ 60fps — without this RN throttles to ~250ms which makes
-          // pagination feel laggy and the loading spinner appear too late.
-          scrollEventThrottle={16}
         >
           {/* Highlighted card for selected pin */}
           {selectedCafe && (
@@ -1069,9 +1178,9 @@ export default function MapScreen() {
               <Text style={styles.listTitle}>
                 {loading
                   ? "Loading cafes..."
-                  : listCafes.length === 0
+                  : listTotal === 0
                     ? "No cafes within this radius"
-                    : `${listCafes.length} cafes within ${radiusKm} km`}
+                    : `${listTotal} cafes within ${radiusKm} km`}
               </Text>
               {searchActive && (
                 <Text style={styles.listSubtitle}>Filtered by search</Text>
@@ -1153,6 +1262,44 @@ export default function MapScreen() {
     </View>
   );
 }
+
+const ClusterMarker = React.memo(function ClusterMarker({
+  lat,
+  lng,
+  count,
+  onPress,
+}: {
+  lat: number;
+  lng: number;
+  count: number;
+  onPress: () => void;
+}) {
+  const [tracking, setTracking] = useState(true);
+  useEffect(() => {
+    const t = setTimeout(() => setTracking(false), 600);
+    return () => clearTimeout(t);
+  }, []);
+  const size = count < 10 ? 36 : count < 50 ? 44 : count < 200 ? 52 : 60;
+  return (
+    <Marker
+      coordinate={{ latitude: lat, longitude: lng }}
+      anchor={{ x: 0.5, y: 0.5 }}
+      tracksViewChanges={tracking}
+      onPress={onPress}
+    >
+      <View
+        style={[
+          styles.clusterPin,
+          { width: size, height: size, borderRadius: size / 2 },
+        ]}
+      >
+        <Text style={styles.clusterPinText}>
+          {count >= 1000 ? `${(count / 1000).toFixed(1)}k` : count}
+        </Text>
+      </View>
+    </Marker>
+  );
+});
 
 // Marker wrapper that flips `tracksViewChanges` true → false after first
 // layout. Without this, custom-View markers on Android are sometimes captured
@@ -2116,6 +2263,23 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 15,
     textAlign: "center",
+  },
+  clusterPin: {
+    backgroundColor: "#D97706",
+    borderWidth: 2,
+    borderColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3,
+    elevation: 4,
+  },
+  clusterPinText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "800",
   },
   cafePinNewBadge: {
     backgroundColor: "#EF4444",

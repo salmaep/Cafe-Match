@@ -29,12 +29,12 @@ import {
 } from "../services/api";
 import { logEvent } from "../utils/analytics";
 import { useCafeDetail } from "../queries/cafes/use-cafe-detail";
-import VoteSection from "../components/cafe/VoteSection";
 import { useReviewSummary } from "../queries/reviews/use-review-summary";
 import { useReviews } from "../queries/reviews/use-reviews";
 import { useLeaderboard } from "../queries/checkins/use-leaderboard";
 import { useQueryClient } from "@tanstack/react-query";
 import { reviewKeys } from "../queries/reviews/keys";
+import { cafeKeys } from "../queries/cafes/keys";
 import { Cafe } from "../types";
 import { colors, spacing, radius } from "../theme";
 import { buildFacilityChips } from "../utils/facilities";
@@ -369,6 +369,8 @@ export default function CafeDetailScreen() {
       (route.params as any)?.newReview;
     if (!signal || !initialCafe?.id) return;
     qc.invalidateQueries({ queryKey: reviewKeys.summary(initialCafe.id) });
+    qc.invalidateQueries({ queryKey: reviewKeys.ofCafe(initialCafe.id) });
+    qc.invalidateQueries({ queryKey: cafeKeys.detail(initialCafe.id) });
     navigation.setParams({
       newReviewTimestamp: undefined,
       newReview: undefined,
@@ -582,26 +584,6 @@ export default function CafeDetailScreen() {
               <Text style={styles.phoneCta}>Telepon →</Text>
             </TouchableOpacity>
           )}
-
-          {/* Mood chips from review aggregation — shown under address */}
-          {moodChips.length > 0 && (
-            <View style={styles.moodRow}>
-              <Text style={styles.moodRowLabel}>
-                Atmosphere according to visitors
-              </Text>
-              <View style={styles.tagsRow}>
-                {moodChips.map((m) => (
-                  <View key={m.label} style={styles.moodChip}>
-                    <Text style={styles.moodChipText}>{m.label}</Text>
-                    {m.count > 0 && (
-                      <Text style={styles.moodChipCount}>· {m.count}</Text>
-                    )}
-                  </View>
-                ))}
-              </View>
-            </View>
-          )}
-          {/* Legacy cafe.purposes row removed — now merged into moodChips above */}
 
           {/* Jam Buka — opening hours table, today highlighted */}
           {cafe.openingHours && Object.keys(cafe.openingHours).length > 0 && (
@@ -834,9 +816,6 @@ export default function CafeDetailScreen() {
             </TouchableOpacity>
           )}
 
-          {/* Vote section (cafe is best for…) */}
-          <VoteSection cafeId={Number(cafe.id)} />
-
           {/* Top check-in leaderboard — mirrors web CafeLeaderboard:
               loading skeleton, empty CTA, top 5 with rank emoji badge,
               checkin count + total time, score in pts. */}
@@ -1042,6 +1021,24 @@ export default function CafeDetailScreen() {
                 ))}
               </View>
             </>
+          )}
+
+          {moodChips.length > 0 && (
+            <View style={styles.moodRow}>
+              <Text style={styles.moodRowLabel}>
+                Atmosphere according to visitors
+              </Text>
+              <View style={styles.tagsRow}>
+                {moodChips.map((m) => (
+                  <View key={m.label} style={styles.moodChip}>
+                    <Text style={styles.moodChipText}>{m.label}</Text>
+                    {m.count > 0 && (
+                      <Text style={styles.moodChipCount}>· {m.count}</Text>
+                    )}
+                  </View>
+                ))}
+              </View>
+            </View>
           )}
 
           <View style={{ height: 120 }} />

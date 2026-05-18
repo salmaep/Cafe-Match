@@ -10,14 +10,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  runOnJS,
-  interpolate,
-  Extrapolation,
-} from 'react-native-reanimated';
+import SwipeableCard from '../components/SwipeableCard';
 import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -31,6 +24,7 @@ import { usePurposeId } from '../queries/purposes/use-purpose-id';
 import { Cafe } from '../types';
 import { colors, spacing, radius } from '../theme';
 import Toast from '../components/Toast';
+import { buildFacilityChips } from '../utils/facilities';
 
 const { width, height } = Dimensions.get('window');
 const CARD_W = width * 0.85;
@@ -343,9 +337,9 @@ export default function CardSwipeScreen() {
                     <Text style={styles.tagText}>{p}</Text>
                   </View>
                 ))}
-                {(cafe.facilities ?? []).slice(0, 2).map((f) => (
-                  <View key={f} style={styles.tag}>
-                    <Text style={styles.tagText}>{f}</Text>
+                {buildFacilityChips(cafe).slice(0, 2).map((f) => (
+                  <View key={f.key} style={styles.tag}>
+                    <Text style={styles.tagText}>{f.icon} {f.label}</Text>
                   </View>
                 ))}
               </View>
@@ -473,128 +467,6 @@ export default function CardSwipeScreen() {
   );
 }
 
-const SWIPE_THRESHOLD = 120;
-const SWIPE_OUT_X = width * 1.5;
-const SPRING_OUT = { damping: 20, stiffness: 90, mass: 1, overshootClamping: true };
-const SPRING_BACK = { damping: 15, stiffness: 150, mass: 0.7 };
-
-type SwipeableCardProps = {
-  top: number;
-  left: number;
-  width: number;
-  height: number;
-  onSwipeComplete: (dir: 'left' | 'right') => void;
-  onTap: () => void;
-  tapFailGesture?: ReturnType<typeof Gesture.Native>;
-  children: React.ReactNode;
-};
-
-function SwipeableCard({
-  top,
-  left,
-  width: cardW,
-  height: cardH,
-  onSwipeComplete,
-  onTap,
-  tapFailGesture,
-  children,
-}: SwipeableCardProps) {
-  const translateX = useSharedValue(0);
-  const translateY = useSharedValue(0);
-
-  const pan = Gesture.Pan()
-    .onUpdate((e) => {
-      translateX.value = e.translationX;
-      translateY.value = e.translationY;
-    })
-    .onEnd((e) => {
-      if (e.translationX > SWIPE_THRESHOLD) {
-        translateX.value = withSpring(SWIPE_OUT_X, SPRING_OUT);
-        runOnJS(onSwipeComplete)('right');
-      } else if (e.translationX < -SWIPE_THRESHOLD) {
-        translateX.value = withSpring(-SWIPE_OUT_X, SPRING_OUT);
-        runOnJS(onSwipeComplete)('left');
-      } else {
-        translateX.value = withSpring(0, SPRING_BACK);
-        translateY.value = withSpring(0, SPRING_BACK);
-      }
-    });
-
-  const baseTap = Gesture.Tap().maxDistance(10).onEnd((_e, success) => {
-    if (success) runOnJS(onTap)();
-  });
-  const tap = tapFailGesture
-    ? baseTap.requireExternalGestureToFail(tapFailGesture)
-    : baseTap;
-
-  const composedGesture = Gesture.Exclusive(pan, tap);
-
-  const animatedCardStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateX: translateX.value },
-      { translateY: translateY.value },
-      {
-        rotate: `${interpolate(
-          translateX.value,
-          [-width, 0, width],
-          [-8, 0, 8],
-          Extrapolation.CLAMP,
-        )}deg`,
-      },
-    ],
-  }));
-
-  const nopeOverlayStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(
-      translateX.value,
-      [-SWIPE_THRESHOLD, 0],
-      [1, 0],
-      Extrapolation.CLAMP,
-    ),
-  }));
-
-  const likeOverlayStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(
-      translateX.value,
-      [0, SWIPE_THRESHOLD],
-      [0, 1],
-      Extrapolation.CLAMP,
-    ),
-  }));
-
-  return (
-    <GestureDetector gesture={composedGesture}>
-      <Animated.View
-        style={[
-          {
-            position: 'absolute',
-            top,
-            left,
-            width: cardW,
-            height: cardH,
-          },
-          animatedCardStyle,
-        ]}
-      >
-        {children}
-
-        <Animated.View
-          pointerEvents="none"
-          style={[styles.overlayLeftWrapper, nopeOverlayStyle]}
-        >
-          <Text style={styles.overlayLabelNope}>NOPE</Text>
-        </Animated.View>
-
-        <Animated.View
-          pointerEvents="none"
-          style={[styles.overlayRightWrapper, likeOverlayStyle]}
-        >
-          <Text style={styles.overlayLabelLike}>SHORTLIST ★</Text>
-        </Animated.View>
-      </Animated.View>
-    </GestureDetector>
-  );
-}
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
@@ -908,39 +780,5 @@ const styles = StyleSheet.create({
 
   cardStackBehind: {
     position: 'absolute',
-  },
-  overlayLeftWrapper: {
-    position: 'absolute',
-    top: 32,
-    right: 24,
-    transform: [{ rotate: '20deg' }],
-  },
-  overlayRightWrapper: {
-    position: 'absolute',
-    top: 32,
-    left: 24,
-    transform: [{ rotate: '-20deg' }],
-  },
-  overlayLabelNope: {
-    backgroundColor: colors.error,
-    color: colors.white,
-    fontSize: 18,
-    fontWeight: '800',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    letterSpacing: 1,
-    overflow: 'hidden',
-  },
-  overlayLabelLike: {
-    backgroundColor: colors.accent,
-    color: colors.white,
-    fontSize: 18,
-    fontWeight: '800',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    letterSpacing: 1,
-    overflow: 'hidden',
   },
 });

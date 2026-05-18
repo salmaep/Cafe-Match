@@ -23,9 +23,9 @@ const PODIUM_STYLE: Record<
   number,
   { bg: string; emoji: string; height: number }
 > = {
-  1: { bg: '#F59E0B', emoji: '👑', height: 140 },
-  2: { bg: '#9CA3AF', emoji: '🥈', height: 110 },
-  3: { bg: '#D97706', emoji: '🥉', height: 92 },
+  1: { bg: '#F59E0B', emoji: '👑', height: 155 },
+  2: { bg: '#9CA3AF', emoji: '🥈', height: 130 },
+  3: { bg: '#D97706', emoji: '🥉', height: 118 },
 };
 
 export default function GlobalLeaderboardScreen() {
@@ -209,7 +209,14 @@ function PodiumStep({ entry, isWinner }: { entry: Entry; isWinner?: boolean }) {
         </Text>
         {entry.badge && (
           <View style={styles.pedestalBadge}>
-            <Text style={styles.pedestalBadgeText}>{entry.badge}</Text>
+            <Text
+              style={styles.pedestalBadgeText}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.7}
+            >
+              {entry.badge}
+            </Text>
           </View>
         )}
         <View style={styles.pedestalScore}>
@@ -394,14 +401,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6, paddingVertical: 2,
     backgroundColor: 'rgba(255,255,255,0.25)',
     borderRadius: radius.full,
+    maxWidth: '95%',
+    alignSelf: 'center',
   },
   pedestalBadgeText: {
     color: colors.white, fontSize: 9, fontWeight: '700',
-    letterSpacing: 1,
+    letterSpacing: 0.3,
+    textAlign: 'center',
   },
   pedestalScore: {
-    position: 'absolute', bottom: 4,
+    marginTop: 'auto',
     alignItems: 'center',
+    paddingTop: 4,
   },
   pedestalScoreNum: {
     color: colors.white, fontSize: 13, fontWeight: '900',

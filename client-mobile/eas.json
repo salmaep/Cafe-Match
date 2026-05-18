@@ -24,7 +24,6 @@
         "EXPO_PUBLIC_GOOGLE_MAPS_API_KEY": "AIzaSyD52bHgX6uJ9TRUaKcDdlLeaEGpLndV0Bc",
         "EXPO_PUBLIC_GOOGLE_MAPS_MAP_ID": "f466e6bb607f3b39930379ff",
         "EXPO_PUBLIC_GOOGLE_CLIENT_ID": "414171634132-4pgb5cijh1a9f01dm35c37ggcb7vvsgk.apps.googleusercontent.com",
-        "EXPO_PUBLIC_GOOGLE_CLIENT_ID_ANDROID": "414171634132-es5tvhm9n8j0vmliv7smlmu6s46jhj7s.apps.googleusercontent.com",
         "EXPO_PUBLIC_FB_APP_ID": "805065779071148"
       }
     },
@@ -36,7 +35,9 @@
       "env": {
         "EXPO_PUBLIC_API_URL": "https://api.salma.imola.ai/api/v1",
         "EXPO_PUBLIC_GOOGLE_MAPS_API_KEY": "AIzaSyD52bHgX6uJ9TRUaKcDdlLeaEGpLndV0Bc",
-        "EXPO_PUBLIC_GOOGLE_MAPS_MAP_ID": "f466e6bb607f3b39930379ff"
+        "EXPO_PUBLIC_GOOGLE_MAPS_MAP_ID": "f466e6bb607f3b39930379ff",
+        "EXPO_PUBLIC_GOOGLE_CLIENT_ID": "414171634132-4pgb5cijh1a9f01dm35c37ggcb7vvsgk.apps.googleusercontent.com",
+        "EXPO_PUBLIC_FB_APP_ID": "805065779071148"
       }
     }
   },

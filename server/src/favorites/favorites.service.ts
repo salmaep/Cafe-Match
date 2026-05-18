@@ -1,4 +1,8 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, MoreThanOrEqual } from 'typeorm';
 import { Favorite } from './entities/favorite.entity';
@@ -20,9 +24,11 @@ function parseSinceCutoff(since?: string): Date | null {
   const value = Number(match[1]);
   const unit = match[2];
   const ms =
-    unit === 'd' ? value * 24 * 60 * 60 * 1000
-    : unit === 'h' ? value * 60 * 60 * 1000
-    : value * 60 * 1000;
+    unit === 'd'
+      ? value * 24 * 60 * 60 * 1000
+      : unit === 'h'
+        ? value * 60 * 60 * 1000
+        : value * 60 * 1000;
   return new Date(Date.now() - ms);
 }
 
@@ -76,7 +82,9 @@ export class FavoritesService {
   }
 }
 
-function enrichCafe<T extends { address?: string | null }>(cafe: T): T & {
+function enrichCafe<T extends { address?: string | null }>(
+  cafe: T,
+): T & {
   city: string | null;
   district: string | null;
 } {

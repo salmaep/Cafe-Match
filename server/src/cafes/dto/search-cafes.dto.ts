@@ -48,9 +48,13 @@ export class SearchCafesDto {
   // Multi-value: accept ?facilities=wifi,mushola,payment_qris OR repeated ?facilities=...
   // OR semantics applied at the search layer (cafe matches if it has ANY of these).
   @IsOptional()
-  @Transform(({ value }) => {
-    if (Array.isArray(value)) return value.filter(Boolean);
-    if (typeof value === 'string') return value.split(',').map((s) => s.trim()).filter(Boolean);
+  @Transform(({ value }: { value: unknown }): string[] | undefined => {
+    if (Array.isArray(value)) return (value as string[]).filter(Boolean);
+    if (typeof value === 'string')
+      return value
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
     return undefined;
   })
   @IsArray()

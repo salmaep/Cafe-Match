@@ -52,9 +52,13 @@ export class SemanticSearchDto {
   priceRange?: string;
 
   @IsOptional()
-  @Transform(({ value }) => {
-    if (Array.isArray(value)) return value.filter(Boolean);
-    if (typeof value === 'string') return value.split(',').map((s) => s.trim()).filter(Boolean);
+  @Transform(({ value }: { value: unknown }): string[] | undefined => {
+    if (Array.isArray(value)) return (value as string[]).filter(Boolean);
+    if (typeof value === 'string')
+      return value
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
     return undefined;
   })
   @IsArray()

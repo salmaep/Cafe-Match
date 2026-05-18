@@ -29,17 +29,14 @@ export class MeridianKeepaliveService
       String(this.config.get('AI_KEEPALIVE_ENABLED', 'true')) !== 'false';
   }
 
-  async onApplicationBootstrap() {
+  onApplicationBootstrap() {
     if (!this.enabled) {
       this.logger.log('Meridian keep-alive disabled via AI_KEEPALIVE_ENABLED');
       return;
     }
     // Fire-and-forget — never block boot on a 20-30s cold start
     void this.ping('boot');
-    this.timer = setInterval(
-      () => void this.ping('interval'),
-      this.intervalMs,
-    );
+    this.timer = setInterval(() => void this.ping('interval'), this.intervalMs);
     this.logger.log(
       `Meridian keep-alive active (every ${this.intervalMs / 1000}s)`,
     );

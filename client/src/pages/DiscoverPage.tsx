@@ -1,6 +1,6 @@
-import { useNavigate } from 'react-router-dom';
-import Wizard from '../components/wizard/Wizard';
-import Seo from '../components/seo/Seo';
+import { useNavigate } from "react-router-dom";
+import Wizard from "../components/wizard/Wizard";
+import Seo from "../components/seo/Seo";
 
 export default function DiscoverPage() {
   const navigate = useNavigate();
@@ -12,8 +12,8 @@ export default function DiscoverPage() {
         description="Find cafes that match your mood, budget, and location."
       />
       <Wizard
-        onComplete={() => navigate('/discover/swipe', { replace: true })}
-        onSkip={() => navigate('/', { replace: true })}
+        onComplete={() => navigate("/discover/swipe", { replace: true })}
+        onSkip={() => navigate("/", { replace: true })}
       />
     </>
   );

@@ -93,8 +93,7 @@ import { SemanticSearchModule } from './semantic-search/semantic-search.module';
               req: IncomingMessage,
               res: ServerResponse,
               err: Error,
-            ) =>
-              `${req.method} ${req.url} ${res.statusCode} (${err.message})`,
+            ) => `${req.method} ${req.url} ${res.statusCode} (${err.message})`,
             autoLogging: {
               ignore: (req: IncomingMessage) => {
                 const url = req.url ?? '';

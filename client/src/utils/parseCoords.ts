@@ -6,12 +6,16 @@
 //   "-6.9148492,107.6648254"   (no space)
 //   "(-6.9148492, 107.6648254)" (parentheses, e.g. from Google Maps)
 //   "  -6.9148492 ,  107.6648254  " (extra whitespace, tabs)
-export function parseCoords(input: string): { lat: number; lng: number } | null {
+export function parseCoords(
+  input: string,
+): { lat: number; lng: number } | null {
   const cleaned = input
     .trim()
-    .replace(/^[\(\[\{]+|[\)\]\}]+$/g, '')
+    .replace(/^[\(\[\{]+|[\)\]\}]+$/g, "")
     .trim();
-  const match = cleaned.match(/^(-?\d+(?:\.\d+)?)\s*[,;\s]\s*(-?\d+(?:\.\d+)?)$/);
+  const match = cleaned.match(
+    /^(-?\d+(?:\.\d+)?)\s*[,;\s]\s*(-?\d+(?:\.\d+)?)$/,
+  );
   if (!match) return null;
   const lat = Number(match[1]);
   const lng = Number(match[2]);

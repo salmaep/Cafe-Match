@@ -1,4 +1,4 @@
-import { Component, type ReactNode } from 'react';
+import { Component, type ReactNode } from "react";
 
 interface Props {
   children: ReactNode;
@@ -16,7 +16,7 @@ export default class MapErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
-    console.error('[MapErrorBoundary] map crashed:', error, info);
+    console.error("[MapErrorBoundary] map crashed:", error, info);
   }
 
   render() {
@@ -25,7 +25,9 @@ export default class MapErrorBoundary extends Component<Props, State> {
         <div className="flex h-full w-full items-center justify-center rounded-xl bg-red-50 p-6 text-center text-sm text-red-800">
           <div>
             <p className="font-semibold">Peta gagal di-load.</p>
-            <p className="mt-1 text-xs opacity-75">{this.state.error.message}</p>
+            <p className="mt-1 text-xs opacity-75">
+              {this.state.error.message}
+            </p>
           </div>
         </div>
       );

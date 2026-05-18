@@ -62,7 +62,8 @@ export function toCafeDocument(raw: {
   }
 
   const googleMapsUrl =
-    cafe.googleMapsUrl ?? cafe.google_maps_url ??
+    cafe.googleMapsUrl ??
+    cafe.google_maps_url ??
     `https://maps.google.com/?q=${cafe.latitude},${cafe.longitude}`;
 
   return {
@@ -78,15 +79,25 @@ export function toCafeDocument(raw: {
       lat: Number(cafe.latitude),
       lng: Number(cafe.longitude),
     },
-    hasActivePromotion: Boolean(cafe.hasActivePromotion ?? cafe.has_active_promotion),
+    hasActivePromotion: Boolean(
+      cafe.hasActivePromotion ?? cafe.has_active_promotion,
+    ),
     isActive: Boolean(cafe.isActive ?? cafe.is_active),
-    priceRange: (cafe.priceRange ?? cafe.price_range) ?? '$$',
-    activePromotionType: (cafe.activePromotionType ?? cafe.active_promotion_type) ?? null,
-    googleRating: (cafe.googleRating ?? cafe.google_rating) != null ? Number(cafe.googleRating ?? cafe.google_rating) : null,
-    totalGoogleReviews: (cafe.totalGoogleReviews ?? cafe.total_google_reviews) ?? 0,
-    bookmarksCount: (cafe.bookmarksCount ?? cafe.bookmarks_count) ?? 0,
-    favoritesCount: (cafe.favoritesCount ?? cafe.favorites_count) ?? 0,
-    createdAt: cafe.createdAt ?? cafe.created_at ? new Date(cafe.createdAt ?? cafe.created_at).getTime() : Date.now(),
+    priceRange: cafe.priceRange ?? cafe.price_range ?? '$$',
+    activePromotionType:
+      cafe.activePromotionType ?? cafe.active_promotion_type ?? null,
+    googleRating:
+      (cafe.googleRating ?? cafe.google_rating) != null
+        ? Number(cafe.googleRating ?? cafe.google_rating)
+        : null,
+    totalGoogleReviews:
+      cafe.totalGoogleReviews ?? cafe.total_google_reviews ?? 0,
+    bookmarksCount: cafe.bookmarksCount ?? cafe.bookmarks_count ?? 0,
+    favoritesCount: cafe.favoritesCount ?? cafe.favorites_count ?? 0,
+    createdAt:
+      (cafe.createdAt ?? cafe.created_at)
+        ? new Date(cafe.createdAt ?? cafe.created_at).getTime()
+        : Date.now(),
     facilities: featureNames,
     featureCategories: Array.from(categoriesSet),
     menuItems: menus.slice(0, 20).map((m) => m.itemName),

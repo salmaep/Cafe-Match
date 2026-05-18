@@ -1,15 +1,15 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from "react";
 import {
   Map,
   AdvancedMarker,
   InfoWindow,
   useMap,
-} from '@vis.gl/react-google-maps';
-import type { Cafe } from '../../types';
-import { formatDistance } from '../../utils/haversine';
-import { cafeUrl } from '../../utils/cafeUrl';
-import { getCafeImage, placeholderImage } from '../../utils/cafeImage';
-import CafeClusterMarkers from './CafeClusterMarkers';
+} from "@vis.gl/react-google-maps";
+import type { Cafe } from "../../types";
+import { formatDistance } from "../../utils/haversine";
+import { cafeUrl } from "../../utils/cafeUrl";
+import { getCafeImage, placeholderImage } from "../../utils/cafeImage";
+import CafeClusterMarkers from "./CafeClusterMarkers";
 
 const MAP_ID = import.meta.env.VITE_GOOGLE_MAPS_MAP_ID || undefined;
 
@@ -46,10 +46,10 @@ function RadiusCircle({
 
     if (!circleRef.current) {
       circleRef.current = new window.google.maps.Circle({
-        strokeColor: '#d97706',
+        strokeColor: "#d97706",
         strokeOpacity: 1,
         strokeWeight: 2,
-        fillColor: '#fbbf24',
+        fillColor: "#fbbf24",
         fillOpacity: 0.1,
         map,
         center: { lat: center[0], lng: center[1] },
@@ -82,27 +82,27 @@ function RadiusCircle({
 // ── Marker visuals ───────────────────────────────────────────────────────────
 function UserPin() {
   return (
-    <div style={{ position: 'relative', width: 24, height: 24 }}>
+    <div style={{ position: "relative", width: 24, height: 24 }}>
       <div
         style={{
-          position: 'absolute',
+          position: "absolute",
           inset: 0,
-          borderRadius: '50%',
-          background: 'rgba(59,130,246,0.25)',
-          animation: 'cm-pulse 2s ease-out infinite',
+          borderRadius: "50%",
+          background: "rgba(59,130,246,0.25)",
+          animation: "cm-pulse 2s ease-out infinite",
         }}
       />
       <div
         style={{
-          position: 'absolute',
+          position: "absolute",
           top: 4,
           left: 4,
           width: 16,
           height: 16,
-          borderRadius: '50%',
-          background: '#3b82f6',
-          border: '3px solid #fff',
-          boxShadow: '0 0 6px rgba(0,0,0,0.3)',
+          borderRadius: "50%",
+          background: "#3b82f6",
+          border: "3px solid #fff",
+          boxShadow: "0 0 6px rgba(0,0,0,0.3)",
         }}
       />
       <style>{`@keyframes cm-pulse{0%{transform:scale(1);opacity:1}100%{transform:scale(2.5);opacity:0}}`}</style>
@@ -121,8 +121,8 @@ export default function MapView({ center, cafes, radius, onMapClick }: Props) {
   if (!apiKey) {
     return (
       <div className="flex h-full w-full items-center justify-center rounded-xl bg-amber-50 p-6 text-center text-sm text-amber-800">
-        Google Maps API key belum diset. Tambahkan{' '}
-        <code className="font-mono">VITE_GOOGLE_MAPS_API_KEY</code> di{' '}
+        Google Maps API key belum diset. Tambahkan{" "}
+        <code className="font-mono">VITE_GOOGLE_MAPS_API_KEY</code> di{" "}
         <code className="font-mono">.env</code>.
       </div>
     );
@@ -143,7 +143,7 @@ export default function MapView({ center, cafes, radius, onMapClick }: Props) {
         fullscreenControl={false}
         mapTypeControl={false}
         className="h-full w-full rounded-xl"
-        style={{ minHeight: '400px' }}
+        style={{ minHeight: "400px" }}
         onClick={(ev) => {
           if (!ev.detail.latLng) return;
           onMapClick?.(ev.detail.latLng.lat, ev.detail.latLng.lng);
@@ -234,7 +234,7 @@ export default function MapView({ center, cafes, radius, onMapClick }: Props) {
                   {(Array.isArray(activeCafe.facilities)
                     ? activeCafe.facilities
                         .slice(0, 3)
-                        .map((f: any) => (typeof f === 'string' ? f : f?.name))
+                        .map((f: any) => (typeof f === "string" ? f : f?.name))
                         .filter(Boolean)
                     : []
                   ).map((name: string) => (
@@ -260,11 +260,11 @@ export default function MapView({ center, cafes, radius, onMapClick }: Props) {
         <button
           type="button"
           onClick={() => setShowCafePins((v) => !v)}
-          title={showCafePins ? 'Hide cafe pins' : 'Show cafe pins'}
+          title={showCafePins ? "Hide cafe pins" : "Show cafe pins"}
           className={`w-11 h-11 rounded-full flex items-center justify-center text-xl shadow-md border-2 transition-colors ${
             showCafePins
-              ? 'bg-[#D48B3A] border-[#D48B3A] text-white'
-              : 'bg-white border-white text-[#1C1C1A] hover:bg-[#F0EDE8]'
+              ? "bg-[#D48B3A] border-[#D48B3A] text-white"
+              : "bg-white border-white text-[#1C1C1A] hover:bg-[#F0EDE8]"
           }`}
         >
           ☕
@@ -272,11 +272,11 @@ export default function MapView({ center, cafes, radius, onMapClick }: Props) {
         <button
           type="button"
           onClick={() => setShowUserPin((v) => !v)}
-          title={showUserPin ? 'Hide my location' : 'Show my location'}
+          title={showUserPin ? "Hide my location" : "Show my location"}
           className={`w-11 h-11 rounded-full flex items-center justify-center text-xl shadow-md border-2 transition-colors ${
             showUserPin
-              ? 'bg-[#D48B3A] border-[#D48B3A] text-white'
-              : 'bg-white border-white text-[#1C1C1A] hover:bg-[#F0EDE8]'
+              ? "bg-[#D48B3A] border-[#D48B3A] text-white"
+              : "bg-white border-white text-[#1C1C1A] hover:bg-[#F0EDE8]"
           }`}
         >
           📍

@@ -66,7 +66,12 @@ export default function SearchBar({
               : "border-[#F0EDE8] text-[#1C1C1A] hover:border-[#D48B3A]"
           }`}
         >
-          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg
+            className="h-4 w-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
             <path
               strokeLinecap="round"
               strokeLinejoin="round"

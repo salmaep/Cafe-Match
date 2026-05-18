@@ -1,11 +1,11 @@
-import { useEffect, useRef } from 'react';
-import { useMap } from '@vis.gl/react-google-maps';
+import { useEffect, useRef } from "react";
+import { useMap } from "@vis.gl/react-google-maps";
 import {
   MarkerClusterer,
   type Renderer,
   type Cluster,
-} from '@googlemaps/markerclusterer';
-import type { Cafe } from '../../types';
+} from "@googlemaps/markerclusterer";
+import type { Cafe } from "../../types";
 
 interface Props {
   cafes: Cafe[];
@@ -36,16 +36,16 @@ const PROMOTED_PIN_HTML = `
 </div>`;
 
 function buildPinElement(isPromoted: boolean): HTMLElement {
-  const el = document.createElement('div');
+  const el = document.createElement("div");
   el.innerHTML = isPromoted ? PROMOTED_PIN_HTML : CAFE_PIN_SVG;
   return el;
 }
 
-const KEYFRAMES_STYLE_ID = 'cm-cluster-pin-keyframes';
+const KEYFRAMES_STYLE_ID = "cm-cluster-pin-keyframes";
 function ensureKeyframes() {
-  if (typeof document === 'undefined') return;
+  if (typeof document === "undefined") return;
   if (document.getElementById(KEYFRAMES_STYLE_ID)) return;
-  const style = document.createElement('style');
+  const style = document.createElement("style");
   style.id = KEYFRAMES_STYLE_ID;
   style.textContent = `@keyframes cm-newbounce{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-3px)}}`;
   document.head.appendChild(style);
@@ -55,7 +55,7 @@ const clusterRenderer: Renderer = {
   render: ({ count, position }: Cluster) => {
     const size = count < 10 ? 40 : count < 50 ? 48 : 56;
     const fontSize = size > 48 ? 16 : 14;
-    const div = document.createElement('div');
+    const div = document.createElement("div");
     div.style.cssText = `width:${size}px;height:${size}px;border-radius:50%;background:#d97706;color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.3);font-size:${fontSize}px;`;
     div.textContent = String(count);
     return new google.maps.marker.AdvancedMarkerElement({
@@ -81,13 +81,13 @@ export default function CafeClusterMarkers({ cafes, onCafeClick }: Props) {
 
     const markers = cafes.map((cafe) => {
       const isPromoted =
-        cafe.hasActivePromotion && cafe.activePromotionType === 'new_cafe';
+        !!cafe.hasActivePromotion && cafe.activePromotionType === "new_cafe";
       const marker = new google.maps.marker.AdvancedMarkerElement({
         position: { lat: cafe.latitude, lng: cafe.longitude },
         content: buildPinElement(isPromoted),
         zIndex: cafe.hasActivePromotion ? 1000 : undefined,
       });
-      const listener = marker.addListener('click', () => onCafeClick(cafe.id));
+      const listener = marker.addListener("click", () => onCafeClick(cafe.id));
       listenersRef.current.push(listener);
       return marker;
     });

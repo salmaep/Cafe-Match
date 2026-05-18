@@ -81,9 +81,15 @@ export class CafesService {
 
     if (isOptions) return flat;
 
-    const groupMap = new Map<string, { category: string; items: { name: string; count: number }[] }>();
+    const groupMap = new Map<
+      string,
+      { category: string; items: { name: string; count: number }[] }
+    >();
     for (const item of flat) {
-      const g = groupMap.get(item.category) ?? { category: item.category, items: [] };
+      const g = groupMap.get(item.category) ?? {
+        category: item.category,
+        items: [],
+      };
       if (g.items.length < CafesService.FILTER_ITEMS_PER_CATEGORY) {
         g.items.push({ name: item.name, count: item.count });
       }
@@ -102,9 +108,14 @@ export class CafesService {
     });
     if (!cafe) throw new NotFoundException('Cafe not found');
 
-    const featureNames = (cafe.features || []).map((f) => f.feature?.name).filter(Boolean) as string[];
+    const featureNames = (cafe.features || [])
+      .map((f) => f.feature?.name)
+      .filter(Boolean);
     const purposeMatchers = await this.loadPurposeMatchers();
-    const { purposes, matchScore } = this.computePurposesAndScore(featureNames, purposeMatchers);
+    const { purposes, matchScore } = this.computePurposesAndScore(
+      featureNames,
+      purposeMatchers,
+    );
 
     const purposeScores: Record<string, number> = {};
     try {
@@ -130,7 +141,8 @@ export class CafesService {
     }
 
     const googleMapsUrl =
-      cafe.googleMapsUrl || `https://maps.google.com/?q=${cafe.latitude},${cafe.longitude}`;
+      cafe.googleMapsUrl ||
+      `https://maps.google.com/?q=${cafe.latitude},${cafe.longitude}`;
 
     return {
       ...cafe,
@@ -138,7 +150,8 @@ export class CafesService {
       latitude: Number(cafe.latitude),
       longitude: Number(cafe.longitude),
       googleMapsUrl,
-      googleRating: cafe.googleRating != null ? Number(cafe.googleRating) : null,
+      googleRating:
+        cafe.googleRating != null ? Number(cafe.googleRating) : null,
       purposes,
       purposeScores,
       detectedFacilities: featureNames,
@@ -199,8 +212,7 @@ export class CafesService {
     const excludeSet = new Set(excludeIds);
     const promoted = await this.findPromotedCafes();
     const promoA = promoted.find(
-      (c: any) =>
-        c.activePromotionType === 'new_cafe' && !excludeSet.has(c.id),
+      (c: any) => c.activePromotionType === 'new_cafe' && !excludeSet.has(c.id),
     );
     const promoB = promoted.find(
       (c: any) =>
@@ -264,9 +276,19 @@ export class CafesService {
     const purposeMatchers = await this.loadPurposeMatchers();
 
     return cafes.map((cafe) => {
-      const featureNames = (cafe.features || []).map((f) => f.feature?.name).filter(Boolean) as string[];
-      const { purposes, matchScore } = this.computePurposesAndScore(featureNames, purposeMatchers);
-      return { ...cafe, purposes, matchScore, promotion: promoMap.get(cafe.id) || null };
+      const featureNames = (cafe.features || [])
+        .map((f) => f.feature?.name)
+        .filter(Boolean);
+      const { purposes, matchScore } = this.computePurposesAndScore(
+        featureNames,
+        purposeMatchers,
+      );
+      return {
+        ...cafe,
+        purposes,
+        matchScore,
+        promotion: promoMap.get(cafe.id) || null,
+      };
     });
   }
 
@@ -322,7 +344,10 @@ export class CafesService {
   // ── Soft delete / restore (admin) ───────────────────────────────────────────
 
   async softRemove(id: number): Promise<void> {
-    const cafe = await this.cafesRepository.findOne({ where: { id }, withDeleted: true });
+    const cafe = await this.cafesRepository.findOne({
+      where: { id },
+      withDeleted: true,
+    });
     if (!cafe) throw new NotFoundException('Cafe not found');
 
     await this.dataSource.transaction(async (manager) => {
@@ -397,15 +422,23 @@ export class CafesService {
       `SELECT id, name, slug FROM purposes ORDER BY display_order ASC`,
     );
     // Resolve feature name via JOIN — purpose_requirements.feature_id → features.name
-    const reqs = await this.dataSource.query<{
-      purposeId: number; featureName: string; isMandatory: number; weight: number;
-    }[]>(
+    const reqs = await this.dataSource.query<
+      {
+        purposeId: number;
+        featureName: string;
+        isMandatory: number;
+        weight: number;
+      }[]
+    >(
       `SELECT pr.purpose_id AS purposeId, f.name AS featureName,
               pr.is_mandatory AS isMandatory, pr.weight AS weight
        FROM purpose_requirements pr
        JOIN features f ON f.id = pr.feature_id`,
     );
-    const reqsByPurpose = new Map<number, { featureName: string; isMandatory: boolean; weight: number }[]>();
+    const reqsByPurpose = new Map<
+      number,
+      { featureName: string; isMandatory: boolean; weight: number }[]
+    >();
     for (const r of reqs) {
       if (!reqsByPurpose.has(r.purposeId)) reqsByPurpose.set(r.purposeId, []);
       reqsByPurpose.get(r.purposeId)!.push({
@@ -416,7 +449,10 @@ export class CafesService {
     }
     return purposes.map((p: any) => {
       const requirements = reqsByPurpose.get(p.id) || [];
-      const maxScore = requirements.reduce((s: number, r: any) => s + r.weight, 0);
+      const maxScore = requirements.reduce(
+        (s: number, r: any) => s + r.weight,
+        0,
+      );
       return { id: p.id, name: p.name, slug: p.slug, requirements, maxScore };
     });
   }
@@ -429,12 +465,15 @@ export class CafesService {
     const looseMatches: { name: string; score: number }[] = [];
 
     for (const p of matchers) {
-      const mandatoryKeys = p.requirements.filter((r) => r.isMandatory).map((r) => r.featureName);
+      const mandatoryKeys = p.requirements
+        .filter((r) => r.isMandatory)
+        .map((r) => r.featureName);
       const strictMet = mandatoryKeys.every((k) => featureNames.includes(k));
       const matchedWeight = p.requirements
         .filter((r) => featureNames.includes(r.featureName))
         .reduce((s, r) => s + r.weight, 0);
-      const normalizedScore = p.maxScore > 0 ? Math.round((matchedWeight / p.maxScore) * 100) : 0;
+      const normalizedScore =
+        p.maxScore > 0 ? Math.round((matchedWeight / p.maxScore) * 100) : 0;
 
       if (strictMet && matchedWeight > 0) {
         strictMatches.push({ name: p.name, score: normalizedScore });
@@ -452,5 +491,4 @@ export class CafesService {
 
     return { purposes: purposeNames, matchScore };
   }
-
 }

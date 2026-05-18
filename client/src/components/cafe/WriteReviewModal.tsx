@@ -1,10 +1,10 @@
-import { useState, useEffect, useMemo } from 'react';
-import { reviewsApi } from '../../api/reviews.api';
-import { cafesApi, type FilterGroup } from '../../api/cafes.api';
-import { usePreferences } from '../../context/PreferencesContext';
-import { X, ChevronLeft, Camera, Video, Star } from '../../utils/lucideIcon';
-import { getPurposeBySlug } from '@shared/constants/purposes';
-import { chipFromFacilityKey } from '@shared/constants/facilities';
+import { useState, useEffect, useMemo } from "react";
+import { reviewsApi } from "../../api/reviews.api";
+import { cafesApi, type FilterGroup } from "../../api/cafes.api";
+import { usePreferences } from "../../context/PreferencesContext";
+import { X, ChevronLeft, Camera, Video, Star } from "../../utils/lucideIcon";
+import { getPurposeBySlug } from "@shared/constants/purposes";
+import { chipFromFacilityKey } from "@shared/constants/facilities";
 
 const TOTAL_STEPS = 5;
 
@@ -40,7 +40,7 @@ async function loadFacilityCatalog(): Promise<FilterGroup[]> {
   return facilityCatalogPromise;
 }
 
-type MediaItem = { url: string; type: 'photo' | 'video'; name: string };
+type MediaItem = { url: string; type: "photo" | "video"; name: string };
 
 interface Props {
   cafeId: number;
@@ -58,7 +58,7 @@ export default function WriteReviewModal({
   const [step, setStep] = useState(0);
   const [mood, setMood] = useState<string | null>(null);
   const [facilities, setFacilities] = useState<string[]>([]);
-  const [text, setText] = useState('');
+  const [text, setText] = useState("");
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
@@ -78,7 +78,9 @@ export default function WriteReviewModal({
   );
 
   // Facility chips ← /cafes/filters (cached in module-level)
-  const [facilityGroups, setFacilityGroups] = useState<FilterGroup[] | null>(facilityCatalogCache);
+  const [facilityGroups, setFacilityGroups] = useState<FilterGroup[] | null>(
+    facilityCatalogCache,
+  );
   useEffect(() => {
     if (facilityCatalogCache) {
       setFacilityGroups(facilityCatalogCache);
@@ -86,9 +88,15 @@ export default function WriteReviewModal({
     }
     let cancelled = false;
     loadFacilityCatalog()
-      .then((g) => { if (!cancelled) setFacilityGroups(g); })
-      .catch(() => { if (!cancelled) setFacilityGroups([]); });
-    return () => { cancelled = true; };
+      .then((g) => {
+        if (!cancelled) setFacilityGroups(g);
+      })
+      .catch(() => {
+        if (!cancelled) setFacilityGroups([]);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
   const facilityOptions: FacilityOption[] = useMemo(() => {
     const groups = facilityGroups ?? [];
@@ -104,19 +112,21 @@ export default function WriteReviewModal({
   // Lock body scroll while modal is open
   useEffect(() => {
     const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    document.body.style.overflow = "hidden";
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === "Escape") onClose();
     };
-    window.addEventListener('keydown', onKey);
+    window.addEventListener("keydown", onKey);
     return () => {
       document.body.style.overflow = prev;
-      window.removeEventListener('keydown', onKey);
+      window.removeEventListener("keydown", onKey);
     };
   }, [onClose]);
 
   const toggleFacility = (key: string) =>
-    setFacilities((p) => (p.includes(key) ? p.filter((k) => k !== key) : [...p, key]));
+    setFacilities((p) =>
+      p.includes(key) ? p.filter((k) => k !== key) : [...p, key],
+    );
 
   const canProceed = () => {
     switch (step) {
@@ -135,11 +145,11 @@ export default function WriteReviewModal({
   };
   const prev = () => step > 0 && setStep(step - 1);
 
-  const onPickFiles = (kind: 'photo' | 'video', files: FileList | null) => {
+  const onPickFiles = (kind: "photo" | "video", files: FileList | null) => {
     if (!files) return;
-    const photoCount = media.filter((m) => m.type === 'photo').length;
-    const videoCount = media.filter((m) => m.type === 'video').length;
-    const limit = kind === 'photo' ? 5 - photoCount : 2 - videoCount;
+    const photoCount = media.filter((m) => m.type === "photo").length;
+    const videoCount = media.filter((m) => m.type === "video").length;
+    const limit = kind === "photo" ? 5 - photoCount : 2 - videoCount;
     const items: MediaItem[] = [];
     for (let i = 0; i < Math.min(files.length, limit); i++) {
       const f = files[i];
@@ -157,12 +167,12 @@ export default function WriteReviewModal({
 
   const handleSubmit = async () => {
     if (!mood) {
-      setError('Pilih mood dulu ya');
+      setError("Pilih mood dulu ya");
       setStep(0);
       return;
     }
     if (rating === 0) {
-      setError('Kasih rating bintang dulu ya');
+      setError("Kasih rating bintang dulu ya");
       setStep(4);
       return;
     }
@@ -172,7 +182,7 @@ export default function WriteReviewModal({
       const ratings: { category: string; score: number }[] = [
         { category: `mood_${mood}`, score: 5 },
         ...facilities.map((f) => ({ category: `facility_${f}`, score: 5 })),
-        { category: 'overall', score: rating },
+        { category: "overall", score: rating },
       ];
       const mediaPayload = media
         .filter((m) => m.url && m.url.length < 2000)
@@ -185,14 +195,14 @@ export default function WriteReviewModal({
       onSubmitted?.();
       onClose();
     } catch (err: any) {
-      const msg = err?.response?.data?.message || 'Gagal mengirim review';
-      setError(typeof msg === 'string' ? msg : msg[0]);
+      const msg = err?.response?.data?.message || "Gagal mengirim review";
+      setError(typeof msg === "string" ? msg : msg[0]);
       setSubmitting(false);
     }
   };
 
-  const photoCount = media.filter((m) => m.type === 'photo').length;
-  const videoCount = media.filter((m) => m.type === 'video').length;
+  const photoCount = media.filter((m) => m.type === "photo").length;
+  const videoCount = media.filter((m) => m.type === "video").length;
 
   return (
     <div
@@ -239,7 +249,7 @@ export default function WriteReviewModal({
               <div className="grid grid-cols-2 gap-3">
                 {moodOptions.map((m) => {
                   const active = mood === m.key;
-                  const emoji = getPurposeBySlug(m.key)?.emoji ?? '✨';
+                  const emoji = getPurposeBySlug(m.key)?.emoji ?? "✨";
                   return (
                     <button
                       key={m.key}
@@ -247,14 +257,14 @@ export default function WriteReviewModal({
                       onClick={() => setMood(m.key)}
                       className={`flex flex-col items-center gap-2 py-5 rounded-2xl border-2 transition-all ${
                         active
-                          ? 'border-[#D48B3A] bg-[#FDF6EC]'
-                          : 'border-transparent bg-white hover:border-[#E8E4DD]'
+                          ? "border-[#D48B3A] bg-[#FDF6EC]"
+                          : "border-transparent bg-white hover:border-[#E8E4DD]"
                       }`}
                     >
                       <span className="text-3xl leading-none">{emoji}</span>
                       <span
                         className={`text-sm font-bold ${
-                          active ? 'text-[#D48B3A]' : 'text-[#1C1C1A]'
+                          active ? "text-[#D48B3A]" : "text-[#1C1C1A]"
                         }`}
                       >
                         {m.label}
@@ -281,14 +291,14 @@ export default function WriteReviewModal({
                       onClick={() => toggleFacility(f.key)}
                       className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-full border-2 transition-all ${
                         active
-                          ? 'border-[#D48B3A] bg-[#FDF6EC]'
-                          : 'border-transparent bg-white hover:border-[#E8E4DD]'
+                          ? "border-[#D48B3A] bg-[#FDF6EC]"
+                          : "border-transparent bg-white hover:border-[#E8E4DD]"
                       }`}
                     >
                       <span className="text-sm leading-none">{f.icon}</span>
                       <span
                         className={`text-sm font-semibold ${
-                          active ? 'text-[#D48B3A]' : 'text-[#1C1C1A]'
+                          active ? "text-[#D48B3A]" : "text-[#1C1C1A]"
                         }`}
                       >
                         {f.label}
@@ -326,7 +336,11 @@ export default function WriteReviewModal({
             >
               <div className="grid grid-cols-2 gap-3">
                 <label className="flex flex-col items-center justify-center py-5 rounded-2xl bg-white border-[1.5px] border-[#D48B3A]/40 hover:border-[#D48B3A] cursor-pointer transition-colors">
-                  <Camera size={28} className="text-[#D48B3A] mb-1.5" strokeWidth={1.8} />
+                  <Camera
+                    size={28}
+                    className="text-[#D48B3A] mb-1.5"
+                    strokeWidth={1.8}
+                  />
                   <span className="text-sm font-bold text-[#D48B3A]">
                     Foto ({photoCount}/5)
                   </span>
@@ -336,13 +350,17 @@ export default function WriteReviewModal({
                     multiple
                     className="hidden"
                     onChange={(e) => {
-                      onPickFiles('photo', e.target.files);
-                      e.target.value = '';
+                      onPickFiles("photo", e.target.files);
+                      e.target.value = "";
                     }}
                   />
                 </label>
                 <label className="flex flex-col items-center justify-center py-5 rounded-2xl bg-white border-[1.5px] border-[#D48B3A]/40 hover:border-[#D48B3A] cursor-pointer transition-colors">
-                  <Video size={28} className="text-[#D48B3A] mb-1.5" strokeWidth={1.8} />
+                  <Video
+                    size={28}
+                    className="text-[#D48B3A] mb-1.5"
+                    strokeWidth={1.8}
+                  />
                   <span className="text-sm font-bold text-[#D48B3A]">
                     Video ({videoCount}/2)
                   </span>
@@ -352,8 +370,8 @@ export default function WriteReviewModal({
                     multiple
                     className="hidden"
                     onChange={(e) => {
-                      onPickFiles('video', e.target.files);
-                      e.target.value = '';
+                      onPickFiles("video", e.target.files);
+                      e.target.value = "";
                     }}
                   />
                 </label>
@@ -363,7 +381,7 @@ export default function WriteReviewModal({
                 <div className="flex gap-2.5 overflow-x-auto mt-4 pb-2">
                   {media.map((m, i) => (
                     <div key={i} className="relative shrink-0">
-                      {m.type === 'photo' ? (
+                      {m.type === "photo" ? (
                         <img
                           src={m.url}
                           alt={m.name}
@@ -402,14 +420,14 @@ export default function WriteReviewModal({
                       onMouseEnter={() => setHoverRating(s)}
                       onMouseLeave={() => setHoverRating(0)}
                       className={`leading-none transition-transform ${
-                        filled ? 'text-[#D48B3A]' : 'text-[#E8E4DD]'
+                        filled ? "text-[#D48B3A]" : "text-[#E8E4DD]"
                       } hover:scale-110`}
                       aria-label={`${s} stars`}
                     >
                       <Star
                         size={42}
                         strokeWidth={1.5}
-                        fill={filled ? 'currentColor' : 'none'}
+                        fill={filled ? "currentColor" : "none"}
                       />
                     </button>
                   );
@@ -417,16 +435,16 @@ export default function WriteReviewModal({
               </div>
               <div className="text-center text-base font-bold text-[#1C1C1A] mt-6">
                 {rating === 0
-                  ? 'Pilih bintang'
+                  ? "Pilih bintang"
                   : rating === 5
-                    ? '🔥 Mantap jiwa!'
+                    ? "🔥 Mantap jiwa!"
                     : rating === 4
-                      ? '😊 Bagus banget'
+                      ? "😊 Bagus banget"
                       : rating === 3
-                        ? '👍 Oke lah'
+                        ? "👍 Oke lah"
                         : rating === 2
-                          ? '😐 Biasa aja'
-                          : '😕 Kurang'}
+                          ? "😐 Biasa aja"
+                          : "😕 Kurang"}
               </div>
             </Step>
           )}
@@ -457,10 +475,10 @@ export default function WriteReviewModal({
             className="flex-1 py-3 rounded-xl bg-[#D48B3A] text-white font-extrabold text-sm hover:bg-[#B97726] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             {submitting
-              ? '...'
+              ? "..."
               : step === TOTAL_STEPS - 1
-                ? 'Kirim Review'
-                : 'Next ›'}
+                ? "Kirim Review"
+                : "Next ›"}
           </button>
         </div>
       </div>

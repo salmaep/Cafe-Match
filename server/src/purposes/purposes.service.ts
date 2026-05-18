@@ -47,9 +47,18 @@ export class PurposesService {
       description?: string;
       icon?: string;
       displayOrder?: number;
-      requirements: { featureName: string; isMandatory?: boolean; weight?: number }[];
+      requirements: {
+        featureName: string;
+        isMandatory?: boolean;
+        weight?: number;
+      }[];
     }[];
-  }): Promise<{ created: number; updated: number; requirementsWritten: number; skippedFeatures: string[] }> {
+  }): Promise<{
+    created: number;
+    updated: number;
+    requirementsWritten: number;
+    skippedFeatures: string[];
+  }> {
     let created = 0;
     let updated = 0;
     let requirementsWritten = 0;
@@ -57,7 +66,9 @@ export class PurposesService {
 
     await this.dataSource.transaction(async (manager) => {
       for (const p of input.purposes) {
-        let purpose = await manager.findOne(Purpose, { where: { slug: p.slug } });
+        let purpose = await manager.findOne(Purpose, {
+          where: { slug: p.slug },
+        });
         if (purpose) {
           purpose.name = p.name;
           purpose.description = p.description ?? purpose.description;
@@ -175,7 +186,10 @@ export class PurposesService {
       );
     // Resolve feature names via JOIN — purpose_requirements.feature_id → features.name
     const reqs: {
-      purposeId: number; featureName: string; isMandatory: number; weight: number;
+      purposeId: number;
+      featureName: string;
+      isMandatory: number;
+      weight: number;
     }[] = await this.dataSource.query(
       `SELECT pr.purpose_id AS purposeId, f.name AS featureName,
               pr.is_mandatory AS isMandatory, pr.weight AS weight
@@ -217,7 +231,10 @@ export class PurposesService {
     return rows.map((r) => r.name);
   }
 
-  private scoreMatcher(featureNames: string[], matcher: PurposeMatcher): number {
+  private scoreMatcher(
+    featureNames: string[],
+    matcher: PurposeMatcher,
+  ): number {
     const mandatoryKeys = matcher.requirements
       .filter((r) => r.isMandatory)
       .map((r) => r.featureName);

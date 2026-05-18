@@ -23,7 +23,10 @@ import { OtpModule } from '../otp/otp.module';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_SECRET')!,
-        signOptions: { expiresIn: (configService.get<string>('JWT_EXPIRATION') ?? '7d') as any },
+        signOptions: {
+          expiresIn: (configService.get<string>('JWT_EXPIRATION') ??
+            '7d') as any,
+        },
       }),
     }),
   ],

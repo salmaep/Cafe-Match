@@ -32,7 +32,12 @@ export class ScraperSyncService {
   ) {}
 
   async syncCafes(cafes: SyncCafeDto[]): Promise<SyncResult> {
-    const result: SyncResult = { processed: 0, created: 0, updated: 0, errors: [] };
+    const result: SyncResult = {
+      processed: 0,
+      created: 0,
+      updated: 0,
+      errors: [],
+    };
     const upsertedIds: number[] = [];
 
     for (const cafe of cafes) {
@@ -41,17 +46,28 @@ export class ScraperSyncService {
         if (cafeId) upsertedIds.push(cafeId);
         result.processed++;
       } catch (err: any) {
-        this.logger.error(`Error syncing ${cafe.googlePlaceId}: ${err.message}`);
-        result.errors.push({ googlePlaceId: cafe.googlePlaceId, reason: err.message });
+        this.logger.error(
+          `Error syncing ${cafe.googlePlaceId}: ${err.message}`,
+        );
+        result.errors.push({
+          googlePlaceId: cafe.googlePlaceId,
+          reason: err.message,
+        });
       }
     }
 
     // Bulk-index to Meilisearch (fail-open — sync errors logged to retry queue)
-    if (this.config.get('MEILI_SYNC_ENABLED') !== 'false' && upsertedIds.length > 0) {
+    if (
+      this.config.get('MEILI_SYNC_ENABLED') !== 'false' &&
+      upsertedIds.length > 0
+    ) {
       try {
         await this.meiliCafes.indexCafes(upsertedIds);
       } catch (err) {
-        this.logger.error('Meili bulk-index failed after scraper-sync batch', err);
+        this.logger.error(
+          'Meili bulk-index failed after scraper-sync batch',
+          err,
+        );
         for (const id of upsertedIds) {
           await this.meiliCafes.queueFailure(id, 'index', String(err));
         }
@@ -61,7 +77,10 @@ export class ScraperSyncService {
     return result;
   }
 
-  private async upsertCafe(dto: SyncCafeDto, result: SyncResult): Promise<number | null> {
+  private async upsertCafe(
+    dto: SyncCafeDto,
+    result: SyncResult,
+  ): Promise<number | null> {
     const [lng, lat] = dto.location;
     const isActive = dto.status === 'active';
 
@@ -133,13 +152,18 @@ export class ScraperSyncService {
         dto.city ?? null,
         dto.district ?? null,
         dto.claimed ? 1 : 0,
-        dto.reviewsDistribution ? JSON.stringify(dto.reviewsDistribution) : null,
+        dto.reviewsDistribution
+          ? JSON.stringify(dto.reviewsDistribution)
+          : null,
       ],
     );
 
     const cafeId: number = result.insertId;
     const slug = buildCafeSlug(dto.name.trim(), cafeId);
-    await this.dataSource.query(`UPDATE cafes SET slug = ? WHERE id = ?`, [slug, cafeId]);
+    await this.dataSource.query(`UPDATE cafes SET slug = ? WHERE id = ?`, [
+      slug,
+      cafeId,
+    ]);
 
     return cafeId;
   }
@@ -189,13 +213,18 @@ export class ScraperSyncService {
         dto.city ?? null,
         dto.district ?? null,
         dto.claimed ? 1 : 0,
-        dto.reviewsDistribution ? JSON.stringify(dto.reviewsDistribution) : null,
+        dto.reviewsDistribution
+          ? JSON.stringify(dto.reviewsDistribution)
+          : null,
         cafeId,
       ],
     );
   }
 
-  private async replaceFeatures(cafeId: number, dto: SyncCafeDto): Promise<void> {
+  private async replaceFeatures(
+    cafeId: number,
+    dto: SyncCafeDto,
+  ): Promise<void> {
     // Wipe only google_scraper-sourced rows; preserve manual entries (owner edits).
     await this.dataSource.query(
       `DELETE FROM cafe_features WHERE cafe_id = ? AND source = 'google_scraper'`,
@@ -235,7 +264,10 @@ export class ScraperSyncService {
    * Each entry must reference an existing purpose by slug. Score < 1 is
    * skipped. Score > 100 is clamped.
    */
-  private async replacePurposeScores(cafeId: number, dto: SyncCafeDto): Promise<void> {
+  private async replacePurposeScores(
+    cafeId: number,
+    dto: SyncCafeDto,
+  ): Promise<void> {
     if (!dto.purposeScores || dto.purposeScores.length === 0) return;
 
     await this.dataSource.query(
@@ -254,7 +286,9 @@ export class ScraperSyncService {
         [slug],
       );
       if (!purposeRow) {
-        this.logger.warn(`Unknown purpose slug "${slug}" for cafe ${cafeId} — skipped`);
+        this.logger.warn(
+          `Unknown purpose slug "${slug}" for cafe ${cafeId} — skipped`,
+        );
         continue;
       }
 
@@ -266,7 +300,10 @@ export class ScraperSyncService {
     }
   }
 
-  private async replaceGooglePhotos(cafeId: number, dto: SyncCafeDto): Promise<void> {
+  private async replaceGooglePhotos(
+    cafeId: number,
+    dto: SyncCafeDto,
+  ): Promise<void> {
     // Remove existing google-sourced photos (preserve source='manual')
     await this.dataSource.query(
       `DELETE FROM cafe_photos WHERE cafe_id = ? AND source = 'google'`,
@@ -276,7 +313,13 @@ export class ScraperSyncService {
     let order = 0;
 
     if (dto.coverImage) {
-      await this.insertGooglePhoto(cafeId, dto.coverImage, 'cover', order++, true);
+      await this.insertGooglePhoto(
+        cafeId,
+        dto.coverImage,
+        'cover',
+        order++,
+        true,
+      );
     }
 
     for (const url of dto.gallery ?? []) {
@@ -303,7 +346,10 @@ export class ScraperSyncService {
     );
   }
 
-  private async upsertGoogleReviews(cafeId: number, dto: SyncCafeDto): Promise<void> {
+  private async upsertGoogleReviews(
+    cafeId: number,
+    dto: SyncCafeDto,
+  ): Promise<void> {
     for (const review of dto.reviews ?? []) {
       const hash = crypto
         .createHash('sha256')

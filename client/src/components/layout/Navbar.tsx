@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import { useShortlist } from '../../context/ShortlistContext';
+import { useEffect, useRef, useState } from "react";
+import { Link, NavLink, useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import { useShortlist } from "../../context/ShortlistContext";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -18,27 +18,27 @@ export default function Navbar() {
       }
     };
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setMenuOpen(false);
+      if (e.key === "Escape") setMenuOpen(false);
     };
-    window.addEventListener('mousedown', onClick);
-    window.addEventListener('keydown', onKey);
+    window.addEventListener("mousedown", onClick);
+    window.addEventListener("keydown", onKey);
     return () => {
-      window.removeEventListener('mousedown', onClick);
-      window.removeEventListener('keydown', onKey);
+      window.removeEventListener("mousedown", onClick);
+      window.removeEventListener("keydown", onKey);
     };
   }, [menuOpen]);
 
   const handleLogout = () => {
     setMenuOpen(false);
     logout();
-    navigate('/');
+    navigate("/");
   };
 
-  const initials = (user?.name || user?.email || '?')
+  const initials = (user?.name || user?.email || "?")
     .split(/\s+/)
     .map((s) => s[0])
     .slice(0, 2)
-    .join('')
+    .join("")
     .toUpperCase();
 
   return (
@@ -94,7 +94,7 @@ export default function Navbar() {
                 </span>
                 <span
                   className={`text-[10px] text-[#8A8880] transition-transform ${
-                    menuOpen ? 'rotate-180' : ''
+                    menuOpen ? "rotate-180" : ""
                   }`}
                 >
                   ▼
@@ -140,8 +140,8 @@ export default function Navbar() {
                 className={({ isActive }) =>
                   `px-4 py-1.5 rounded-full text-sm font-bold transition-colors ${
                     isActive
-                      ? 'bg-[#1C1C1A] text-white shadow-sm'
-                      : 'text-[#1C1C1A] hover:text-[#D48B3A]'
+                      ? "bg-[#1C1C1A] text-white shadow-sm"
+                      : "text-[#1C1C1A] hover:text-[#D48B3A]"
                   }`
                 }
               >
@@ -152,8 +152,8 @@ export default function Navbar() {
                 className={({ isActive }) =>
                   `px-4 py-1.5 rounded-full text-sm font-bold transition-colors ${
                     isActive
-                      ? 'bg-[#1C1C1A] text-white shadow-sm'
-                      : 'text-[#1C1C1A] hover:text-[#D48B3A]'
+                      ? "bg-[#1C1C1A] text-white shadow-sm"
+                      : "text-[#1C1C1A] hover:text-[#D48B3A]"
                   }`
                 }
               >
@@ -185,8 +185,8 @@ function NavItem({
       className={({ isActive }) =>
         `relative px-4 py-1.5 rounded-full text-sm font-semibold transition-colors ${
           isActive
-            ? 'bg-[#FDF6EC] text-[#D48B3A]'
-            : 'text-[#1C1C1A] hover:bg-[#F0EDE8]'
+            ? "bg-[#FDF6EC] text-[#D48B3A]"
+            : "text-[#1C1C1A] hover:bg-[#F0EDE8]"
         }`
       }
     >

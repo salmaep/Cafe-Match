@@ -9,7 +9,12 @@ import { PromotionsService } from './promotions.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Promotion, AdvertisementPackage, PromotionSlot, Cafe]),
+    TypeOrmModule.forFeature([
+      Promotion,
+      AdvertisementPackage,
+      PromotionSlot,
+      Cafe,
+    ]),
   ],
   controllers: [PromotionsController],
   providers: [PromotionsService],

@@ -1,26 +1,32 @@
- import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { cafesApi } from '../api/cafes.api';
-import { purposesApi } from '../api/purposes.api';
-import type { Cafe, Purpose } from '../types';
-import { useGeolocation, FALLBACK_LAT, FALLBACK_LNG } from '../hooks/useGeolocation';
-import { getCafeImage, placeholderImage } from '../utils/cafeImage';
-import { cafeUrl } from '../utils/cafeUrl';
-import HybridAdSlot from '../components/HybridAdSlot';
-import InfiniteScrollSentinel from '../components/InfiniteScrollSentinel';
-import Seo from '../components/seo/Seo';
-import FilterPanel from '../components/search/FilterPanel';
-import { getOpenStatus } from '../utils/openingHours';
-import { buildFacilityChips } from '../utils/facilities';
-import { formatRating } from '../utils/rating';
-import { getPurposeBySlug } from '../constants/purposes';
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { cafesApi } from "../api/cafes.api";
+import { purposesApi } from "../api/purposes.api";
+import type { Cafe, Purpose } from "../types";
+import {
+  useGeolocation,
+  FALLBACK_LAT,
+  FALLBACK_LNG,
+} from "../hooks/useGeolocation";
+import { getCafeImage, placeholderImage } from "../utils/cafeImage";
+import { cafeUrl } from "../utils/cafeUrl";
+import HybridAdSlot from "../components/HybridAdSlot";
+import InfiniteScrollSentinel from "../components/InfiniteScrollSentinel";
+import Seo from "../components/seo/Seo";
+import FilterPanel from "../components/search/FilterPanel";
+import { getOpenStatus } from "../utils/openingHours";
+import { buildFacilityChips } from "../utils/facilities";
+import { formatRating } from "../utils/rating";
+import { getPurposeBySlug } from "../constants/purposes";
 
 const PAGE_SIZE = 24;
 const AD_INTERVAL = 10;
 const MAX_ADS = 2;
 
 function distanceKm(cafe: Cafe): string | null {
-  return cafe.distanceMeters != null ? (cafe.distanceMeters / 1000).toFixed(1) : null;
+  return cafe.distanceMeters != null
+    ? (cafe.distanceMeters / 1000).toFixed(1)
+    : null;
 }
 
 export default function TrendingPage() {
@@ -30,7 +36,7 @@ export default function TrendingPage() {
   const [purposes, setPurposes] = useState<Purpose[]>([]);
   const [activePurposeId, setActivePurposeId] = useState<number | null>(null);
   const [facilities, setFacilities] = useState<string[]>([]);
-  const [priceRange, setPriceRange] = useState<string>('');
+  const [priceRange, setPriceRange] = useState<string>("");
   const [filterModalOpen, setFilterModalOpen] = useState(false);
   const [cafes, setCafes] = useState<Cafe[]>([]);
   const [page, setPage] = useState(1);
@@ -56,12 +62,14 @@ export default function TrendingPage() {
         priceRange: priceRange || undefined,
         page: targetPage,
         limit: PAGE_SIZE,
-        sort: 'trending',
+        sort: "trending",
       })
       .then((res) => {
         const incoming = res.data?.data ?? [];
         const totalCount = res.data?.meta?.total ?? incoming.length;
-        setCafes((prev) => (targetPage === 1 ? incoming : [...prev, ...incoming]));
+        setCafes((prev) =>
+          targetPage === 1 ? incoming : [...prev, ...incoming],
+        );
         setTotal(totalCount);
       })
       .catch(() => {
@@ -76,7 +84,14 @@ export default function TrendingPage() {
     setPage(1);
     fetchCafes(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [latitude, longitude, activePurposeId, facilities, priceRange, geoLoading]);
+  }, [
+    latitude,
+    longitude,
+    activePurposeId,
+    facilities,
+    priceRange,
+    geoLoading,
+  ]);
 
   const hasMore = cafes.length < total;
   const loadMore = () => {
@@ -117,21 +132,24 @@ export default function TrendingPage() {
                   <span>🔥</span> Trending Now
                 </div>
                 <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#1C1C1A] tracking-tight leading-tight">
-                  Cafe paling{' '}
+                  Cafe paling{" "}
                   <span className="bg-gradient-to-r from-[#F97316] to-[#EA580C] bg-clip-text text-transparent">
                     hits
-                  </span>{' '}
+                  </span>{" "}
                   minggu ini
                 </h1>
                 <p className="text-sm sm:text-[15px] text-[#5C5A52] mt-2 max-w-xl">
-                  Berdasarkan jumlah favorit & bookmark dari komunitas — update tiap hari.
+                  Berdasarkan jumlah favorit & bookmark dari komunitas — update
+                  tiap hari.
                 </p>
               </div>
               <div className="shrink-0 flex flex-col sm:flex-row items-end sm:items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-br from-[#FBBF24] via-[#F97316] to-[#EA580C] text-white text-xs font-extrabold shadow-md shadow-orange-500/20">
                   <span className="text-sm leading-none">🔥</span>
                   <span className="tabular-nums">{total.toLocaleString()}</span>
-                  <span className="text-[10px] opacity-80 font-bold tracking-wider">CAFES</span>
+                  <span className="text-[10px] opacity-80 font-bold tracking-wider">
+                    CAFES
+                  </span>
                 </span>
                 <button
                   type="button"
@@ -139,9 +157,13 @@ export default function TrendingPage() {
                   className="lg:hidden inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white text-[#1C1C1A] ring-1 ring-[#E8E4DD] text-xs font-bold hover:ring-[#D48B3A] transition-colors shadow-sm"
                 >
                   <span>⚙️</span> Filter
-                  {(facilities.length > 0 || priceRange || activePurposeId != null) && (
+                  {(facilities.length > 0 ||
+                    priceRange ||
+                    activePurposeId != null) && (
                     <span className="bg-[#D48B3A] text-white rounded-full px-1.5 text-[10px] font-extrabold">
-                      {facilities.length + (priceRange ? 1 : 0) + (activePurposeId != null ? 1 : 0)}
+                      {facilities.length +
+                        (priceRange ? 1 : 0) +
+                        (activePurposeId != null ? 1 : 0)}
                     </span>
                   )}
                 </button>
@@ -171,94 +193,127 @@ export default function TrendingPage() {
         </aside>
 
         <main className="flex-1 min-w-0">
-        {loading && cafes.length === 0 ? (
-          <SkeletonGrid />
-        ) : cafes.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 text-center">
-            <span className="text-5xl mb-3 inline-block animate-bounce">🔥</span>
-            <h2 className="text-lg font-bold text-[#1C1C1A] mb-1">Belum ada cafe trending</h2>
-            <p className="text-sm text-[#8A8880]">Coba ganti filter atau cek lagi nanti</p>
-          </div>
-        ) : (
-          <>
-            {/* Top 3 podium — Winner full-width, runners-up below as 2-col grid */}
-            {top1 && (
-              <div className="trending-fade-in">
-                <WinnerCard cafe={top1} onClick={() => navigate(cafeUrl(top1), { state: { backLabel: 'Trending' } })} />
-              </div>
-            )}
-            {(top2 || top3) && (
-              <div
-                className="mt-3 sm:mt-4 grid grid-cols-2 gap-2.5 sm:gap-4 trending-fade-in"
-                style={{ animationDelay: '60ms' }}
-              >
-                {top2 && (
-                  <RunnerUpCard
-                    cafe={top2}
-                    rank={2}
-                    onClick={() => navigate(cafeUrl(top2), { state: { backLabel: 'Trending' } })}
+          {loading && cafes.length === 0 ? (
+            <SkeletonGrid />
+          ) : cafes.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-24 text-center">
+              <span className="text-5xl mb-3 inline-block animate-bounce">
+                🔥
+              </span>
+              <h2 className="text-lg font-bold text-[#1C1C1A] mb-1">
+                Belum ada cafe trending
+              </h2>
+              <p className="text-sm text-[#8A8880]">
+                Coba ganti filter atau cek lagi nanti
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* Top 3 podium — Winner full-width, runners-up below as 2-col grid */}
+              {top1 && (
+                <div className="trending-fade-in">
+                  <WinnerCard
+                    cafe={top1}
+                    onClick={() =>
+                      navigate(cafeUrl(top1), {
+                        state: { backLabel: "Trending" },
+                      })
+                    }
                   />
-                )}
-                {top3 && (
-                  <RunnerUpCard
-                    cafe={top3}
-                    rank={3}
-                    onClick={() => navigate(cafeUrl(top3), { state: { backLabel: 'Trending' } })}
-                  />
-                )}
-              </div>
-            )}
+                </div>
+              )}
+              {(top2 || top3) && (
+                <div
+                  className="mt-3 sm:mt-4 grid grid-cols-2 gap-2.5 sm:gap-4 trending-fade-in"
+                  style={{ animationDelay: "60ms" }}
+                >
+                  {top2 && (
+                    <RunnerUpCard
+                      cafe={top2}
+                      rank={2}
+                      onClick={() =>
+                        navigate(cafeUrl(top2), {
+                          state: { backLabel: "Trending" },
+                        })
+                      }
+                    />
+                  )}
+                  {top3 && (
+                    <RunnerUpCard
+                      cafe={top3}
+                      rank={3}
+                      onClick={() =>
+                        navigate(cafeUrl(top3), {
+                          state: { backLabel: "Trending" },
+                        })
+                      }
+                    />
+                  )}
+                </div>
+              )}
 
-            {rest.length > 0 && (
-              <div className="mt-10 mb-4 flex items-center justify-between">
-                <h2 className="text-sm font-extrabold text-[#1C1C1A] uppercase tracking-[0.1em]">
-                  Peringkat 4 – {Math.min(total, cafes.length)}
-                </h2>
-                <span className="text-[11px] text-[#8A8880] font-semibold">
-                  Geser bawah untuk lihat lebih
-                </span>
-              </div>
-            )}
+              {rest.length > 0 && (
+                <div className="mt-10 mb-4 flex items-center justify-between">
+                  <h2 className="text-sm font-extrabold text-[#1C1C1A] uppercase tracking-[0.1em]">
+                    Peringkat 4 – {Math.min(total, cafes.length)}
+                  </h2>
+                  <span className="text-[11px] text-[#8A8880] font-semibold">
+                    Geser bawah untuk lihat lebih
+                  </span>
+                </div>
+              )}
 
-            <div className="flex flex-col gap-3">
-              {(() => {
-                const nodes: React.ReactNode[] = [];
-                let adsShown = 0;
-                rest.forEach((cafe, i) => {
-                  const rank = i + 4;
-                  nodes.push(
-                    <div
-                      key={`row-${cafe.id}`}
-                      className="trending-fade-in"
-                      style={{ animationDelay: `${Math.min(i * 30, 400)}ms` }}
-                    >
-                      <ListRow
-                        cafe={cafe}
-                        rank={rank}
-                        maxFavorites={top1?.favoritesCount ?? 1}
-                        onClick={() => navigate(cafeUrl(cafe), { state: { backLabel: 'Trending' } })}
-                      />
-                    </div>,
-                  );
-                  const shouldAd =
-                    adsShown < MAX_ADS &&
-                    (i + 1) % AD_INTERVAL === 0 &&
-                    i !== rest.length - 1;
-                  if (shouldAd) {
+              <div className="flex flex-col gap-3">
+                {(() => {
+                  const nodes: React.ReactNode[] = [];
+                  let adsShown = 0;
+                  rest.forEach((cafe, i) => {
+                    const rank = i + 4;
                     nodes.push(
-                      <div key={`ad-${i}`} className="trending-fade-in">
-                        <HybridAdSlot slotIndex={adsShown} variant="list" size="compact" />
+                      <div
+                        key={`row-${cafe.id}`}
+                        className="trending-fade-in"
+                        style={{ animationDelay: `${Math.min(i * 30, 400)}ms` }}
+                      >
+                        <ListRow
+                          cafe={cafe}
+                          rank={rank}
+                          maxFavorites={top1?.favoritesCount ?? 1}
+                          onClick={() =>
+                            navigate(cafeUrl(cafe), {
+                              state: { backLabel: "Trending" },
+                            })
+                          }
+                        />
                       </div>,
                     );
-                    adsShown += 1;
-                  }
-                });
-                return nodes;
-              })()}
-            </div>
-            <InfiniteScrollSentinel onLoadMore={loadMore} hasMore={hasMore} loading={loading} />
-          </>
-        )}
+                    const shouldAd =
+                      adsShown < MAX_ADS &&
+                      (i + 1) % AD_INTERVAL === 0 &&
+                      i !== rest.length - 1;
+                    if (shouldAd) {
+                      nodes.push(
+                        <div key={`ad-${i}`} className="trending-fade-in">
+                          <HybridAdSlot
+                            slotIndex={adsShown}
+                            variant="list"
+                            size="compact"
+                          />
+                        </div>,
+                      );
+                      adsShown += 1;
+                    }
+                  });
+                  return nodes;
+                })()}
+              </div>
+              <InfiniteScrollSentinel
+                onLoadMore={loadMore}
+                hasMore={hasMore}
+                loading={loading}
+              />
+            </>
+          )}
         </main>
       </div>
 
@@ -314,7 +369,10 @@ function SkeletonGrid() {
       </div>
       <div className="grid grid-cols-2 gap-3">
         {[0, 1].map((k) => (
-          <div key={k} className="rounded-2xl bg-white ring-1 ring-[#F0EDE8] overflow-hidden">
+          <div
+            key={k}
+            className="rounded-2xl bg-white ring-1 ring-[#F0EDE8] overflow-hidden"
+          >
             <div className="aspect-[4/3] bg-gradient-to-br from-[#F0EDE8] to-[#E8E4DD] animate-pulse" />
             <div className="p-3 space-y-2">
               <div className="h-3 w-3/4 rounded bg-[#F0EDE8] animate-pulse" />
@@ -369,7 +427,9 @@ function WinnerCard({ cafe, onClick }: { cafe: Cafe; onClick: () => void }) {
             referrerPolicy="no-referrer"
             className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-700 ease-out"
             onError={(e) => {
-              (e.currentTarget as HTMLImageElement).src = placeholderImage(cafe.id);
+              (e.currentTarget as HTMLImageElement).src = placeholderImage(
+                cafe.id,
+              );
             }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-black/10" />
@@ -413,7 +473,7 @@ function WinnerCard({ cafe, onClick }: { cafe: Cafe; onClick: () => void }) {
             </h2>
             {(locality || km) && (
               <p className="mt-1.5 text-white/90 text-[13px] sm:text-sm line-clamp-1 font-medium">
-                {[locality, km ? `${km} km` : null].filter(Boolean).join(' · ')}
+                {[locality, km ? `${km} km` : null].filter(Boolean).join(" · ")}
               </p>
             )}
             <div className="mt-3 flex flex-wrap items-center gap-1.5">
@@ -432,11 +492,14 @@ function WinnerCard({ cafe, onClick }: { cafe: Cafe; onClick: () => void }) {
                 <span
                   className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold ring-1 ${
                     open.isOpen
-                      ? 'bg-emerald-500/90 text-white ring-emerald-400/50'
-                      : 'bg-black/60 text-white ring-white/20'
+                      ? "bg-emerald-500/90 text-white ring-emerald-400/50"
+                      : "bg-black/60 text-white ring-white/20"
                   }`}
                 >
-                  ● {open.isOpen ? `Buka${open.closesAt ? ` · ${open.closesAt}` : ''}` : 'Tutup'}
+                  ●{" "}
+                  {open.isOpen
+                    ? `Buka${open.closesAt ? ` · ${open.closesAt}` : ""}`
+                    : "Tutup"}
                 </span>
               )}
             </div>
@@ -490,12 +553,12 @@ function RunnerUpCard({
   // Border gradient — silver for #2, bronze for #3
   const borderGradient =
     rank === 2
-      ? 'from-[#E5E7EB] via-[#9CA3AF] to-[#6B7280]'
-      : 'from-[#FCD34D] via-[#D97706] to-[#B45309]';
+      ? "from-[#E5E7EB] via-[#9CA3AF] to-[#6B7280]"
+      : "from-[#FCD34D] via-[#D97706] to-[#B45309]";
   const rankBg =
     rank === 2
-      ? 'bg-gradient-to-br from-[#E5E7EB] to-[#9CA3AF]'
-      : 'bg-gradient-to-br from-[#FCD34D] to-[#B45309]';
+      ? "bg-gradient-to-br from-[#E5E7EB] to-[#9CA3AF]"
+      : "bg-gradient-to-br from-[#FCD34D] to-[#B45309]";
 
   return (
     <div
@@ -514,7 +577,9 @@ function RunnerUpCard({
             referrerPolicy="no-referrer"
             className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-300"
             onError={(e) => {
-              (e.currentTarget as HTMLImageElement).src = placeholderImage(cafe.id);
+              (e.currentTarget as HTMLImageElement).src = placeholderImage(
+                cafe.id,
+              );
             }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
@@ -526,7 +591,9 @@ function RunnerUpCard({
             >
               {rank}
             </span>
-            <span className="text-[10px] font-extrabold tracking-wider text-[#1C1C1A]">TOP</span>
+            <span className="text-[10px] font-extrabold tracking-wider text-[#1C1C1A]">
+              TOP
+            </span>
           </span>
 
           {km && (
@@ -566,7 +633,9 @@ function RunnerUpCard({
               </span>
             )}
             {cafe.priceRange && (
-              <span className="ml-auto font-extrabold text-[#D48B3A]">{cafe.priceRange}</span>
+              <span className="ml-auto font-extrabold text-[#D48B3A]">
+                {cafe.priceRange}
+              </span>
             )}
           </div>
 
@@ -577,17 +646,17 @@ function RunnerUpCard({
                 <span
                   className={`text-[10px] font-bold rounded-full px-2 py-0.5 ${
                     open.isOpen
-                      ? 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200'
-                      : 'bg-stone-200 text-stone-700 ring-1 ring-stone-300'
+                      ? "bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200"
+                      : "bg-stone-200 text-stone-700 ring-1 ring-stone-300"
                   }`}
                 >
                   {open.isOpen
                     ? open.closesAt
                       ? `Buka · ${open.closesAt}`
-                      : 'Buka'
+                      : "Buka"
                     : open.opensAt
                       ? `Tutup · ${open.opensAt}`
-                      : 'Tutup'}
+                      : "Tutup"}
                 </span>
               )}
               {visibleChips.map((c) => (
@@ -653,35 +722,43 @@ function ListRow({
           alt={cafe.name}
           className="w-[100px] h-[100px] rounded-xl object-cover bg-[#F0EDE8]"
           onError={(e) => {
-            (e.currentTarget as HTMLImageElement).src = placeholderImage(cafe.id);
+            (e.currentTarget as HTMLImageElement).src = placeholderImage(
+              cafe.id,
+            );
           }}
         />
-        {cafe.activePromotionType === 'new_cafe' && (
+        {cafe.activePromotionType === "new_cafe" && (
           <span className="absolute top-1 left-1 bg-[#E94B4B] text-white text-[9px] font-bold rounded px-1 py-px">
             NEW
           </span>
         )}
-        {cafe.activePromotionType === 'featured_promo' && (
+        {cafe.activePromotionType === "featured_promo" && (
           <span className="absolute top-1 left-1 bg-[#D48B3A] text-white text-[9px] font-bold rounded px-1 py-px">
             Featured
           </span>
         )}
       </div>
       <div className="flex-1 min-w-0 py-0.5">
-        <h3 className="font-bold text-[#1C1C1A] text-[15px] truncate">{cafe.name}</h3>
+        <h3 className="font-bold text-[#1C1C1A] text-[15px] truncate">
+          {cafe.name}
+        </h3>
 
         <div className="flex items-center gap-1.5 mt-0.5 text-[12px] text-[#8A8880]">
           {formatRating(rating) && (
             <>
               <span className="text-amber-500">★</span>
-              <span className="font-semibold text-[#1C1C1A]">{formatRating(rating)}</span>
+              <span className="font-semibold text-[#1C1C1A]">
+                {formatRating(rating)}
+              </span>
               {reviews != null && <span>({reviews.toLocaleString()})</span>}
               <span className="text-[#D9D6CE]">·</span>
             </>
           )}
           {cafe.priceRange && (
             <>
-              <span className="font-bold text-[#D48B3A]">{cafe.priceRange}</span>
+              <span className="font-bold text-[#D48B3A]">
+                {cafe.priceRange}
+              </span>
               <span className="text-[#D9D6CE]">·</span>
             </>
           )}
@@ -689,7 +766,9 @@ function ListRow({
         </div>
 
         {locality && (
-          <p className="text-[11px] text-[#A8A59C] truncate mt-0.5">{locality}</p>
+          <p className="text-[11px] text-[#A8A59C] truncate mt-0.5">
+            {locality}
+          </p>
         )}
 
         <div className="flex flex-wrap gap-1 mt-1.5">
@@ -697,17 +776,17 @@ function ListRow({
             <span
               className={`text-[10px] font-bold rounded-full px-2 py-px ${
                 open.isOpen
-                  ? 'bg-emerald-50 text-emerald-700'
-                  : 'bg-gray-100 text-gray-600'
+                  ? "bg-emerald-50 text-emerald-700"
+                  : "bg-gray-100 text-gray-600"
               }`}
             >
               {open.isOpen
                 ? open.closesAt
                   ? `Buka · tutup ${open.closesAt}`
-                  : 'Buka'
+                  : "Buka"
                 : open.opensAt
-                  ? `Tutup · buka ${open.nextOpenDay === 'today' ? '' : `${open.nextOpenDay} `}${open.opensAt}`
-                  : 'Tutup'}
+                  ? `Tutup · buka ${open.nextOpenDay === "today" ? "" : `${open.nextOpenDay} `}${open.opensAt}`
+                  : "Tutup"}
             </span>
           )}
           {visibleChips.map((c) => (
@@ -727,7 +806,8 @@ function ListRow({
 
         {cafe.topReviewText && (
           <p className="text-[11px] text-[#5C5A52] leading-snug mt-1.5 line-clamp-1 italic">
-            <span className="text-[#8A8880] not-italic">💬</span> "{cafe.topReviewText}"
+            <span className="text-[#8A8880] not-italic">💬</span> "
+            {cafe.topReviewText}"
           </p>
         )}
 
@@ -765,7 +845,9 @@ function PurposeSidebar({
     <div className="bg-white rounded-xl border border-[#F0EDE8] overflow-hidden">
       <div className="px-4 py-3 border-b border-[#F0EDE8]">
         <h3 className="text-sm font-bold text-[#1C1C1A]">Tujuan</h3>
-        <p className="text-[11px] text-[#8A8880] mt-0.5">Filter by your reason</p>
+        <p className="text-[11px] text-[#8A8880] mt-0.5">
+          Filter by your reason
+        </p>
       </div>
       <div className="px-4 py-3 flex flex-wrap gap-1.5">
         <button
@@ -773,8 +855,8 @@ function PurposeSidebar({
           onClick={() => onSelect(null)}
           className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
             activeId === null
-              ? 'bg-[#1C1C1A] text-white border-[#1C1C1A]'
-              : 'bg-white text-[#1C1C1A] border-[#E8E4DD] hover:border-[#D48B3A] hover:text-[#D48B3A]'
+              ? "bg-[#1C1C1A] text-white border-[#1C1C1A]"
+              : "bg-white text-[#1C1C1A] border-[#E8E4DD] hover:border-[#D48B3A] hover:text-[#D48B3A]"
           }`}
         >
           Semua
@@ -783,7 +865,7 @@ function PurposeSidebar({
           const active = activeId === p.id;
           const wizard = getPurposeBySlug(p.slug);
           const label = wizard?.label ?? p.name;
-          const emoji = wizard?.emoji ?? '';
+          const emoji = wizard?.emoji ?? "";
           return (
             <button
               key={p.id}
@@ -791,8 +873,8 @@ function PurposeSidebar({
               onClick={() => onSelect(active ? null : p.id)}
               className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
                 active
-                  ? 'bg-[#D48B3A] text-white border-[#D48B3A] shadow-sm'
-                  : 'bg-white text-[#1C1C1A] border-[#E8E4DD] hover:border-[#D48B3A] hover:text-[#D48B3A]'
+                  ? "bg-[#D48B3A] text-white border-[#D48B3A] shadow-sm"
+                  : "bg-white text-[#1C1C1A] border-[#E8E4DD] hover:border-[#D48B3A] hover:text-[#D48B3A]"
               }`}
             >
               {emoji} {label}
@@ -825,7 +907,11 @@ function MobileFilterModal({
 }) {
   return (
     <div className="lg:hidden fixed inset-0 z-[1100] flex items-end justify-center">
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} aria-hidden />
+      <div
+        className="absolute inset-0 bg-black/50"
+        onClick={onClose}
+        aria-hidden
+      />
       <div className="relative bg-white w-full rounded-t-2xl shadow-2xl h-[88vh] flex flex-col overflow-hidden">
         <div className="flex items-center justify-between px-4 py-3 border-b border-[#F0EDE8]">
           <h3 className="text-base font-bold text-[#1C1C1A]">Filter</h3>
@@ -850,8 +936,8 @@ function MobileFilterModal({
                 onClick={() => onPurposeSelect(null)}
                 className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
                   activePurposeId === null
-                    ? 'bg-[#1C1C1A] text-white border-[#1C1C1A]'
-                    : 'bg-white text-[#1C1C1A] border-[#E8E4DD]'
+                    ? "bg-[#1C1C1A] text-white border-[#1C1C1A]"
+                    : "bg-white text-[#1C1C1A] border-[#E8E4DD]"
                 }`}
               >
                 Semua
@@ -860,7 +946,7 @@ function MobileFilterModal({
                 const active = activePurposeId === p.id;
                 const wizard = getPurposeBySlug(p.slug);
                 const label = wizard?.label ?? p.name;
-                const emoji = wizard?.emoji ?? '';
+                const emoji = wizard?.emoji ?? "";
                 return (
                   <button
                     key={p.id}
@@ -868,8 +954,8 @@ function MobileFilterModal({
                     onClick={() => onPurposeSelect(active ? null : p.id)}
                     className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
                       active
-                        ? 'bg-[#D48B3A] text-white border-[#D48B3A]'
-                        : 'bg-white text-[#1C1C1A] border-[#E8E4DD]'
+                        ? "bg-[#D48B3A] text-white border-[#D48B3A]"
+                        : "bg-white text-[#1C1C1A] border-[#E8E4DD]"
                     }`}
                   >
                     {emoji} {label}

@@ -74,7 +74,17 @@ export class MeiliService implements OnModuleInit {
         'exactness',
       ],
       typoTolerance: { enabled: true },
-      stopWords: ['yang', 'di', 'dan', 'untuk', 'dengan', 'ke', 'dari', 'ini', 'itu'],
+      stopWords: [
+        'yang',
+        'di',
+        'dan',
+        'untuk',
+        'dengan',
+        'ke',
+        'dari',
+        'ini',
+        'itu',
+      ],
       // Meili defaults to 100 unique values per facet — with ~150 distinct
       // feature names indexed across all cafes, the default silently drops
       // the long tail of the `facilities` facet. Bump to keep counts exact.
@@ -87,8 +97,14 @@ export class MeiliService implements OnModuleInit {
     const jinaApiKey = this.config.get<string>('JINA_API_KEY', '');
     if (!jinaApiKey) return;
 
-    const jinaModel = this.config.get<string>('JINA_MODEL', 'jina-embeddings-v3');
-    const jinaDimensions = parseInt(this.config.get<string>('JINA_DIMENSIONS', '1024'), 10);
+    const jinaModel = this.config.get<string>(
+      'JINA_MODEL',
+      'jina-embeddings-v3',
+    );
+    const jinaDimensions = parseInt(
+      this.config.get<string>('JINA_DIMENSIONS', '1024'),
+      10,
+    );
 
     const embedder: Embedder = {
       source: 'rest',

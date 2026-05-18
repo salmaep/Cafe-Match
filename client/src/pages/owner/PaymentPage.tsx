@@ -1,29 +1,32 @@
-import { useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { paymentsApi } from '../../api/payments.api';
-import { openSnapPopup } from '../../utils/midtrans';
+import { useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { paymentsApi } from "../../api/payments.api";
+import { openSnapPopup } from "../../utils/midtrans";
 
 export default function PaymentPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const promotionId = searchParams.get('promotionId');
+  const promotionId = searchParams.get("promotionId");
 
   useEffect(() => {
     if (!promotionId) {
-      navigate('/owner/promotion');
+      navigate("/owner/promotion");
       return;
     }
 
-    paymentsApi.createPayment(Number(promotionId)).then((res) => {
-      openSnapPopup(res.data.token, {
-        onSuccess: () => navigate('/owner/payment/success'),
-        onPending: () => navigate('/owner/payment/success'),
-        onError: () => navigate('/owner/payment/failed'),
-        onClose: () => navigate('/owner/promotion'),
+    paymentsApi
+      .createPayment(Number(promotionId))
+      .then((res) => {
+        openSnapPopup(res.data.token, {
+          onSuccess: () => navigate("/owner/payment/success"),
+          onPending: () => navigate("/owner/payment/success"),
+          onError: () => navigate("/owner/payment/failed"),
+          onClose: () => navigate("/owner/promotion"),
+        });
+      })
+      .catch(() => {
+        navigate("/owner/payment/failed");
       });
-    }).catch(() => {
-      navigate('/owner/payment/failed');
-    });
   }, [promotionId, navigate]);
 
   return (

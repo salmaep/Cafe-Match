@@ -137,18 +137,23 @@ export class RecapsService {
     return recapData;
   }
 
-  private computeYearTitle(topPurpose: string, totalCheckins: number, favDay?: string): string {
+  private computeYearTitle(
+    topPurpose: string,
+    totalCheckins: number,
+    favDay?: string,
+  ): string {
     const purposeMap: Record<string, string> = {
       'Work from Cafe': 'Si Pekerja Kafe',
       'Me Time': 'Petualang Me Time',
-      'Date': 'Si Romantis Kafe',
+      Date: 'Si Romantis Kafe',
       'Family Time': 'Family Cafe Explorer',
       'Group Work / Study': 'Si Rajin Belajar',
     };
     if (totalCheckins >= 200) return 'Kafe Addict Sejati';
     if (totalCheckins >= 100) return 'Legenda Nongkrong';
     if (purposeMap[topPurpose]) return purposeMap[topPurpose];
-    if (favDay === 'Saturday' || favDay === 'Sunday') return 'Weekend Cafe Hunter';
+    if (favDay === 'Saturday' || favDay === 'Sunday')
+      return 'Weekend Cafe Hunter';
     return `Pecinta Kafe ${new Date().getFullYear()}`;
   }
 }

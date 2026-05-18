@@ -1,6 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { getPurposeBySlug } from "@shared/constants/purposes";
-import { useGeolocation, FALLBACK_LAT, FALLBACK_LNG } from "../hooks/useGeolocation";
+import {
+  useGeolocation,
+  FALLBACK_LAT,
+  FALLBACK_LNG,
+} from "../hooks/useGeolocation";
 import { cafesApi, type SearchParams } from "../api/cafes.api";
 import { promotionsApi } from "../api/promotions.api";
 import { parseCoords } from "../utils/parseCoords";
@@ -78,7 +82,7 @@ export default function HomePage() {
   // Track whether the current center came from GPS or a manual user action
   // (map click / fallback button). When `gps`, GPS updates may overwrite center;
   // when `manual`, GPS updates are ignored until user explicitly recenters.
-  const [centerSource, setCenterSource] = useState<'gps' | 'manual'>('gps');
+  const [centerSource, setCenterSource] = useState<"gps" | "manual">("gps");
   const [radius, setRadius] = useState(2000);
   const [purposeId, setPurposeId] = useState<number | null>(null);
   const [filters, setFilters] = useState<Filters>({
@@ -91,21 +95,22 @@ export default function HomePage() {
   // Default open on large monitors (≥1536px / Tailwind 2xl) — user can still close.
   // On smaller screens stays closed by default to keep map space.
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return window.matchMedia('(min-width: 1536px)').matches;
+    if (typeof window === "undefined") return false;
+    return window.matchMedia("(min-width: 1536px)").matches;
   });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [featuredCafes, setFeaturedCafes] = useState<any[]>([]);
   const [mobileQuery, setMobileQuery] = useState("");
   const [showAllModal, setShowAllModal] = useState(false);
   const [coordInputOpen, setCoordInputOpen] = useState(false);
   const [coordInput, setCoordInput] = useState("");
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
-    if (typeof window === 'undefined') return 'grid';
-    return (localStorage.getItem('cm_home_view') as 'grid' | 'list') || 'grid';
+  const [viewMode, setViewMode] = useState<"grid" | "list">(() => {
+    if (typeof window === "undefined") return "grid";
+    return (localStorage.getItem("cm_home_view") as "grid" | "list") || "grid";
   });
 
   useEffect(() => {
-    localStorage.setItem('cm_home_view', viewMode);
+    localStorage.setItem("cm_home_view", viewMode);
   }, [viewMode]);
 
   // ── Hydrate filters from wizard preferences (one-time, on entry) ────────
@@ -125,15 +130,20 @@ export default function HomePage() {
     if (preferences.radius) setRadius(preferences.radius * 1000);
     if (resolvedPurposeId != null) setPurposeId(resolvedPurposeId);
     setFilters({
-      q: '',
+      q: "",
       facilities: preferences.amenities ?? [],
-      priceRange: preferences.priceRange ?? '',
+      priceRange: preferences.priceRange ?? "",
     });
-    if (preferences.location?.type === 'custom' &&
-        preferences.location.latitude != null &&
-        preferences.location.longitude != null) {
-      setCenter([preferences.location.latitude, preferences.location.longitude]);
-      setCenterSource('manual');
+    if (
+      preferences.location?.type === "custom" &&
+      preferences.location.latitude != null &&
+      preferences.location.longitude != null
+    ) {
+      setCenter([
+        preferences.location.latitude,
+        preferences.location.longitude,
+      ]);
+      setCenterSource("manual");
     }
     setWizardBannerVisible(true);
   }, [wizardCompleted, preferences, getPurposeId]);
@@ -142,12 +152,12 @@ export default function HomePage() {
     setWizardPreferences(null);
     setWizardBannerVisible(false);
     setPurposeId(null);
-    setFilters({ q: '', facilities: [], priceRange: '' });
+    setFilters({ q: "", facilities: [], priceRange: "" });
     setRadius(2000);
   };
 
   useEffect(() => {
-    if (centerSource !== 'gps') return;
+    if (centerSource !== "gps") return;
     if (geo.latitude && geo.longitude) {
       setCenter([geo.latitude, geo.longitude]);
     }
@@ -175,7 +185,8 @@ export default function HomePage() {
         };
         if (purposeId) params.purposeId = purposeId;
         if (filters.q) params.q = filters.q;
-        if (filters.facilities.length > 0) params.facilities = filters.facilities;
+        if (filters.facilities.length > 0)
+          params.facilities = filters.facilities;
         if (filters.priceRange) params.priceRange = filters.priceRange;
 
         if (hasTextQuery) {
@@ -193,7 +204,9 @@ export default function HomePage() {
           const res = await cafesApi.search(params);
           const incoming = res.data.data ?? [];
           const totalCount = res.data.meta?.total ?? incoming.length;
-          setCafes((prev) => (targetPage === 1 ? incoming : [...prev, ...incoming]));
+          setCafes((prev) =>
+            targetPage === 1 ? incoming : [...prev, ...incoming],
+          );
           setTotal(totalCount);
           setRadiusSuggestion({ suggested: null, totalIfExpanded: null });
           setIsSemanticMode(false);
@@ -256,11 +269,11 @@ export default function HomePage() {
 
   const handleMapClick = (lat: number, lng: number) => {
     setCenter([lat, lng]);
-    setCenterSource('manual');
+    setCenterSource("manual");
   };
 
   const useMyLocation = () => {
-    setCenterSource('gps');
+    setCenterSource("gps");
     geo.refetch();
   };
 
@@ -268,7 +281,7 @@ export default function HomePage() {
     const parsed = parseCoords(coordInput);
     if (!parsed) return;
     setCenter([parsed.lat, parsed.lng]);
-    setCenterSource('manual');
+    setCenterSource("manual");
     setCoordInputOpen(false);
     setCoordInput("");
   };
@@ -296,7 +309,7 @@ export default function HomePage() {
     if (!p?.requirements) return;
     const features = p.requirements
       .map((r) => r.feature?.name)
-      .filter((n): n is string => typeof n === 'string' && n.length > 0);
+      .filter((n): n is string => typeof n === "string" && n.length > 0);
     if (features.length === 0) return;
     setFilters((prev) => ({ ...prev, facilities: features }));
   };
@@ -312,7 +325,7 @@ export default function HomePage() {
     const p = purposes.find((x) => x.id === purposeId);
     return (p?.requirements ?? [])
       .map((r) => r.feature?.name)
-      .filter((n): n is string => typeof n === 'string' && n.length > 0);
+      .filter((n): n is string => typeof n === "string" && n.length > 0);
   })();
 
   // Debounce mobile search input
@@ -348,7 +361,7 @@ export default function HomePage() {
           <button
             onClick={() => {
               setCenter([FALLBACK_LAT, FALLBACK_LNG]);
-              setCenterSource('manual');
+              setCenterSource("manual");
             }}
             className="mt-4 px-4 py-2 bg-[#D48B3A] text-white rounded-lg text-sm"
           >
@@ -358,7 +371,6 @@ export default function HomePage() {
       </div>
     );
   }
-
 
   return (
     <>
@@ -416,7 +428,13 @@ export default function HomePage() {
           {geo.loading ? (
             <div className="w-4 h-4 border-2 border-[#D48B3A] border-t-transparent rounded-full animate-spin" />
           ) : (
-            <span className={centerSource === 'gps' ? 'text-[#D48B3A]' : 'text-[#8A8880]'}>📍</span>
+            <span
+              className={
+                centerSource === "gps" ? "text-[#D48B3A]" : "text-[#8A8880]"
+              }
+            >
+              📍
+            </span>
           )}
         </button>
         <button
@@ -424,7 +442,9 @@ export default function HomePage() {
           onClick={() => setCoordInputOpen((v) => !v)}
           title="Masukkan koordinat"
           className={`w-10 h-10 rounded-full shadow-lg border border-[#F0EDE8] flex items-center justify-center text-lg active:scale-95 transition-transform ${
-            coordInputOpen ? 'bg-[#D48B3A] text-white' : 'bg-white text-[#8A8880]'
+            coordInputOpen
+              ? "bg-[#D48B3A] text-white"
+              : "bg-white text-[#8A8880]"
           }`}
         >
           📌
@@ -436,7 +456,7 @@ export default function HomePage() {
               value={coordInput}
               onChange={(e) => setCoordInput(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter') submitCoords();
+                if (e.key === "Enter") submitCoords();
               }}
               placeholder="-6.9175, 107.6191"
               autoFocus
@@ -522,6 +542,7 @@ export default function HomePage() {
                   Featured Today ✨
                 </h3>
                 <div className="flex items-stretch gap-3 overflow-x-auto pb-2">
+                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                   {featuredCafes.map((promo: any) => (
                     <FeaturedCafeCard
                       key={promo.id}
@@ -584,12 +605,22 @@ export default function HomePage() {
                   slotIdx < MAX_ADS;
                 const nodes = [<CafeListItem key={cafe.id} cafe={cafe} />];
                 if (showAd) {
-                  nodes.push(<HybridAdSlot key={`ad-${i}`} slotIndex={slotIdx} variant="list" />);
+                  nodes.push(
+                    <HybridAdSlot
+                      key={`ad-${i}`}
+                      slotIndex={slotIdx}
+                      variant="list"
+                    />,
+                  );
                 }
                 return nodes;
               })}
               {cafes.length > 0 && (
-                <InfiniteScrollSentinel onLoadMore={loadMore} hasMore={hasMore} loading={loading} />
+                <InfiniteScrollSentinel
+                  onLoadMore={loadMore}
+                  hasMore={hasMore}
+                  loading={loading}
+                />
               )}
               {!loading && cafes.length === 0 && (
                 <div className="text-center py-10">
@@ -669,7 +700,12 @@ export default function HomePage() {
               }`}
               aria-label="Buka filter"
             >
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -690,7 +726,10 @@ export default function HomePage() {
         <div className="md:flex-1 lg:flex-[2] 2xl:flex-none 2xl:w-[580px] md:flex md:flex-col gap-3 md:overflow-hidden md:min-w-0">
           <SearchBar q={filters.q} onQChange={setQ} />
           <RadiusSlider radius={radius} onChange={setRadius} />
-          <PurposeFilter selectedPurposeId={purposeId} onSelect={handlePurposeSelect} />
+          <PurposeFilter
+            selectedPurposeId={purposeId}
+            onSelect={handlePurposeSelect}
+          />
 
           {featuredCafes.length > 0 && (
             <div className="mb-2">
@@ -698,6 +737,7 @@ export default function HomePage() {
                 Featured Cafes
               </h3>
               <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1">
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                 {featuredCafes.map((promo: any) => (
                   <FeaturedCafeCard
                     key={promo.id}
@@ -723,26 +763,26 @@ export default function HomePage() {
               >
                 <button
                   type="button"
-                  onClick={() => setViewMode('grid')}
+                  onClick={() => setViewMode("grid")}
                   className={`w-7 h-7 rounded-md flex items-center justify-center text-xs transition-colors ${
-                    viewMode === 'grid'
-                      ? 'bg-white text-[#1C1C1A] shadow-sm'
-                      : 'text-[#8A8880] hover:text-[#1C1C1A]'
+                    viewMode === "grid"
+                      ? "bg-white text-[#1C1C1A] shadow-sm"
+                      : "text-[#8A8880] hover:text-[#1C1C1A]"
                   }`}
-                  aria-pressed={viewMode === 'grid'}
+                  aria-pressed={viewMode === "grid"}
                   title="Grid view"
                 >
                   ▦
                 </button>
                 <button
                   type="button"
-                  onClick={() => setViewMode('list')}
+                  onClick={() => setViewMode("list")}
                   className={`w-7 h-7 rounded-md flex items-center justify-center text-xs transition-colors ${
-                    viewMode === 'list'
-                      ? 'bg-white text-[#1C1C1A] shadow-sm'
-                      : 'text-[#8A8880] hover:text-[#1C1C1A]'
+                    viewMode === "list"
+                      ? "bg-white text-[#1C1C1A] shadow-sm"
+                      : "text-[#8A8880] hover:text-[#1C1C1A]"
                   }`}
-                  aria-pressed={viewMode === 'list'}
+                  aria-pressed={viewMode === "list"}
                   title="List view"
                 >
                   ☰
@@ -751,8 +791,8 @@ export default function HomePage() {
               <div className="text-sm text-gray-500 min-w-0 truncate">
                 {loading
                   ? willUseSemantic
-                    ? 'Mencari dengan AI…'
-                    : 'Mencari…'
+                    ? "Mencari dengan AI…"
+                    : "Mencari…"
                   : `${total} cafes found`}
               </div>
             </div>
@@ -773,13 +813,18 @@ export default function HomePage() {
               cafes.length < 3 && (
                 <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm flex items-center justify-between gap-3">
                   <span className="text-amber-900">
-                    Hasil terbatas dalam {(radius / 1000).toFixed(1)} km. Perluas radius untuk melihat lebih banyak cafe — scroll untuk memuat hasil tambahan.
+                    Hasil terbatas dalam {(radius / 1000).toFixed(1)} km.
+                    Perluas radius untuk melihat lebih banyak cafe — scroll
+                    untuk memuat hasil tambahan.
                   </span>
                   <button
                     type="button"
                     onClick={() => {
                       const next = radiusSuggestion.suggested!;
-                      setRadiusSuggestion({ suggested: null, totalIfExpanded: null });
+                      setRadiusSuggestion({
+                        suggested: null,
+                        totalIfExpanded: null,
+                      });
                       setForceListMode(true);
                       setRadius(next);
                     }}
@@ -790,10 +835,18 @@ export default function HomePage() {
                 </div>
               )}
             {loading && cafes.length === 0 ? (
-              <div className={viewMode === 'grid' ? 'grid grid-cols-1 xl:grid-cols-2 gap-3' : 'space-y-2'}>
-                {[0, 1, 2].map((i) => <CafeCardSkeleton key={i} />)}
+              <div
+                className={
+                  viewMode === "grid"
+                    ? "grid grid-cols-1 xl:grid-cols-2 gap-3"
+                    : "space-y-2"
+                }
+              >
+                {[0, 1, 2].map((i) => (
+                  <CafeCardSkeleton key={i} />
+                ))}
               </div>
-            ) : viewMode === 'grid' ? (
+            ) : viewMode === "grid" ? (
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
                 {cafes.flatMap((cafe, i) => {
                   const slotIdx = Math.floor(i / AD_INTERVAL);
@@ -803,7 +856,13 @@ export default function HomePage() {
                     slotIdx < MAX_ADS;
                   const nodes = [<CafeCard key={cafe.id} cafe={cafe} />];
                   if (showAd) {
-                    nodes.push(<HybridAdSlot key={`ad-${i}`} slotIndex={slotIdx} variant="card" />);
+                    nodes.push(
+                      <HybridAdSlot
+                        key={`ad-${i}`}
+                        slotIndex={slotIdx}
+                        variant="card"
+                      />,
+                    );
                   }
                   return nodes;
                 })}
@@ -818,7 +877,13 @@ export default function HomePage() {
                     slotIdx < MAX_ADS;
                   const nodes = [<CafeListItem key={cafe.id} cafe={cafe} />];
                   if (showAd) {
-                    nodes.push(<HybridAdSlot key={`ad-${i}`} slotIndex={slotIdx} variant="list" />);
+                    nodes.push(
+                      <HybridAdSlot
+                        key={`ad-${i}`}
+                        slotIndex={slotIdx}
+                        variant="list"
+                      />,
+                    );
                   }
                   return nodes;
                 })}
@@ -830,7 +895,11 @@ export default function HomePage() {
               </p>
             )}
             {cafes.length > 0 && (
-              <InfiniteScrollSentinel onLoadMore={loadMore} hasMore={hasMore} loading={loading} />
+              <InfiniteScrollSentinel
+                onLoadMore={loadMore}
+                hasMore={hasMore}
+                loading={loading}
+              />
             )}
           </div>
         </div>
@@ -886,13 +955,23 @@ export default function HomePage() {
                     slotIdx < MAX_ADS;
                   const nodes = [<CafeCard key={cafe.id} cafe={cafe} />];
                   if (showAd) {
-                    nodes.push(<HybridAdSlot key={`ad-${i}`} slotIndex={slotIdx} variant="card" />);
+                    nodes.push(
+                      <HybridAdSlot
+                        key={`ad-${i}`}
+                        slotIndex={slotIdx}
+                        variant="card"
+                      />,
+                    );
                   }
                   return nodes;
                 })}
               </div>
               {cafes.length > 0 && (
-                <InfiniteScrollSentinel onLoadMore={loadMore} hasMore={hasMore} loading={loading} />
+                <InfiniteScrollSentinel
+                  onLoadMore={loadMore}
+                  hasMore={hasMore}
+                  loading={loading}
+                />
               )}
             </div>
           </div>
@@ -916,7 +995,9 @@ function PurposeChips({
     <div className="bg-white rounded-xl border border-[#F0EDE8] overflow-hidden">
       <div className="px-4 py-3 border-b border-[#F0EDE8]">
         <h3 className="text-sm font-bold text-[#1C1C1A]">Tujuan</h3>
-        <p className="text-[11px] text-[#8A8880] mt-0.5">Filter by your reason</p>
+        <p className="text-[11px] text-[#8A8880] mt-0.5">
+          Filter by your reason
+        </p>
       </div>
       <div className="px-4 py-3 flex flex-wrap gap-1.5">
         <button
@@ -924,8 +1005,8 @@ function PurposeChips({
           onClick={() => onSelect(null)}
           className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
             activeId === null
-              ? 'bg-[#1C1C1A] text-white border-[#1C1C1A]'
-              : 'bg-white text-[#1C1C1A] border-[#E8E4DD] hover:border-[#D48B3A] hover:text-[#D48B3A]'
+              ? "bg-[#1C1C1A] text-white border-[#1C1C1A]"
+              : "bg-white text-[#1C1C1A] border-[#E8E4DD] hover:border-[#D48B3A] hover:text-[#D48B3A]"
           }`}
         >
           Semua
@@ -940,8 +1021,8 @@ function PurposeChips({
               onClick={() => onSelect(active ? null : p.id)}
               className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
                 active
-                  ? 'bg-[#D48B3A] text-white border-[#D48B3A] shadow-sm'
-                  : 'bg-white text-[#1C1C1A] border-[#E8E4DD] hover:border-[#D48B3A] hover:text-[#D48B3A]'
+                  ? "bg-[#D48B3A] text-white border-[#D48B3A] shadow-sm"
+                  : "bg-white text-[#1C1C1A] border-[#E8E4DD] hover:border-[#D48B3A] hover:text-[#D48B3A]"
               }`}
             >
               {emoji && <span className="text-sm leading-none">{emoji}</span>}
@@ -978,7 +1059,11 @@ function MobileFilterModal({
 }) {
   return (
     <div className="md:hidden fixed inset-0 z-[1100] flex items-end justify-center">
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} aria-hidden />
+      <div
+        className="absolute inset-0 bg-black/50"
+        onClick={onClose}
+        aria-hidden
+      />
       <div className="relative bg-white w-full rounded-t-2xl shadow-2xl h-[88vh] flex flex-col overflow-hidden">
         <div className="flex items-center justify-between px-4 py-3 border-b border-[#F0EDE8]">
           <h3 className="text-base font-bold text-[#1C1C1A]">Filter</h3>
@@ -1003,8 +1088,8 @@ function MobileFilterModal({
                 onClick={() => onPurposeSelect(null)}
                 className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
                   activePurposeId === null
-                    ? 'bg-[#1C1C1A] text-white border-[#1C1C1A]'
-                    : 'bg-white text-[#1C1C1A] border-[#E8E4DD]'
+                    ? "bg-[#1C1C1A] text-white border-[#1C1C1A]"
+                    : "bg-white text-[#1C1C1A] border-[#E8E4DD]"
                 }`}
               >
                 Semua
@@ -1019,11 +1104,13 @@ function MobileFilterModal({
                     onClick={() => onPurposeSelect(active ? null : p.id)}
                     className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
                       active
-                        ? 'bg-[#D48B3A] text-white border-[#D48B3A]'
-                        : 'bg-white text-[#1C1C1A] border-[#E8E4DD]'
+                        ? "bg-[#D48B3A] text-white border-[#D48B3A]"
+                        : "bg-white text-[#1C1C1A] border-[#E8E4DD]"
                     }`}
                   >
-                    {emoji && <span className="text-sm leading-none">{emoji}</span>}
+                    {emoji && (
+                      <span className="text-sm leading-none">{emoji}</span>
+                    )}
                     {p.name}
                   </button>
                 );

@@ -27,7 +27,9 @@ export class SeedDummyPromotions1712600000000 implements MigrationInterface {
       `SELECT COUNT(*) AS cnt FROM promotions WHERE cafe_id IN (1, 2, 3, 4, 5, 6)`,
     );
     if (parseInt(existingPromo?.cnt ?? '0', 10) > 0) {
-      console.log('[SeedDummyPromotions] Skipped — promotions already seeded for cafes 1-6');
+      console.log(
+        '[SeedDummyPromotions] Skipped — promotions already seeded for cafes 1-6',
+      );
       return;
     }
 
@@ -106,7 +108,9 @@ export class SeedDummyPromotions1712600000000 implements MigrationInterface {
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`DELETE FROM promotions WHERE cafe_id IN (1, 2, 3, 4, 5, 6)`);
+    await queryRunner.query(
+      `DELETE FROM promotions WHERE cafe_id IN (1, 2, 3, 4, 5, 6)`,
+    );
     await queryRunner.query(`
       UPDATE cafes SET has_active_promotion = FALSE, active_promotion_type = NULL, owner_id = NULL
       WHERE id IN (1, 2, 3, 4, 5, 6)

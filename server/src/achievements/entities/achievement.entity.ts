@@ -22,7 +22,15 @@ export class Achievement {
 
   @Column({
     type: 'enum',
-    enum: ['bronze_1', 'bronze_2', 'silver_1', 'silver_2', 'gold_1', 'gold_2', 'platinum'],
+    enum: [
+      'bronze_1',
+      'bronze_2',
+      'silver_1',
+      'silver_2',
+      'gold_1',
+      'gold_2',
+      'platinum',
+    ],
   })
   tier: string;
 

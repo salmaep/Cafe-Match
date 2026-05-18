@@ -37,7 +37,13 @@ export class Promotion {
 
   @Column({
     type: 'enum',
-    enum: ['pending_review', 'active', 'rejected', 'expired', 'pending_payment'],
+    enum: [
+      'pending_review',
+      'active',
+      'rejected',
+      'expired',
+      'pending_payment',
+    ],
     default: 'pending_payment',
   })
   status: string;

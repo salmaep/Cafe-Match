@@ -1,8 +1,8 @@
-import { useState, useEffect, type FormEvent } from 'react';
-import { ownerApi } from '../../api/owner.api';
-import type { Cafe } from '../../types';
+import { useState, useEffect, type FormEvent } from "react";
+import { ownerApi } from "../../api/owner.api";
+import type { Cafe } from "../../types";
 
-type Mode = 'view' | 'edit' | 'create';
+type Mode = "view" | "edit" | "create";
 
 interface FormState {
   name: string;
@@ -15,29 +15,30 @@ interface FormState {
 }
 
 const EMPTY_FORM: FormState = {
-  name: '',
-  address: '',
-  phone: '',
-  description: '',
-  priceRange: '$$',
-  latitude: '',
-  longitude: '',
+  name: "",
+  address: "",
+  phone: "",
+  description: "",
+  priceRange: "$$",
+  latitude: "",
+  longitude: "",
 };
 
 // Live thousand-separator formatting for price inputs. State stores raw
 // digits ("25000") so BE receives a clean number; display shows "25.000".
-const formatRupiah = (digits: string) => (digits ? Number(digits).toLocaleString('id-ID') : '');
-const parseRupiah = (formatted: string) => formatted.replace(/[^\d]/g, '');
+const formatRupiah = (digits: string) =>
+  digits ? Number(digits).toLocaleString("id-ID") : "";
+const parseRupiah = (formatted: string) => formatted.replace(/[^\d]/g, "");
 
 function cafeToForm(cafe: Cafe): FormState {
   return {
-    name: cafe.name || '',
-    address: cafe.address || '',
-    phone: cafe.phone || '',
-    description: cafe.description || '',
-    priceRange: cafe.priceRange || '$$',
-    latitude: cafe.latitude?.toString() || '',
-    longitude: cafe.longitude?.toString() || '',
+    name: cafe.name || "",
+    address: cafe.address || "",
+    phone: cafe.phone || "",
+    description: cafe.description || "",
+    priceRange: cafe.priceRange || "$$",
+    latitude: cafe.latitude?.toString() || "",
+    longitude: cafe.longitude?.toString() || "",
   };
 }
 
@@ -45,8 +46,11 @@ export default function CafeManagementPage() {
   const [cafe, setCafe] = useState<Cafe | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const [mode, setMode] = useState<Mode>('view');
+  const [message, setMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
+  const [mode, setMode] = useState<Mode>("view");
 
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
 
@@ -69,12 +73,12 @@ export default function CafeManagementPage() {
               category: m.category,
               itemName: m.itemName,
               price: m.price.toString(),
-              description: m.description || '',
+              description: m.description || "",
             })),
           );
-          setMode('view');
+          setMode("view");
         } else {
-          setMode('create');
+          setMode("create");
         }
       })
       .finally(() => setLoading(false));
@@ -85,13 +89,13 @@ export default function CafeManagementPage() {
 
   const startEdit = () => {
     if (cafe) setForm(cafeToForm(cafe));
-    setMode('edit');
+    setMode("edit");
     setMessage(null);
   };
 
   const cancelEdit = () => {
     if (cafe) setForm(cafeToForm(cafe));
-    setMode('view');
+    setMode("view");
     setMessage(null);
   };
 
@@ -106,19 +110,22 @@ export default function CafeManagementPage() {
       if (data.longitude) data.longitude = Number(data.longitude);
       else delete data.longitude;
 
-      if (mode === 'create') {
+      if (mode === "create") {
         const res = await ownerApi.createCafe(data);
         setCafe(res.data);
-        setMode('view');
-        setMessage({ type: 'success', text: 'Cafe registered successfully!' });
+        setMode("view");
+        setMessage({ type: "success", text: "Cafe registered successfully!" });
       } else {
         const res = await ownerApi.updateCafe(data);
         setCafe(res.data);
-        setMode('view');
-        setMessage({ type: 'success', text: 'Cafe updated successfully!' });
+        setMode("view");
+        setMessage({ type: "success", text: "Cafe updated successfully!" });
       }
     } catch (err: any) {
-      setMessage({ type: 'error', text: err.response?.data?.message || 'Failed to save' });
+      setMessage({
+        type: "error",
+        text: err.response?.data?.message || "Failed to save",
+      });
     } finally {
       setSaving(false);
     }
@@ -131,7 +138,9 @@ export default function CafeManagementPage() {
     // First-time add: drop user straight into a blank row instead of an
     // empty list with just a "+ Add Item" button (less hunting).
     if (menus.length === 0) {
-      setMenus([{ category: 'Coffee', itemName: '', price: '', description: '' }]);
+      setMenus([
+        { category: "Coffee", itemName: "", price: "", description: "" },
+      ]);
     }
   };
 
@@ -153,16 +162,19 @@ export default function CafeManagementPage() {
         })),
       );
       setEditingMenu(false);
-      setMessage({ type: 'success', text: 'Menu updated successfully!' });
+      setMessage({ type: "success", text: "Menu updated successfully!" });
     } catch {
-      setMessage({ type: 'error', text: 'Failed to save menu' });
+      setMessage({ type: "error", text: "Failed to save menu" });
     } finally {
       setSaving(false);
     }
   };
 
   const addMenuItem = () => {
-    setMenus([...menus, { category: 'Coffee', itemName: '', price: '', description: '' }]);
+    setMenus([
+      ...menus,
+      { category: "Coffee", itemName: "", price: "", description: "" },
+    ]);
   };
 
   const removeMenuItem = (index: number) => {
@@ -181,22 +193,22 @@ export default function CafeManagementPage() {
     );
   }
 
-  const editing = mode === 'edit' || mode === 'create';
+  const editing = mode === "edit" || mode === "create";
 
   return (
     <div className="px-4 sm:px-6 lg:px-10 py-6 lg:py-8 max-w-5xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-5">
         <div>
           <h1 className="text-2xl lg:text-3xl font-bold text-[#1C1C1A]">
-            {mode === 'create' ? 'Register Your Cafe' : 'My Cafe'}
+            {mode === "create" ? "Register Your Cafe" : "My Cafe"}
           </h1>
           <p className="text-sm text-[#8A8880] mt-1">
-            {mode === 'create'
-              ? 'Fill in the basics — you can update photos and menu later.'
-              : 'Update your cafe information and menu.'}
+            {mode === "create"
+              ? "Fill in the basics — you can update photos and menu later."
+              : "Update your cafe information and menu."}
           </p>
         </div>
-        {mode === 'view' && cafe && (
+        {mode === "view" && cafe && (
           <button
             type="button"
             onClick={startEdit}
@@ -210,9 +222,9 @@ export default function CafeManagementPage() {
       {message && (
         <div
           className={`mb-4 p-3 rounded-xl text-sm border ${
-            message.type === 'success'
-              ? 'bg-green-50 text-green-700 border-green-100'
-              : 'bg-red-50 text-red-600 border-red-100'
+            message.type === "success"
+              ? "bg-green-50 text-green-700 border-green-100"
+              : "bg-red-50 text-red-600 border-red-100"
           }`}
         >
           {message.text}
@@ -233,7 +245,7 @@ export default function CafeManagementPage() {
             <Field label="Cafe Name" required>
               <TextInput
                 value={form.name}
-                onChange={(v) => set('name', v)}
+                onChange={(v) => set("name", v)}
                 placeholder="e.g. Kopi Kenangan Sudirman"
                 required
                 minLength={2}
@@ -242,7 +254,7 @@ export default function CafeManagementPage() {
             <Field label="Phone">
               <TextInput
                 value={form.phone}
-                onChange={(v) => set('phone', v.replace(/[^\d+\s\-()]/g, ''))}
+                onChange={(v) => set("phone", v.replace(/[^\d+\s\-()]/g, ""))}
                 placeholder="+62 812 3456 7890"
                 inputMode="tel"
                 autoComplete="tel"
@@ -253,7 +265,7 @@ export default function CafeManagementPage() {
               <Field label="Address" required>
                 <TextInput
                   value={form.address}
-                  onChange={(v) => set('address', v)}
+                  onChange={(v) => set("address", v)}
                   placeholder="Full street address"
                   required
                   minLength={5}
@@ -264,7 +276,7 @@ export default function CafeManagementPage() {
               <Field label="Description">
                 <textarea
                   value={form.description}
-                  onChange={(e) => set('description', e.target.value)}
+                  onChange={(e) => set("description", e.target.value)}
                   rows={3}
                   placeholder="Tell customers what makes your cafe special…"
                   className="w-full px-4 py-3 bg-[#F0EDE8] rounded-xl text-[15px] text-[#1C1C1A] placeholder:text-[#8A8880] focus:bg-white focus:ring-2 focus:ring-[#D48B3A]/30 outline-none border-none resize-none transition-all"
@@ -274,7 +286,7 @@ export default function CafeManagementPage() {
             <Field label="Latitude" hint="-90 to 90">
               <TextInput
                 value={form.latitude}
-                onChange={(v) => set('latitude', v.replace(/[^\d.-]/g, ''))}
+                onChange={(v) => set("latitude", v.replace(/[^\d.-]/g, ""))}
                 placeholder="-6.9175"
                 inputMode="decimal"
               />
@@ -282,7 +294,7 @@ export default function CafeManagementPage() {
             <Field label="Longitude" hint="-180 to 180">
               <TextInput
                 value={form.longitude}
-                onChange={(v) => set('longitude', v.replace(/[^\d.-]/g, ''))}
+                onChange={(v) => set("longitude", v.replace(/[^\d.-]/g, ""))}
                 placeholder="107.6191"
                 inputMode="decimal"
               />
@@ -295,7 +307,7 @@ export default function CafeManagementPage() {
             <Field label="Price Range">
               <select
                 value={form.priceRange}
-                onChange={(e) => set('priceRange', e.target.value)}
+                onChange={(e) => set("priceRange", e.target.value)}
                 className="w-full px-4 py-3 bg-[#F0EDE8] rounded-xl text-[15px] text-[#1C1C1A] focus:bg-white focus:ring-2 focus:ring-[#D48B3A]/30 outline-none border-none transition-all"
               >
                 <option value="$">$ (Budget)</option>
@@ -306,7 +318,7 @@ export default function CafeManagementPage() {
           </div>
 
           <div className="flex flex-col-reverse sm:flex-row gap-3 mt-6">
-            {mode === 'edit' && (
+            {mode === "edit" && (
               <button
                 type="button"
                 onClick={cancelEdit}
@@ -321,7 +333,11 @@ export default function CafeManagementPage() {
               disabled={saving}
               className="w-full sm:w-auto sm:ml-auto px-6 py-3 bg-[#1C1C1A] text-white rounded-xl font-bold text-sm hover:bg-black disabled:opacity-60 transition-colors"
             >
-              {saving ? 'Saving…' : mode === 'create' ? 'Register Cafe' : 'Save Changes'}
+              {saving
+                ? "Saving…"
+                : mode === "create"
+                  ? "Register Cafe"
+                  : "Save Changes"}
             </button>
           </div>
         </form>
@@ -338,7 +354,7 @@ export default function CafeManagementPage() {
                 onClick={startMenuEdit}
                 className="px-3 py-1.5 bg-[#1C1C1A] text-white rounded-lg text-xs font-bold hover:bg-black transition-colors"
               >
-                ✏️ {menus.length === 0 ? 'Add Menu' : 'Edit Menu'}
+                ✏️ {menus.length === 0 ? "Add Menu" : "Edit Menu"}
               </button>
             ) : (
               <button
@@ -352,15 +368,14 @@ export default function CafeManagementPage() {
           </div>
 
           {/* View mode */}
-          {!editingMenu && (
-            menus.length === 0 ? (
+          {!editingMenu &&
+            (menus.length === 0 ? (
               <p className="text-[#8A8880] text-sm py-3">
                 No menu items yet. Click "Add Menu" to start.
               </p>
             ) : (
               <MenuList items={menus} />
-            )
-          )}
+            ))}
 
           {/* Edit mode */}
           {editingMenu && (
@@ -381,7 +396,7 @@ export default function CafeManagementPage() {
                         <SmallInput
                           placeholder="Coffee"
                           value={item.category}
-                          onChange={(v) => updateMenu(i, 'category', v)}
+                          onChange={(v) => updateMenu(i, "category", v)}
                         />
                       </div>
                       <div className="col-span-12 sm:col-span-4">
@@ -389,7 +404,7 @@ export default function CafeManagementPage() {
                         <SmallInput
                           placeholder="Es Kopi Susu"
                           value={item.itemName}
-                          onChange={(v) => updateMenu(i, 'itemName', v)}
+                          onChange={(v) => updateMenu(i, "itemName", v)}
                         />
                       </div>
                       <div className="col-span-6 sm:col-span-2">
@@ -397,7 +412,9 @@ export default function CafeManagementPage() {
                         <SmallInput
                           placeholder="25.000"
                           value={formatRupiah(item.price)}
-                          onChange={(v) => updateMenu(i, 'price', parseRupiah(v))}
+                          onChange={(v) =>
+                            updateMenu(i, "price", parseRupiah(v))
+                          }
                           inputMode="numeric"
                         />
                       </div>
@@ -406,7 +423,7 @@ export default function CafeManagementPage() {
                         <SmallInput
                           placeholder="Optional"
                           value={item.description}
-                          onChange={(v) => updateMenu(i, 'description', v)}
+                          onChange={(v) => updateMenu(i, "description", v)}
                         />
                       </div>
                       <div className="col-span-12 sm:col-span-1 flex sm:justify-end">
@@ -438,7 +455,7 @@ export default function CafeManagementPage() {
                   disabled={saving}
                   className="w-full sm:w-auto sm:ml-auto px-6 py-3 bg-[#D48B3A] text-white rounded-xl font-bold text-sm hover:bg-[#b87528] disabled:opacity-60 transition-colors"
                 >
-                  {saving ? 'Saving…' : 'Save Menu'}
+                  {saving ? "Saving…" : "Save Menu"}
                 </button>
               </div>
             </>
@@ -459,23 +476,27 @@ function CafeSummary({ cafe, onEdit }: { cafe: Cafe; onEdit: () => void }) {
     : Array.isArray(cafe.facilities)
       ? cafe.facilities
           .slice(0, 4)
-          .map((f: any) => (typeof f === 'string' ? f : f?.name))
+          .map((f: any) => (typeof f === "string" ? f : f?.name))
           .filter(Boolean)
       : [];
   for (const name of featureNames) chips.push(`✓ ${name}`);
   if (cafe.latitude != null && cafe.longitude != null) {
-    chips.push(`📍 ${Number(cafe.latitude).toFixed(4)}, ${Number(cafe.longitude).toFixed(4)}`);
+    chips.push(
+      `📍 ${Number(cafe.latitude).toFixed(4)}, ${Number(cafe.longitude).toFixed(4)}`,
+    );
   }
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-[#F0EDE8] p-4 sm:p-5 mb-5">
       <div className="flex items-start justify-between gap-3 mb-2">
         <div className="min-w-0 flex-1">
-          <h2 className="text-lg sm:text-xl font-bold text-[#1C1C1A] truncate">{cafe.name}</h2>
+          <h2 className="text-lg sm:text-xl font-bold text-[#1C1C1A] truncate">
+            {cafe.name}
+          </h2>
           <p className="text-sm text-[#8A8880] mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5">
             <span className="inline-flex items-center gap-1 min-w-0">
               <span>📍</span>
-              <span className="truncate">{cafe.address || '—'}</span>
+              <span className="truncate">{cafe.address || "—"}</span>
             </span>
             {cafe.phone && (
               <span className="inline-flex items-center gap-1">
@@ -495,7 +516,9 @@ function CafeSummary({ cafe, onEdit }: { cafe: Cafe; onEdit: () => void }) {
       </div>
 
       {cafe.description && (
-        <p className="text-sm text-[#1C1C1A] leading-relaxed mt-2">{cafe.description}</p>
+        <p className="text-sm text-[#1C1C1A] leading-relaxed mt-2">
+          {cafe.description}
+        </p>
       )}
 
       {chips.length > 0 && (
@@ -519,7 +542,12 @@ function CafeSummary({ cafe, onEdit }: { cafe: Cafe; onEdit: () => void }) {
 function MenuList({
   items,
 }: {
-  items: { category: string; itemName: string; price: string; description: string }[];
+  items: {
+    category: string;
+    itemName: string;
+    price: string;
+    description: string;
+  }[];
 }) {
   // Group by category
   const grouped = items.reduce<Record<string, typeof items>>((acc, m) => {
@@ -536,15 +564,22 @@ function MenuList({
           </p>
           <div className="divide-y divide-[#F0EDE8]">
             {list.map((m, i) => (
-              <div key={i} className="flex items-start justify-between gap-3 py-2.5">
+              <div
+                key={i}
+                className="flex items-start justify-between gap-3 py-2.5"
+              >
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-[#1C1C1A]">{m.itemName}</p>
+                  <p className="text-sm font-semibold text-[#1C1C1A]">
+                    {m.itemName}
+                  </p>
                   {m.description && (
-                    <p className="text-xs text-[#8A8880] mt-0.5">{m.description}</p>
+                    <p className="text-xs text-[#8A8880] mt-0.5">
+                      {m.description}
+                    </p>
                   )}
                 </div>
                 <p className="shrink-0 text-sm font-bold text-[#1C1C1A]">
-                  Rp {Number(m.price || 0).toLocaleString('id-ID')}
+                  Rp {Number(m.price || 0).toLocaleString("id-ID")}
                 </p>
               </div>
             ))}
@@ -559,7 +594,7 @@ function MenuList({
 
 function SectionHeader({
   children,
-  className = '',
+  className = "",
 }: {
   children: React.ReactNode;
   className?: string;
@@ -588,7 +623,11 @@ function Field({
     <div>
       <label className="block text-[13px] font-semibold text-[#1C1C1A] mb-1">
         {label} {required && <span className="text-red-500">*</span>}
-        {hint && <span className="ml-2 text-[11px] font-normal text-[#8A8880]">({hint})</span>}
+        {hint && (
+          <span className="ml-2 text-[11px] font-normal text-[#8A8880]">
+            ({hint})
+          </span>
+        )}
       </label>
       {children}
     </div>
@@ -611,7 +650,14 @@ function TextInput({
   required?: boolean;
   minLength?: number;
   maxLength?: number;
-  inputMode?: 'text' | 'tel' | 'email' | 'numeric' | 'decimal' | 'search' | 'url';
+  inputMode?:
+    | "text"
+    | "tel"
+    | "email"
+    | "numeric"
+    | "decimal"
+    | "search"
+    | "url";
   autoComplete?: string;
 }) {
   return (
@@ -630,7 +676,6 @@ function TextInput({
   );
 }
 
-
 function SmallLabel({ children }: { children: React.ReactNode }) {
   return (
     <label className="block text-[11px] font-semibold text-[#8A8880] mb-1 uppercase tracking-wider">
@@ -648,7 +693,7 @@ function SmallInput({
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
-  inputMode?: 'text' | 'tel' | 'email' | 'numeric' | 'decimal';
+  inputMode?: "text" | "tel" | "email" | "numeric" | "decimal";
 }) {
   return (
     <input

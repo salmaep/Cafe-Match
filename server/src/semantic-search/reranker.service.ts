@@ -19,7 +19,11 @@ No markdown, no commentary, no explanation — JSON only.`;
     private readonly budget: TokenBudgetService,
   ) {}
 
-  async rerank(query: string, hits: CafeHit[], topN: number): Promise<CafeHit[]> {
+  async rerank(
+    query: string,
+    hits: CafeHit[],
+    topN: number,
+  ): Promise<CafeHit[]> {
     if (hits.length <= 1) return hits;
     if (!(await this.budget.canSpend())) return hits.slice(0, topN);
 
@@ -37,15 +41,21 @@ No markdown, no commentary, no explanation — JSON only.`;
 
       const rankedIds = this.parseRankedIds(resp.content);
       if (!rankedIds?.length) {
-        this.logger.warn(`Reranker returned no valid IDs for query: "${query}"`);
+        this.logger.warn(
+          `Reranker returned no valid IDs for query: "${query}"`,
+        );
         return hits.slice(0, topN);
       }
 
-      this.logger.debug(`Reranker ranked ${rankedIds.length} IDs for query: "${query}"`);
+      this.logger.debug(
+        `Reranker ranked ${rankedIds.length} IDs for query: "${query}"`,
+      );
       return this.reorderHits(hits, rankedIds, topN);
     } catch (err) {
       const reason = err instanceof Error ? err.message : String(err);
-      this.logger.warn(`Reranker skipped → keeping Meili order. Reason: ${reason}`);
+      this.logger.warn(
+        `Reranker skipped → keeping Meili order. Reason: ${reason}`,
+      );
       return hits.slice(0, topN);
     }
   }
@@ -54,7 +64,7 @@ No markdown, no commentary, no explanation — JSON only.`;
     return hits
       .map((h) => {
         const facilities = Array.isArray(h.facilities)
-          ? (h.facilities as string[]).slice(0, 6).join(', ')
+          ? h.facilities.slice(0, 6).join(', ')
           : '';
         const review = h.topReviewText
           ? `"${String(h.topReviewText).slice(0, 100)}" (${h.googleRating ?? '?'}★)`
@@ -65,7 +75,10 @@ No markdown, no commentary, no explanation — JSON only.`;
   }
 
   private parseRankedIds(raw: string): number[] | null {
-    const cleaned = raw.replace(/```[a-z]*\n?/g, '').replace(/```/g, '').trim();
+    const cleaned = raw
+      .replace(/```[a-z]*\n?/g, '')
+      .replace(/```/g, '')
+      .trim();
     const start = cleaned.indexOf('{');
     const end = cleaned.lastIndexOf('}');
     if (start === -1 || end === -1) return null;
@@ -82,7 +95,11 @@ No markdown, no commentary, no explanation — JSON only.`;
     }
   }
 
-  private reorderHits(hits: CafeHit[], rankedIds: number[], topN: number): CafeHit[] {
+  private reorderHits(
+    hits: CafeHit[],
+    rankedIds: number[],
+    topN: number,
+  ): CafeHit[] {
     const hitMap = new Map(hits.map((h) => [h.id, h]));
     const reranked: CafeHit[] = [];
 

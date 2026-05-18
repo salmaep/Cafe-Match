@@ -1,4 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  Index,
+} from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 
 @Entity('notifications')
@@ -11,8 +18,15 @@ export class Notification {
 
   @Column({
     type: 'enum',
-    enum: ['rank_change', 'friend_request', 'friend_nearby', 'friend_same_cafe',
-           'achievement_unlocked', 'together_bomb', 'emoji_spam'],
+    enum: [
+      'rank_change',
+      'friend_request',
+      'friend_nearby',
+      'friend_same_cafe',
+      'achievement_unlocked',
+      'together_bomb',
+      'emoji_spam',
+    ],
   })
   type: string;
 
@@ -28,7 +42,11 @@ export class Notification {
   @Column({ name: 'is_read', default: false })
   isRead: boolean;
 
-  @Column({ name: 'created_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @Column({
+    name: 'created_at',
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
   createdAt: Date;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })

@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from "react-router-dom";
 
 export default function PaymentFailedPage() {
   return (
@@ -7,9 +7,12 @@ export default function PaymentFailedPage() {
         <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <span className="text-3xl text-red-600">&#10007;</span>
         </div>
-        <h1 className="text-2xl font-bold text-gray-800 mb-2">Payment Failed</h1>
+        <h1 className="text-2xl font-bold text-gray-800 mb-2">
+          Payment Failed
+        </h1>
         <p className="text-gray-500 mb-6">
-          Something went wrong with your payment. Don't worry — no charges were made. You can try again.
+          Something went wrong with your payment. Don't worry — no charges were
+          made. You can try again.
         </p>
         <div className="flex gap-3 justify-center">
           <Link

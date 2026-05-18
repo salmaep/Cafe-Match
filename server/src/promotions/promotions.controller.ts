@@ -11,7 +11,10 @@ import {
   Request,
 } from '@nestjs/common';
 import { PromotionsService } from './promotions.service';
-import { CreatePromotionDto, UpdatePromotionContentDto } from './dto/create-promotion.dto';
+import {
+  CreatePromotionDto,
+  UpdatePromotionContentDto,
+} from './dto/create-promotion.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -40,7 +43,10 @@ export class PromotionsController {
     @Param('id', ParseIntPipe) packageId: number,
     @Query('type') type: string,
   ) {
-    return this.promotionsService.getAvailability(packageId, type || 'new_cafe');
+    return this.promotionsService.getAvailability(
+      packageId,
+      type || 'new_cafe',
+    );
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

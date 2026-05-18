@@ -23,7 +23,9 @@ export class SemanticSearchController {
     try {
       return await this.semanticSearch.search(dto);
     } catch (err) {
-      this.logger.error(`Semantic search failed, using fallback: ${String(err)}`);
+      this.logger.error(
+        `Semantic search failed, using fallback: ${String(err)}`,
+      );
       return this.semanticSearch.fallbackSearch(dto);
     }
   }

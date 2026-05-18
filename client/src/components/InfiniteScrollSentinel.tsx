@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef } from "react";
 
 interface Props {
   onLoadMore: () => void;
@@ -10,7 +10,11 @@ interface Props {
  * Invisible sentinel — when it enters the viewport, fires onLoadMore.
  * Doubles as a visible "loading" indicator while the next page fetches.
  */
-export default function InfiniteScrollSentinel({ onLoadMore, hasMore, loading }: Props) {
+export default function InfiniteScrollSentinel({
+  onLoadMore,
+  hasMore,
+  loading,
+}: Props) {
   const ref = useRef<HTMLDivElement>(null);
   // Keep latest callbacks in refs so the observer setup doesn't re-create on
   // every render (which would tear down/recreate the observer).
@@ -29,7 +33,7 @@ export default function InfiniteScrollSentinel({ onLoadMore, hasMore, loading }:
         const { hasMore: hm, loading: ld } = stateRef.current;
         if (hm && !ld) cbRef.current();
       },
-      { root: null, rootMargin: '200px', threshold: 0 },
+      { root: null, rootMargin: "200px", threshold: 0 },
     );
     obs.observe(node);
     return () => obs.disconnect();

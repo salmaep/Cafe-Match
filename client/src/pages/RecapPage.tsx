@@ -1,18 +1,18 @@
-import { useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { recapsApi, type RecapData } from '../api/recaps.api';
-import { placeholderImage } from '../utils/cafeImage';
-import Seo from '../components/seo/Seo';
+import { useEffect, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { recapsApi, type RecapData } from "../api/recaps.api";
+import { placeholderImage } from "../utils/cafeImage";
+import Seo from "../components/seo/Seo";
 
 const DAY_TRANSLATE: Record<string, string> = {
-  Monday: 'Senin',
-  Tuesday: 'Selasa',
-  Wednesday: 'Rabu',
-  Thursday: 'Kamis',
-  Friday: 'Jumat',
-  Saturday: 'Sabtu',
-  Sunday: 'Minggu',
+  Monday: "Senin",
+  Tuesday: "Selasa",
+  Wednesday: "Rabu",
+  Thursday: "Kamis",
+  Friday: "Jumat",
+  Saturday: "Sabtu",
+  Sunday: "Minggu",
 };
 
 export default function RecapPage() {
@@ -43,7 +43,9 @@ export default function RecapPage() {
       const res = await recapsApi.generate(year);
       setRecap(res.data);
     } catch (err: any) {
-      setError(err?.response?.data?.message || 'Gagal generate recap. Coba lagi.');
+      setError(
+        err?.response?.data?.message || "Gagal generate recap. Coba lagi.",
+      );
     } finally {
       setGenerating(false);
     }
@@ -57,11 +59,11 @@ export default function RecapPage() {
         await navigator.share({
           title: `CafeMatch Recap ${year}`,
           text,
-          url: 'https://salma.imola.ai',
+          url: "https://salma.imola.ai",
         });
       } catch {}
     } else {
-      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
     }
   };
 
@@ -78,7 +80,9 @@ export default function RecapPage() {
       <div className="min-h-screen bg-[#FAF9F6] flex items-center justify-center px-4">
         <div className="bg-white rounded-2xl border border-[#F0EDE8] p-8 max-w-md text-center">
           <span className="text-5xl mb-3 inline-block">📊</span>
-          <p className="text-[#1C1C1A] font-bold">Login dulu untuk lihat Recap kamu</p>
+          <p className="text-[#1C1C1A] font-bold">
+            Login dulu untuk lihat Recap kamu
+          </p>
           <Link
             to={`/login?redirect=%2Frecap%2F${year}`}
             className="inline-block mt-4 px-6 py-2.5 bg-[#1C1C1A] text-white rounded-xl font-bold hover:bg-black"
@@ -100,8 +104,8 @@ export default function RecapPage() {
             Recap {year} belum dibuat
           </h1>
           <p className="text-sm text-[#8A8880] mb-5">
-            Lihat ringkasan perjalanan ngafemu sepanjang {year} —
-            cafe favorit, total check-in, achievement, dll.
+            Lihat ringkasan perjalanan ngafemu sepanjang {year} — cafe favorit,
+            total check-in, achievement, dll.
           </p>
           {error && (
             <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-xl text-sm border border-red-100">
@@ -114,7 +118,7 @@ export default function RecapPage() {
             disabled={generating}
             className="w-full py-3 bg-[#1C1C1A] text-white rounded-xl font-bold hover:bg-black disabled:opacity-60 transition-colors"
           >
-            {generating ? 'Membuat recap…' : 'Buat Recap Saya'}
+            {generating ? "Membuat recap…" : "Buat Recap Saya"}
           </button>
           <Link
             to="/profile"
@@ -136,7 +140,7 @@ export default function RecapPage() {
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
           <button
             type="button"
-            onClick={() => navigate('/profile')}
+            onClick={() => navigate("/profile")}
             className="text-[#8A8880] hover:text-[#1C1C1A] text-sm font-semibold transition-colors"
           >
             ← Profile
@@ -167,10 +171,26 @@ export default function RecapPage() {
 
         {/* Big numbers — 2×2 mobile, 4-col desktop */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <BigStat icon="☕" value={recap.totalCheckins.toLocaleString()} label="Check-in" />
-          <BigStat icon="📍" value={recap.totalCafesVisited.toLocaleString()} label="Cafe unik" />
-          <BigStat icon="⏱️" value={`${recap.totalDurationHours}j`} label="Total nongkrong" />
-          <BigStat icon="🔥" value={recap.longestStreak.toLocaleString()} label="Hari beruntun" />
+          <BigStat
+            icon="☕"
+            value={recap.totalCheckins.toLocaleString()}
+            label="Check-in"
+          />
+          <BigStat
+            icon="📍"
+            value={recap.totalCafesVisited.toLocaleString()}
+            label="Cafe unik"
+          />
+          <BigStat
+            icon="⏱️"
+            value={`${recap.totalDurationHours}j`}
+            label="Total nongkrong"
+          />
+          <BigStat
+            icon="🔥"
+            value={recap.longestStreak.toLocaleString()}
+            label="Hari beruntun"
+          />
         </div>
 
         {/* Top cafes */}
@@ -191,7 +211,8 @@ export default function RecapPage() {
                     referrerPolicy="no-referrer"
                     className="w-12 h-12 rounded-lg object-cover bg-[#F0EDE8] shrink-0"
                     onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src = placeholderImage(c.cafeId);
+                      (e.currentTarget as HTMLImageElement).src =
+                        placeholderImage(c.cafeId);
                     }}
                   />
                   <div className="flex-1 min-w-0">
@@ -233,7 +254,10 @@ export default function RecapPage() {
           <div className="grid grid-cols-3 divide-x divide-[#F0EDE8]">
             <SocialStat value={recap.friendsMade} label="Teman baru" />
             <SocialStat value={recap.totalReviews} label="Review" />
-            <SocialStat value={recap.achievementsUnlocked} label="Achievement" />
+            <SocialStat
+              value={recap.achievementsUnlocked}
+              label="Achievement"
+            />
           </div>
         </Section>
 
@@ -253,7 +277,7 @@ export default function RecapPage() {
           disabled={generating}
           className="w-full py-2 text-[#8A8880] hover:text-[#1C1C1A] text-xs font-semibold transition-colors disabled:opacity-50"
         >
-          {generating ? 'Memperbarui…' : '↻ Perbarui Recap'}
+          {generating ? "Memperbarui…" : "↻ Perbarui Recap"}
         </button>
       </div>
     </div>

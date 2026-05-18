@@ -1,4 +1,4 @@
-import apiClient from './client';
+import apiClient from "./client";
 
 export interface Friend {
   id: number;
@@ -11,7 +11,7 @@ export interface Friend {
 export interface FriendRequest {
   id: number;
   fromUser: Friend;
-  status: 'pending' | 'accepted' | 'rejected';
+  status: "pending" | "accepted" | "rejected";
   createdAt: string;
 }
 
@@ -22,16 +22,21 @@ export interface FriendPreview {
 }
 
 export const friendsApi = {
-  list: () => apiClient.get<Friend[]>('/friends'),
-  pendingRequests: () => apiClient.get<FriendRequest[]>('/friends/requests/pending'),
+  list: () => apiClient.get<Friend[]>("/friends"),
+  pendingRequests: () =>
+    apiClient.get<FriendRequest[]>("/friends/requests/pending"),
   sendRequest: (friendCode: string) =>
-    apiClient.post('/friends/request', { friendCode }),
-  accept: (requestId: number) => apiClient.put(`/friends/request/${requestId}/accept`),
-  reject: (requestId: number) => apiClient.put(`/friends/request/${requestId}/reject`),
+    apiClient.post("/friends/request", { friendCode }),
+  accept: (requestId: number) =>
+    apiClient.put(`/friends/request/${requestId}/accept`),
+  reject: (requestId: number) =>
+    apiClient.put(`/friends/request/${requestId}/reject`),
   throwEmoji: (friendId: number, emoji: string) =>
     apiClient.post(`/friends/${friendId}/emoji`, { emoji }),
   /** Resolve a friend code to minimal profile preview before sending a request.
    *  Returns null when no user matches (or the code is the requester's own). */
   lookup: (code: string) =>
-    apiClient.get<FriendPreview | null>('/friends/lookup', { params: { code } }),
+    apiClient.get<FriendPreview | null>("/friends/lookup", {
+      params: { code },
+    }),
 };

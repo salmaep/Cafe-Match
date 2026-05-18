@@ -1,4 +1,11 @@
-import { Body, Controller, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  HttpStatus,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { AdminApiKeyGuard } from '../common/guards/admin-api-key.guard';
 import { Public } from '../common/decorators/public.decorator';
 import { PurposesService } from './purposes.service';

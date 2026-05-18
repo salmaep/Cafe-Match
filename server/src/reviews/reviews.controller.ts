@@ -1,4 +1,14 @@
-import { Controller, Post, Put, Delete, Get, Param, Body, Query, ParseIntPipe } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Put,
+  Delete,
+  Get,
+  Param,
+  Body,
+  Query,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { ReviewsService, ReviewSort } from './reviews.service';
 import { CreateReviewDto, UpdateReviewDto } from './dto/create-review.dto';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
@@ -43,7 +53,12 @@ export class ReviewsController {
     @Query('sort') sort?: string,
   ) {
     const sortNorm: ReviewSort = sort === 'recent' ? 'recent' : 'helpful';
-    return this.reviewsService.findByCafe(cafeId, page || 1, limit || 20, sortNorm);
+    return this.reviewsService.findByCafe(
+      cafeId,
+      page || 1,
+      limit || 20,
+      sortNorm,
+    );
   }
 
   /** Returns review IDs the current user has voted helpful on for this cafe.

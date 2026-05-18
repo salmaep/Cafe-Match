@@ -52,10 +52,21 @@ export class Cafe {
   @Column({ name: 'google_maps_url', length: 500, nullable: true })
   googleMapsUrl: string;
 
-  @Column({ name: 'google_rating', type: 'decimal', precision: 2, scale: 1, nullable: true })
+  @Column({
+    name: 'google_rating',
+    type: 'decimal',
+    precision: 2,
+    scale: 1,
+    nullable: true,
+  })
   googleRating: number;
 
-  @Column({ name: 'total_google_reviews', type: 'int', unsigned: true, nullable: true })
+  @Column({
+    name: 'total_google_reviews',
+    type: 'int',
+    unsigned: true,
+    nullable: true,
+  })
   totalGoogleReviews: number;
 
   @Column({ length: 500, nullable: true })

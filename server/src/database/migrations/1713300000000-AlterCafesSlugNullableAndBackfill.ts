@@ -13,13 +13,18 @@ export class AlterCafesSlugNullableAndBackfill1713300000000 implements Migration
 
     for (const row of rows) {
       const slug = buildCafeSlug(row.name, row.id);
-      await queryRunner.query(`UPDATE cafes SET slug = ? WHERE id = ?`, [slug, row.id]);
+      await queryRunner.query(`UPDATE cafes SET slug = ? WHERE id = ?`, [
+        slug,
+        row.id,
+      ]);
     }
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     // Revert nullability only; slug content backfill is not reversible.
     // Existing values must satisfy NOT NULL — the UPDATE above guarantees this for all rows.
-    await queryRunner.query(`ALTER TABLE cafes MODIFY slug VARCHAR(255) NOT NULL`);
+    await queryRunner.query(
+      `ALTER TABLE cafes MODIFY slug VARCHAR(255) NOT NULL`,
+    );
   }
 }

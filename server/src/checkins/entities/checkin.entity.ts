@@ -1,5 +1,10 @@
 import {
-  Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, Index,
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  Index,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Cafe } from '../../cafes/entities/cafe.entity';
@@ -15,13 +20,22 @@ export class Checkin {
   @Column({ name: 'cafe_id', unsigned: true })
   cafeId: number;
 
-  @Column({ name: 'check_in_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @Column({
+    name: 'check_in_at',
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
   checkInAt: Date;
 
   @Column({ name: 'check_out_at', type: 'timestamp', nullable: true })
   checkOutAt: Date;
 
-  @Column({ name: 'duration_minutes', type: 'smallint', unsigned: true, nullable: true })
+  @Column({
+    name: 'duration_minutes',
+    type: 'smallint',
+    unsigned: true,
+    nullable: true,
+  })
   durationMinutes: number;
 
   @Column({ default: true })

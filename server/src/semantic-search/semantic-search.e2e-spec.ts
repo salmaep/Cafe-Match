@@ -256,7 +256,9 @@ describe('Semantic Search (e2e, real Meridian + DB + Meili)', () => {
       if (res.body.data.length < 3) {
         expect(res.body.meta.suggestedRadius).not.toBeNull();
         expect(res.body.meta.suggestedRadius).toBeGreaterThan(300);
-        expect(res.body.meta.totalIfExpanded).toBeGreaterThan(res.body.data.length);
+        expect(res.body.meta.totalIfExpanded).toBeGreaterThan(
+          res.body.data.length,
+        );
       }
     });
 

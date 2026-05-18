@@ -62,7 +62,9 @@ export class CafesController {
     try {
       return await this.semanticSearch.search(dto);
     } catch (err) {
-      this.logger.error(`Semantic search failed, using fallback: ${String(err)}`);
+      this.logger.error(
+        `Semantic search failed, using fallback: ${String(err)}`,
+      );
       return this.semanticSearch.fallbackSearch(dto);
     }
   }
@@ -83,7 +85,11 @@ export class CafesController {
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
-    return this.cafesService.getGoogleReviews(id, page ? +page : 1, limit ? +limit : 5);
+    return this.cafesService.getGoogleReviews(
+      id,
+      page ? +page : 1,
+      limit ? +limit : 5,
+    );
   }
 
   @Public()

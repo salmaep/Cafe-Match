@@ -60,7 +60,9 @@ export class BookmarksService {
   }
 }
 
-function enrichCafe<T extends { address?: string | null }>(cafe: T): T & {
+function enrichCafe<T extends { address?: string | null }>(
+  cafe: T,
+): T & {
   city: string | null;
   district: string | null;
 } {

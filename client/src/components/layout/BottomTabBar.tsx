@@ -1,6 +1,6 @@
-import { NavLink } from 'react-router-dom';
-import { useShortlist } from '../../context/ShortlistContext';
-import { useAuth } from '../../context/AuthContext';
+import { NavLink } from "react-router-dom";
+import { useShortlist } from "../../context/ShortlistContext";
+import { useAuth } from "../../context/AuthContext";
 
 interface Tab {
   to: string;
@@ -15,16 +15,16 @@ export default function BottomTabBar() {
   const { user } = useAuth();
 
   const TABS: Tab[] = [
-    { to: '/', label: 'Explore', icon: '🗺️', exact: true },
-    { to: '/discover', label: 'Discover', icon: '🃏' },
-    { to: '/trending', label: 'Trending', icon: '🔥' },
+    { to: "/", label: "Explore", icon: "🗺️", exact: true },
+    { to: "/discover", label: "Discover", icon: "🃏" },
+    { to: "/trending", label: "Trending", icon: "🔥" },
     {
-      to: '/shortlist',
-      label: 'Shortlist',
-      icon: '★',
+      to: "/shortlist",
+      label: "Shortlist",
+      icon: "★",
       badge: shortlist.length || undefined,
     },
-    { to: user ? '/profile' : '/login', label: 'Profile', icon: '👤' },
+    { to: user ? "/profile" : "/login", label: "Profile", icon: "👤" },
   ];
 
   return (
@@ -37,7 +37,9 @@ export default function BottomTabBar() {
             end={tab.exact}
             className={({ isActive }) =>
               `relative flex-1 flex flex-col items-center justify-center py-2 gap-0.5 transition-colors ${
-                isActive ? 'text-[#D48B3A]' : 'text-[#8A8880] hover:text-[#1C1C1A]'
+                isActive
+                  ? "text-[#D48B3A]"
+                  : "text-[#8A8880] hover:text-[#1C1C1A]"
               }`
             }
           >
@@ -45,7 +47,7 @@ export default function BottomTabBar() {
               <>
                 <span
                   className={`text-[22px] leading-none transition-opacity ${
-                    isActive ? 'opacity-100' : 'opacity-50'
+                    isActive ? "opacity-100" : "opacity-50"
                   }`}
                 >
                   {tab.icon}

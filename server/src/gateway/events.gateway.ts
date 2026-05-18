@@ -20,7 +20,8 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const userId = this.extractUserId(client);
     if (userId) {
       client.join(`user:${userId}`);
-      if (!this.userSockets.has(userId)) this.userSockets.set(userId, new Set());
+      if (!this.userSockets.has(userId))
+        this.userSockets.set(userId, new Set());
       this.userSockets.get(userId)!.add(client.id);
     }
   }

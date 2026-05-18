@@ -78,12 +78,11 @@ export class SemanticSearchService {
 
     // [3] Meili retrieval — 30 candidates.
     // User-supplied filters take precedence over AI-inferred ones.
-    const facilities =
-      dtoFacilities?.length
-        ? dtoFacilities
-        : parsed?.facilities?.length
-          ? parsed.facilities
-          : undefined;
+    const facilities = dtoFacilities?.length
+      ? dtoFacilities
+      : parsed?.facilities?.length
+        ? parsed.facilities
+        : undefined;
     const priceRange = dtoPrice ?? parsed?.priceRange ?? undefined;
 
     const meiliQ = parsed?.keywords ?? q;
@@ -134,7 +133,10 @@ export class SemanticSearchService {
       lng != null &&
       radius < MAX_EXPAND_RADIUS
     ) {
-      const expandedRadius = Math.min(radius * EXPAND_FACTOR, MAX_EXPAND_RADIUS);
+      const expandedRadius = Math.min(
+        radius * EXPAND_FACTOR,
+        MAX_EXPAND_RADIUS,
+      );
       try {
         const probe = await this.meili.searchCafes({
           q: meiliQ,
@@ -177,9 +179,10 @@ export class SemanticSearchService {
 
     // [4] Haiku rerank. reranker.rerank() handles its own errors and
     // gracefully returns hits.slice(0, topN) on failure.
-    hits = aiUsed && hits.length > 1
-      ? await this.reranker.rerank(q, hits, topN)
-      : hits.slice(0, topN);
+    hits =
+      aiUsed && hits.length > 1
+        ? await this.reranker.rerank(q, hits, topN)
+        : hits.slice(0, topN);
 
     // [5] Cache result — only when AI succeeded. We don't want to serve a
     // stale fallback result after Meridian recovers.
@@ -204,7 +207,18 @@ export class SemanticSearchService {
   }
 
   async fallbackSearch(dto: SemanticSearchDto): Promise<SemanticSearchResult> {
-    const { q, lat, lng, radius = 2000, limit = 7, page = 1, sort, purposeId, priceRange, facilities } = dto;
+    const {
+      q,
+      lat,
+      lng,
+      radius = 2000,
+      limit = 7,
+      page = 1,
+      sort,
+      purposeId,
+      priceRange,
+      facilities,
+    } = dto;
     const topN = Math.min(limit, 30);
     const result = await this.meili.searchCafes({
       q,

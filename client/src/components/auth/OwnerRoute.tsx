@@ -1,6 +1,6 @@
-import { Navigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import type { ReactNode } from 'react';
+import { Navigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import type { ReactNode } from "react";
 
 export default function OwnerRoute({ children }: { children: ReactNode }) {
   const { user, isLoading } = useAuth();
@@ -17,7 +17,7 @@ export default function OwnerRoute({ children }: { children: ReactNode }) {
     return <Navigate to="/owner/login" replace />;
   }
 
-  if (user.role !== 'owner') {
+  if (user.role !== "owner") {
     return <Navigate to="/" replace />;
   }
 

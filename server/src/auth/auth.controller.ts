@@ -67,7 +67,10 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Post('phone/enroll')
   enrollPhone(@Request() req: any, @Body() dto: EnrollPhoneDto) {
-    return this.authService.enrollPhoneStart(req.user.userId ?? req.user.id, dto.phone);
+    return this.authService.enrollPhoneStart(
+      req.user.userId ?? req.user.id,
+      dto.phone,
+    );
   }
 
   @UseGuards(JwtAuthGuard)

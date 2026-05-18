@@ -12,7 +12,13 @@ import { SemanticSearchModule } from '../semantic-search/semantic-search.module'
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Cafe, CafeFeature, Feature, PurposeRequirement, CafeGoogleReview]),
+    TypeOrmModule.forFeature([
+      Cafe,
+      CafeFeature,
+      Feature,
+      PurposeRequirement,
+      CafeGoogleReview,
+    ]),
     MeiliModule,
     SemanticSearchModule,
   ],

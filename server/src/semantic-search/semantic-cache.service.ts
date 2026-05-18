@@ -37,7 +37,9 @@ export class SemanticCacheService {
     try {
       const entry = await this.cache.get<CacheEntry>(key);
       if (entry) {
-        this.logger.debug(`Cache HIT key=${hash.slice(0, 8)}... bucket=${geoBucket}`);
+        this.logger.debug(
+          `Cache HIT key=${hash.slice(0, 8)}... bucket=${geoBucket}`,
+        );
         return entry;
       }
       return null;
@@ -56,7 +58,9 @@ export class SemanticCacheService {
     const key = this.key(hash, geoBucket);
     try {
       await this.cache.set(key, { parsed, hits });
-      this.logger.debug(`Cache SET key=${hash.slice(0, 8)}... bucket=${geoBucket}`);
+      this.logger.debug(
+        `Cache SET key=${hash.slice(0, 8)}... bucket=${geoBucket}`,
+      );
     } catch (err) {
       this.logger.warn(`Cache write failed: ${String(err)}`);
     }

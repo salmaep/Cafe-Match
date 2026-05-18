@@ -59,9 +59,7 @@ export const FACILITY_CATALOG: FacilityGroup[] = [
   {
     key: 'audience',
     label: 'Cocok Untuk',
-    items: [
-      { key: 'kid_friendly', label: 'Ramah Anak', icon: 'Baby' },
-    ],
+    items: [{ key: 'kid_friendly', label: 'Ramah Anak', icon: 'Baby' }],
   },
   {
     key: 'payment',

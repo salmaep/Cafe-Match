@@ -17,12 +17,16 @@ export class AchievementsService {
   ) {}
 
   async findAll() {
-    return this.achievementRepo.find({ order: { category: 'ASC', threshold: 'ASC' } });
+    return this.achievementRepo.find({
+      order: { category: 'ASC', threshold: 'ASC' },
+    });
   }
 
   async findByUser(userId: number) {
     const achievements = await this.achievementRepo.find();
-    const userAchievements = await this.userAchievementRepo.find({ where: { userId } });
+    const userAchievements = await this.userAchievementRepo.find({
+      where: { userId },
+    });
     const uaMap = new Map(userAchievements.map((ua) => [ua.achievementId, ua]));
 
     return achievements.map((a) => {
@@ -57,15 +61,22 @@ export class AchievementsService {
       [userId],
     );
     const totalCount = parseInt(total, 10);
-    await this.checkAndAward(userId, 'visit_general', null, totalCount, newlyUnlocked);
+    await this.checkAndAward(
+      userId,
+      'visit_general',
+      null,
+      totalCount,
+      newlyUnlocked,
+    );
 
     // 2. Per-purpose monthly counts (distinct cafes visited per purpose this month)
     const monthStart = new Date();
     monthStart.setDate(1);
     monthStart.setHours(0, 0, 0, 0);
 
-    const purposeCounts: { purpose_slug: string; cnt: string }[] = await this.dataSource.query(
-      `SELECT pr.purpose_slug, COUNT(DISTINCT ck.cafe_id) AS cnt
+    const purposeCounts: { purpose_slug: string; cnt: string }[] =
+      await this.dataSource.query(
+        `SELECT pr.purpose_slug, COUNT(DISTINCT ck.cafe_id) AS cnt
        FROM checkins ck
        JOIN cafe_features cf ON cf.cafe_id = ck.cafe_id
        JOIN purpose_requirements pr2 ON pr2.feature_id = cf.feature_id AND pr2.is_mandatory = TRUE
@@ -73,8 +84,8 @@ export class AchievementsService {
        JOIN (SELECT DISTINCT slug AS purpose_slug FROM purposes) pr ON pr.purpose_slug = p.slug
        WHERE ck.user_id = ? AND ck.check_in_at >= ?
        GROUP BY pr.purpose_slug`,
-      [userId, monthStart.toISOString().split('T')[0]],
-    );
+        [userId, monthStart.toISOString().split('T')[0]],
+      );
 
     for (const pc of purposeCounts) {
       await this.checkAndAward(
@@ -92,18 +103,30 @@ export class AchievementsService {
       [userId],
     );
     if (streakRow) {
-      await this.checkAndAward(userId, 'streak', null, streakRow.longest_streak, newlyUnlocked);
+      await this.checkAndAward(
+        userId,
+        'streak',
+        null,
+        streakRow.longest_streak,
+        newlyUnlocked,
+      );
     }
 
     return newlyUnlocked;
   }
 
   /** Check social achievements (friends count, reviews count) */
-  async checkSocialAchievements(userId: number, metric: 'friends' | 'reviews', count: number) {
+  async checkSocialAchievements(
+    userId: number,
+    metric: 'friends' | 'reviews',
+    count: number,
+  ) {
     const newlyUnlocked: string[] = [];
     // Social achievements use category 'social' and no purpose_slug
     // Map metric to specific achievement slugs
-    const achievements = await this.achievementRepo.find({ where: { category: 'social' } });
+    const achievements = await this.achievementRepo.find({
+      where: { category: 'social' },
+    });
     for (const a of achievements) {
       const matches =
         (metric === 'friends' && a.slug.includes('friend')) ||
@@ -143,11 +166,17 @@ export class AchievementsService {
       where: { userId, achievementId },
     });
 
-    const achievement = await this.achievementRepo.findOne({ where: { id: achievementId } });
+    const achievement = await this.achievementRepo.findOne({
+      where: { id: achievementId },
+    });
     if (!achievement) return;
 
     if (!ua) {
-      ua = this.userAchievementRepo.create({ userId, achievementId, progress: 0 });
+      ua = this.userAchievementRepo.create({
+        userId,
+        achievementId,
+        progress: 0,
+      });
     }
 
     ua.progress = progress;

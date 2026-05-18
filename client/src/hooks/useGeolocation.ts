@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from "react";
 
 interface GeoState {
   latitude: number | null;
@@ -25,7 +25,7 @@ export function useGeolocation() {
       setState({
         latitude: null,
         longitude: null,
-        error: 'Geolocation is not supported',
+        error: "Geolocation is not supported",
         loading: false,
       });
       return;

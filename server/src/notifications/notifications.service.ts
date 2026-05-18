@@ -86,12 +86,19 @@ export class NotificationsService {
       existing.platform = platform;
       return this.tokenRepo.save(existing);
     }
-    return this.tokenRepo.save(this.tokenRepo.create({ userId, token, platform }));
+    return this.tokenRepo.save(
+      this.tokenRepo.create({ userId, token, platform }),
+    );
   }
 
   // ── Expo Push (lightweight, using native fetch — no extra deps) ──
 
-  private async sendExpoPush(tokens: string[], title: string, body: string, data?: any) {
+  private async sendExpoPush(
+    tokens: string[],
+    title: string,
+    body: string,
+    data?: any,
+  ) {
     const messages = tokens.map((token) => ({
       to: token,
       title,

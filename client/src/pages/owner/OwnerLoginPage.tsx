@@ -1,29 +1,28 @@
-import { useState, type FormEvent } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-
+import { useState, type FormEvent } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 export default function OwnerLoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
     if (!email || !password) {
-      setError('Please fill in all fields');
+      setError("Please fill in all fields");
       return;
     }
     setLoading(true);
     try {
       await login(email, password);
-      navigate('/owner/dashboard');
+      navigate("/owner/dashboard");
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Login failed');
+      setError(err.response?.data?.message || "Login failed");
     } finally {
       setLoading(false);
     }
@@ -91,12 +90,12 @@ export default function OwnerLoginPage() {
             disabled={loading}
             className="w-full mt-6 py-3 bg-[#1C1C1A] text-white rounded-xl font-bold text-base hover:bg-black disabled:opacity-60 transition-colors"
           >
-            {loading ? 'Signing in…' : 'Login as Owner'}
+            {loading ? "Signing in…" : "Login as Owner"}
           </button>
         </form>
 
         <div className="text-center text-sm text-[#8A8880] mt-5">
-          Don't have an owner account?{' '}
+          Don't have an owner account?{" "}
           <Link
             to="/owner/register"
             className="text-[#D48B3A] font-semibold hover:underline"

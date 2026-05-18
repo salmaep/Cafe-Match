@@ -32,7 +32,7 @@ export interface Cafe {
   isActive?: boolean;
   createdAt?: string | number;
   hasActivePromotion?: boolean;
-  activePromotionType?: 'new_cafe' | 'featured_promo' | null;
+  activePromotionType?: "new_cafe" | "featured_promo" | null;
   distanceMeters?: number;
   matchScore?: number;
   facilities?: string[] | CafeFeature[];

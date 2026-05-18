@@ -45,7 +45,10 @@ export class DiscoverCafesDto {
   @Transform(({ value }) => {
     if (Array.isArray(value)) return value.filter(Boolean);
     if (typeof value === 'string')
-      return value.split(',').map((s) => s.trim()).filter(Boolean);
+      return value
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
     return undefined;
   })
   @IsArray()

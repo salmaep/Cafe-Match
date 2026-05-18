@@ -1,4 +1,14 @@
-import { IsString, IsOptional, IsBoolean, IsNumber, IsIn, IsArray, MinLength, Min, Max } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsBoolean,
+  IsNumber,
+  IsIn,
+  IsArray,
+  MinLength,
+  Min,
+  Max,
+} from 'class-validator';
 
 export class UpdateCafeDto {
   @IsOptional()

@@ -1,4 +1,9 @@
-import { Injectable, BadRequestException, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { FriendRequest } from './entities/friend-request.entity';
@@ -38,11 +43,17 @@ export class FriendsService {
   async sendRequest(senderId: number, friendCode: string) {
     const receiver = await this.userRepo.findOne({ where: { friendCode } });
     if (!receiver) throw new NotFoundException('Kode teman tidak ditemukan');
-    if (receiver.id === senderId) throw new BadRequestException('Gak bisa add diri sendiri dong');
+    if (receiver.id === senderId)
+      throw new BadRequestException('Gak bisa add diri sendiri dong');
 
     // Check if already friends
-    const [a, b] = senderId < receiver.id ? [senderId, receiver.id] : [receiver.id, senderId];
-    const existing = await this.friendshipRepo.findOne({ where: { userAId: a, userBId: b } });
+    const [a, b] =
+      senderId < receiver.id
+        ? [senderId, receiver.id]
+        : [receiver.id, senderId];
+    const existing = await this.friendshipRepo.findOne({
+      where: { userAId: a, userBId: b },
+    });
     if (existing) throw new ConflictException('Kalian sudah berteman');
 
     // Check if request already exists
@@ -53,11 +64,16 @@ export class FriendsService {
       ],
     });
     if (existingReq) {
-      if (existingReq.status === 'pending') throw new ConflictException('Request sudah dikirim');
-      if (existingReq.status === 'accepted') throw new ConflictException('Kalian sudah berteman');
+      if (existingReq.status === 'pending')
+        throw new ConflictException('Request sudah dikirim');
+      if (existingReq.status === 'accepted')
+        throw new ConflictException('Kalian sudah berteman');
     }
 
-    const request = this.requestRepo.create({ senderId, receiverId: receiver.id });
+    const request = this.requestRepo.create({
+      senderId,
+      receiverId: receiver.id,
+    });
     const saved = await this.requestRepo.save(request);
 
     const sender = await this.userRepo.findOne({ where: { id: senderId } });
@@ -73,18 +89,23 @@ export class FriendsService {
   }
 
   async acceptRequest(userId: number, requestId: number) {
-    const request = await this.requestRepo.findOne({ where: { id: requestId, receiverId: userId, status: 'pending' } });
+    const request = await this.requestRepo.findOne({
+      where: { id: requestId, receiverId: userId, status: 'pending' },
+    });
     if (!request) throw new NotFoundException('Request tidak ditemukan');
 
     request.status = 'accepted';
     await this.requestRepo.save(request);
 
     // Create friendship (enforce user_a_id < user_b_id)
-    const [a, b] = request.senderId < request.receiverId
-      ? [request.senderId, request.receiverId]
-      : [request.receiverId, request.senderId];
+    const [a, b] =
+      request.senderId < request.receiverId
+        ? [request.senderId, request.receiverId]
+        : [request.receiverId, request.senderId];
 
-    await this.friendshipRepo.save(this.friendshipRepo.create({ userAId: a, userBId: b }));
+    await this.friendshipRepo.save(
+      this.friendshipRepo.create({ userAId: a, userBId: b }),
+    );
 
     // Notify the sender
     const accepter = await this.userRepo.findOne({ where: { id: userId } });
@@ -120,7 +141,9 @@ export class FriendsService {
   }
 
   async rejectRequest(userId: number, requestId: number) {
-    const request = await this.requestRepo.findOne({ where: { id: requestId, receiverId: userId, status: 'pending' } });
+    const request = await this.requestRepo.findOne({
+      where: { id: requestId, receiverId: userId, status: 'pending' },
+    });
     if (!request) throw new NotFoundException('Request tidak ditemukan');
     request.status = 'rejected';
     await this.requestRepo.save(request);
@@ -201,9 +224,10 @@ export class FriendsService {
    */
   async throwEmoji(senderId: number, targetFriendId: number, emoji: string) {
     // Verify friendship exists
-    const [a, b] = senderId < targetFriendId
-      ? [senderId, targetFriendId]
-      : [targetFriendId, senderId];
+    const [a, b] =
+      senderId < targetFriendId
+        ? [senderId, targetFriendId]
+        : [targetFriendId, senderId];
     const friendship = await this.friendshipRepo.findOne({
       where: { userAId: a, userBId: b },
     });

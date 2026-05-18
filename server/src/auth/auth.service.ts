@@ -23,7 +23,10 @@ import { User } from '../users/entities/user.entity';
 export class AuthService {
   // In-memory map: otpId -> userId. OTP itself is verified by Engine OTP service;
   // we just bind it to a pending user so we can issue JWT after success.
-  private readonly pendingTwoFa = new Map<string, { userId: number; expiresAt: number }>();
+  private readonly pendingTwoFa = new Map<
+    string,
+    { userId: number; expiresAt: number }
+  >();
   // Pending social-login phone enrollment: enrollmentId -> userId. Used when
   // a Google/FB user has no phone yet — they must enroll a phone + verify OTP
   // before a JWT is issued.
@@ -60,7 +63,9 @@ export class AuthService {
   private validatePhone(phone: string): string {
     const digits = phone.replace(/\D/g, '');
     if (digits.length < 8 || digits.length > 15) {
-      throw new BadRequestException('Format nomor WA tidak valid (8–15 digit).');
+      throw new BadRequestException(
+        'Format nomor WA tidak valid (8–15 digit).',
+      );
     }
     return digits;
   }
@@ -97,13 +102,14 @@ export class AuthService {
     });
 
     // Create the owner's cafe so they see it on first login
-    const slug = dto.cafeName
-      .toLowerCase()
-      .replace(/[^a-z0-9\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      .trim()
-      .slice(0, 60) +
+    const slug =
+      dto.cafeName
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+        .trim()
+        .slice(0, 60) +
       '-' +
       Date.now().toString(36);
 
@@ -135,12 +141,20 @@ export class AuthService {
         ],
       );
     } catch (err: any) {
-      console.warn('[auth] Failed to create owner cafe on registration:', err.message);
+      console.warn(
+        '[auth] Failed to create owner cafe on registration:',
+        err.message,
+      );
       // Don't fail registration — user can still log in, just without a cafe
     }
 
     const { passwordHash: _, ...result } = user;
-    return { ...result, cafeName: dto.cafeName, cafeAddress: dto.cafeAddress, phone: dto.phone };
+    return {
+      ...result,
+      cafeName: dto.cafeName,
+      cafeAddress: dto.cafeAddress,
+      phone: dto.phone,
+    };
   }
 
   async login(dto: LoginDto) {
@@ -149,13 +163,18 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const isPasswordValid = await bcrypt.compare(dto.password, user.passwordHash);
+    const isPasswordValid = await bcrypt.compare(
+      dto.password,
+      user.passwordHash,
+    );
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
     if (user.twoFaEnabled && user.phone && user.phoneVerified) {
-      const otp = await this.otpClient.requestOtp(this.validatePhone(user.phone));
+      const otp = await this.otpClient.requestOtp(
+        this.validatePhone(user.phone),
+      );
       this.pendingTwoFa.set(otp.otpId, {
         userId: user.id,
         expiresAt: new Date(otp.expiresAt).getTime(),
@@ -177,7 +196,9 @@ export class AuthService {
       this.pendingTwoFa.delete(otpId);
       // 400 (not 401) so the FE doesn't auto-redirect to /login — user should
       // see the inline message and request a fresh OTP.
-      throw new BadRequestException('Sesi verifikasi sudah habis. Silakan minta kode baru.');
+      throw new BadRequestException(
+        'Sesi verifikasi sudah habis. Silakan minta kode baru.',
+      );
     }
 
     const result = await this.otpClient.verifyOtp(otpId, code);
@@ -198,7 +219,8 @@ export class AuthService {
     const pending = this.pendingTwoFa.get(otpId);
     if (!pending) throw new UnauthorizedException('Sesi tidak ditemukan.');
     const user = await this.usersService.findById(pending.userId);
-    if (!user || !user.phone) throw new NotFoundException('User tidak ditemukan.');
+    if (!user || !user.phone)
+      throw new NotFoundException('User tidak ditemukan.');
     const otp = await this.otpClient.requestOtp(this.validatePhone(user.phone));
     this.pendingTwoFa.delete(otpId);
     this.pendingTwoFa.set(otp.otpId, {
@@ -221,7 +243,12 @@ export class AuthService {
     return { otpId: otp.otpId, expiresAt: otp.expiresAt };
   }
 
-  async enrollPhoneVerify(userId: number, otpId: string, code: string, phoneRaw: string) {
+  async enrollPhoneVerify(
+    userId: number,
+    otpId: string,
+    code: string,
+    phoneRaw: string,
+  ) {
     const pending = this.pendingTwoFa.get(otpId);
     if (!pending || pending.userId !== userId) {
       throw new BadRequestException('Sesi verifikasi tidak valid.');
@@ -274,7 +301,10 @@ export class AuthService {
     const client = new OAuth2Client();
     let payload: any;
     try {
-      const ticket = await client.verifyIdToken({ idToken, audience: audiences });
+      const ticket = await client.verifyIdToken({
+        idToken,
+        audience: audiences,
+      });
       payload = ticket.getPayload();
     } catch {
       throw new UnauthorizedException('Invalid Google ID token');
@@ -316,7 +346,7 @@ export class AuthService {
       `?input_token=${encodeURIComponent(accessToken)}` +
       `&access_token=${encodeURIComponent(`${appId}|${appSecret}`)}`;
     const debugRes = await fetch(debugUrl);
-    const debug = (await debugRes.json()) as any;
+    const debug = await debugRes.json();
     if (!debug?.data?.is_valid || debug.data.app_id !== appId) {
       throw new UnauthorizedException('Invalid Facebook token');
     }
@@ -327,8 +357,9 @@ export class AuthService {
       `?fields=id,name,email,picture.type(large)` +
       `&access_token=${encodeURIComponent(accessToken)}`;
     const meRes = await fetch(meUrl);
-    const me = (await meRes.json()) as any;
-    if (!me?.id) throw new UnauthorizedException('Facebook profile fetch failed');
+    const me = await meRes.json();
+    if (!me?.id)
+      throw new UnauthorizedException('Facebook profile fetch failed');
 
     return {
       provider: 'facebook',
@@ -351,7 +382,9 @@ export class AuthService {
 
     // User already has a verified phone → send OTP to existing number.
     if (user.phone && user.phoneVerified) {
-      const otp = await this.otpClient.requestOtp(this.validatePhone(user.phone));
+      const otp = await this.otpClient.requestOtp(
+        this.validatePhone(user.phone),
+      );
       this.pendingTwoFa.set(otp.otpId, {
         userId: user.id,
         expiresAt: new Date(otp.expiresAt).getTime(),
@@ -381,7 +414,9 @@ export class AuthService {
     const pending = this.pendingSocialEnroll.get(enrollmentId);
     if (!pending || pending.expiresAt < Date.now()) {
       this.pendingSocialEnroll.delete(enrollmentId);
-      throw new BadRequestException('Sesi enrollment habis. Silakan login ulang.');
+      throw new BadRequestException(
+        'Sesi enrollment habis. Silakan login ulang.',
+      );
     }
     const phone = this.validatePhone(phoneRaw);
     const otp = await this.otpClient.requestOtp(phone);
@@ -401,7 +436,9 @@ export class AuthService {
     const enroll = this.pendingSocialEnroll.get(enrollmentId);
     if (!enroll || enroll.expiresAt < Date.now()) {
       this.pendingSocialEnroll.delete(enrollmentId);
-      throw new BadRequestException('Sesi enrollment habis. Silakan login ulang.');
+      throw new BadRequestException(
+        'Sesi enrollment habis. Silakan login ulang.',
+      );
     }
     const pending = this.pendingTwoFa.get(otpId);
     if (!pending || pending.userId !== enroll.userId) {

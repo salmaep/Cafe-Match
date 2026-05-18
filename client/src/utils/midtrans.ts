@@ -24,7 +24,7 @@ export function openSnapPopup(
   },
 ) {
   if (!window.snap) {
-    alert('Midtrans Snap is not loaded. Please refresh the page.');
+    alert("Midtrans Snap is not loaded. Please refresh the page.");
     return;
   }
   window.snap.pay(token, callbacks);

@@ -1,4 +1,13 @@
-import { Controller, Post, Put, Get, Param, Body, Query, ParseIntPipe } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Put,
+  Get,
+  Param,
+  Body,
+  Query,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { FriendsService } from './friends.service';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { IsString } from 'class-validator';

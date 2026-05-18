@@ -6,15 +6,19 @@ import {
   useRef,
   useState,
   type ReactNode,
-} from 'react';
-import { checkinsApi, type Checkin } from '../api/checkins.api';
-import { useAuth } from './AuthContext';
+} from "react";
+import { checkinsApi, type Checkin } from "../api/checkins.api";
+import { useAuth } from "./AuthContext";
 
 interface ActiveCheckinValue {
   active: Checkin | null;
   loading: boolean;
   refresh: () => Promise<void>;
-  checkIn: (args: { cafeId: number; latitude: number; longitude: number }) => Promise<Checkin>;
+  checkIn: (args: {
+    cafeId: number;
+    latitude: number;
+    longitude: number;
+  }) => Promise<Checkin>;
   checkOut: (args?: { checkinId?: number; cafeId?: number }) => Promise<void>;
 }
 
@@ -81,12 +85,12 @@ export function ActiveCheckinProvider({ children }: { children: ReactNode }) {
     // Initial fetch + start polling if visible
     tick();
     if (!document.hidden) startPolling();
-    document.addEventListener('visibilitychange', onVisibility);
+    document.addEventListener("visibilitychange", onVisibility);
 
     return () => {
       cancelled = true;
       stopPolling();
-      document.removeEventListener('visibilitychange', onVisibility);
+      document.removeEventListener("visibilitychange", onVisibility);
     };
   }, [user, refresh]);
 
@@ -119,7 +123,9 @@ export function ActiveCheckinProvider({ children }: { children: ReactNode }) {
 export function useActiveCheckin(): ActiveCheckinValue {
   const ctx = useContext(ActiveCheckinContext);
   if (!ctx) {
-    throw new Error('useActiveCheckin must be used inside ActiveCheckinProvider');
+    throw new Error(
+      "useActiveCheckin must be used inside ActiveCheckinProvider",
+    );
   }
   return ctx;
 }

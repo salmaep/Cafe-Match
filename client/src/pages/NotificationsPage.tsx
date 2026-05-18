@@ -1,19 +1,22 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { notificationsApi, type Notification } from '../api/notifications.api';
-import Seo from '../components/seo/Seo';
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { notificationsApi, type Notification } from "../api/notifications.api";
+import Seo from "../components/seo/Seo";
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
   const m = Math.floor(diff / 60000);
-  if (m < 1) return 'baru saja';
+  if (m < 1) return "baru saja";
   if (m < 60) return `${m} menit lalu`;
   const h = Math.floor(m / 60);
   if (h < 24) return `${h} jam lalu`;
   const d = Math.floor(h / 24);
   if (d < 7) return `${d} hari lalu`;
-  return new Date(iso).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+  return new Date(iso).toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "short",
+  });
 }
 
 function dateGroupKey(iso: string): string {
@@ -22,21 +25,21 @@ function dateGroupKey(iso: string): string {
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const dDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
   const diffDays = Math.floor((today.getTime() - dDate.getTime()) / 86_400_000);
-  if (diffDays === 0) return 'Hari ini';
-  if (diffDays === 1) return 'Kemarin';
-  if (diffDays < 7) return 'Minggu ini';
-  if (diffDays < 30) return 'Bulan ini';
-  return 'Lebih lama';
+  if (diffDays === 0) return "Hari ini";
+  if (diffDays === 1) return "Kemarin";
+  if (diffDays < 7) return "Minggu ini";
+  if (diffDays < 30) return "Bulan ini";
+  return "Lebih lama";
 }
 
 const TYPE_META: Record<string, { icon: string; tone: string }> = {
-  friend_request: { icon: '👥', tone: 'bg-blue-50 text-blue-600' },
-  friend_accepted: { icon: '🤝', tone: 'bg-emerald-50 text-emerald-600' },
-  emoji_thrown: { icon: '😄', tone: 'bg-violet-50 text-violet-600' },
-  achievement_unlocked: { icon: '🏆', tone: 'bg-amber-50 text-amber-600' },
-  promotion: { icon: '🎁', tone: 'bg-rose-50 text-rose-600' },
-  together_bomb: { icon: '💥', tone: 'bg-orange-50 text-orange-600' },
-  default: { icon: '🔔', tone: 'bg-[#F0EDE8] text-[#5C5A52]' },
+  friend_request: { icon: "👥", tone: "bg-blue-50 text-blue-600" },
+  friend_accepted: { icon: "🤝", tone: "bg-emerald-50 text-emerald-600" },
+  emoji_thrown: { icon: "😄", tone: "bg-violet-50 text-violet-600" },
+  achievement_unlocked: { icon: "🏆", tone: "bg-amber-50 text-amber-600" },
+  promotion: { icon: "🎁", tone: "bg-rose-50 text-rose-600" },
+  together_bomb: { icon: "💥", tone: "bg-orange-50 text-orange-600" },
+  default: { icon: "🔔", tone: "bg-[#F0EDE8] text-[#5C5A52]" },
 };
 
 const PAGE_SIZE = 20;
@@ -84,7 +87,9 @@ export default function NotificationsPage() {
     if (n.isRead) return;
     try {
       await notificationsApi.markRead(n.id);
-      setItems((prev) => prev.map((x) => (x.id === n.id ? { ...x, isRead: true } : x)));
+      setItems((prev) =>
+        prev.map((x) => (x.id === n.id ? { ...x, isRead: true } : x)),
+      );
     } catch {}
   };
 
@@ -110,7 +115,9 @@ export default function NotificationsPage() {
       <div className="min-h-screen flex items-center justify-center bg-[#FAF9F6] px-4">
         <div className="bg-white rounded-2xl p-8 max-w-md w-full text-center border border-[#F0EDE8]">
           <span className="text-5xl mb-4 inline-block">🔔</span>
-          <p className="text-[#1C1C1A] font-bold">Login dulu untuk melihat notifikasi</p>
+          <p className="text-[#1C1C1A] font-bold">
+            Login dulu untuk melihat notifikasi
+          </p>
           <p className="text-sm text-[#8A8880] mt-1 mb-5">
             Kami akan kabari saat ada teman, achievement, atau promo baru.
           </p>
@@ -127,7 +134,10 @@ export default function NotificationsPage() {
 
   return (
     <div className="min-h-screen bg-[#FAF9F6] pb-16">
-      <Seo title="Notifikasi" description="Lihat update terbaru dari CafeMatch" />
+      <Seo
+        title="Notifikasi"
+        description="Lihat update terbaru dari CafeMatch"
+      />
 
       {/* Hero — full-width on mobile, card on desktop (consistent with other pages) */}
       <div className="lg:max-w-3xl lg:mx-auto lg:px-8 lg:pt-5">
@@ -144,7 +154,7 @@ export default function NotificationsPage() {
               <h1 className="text-xl sm:text-2xl font-extrabold text-[#1C1C1A] tracking-tight">
                 {unreadCount > 0
                   ? `${unreadCount} pesan baru`
-                  : 'Semua sudah dibaca'}
+                  : "Semua sudah dibaca"}
               </h1>
             </div>
             {unreadCount > 0 && (
@@ -193,7 +203,7 @@ export default function NotificationsPage() {
                 disabled={loading}
                 className="w-full py-3 bg-white border border-[#F0EDE8] rounded-xl font-bold text-sm text-[#1C1C1A] hover:bg-[#FAF9F6] disabled:opacity-50 transition-colors"
               >
-                {loading ? 'Memuat…' : 'Muat lebih banyak'}
+                {loading ? "Memuat…" : "Muat lebih banyak"}
               </button>
             )}
           </div>
@@ -218,8 +228,8 @@ function NotifRow({
       type="button"
       onClick={onClick}
       className={`w-full flex items-start gap-3 px-4 py-3.5 text-left transition-colors ${
-        isLast ? '' : 'border-b border-[#F0EDE8]'
-      } ${n.isRead ? 'hover:bg-[#FAF9F6]' : 'bg-amber-50/40 hover:bg-amber-50'}`}
+        isLast ? "" : "border-b border-[#F0EDE8]"
+      } ${n.isRead ? "hover:bg-[#FAF9F6]" : "bg-amber-50/40 hover:bg-amber-50"}`}
     >
       <div
         className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-lg ${meta.tone}`}
@@ -230,7 +240,9 @@ function NotifRow({
         <div className="flex items-start gap-2">
           <h3
             className={`text-sm truncate ${
-              n.isRead ? 'font-semibold text-[#1C1C1A]' : 'font-extrabold text-[#1C1C1A]'
+              n.isRead
+                ? "font-semibold text-[#1C1C1A]"
+                : "font-extrabold text-[#1C1C1A]"
             }`}
           >
             {n.title}
@@ -239,7 +251,9 @@ function NotifRow({
             <span className="shrink-0 w-2 h-2 rounded-full bg-[#EA580C] mt-1.5" />
           )}
         </div>
-        <p className="text-[13px] text-[#5C5A52] mt-0.5 line-clamp-2">{n.message}</p>
+        <p className="text-[13px] text-[#5C5A52] mt-0.5 line-clamp-2">
+          {n.message}
+        </p>
         <p className="text-[11px] text-[#8A8880] mt-1 font-medium">
           {timeAgo(n.createdAt)}
         </p>

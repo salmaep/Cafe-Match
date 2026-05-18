@@ -8,7 +8,7 @@
  * now since the only consumer is the user's own profile view.
  */
 
-const KEY = 'cm_hidden_friends';
+const KEY = "cm_hidden_friends";
 
 function read(): Set<number> {
   try {
@@ -16,7 +16,7 @@ function read(): Set<number> {
     if (!raw) return new Set();
     const arr = JSON.parse(raw);
     if (!Array.isArray(arr)) return new Set();
-    return new Set(arr.filter((x): x is number => typeof x === 'number'));
+    return new Set(arr.filter((x): x is number => typeof x === "number"));
   } catch {
     return new Set();
   }

@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Patch, Post, Request, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Patch,
+  Post,
+  Request,
+  UseGuards,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { UsersService } from './users.service';
 import { ChangePasswordDto, UpdateProfileDto } from './dto/update-profile.dto';
@@ -10,7 +18,9 @@ export class UsersController {
 
   @Get('me')
   async getMe(@Request() req: any) {
-    const user = await this.usersService.findById(req.user.userId ?? req.user.id);
+    const user = await this.usersService.findById(
+      req.user.userId ?? req.user.id,
+    );
     if (!user) return null;
     const { passwordHash: _, ...rest } = user as any;
     return rest;

@@ -16,10 +16,7 @@ export class BookmarksController {
   constructor(private readonly bookmarksService: BookmarksService) {}
 
   @Post(':cafeId')
-  toggle(
-    @Request() req: any,
-    @Param('cafeId', ParseIntPipe) cafeId: number,
-  ) {
+  toggle(@Request() req: any, @Param('cafeId', ParseIntPipe) cafeId: number) {
     return this.bookmarksService.toggle(req.user.id, cafeId);
   }
 

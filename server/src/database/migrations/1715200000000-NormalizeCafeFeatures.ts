@@ -35,7 +35,9 @@ export class NormalizeCafeFeatures1715200000000 implements MigrationInterface {
   }
 
   async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`ALTER TABLE \`cafe_photos\` DROP COLUMN \`photo_type\``);
+    await queryRunner.query(
+      `ALTER TABLE \`cafe_photos\` DROP COLUMN \`photo_type\``,
+    );
 
     await queryRunner.query(`DROP TABLE IF EXISTS \`cafe_features\``);
 

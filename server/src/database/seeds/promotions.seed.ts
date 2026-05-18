@@ -17,38 +17,52 @@ dotenv.config();
 const TYPE_A_TEMPLATES = [
   {
     openingSince: 'April 2026',
-    highlightText: "Bandung's newest specialty coffee destination — freshly opened with handpicked beans and panoramic views.",
+    highlightText:
+      "Bandung's newest specialty coffee destination — freshly opened with handpicked beans and panoramic views.",
     keunggulan: ['Rooftop seating', 'Specialty coffee', 'Free WiFi 50 Mbps'],
     promoOffer: 'Grand Opening: Buy 1 Get 1 all beverages this month!',
   },
   {
     openingSince: 'March 2026',
-    highlightText: "A fresh face in Bandung's cafe scene — modern interior with a full brunch menu and artisan pastries.",
-    keunggulan: ['Full brunch menu', 'Artisan pastries', 'Power outlets at every table'],
+    highlightText:
+      "A fresh face in Bandung's cafe scene — modern interior with a full brunch menu and artisan pastries.",
+    keunggulan: [
+      'Full brunch menu',
+      'Artisan pastries',
+      'Power outlets at every table',
+    ],
     promoOffer: 'Opening Month: Free dessert with any main course!',
   },
   {
     openingSince: 'April 2026',
-    highlightText: "New on the block — cozy atmosphere perfect for WFH, with single-origin pour-over and homemade cakes.",
+    highlightText:
+      'New on the block — cozy atmosphere perfect for WFH, with single-origin pour-over and homemade cakes.',
     keunggulan: ['Single-origin coffee', 'Homemade cakes', 'Quiet workspace'],
     promoOffer: 'First 50 visitors get a free signature latte!',
   },
   {
     openingSince: 'February 2026',
-    highlightText: "Just opened in the heart of Dago — minimalist Scandinavian vibes with locally-roasted beans.",
+    highlightText:
+      'Just opened in the heart of Dago — minimalist Scandinavian vibes with locally-roasted beans.',
     keunggulan: ['Scandinavian interior', 'Local roastery', 'Photogenic spot'],
     promoOffer: 'Soft Opening: 30% off everything until end of month!',
   },
   {
     openingSince: 'May 2026',
-    highlightText: "Brand new co-working cafe — fast WiFi, ergonomic seating, and a quiet zone for deep work.",
+    highlightText:
+      'Brand new co-working cafe — fast WiFi, ergonomic seating, and a quiet zone for deep work.',
     keunggulan: ['100 Mbps WiFi', 'Ergonomic seating', 'Quiet zone'],
     promoOffer: 'Launch Week: Free 1-hour parking with any order!',
   },
   {
     openingSince: 'March 2026',
-    highlightText: "Newly opened bakery + cafe — sourdough fresh out of the oven daily, paired with house-blend coffee.",
-    keunggulan: ['Daily fresh sourdough', 'House-blend coffee', 'Pet-friendly patio'],
+    highlightText:
+      'Newly opened bakery + cafe — sourdough fresh out of the oven daily, paired with house-blend coffee.',
+    keunggulan: [
+      'Daily fresh sourdough',
+      'House-blend coffee',
+      'Pet-friendly patio',
+    ],
     promoOffer: 'Open House: Complimentary pastry sample with every coffee!',
   },
 ];
@@ -56,42 +70,48 @@ const TYPE_A_TEMPLATES = [
 const TYPE_B_TEMPLATES = [
   {
     title: 'Live Music Every Weekend!',
-    description: 'Enjoy live acoustic performances every Friday & Saturday night. Free entry with any drink purchase.',
+    description:
+      'Enjoy live acoustic performances every Friday & Saturday night. Free entry with any drink purchase.',
     validHours: '19:00 - 22:00',
     validDays: 'Jumat – Sabtu',
     highlightedFacilities: '["cozy_seating", "outdoor_seating"]',
   },
   {
     title: 'Buy 1 Get 1 All Lattes!',
-    description: 'Every Monday-Wednesday, buy any latte and get the second one free. Perfect for catching up with friends.',
+    description:
+      'Every Monday-Wednesday, buy any latte and get the second one free. Perfect for catching up with friends.',
     validHours: '09:00 - 17:00',
     validDays: 'Senin – Rabu',
     highlightedFacilities: '["strong_wifi", "power_outlets"]',
   },
   {
     title: 'New Seasonal Menu Available!',
-    description: 'Try our new Mango Coconut Cold Brew and Matcha Croissant. Limited time only!',
+    description:
+      'Try our new Mango Coconut Cold Brew and Matcha Croissant. Limited time only!',
     validHours: '10:00 - 22:00',
     validDays: 'Setiap Hari',
     highlightedFacilities: '["cozy_seating"]',
   },
   {
     title: 'Happy Hour 4–7 PM!',
-    description: 'All espresso-based drinks 25% off. Pair with our discounted snack platter for the perfect afternoon break.',
+    description:
+      'All espresso-based drinks 25% off. Pair with our discounted snack platter for the perfect afternoon break.',
     validHours: '16:00 - 19:00',
     validDays: 'Senin – Jumat',
     highlightedFacilities: '["power_outlets", "cozy_seating"]',
   },
   {
     title: 'Student Discount 20%',
-    description: 'Show your student ID and get 20% off your entire order. Valid for dine-in and takeaway.',
+    description:
+      'Show your student ID and get 20% off your entire order. Valid for dine-in and takeaway.',
     validHours: '08:00 - 20:00',
     validDays: 'Setiap Hari',
     highlightedFacilities: '["strong_wifi", "quiet_atmosphere"]',
   },
   {
     title: 'Brunch Bundle 99k!',
-    description: 'Pick any signature drink + brunch plate for only 99k. Available weekends until 2 PM.',
+    description:
+      'Pick any signature drink + brunch plate for only 99k. Available weekends until 2 PM.',
     validHours: '09:00 - 14:00',
     validDays: 'Sabtu – Minggu',
     highlightedFacilities: '["outdoor_seating", "cozy_seating"]',
@@ -225,7 +245,14 @@ async function seedPromotions(dataSource: DataSource) {
     await dataSource.query(
       `INSERT INTO promotions (cafe_id, package_id, type, billing_cycle, status, content_title, content_description, content_photo_url, highlighted_facilities, started_at, expires_at)
        VALUES (?, ?, 'featured_promo', 'monthly', 'active', ?, ?, ?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 30 DAY))`,
-      [cafe.id, pkg.id, tpl.title, tpl.description, cafe.primaryPhoto || null, tpl.highlightedFacilities],
+      [
+        cafe.id,
+        pkg.id,
+        tpl.title,
+        tpl.description,
+        cafe.primaryPhoto || null,
+        tpl.highlightedFacilities,
+      ],
     );
     await dataSource.query(
       `UPDATE cafes

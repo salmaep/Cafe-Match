@@ -1,12 +1,15 @@
-import { Link } from 'react-router-dom';
-import { analyticsApi } from '../api/analytics.api';
-import { placeholderImage } from '../utils/cafeImage';
-import { cafeUrl } from '../utils/cafeUrl';
-import { useActivePromotions, pickPromotion } from '../hooks/useActivePromotions';
-import InFeedAd from './InFeedAd';
+import { Link } from "react-router-dom";
+import { analyticsApi } from "../api/analytics.api";
+import { placeholderImage } from "../utils/cafeImage";
+import { cafeUrl } from "../utils/cafeUrl";
+import {
+  useActivePromotions,
+  pickPromotion,
+} from "../hooks/useActivePromotions";
+import InFeedAd from "./InFeedAd";
 
-type Variant = 'card' | 'list';
-type Size = 'normal' | 'compact';
+type Variant = "card" | "list";
+type Size = "normal" | "compact";
 
 interface Props {
   // Index in the host feed — used to pick a stable, round-robin promotion
@@ -16,12 +19,16 @@ interface Props {
   size?: Size;
 }
 
-export default function SponsoredCafeSlot({ slotIndex, variant = 'card', size = 'normal' }: Props) {
+export default function SponsoredCafeSlot({
+  slotIndex,
+  variant = "card",
+  size = "normal",
+}: Props) {
   const promotions = useActivePromotions();
 
   // Still loading — show a neutral skeleton-ish placeholder so layout doesn't shift.
   if (promotions === null) {
-    return variant === 'list' ? <ListSkeleton /> : <CardSkeleton />;
+    return variant === "list" ? <ListSkeleton /> : <CardSkeleton />;
   }
 
   // No internal promo inventory — fall back to AdSense.
@@ -36,12 +43,12 @@ export default function SponsoredCafeSlot({ slotIndex, variant = 'card', size = 
   const subline = promo.contentDescription || cafe.address;
 
   const handleClick = () => {
-    analyticsApi.track(cafe.id, 'click', promo.id).catch(() => {});
+    analyticsApi.track(cafe.id, "click", promo.id).catch(() => {});
   };
 
   const href = cafeUrl(cafe);
 
-  return variant === 'list' ? (
+  return variant === "list" ? (
     <ListView
       to={href}
       photo={photo}
@@ -81,7 +88,7 @@ function CardView({
   onClick: () => void;
   size: Size;
 }) {
-  if (size === 'compact') {
+  if (size === "compact") {
     return (
       <Link
         to={to}
@@ -91,15 +98,26 @@ function CardView({
         <span className="absolute top-1.5 left-1.5 z-10 inline-flex items-center gap-0.5 text-[9px] font-extrabold tracking-wider uppercase bg-amber-400 text-stone-900 px-1.5 py-0.5 rounded shadow">
           ⚡ Sponsored
         </span>
-        <img src={photo} alt={cafeName} referrerPolicy="no-referrer" className="w-full h-24 object-cover bg-[#F0EDE8]" />
+        <img
+          src={photo}
+          alt={cafeName}
+          referrerPolicy="no-referrer"
+          className="w-full h-24 object-cover bg-[#F0EDE8]"
+        />
         <div className="p-2.5">
-          <h3 className="text-[13px] font-bold text-gray-900 truncate">{headline}</h3>
-          <p className="text-[11px] text-gray-600 line-clamp-1 mt-0.5">{subline}</p>
+          <h3 className="text-[13px] font-bold text-gray-900 truncate">
+            {headline}
+          </h3>
+          <p className="text-[11px] text-gray-600 line-clamp-1 mt-0.5">
+            {subline}
+          </p>
           <div className="flex items-center justify-between mt-1.5">
             <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-amber-800 bg-amber-100 rounded-full px-1.5 py-0.5 truncate">
               📍 {cafeName}
             </span>
-            <span className="shrink-0 text-[10px] font-bold text-amber-700 ml-1">Lihat →</span>
+            <span className="shrink-0 text-[10px] font-bold text-amber-700 ml-1">
+              Lihat →
+            </span>
           </div>
         </div>
       </Link>
@@ -114,15 +132,24 @@ function CardView({
       <span className="absolute top-2.5 left-2.5 z-10 inline-flex items-center gap-1 text-[11px] font-extrabold tracking-wider uppercase bg-amber-400 text-stone-900 px-2.5 py-1 rounded-md shadow">
         ⚡ Sponsored
       </span>
-      <img src={photo} alt={cafeName} referrerPolicy="no-referrer" className="w-full h-44 object-cover bg-[#F0EDE8]" />
+      <img
+        src={photo}
+        alt={cafeName}
+        referrerPolicy="no-referrer"
+        className="w-full h-44 object-cover bg-[#F0EDE8]"
+      />
       <div className="p-5">
-        <h3 className="text-base font-bold text-gray-900 truncate">{headline}</h3>
+        <h3 className="text-base font-bold text-gray-900 truncate">
+          {headline}
+        </h3>
         <p className="text-[13px] text-gray-600 line-clamp-2 mt-1">{subline}</p>
         <div className="flex items-center justify-between mt-3">
           <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-800 bg-amber-100 rounded-full px-2.5 py-1">
             📍 {cafeName}
           </span>
-          <span className="text-xs font-bold text-amber-700">Lihat detail →</span>
+          <span className="text-xs font-bold text-amber-700">
+            Lihat detail →
+          </span>
         </div>
       </div>
     </Link>
@@ -146,7 +173,7 @@ function ListView({
   onClick: () => void;
   size: Size;
 }) {
-  if (size === 'compact') {
+  if (size === "compact") {
     return (
       <Link
         to={to}
@@ -164,13 +191,19 @@ function ListView({
           loading="lazy"
         />
         <div className="flex-1 min-w-0 flex flex-col justify-center">
-          <h3 className="text-[13px] font-bold text-[#1C1C1A] truncate">{headline}</h3>
-          <p className="text-[11px] text-[#5C5A52] mt-0.5 line-clamp-1">{subline}</p>
+          <h3 className="text-[13px] font-bold text-[#1C1C1A] truncate">
+            {headline}
+          </h3>
+          <p className="text-[11px] text-[#5C5A52] mt-0.5 line-clamp-1">
+            {subline}
+          </p>
           <div className="flex items-center justify-between mt-1">
             <span className="inline-flex items-center gap-0.5 bg-amber-100 text-amber-800 text-[10px] font-bold rounded-full px-1.5 py-0 truncate">
               📍 {cafeName}
             </span>
-            <span className="shrink-0 text-[10px] font-bold text-amber-700 ml-1">Lihat →</span>
+            <span className="shrink-0 text-[10px] font-bold text-amber-700 ml-1">
+              Lihat →
+            </span>
           </div>
         </div>
       </Link>
@@ -194,8 +227,12 @@ function ListView({
       />
       <div className="flex-1 min-w-0 flex flex-col justify-between">
         <div>
-          <h3 className="text-[15px] font-bold text-[#1C1C1A] truncate">{headline}</h3>
-          <p className="text-[12px] text-[#5C5A52] mt-0.5 line-clamp-2">{subline}</p>
+          <h3 className="text-[15px] font-bold text-[#1C1C1A] truncate">
+            {headline}
+          </h3>
+          <p className="text-[12px] text-[#5C5A52] mt-0.5 line-clamp-2">
+            {subline}
+          </p>
         </div>
         <div className="flex items-center justify-between mt-2">
           <span className="inline-flex items-center gap-1 bg-amber-100 text-amber-800 text-[11px] font-bold rounded-full px-2.5 py-0.5">

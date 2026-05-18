@@ -1,40 +1,46 @@
-import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useShortlist } from '../context/ShortlistContext';
-import { useAuth } from '../context/AuthContext';
-import { useGeolocation, FALLBACK_LAT, FALLBACK_LNG } from '../hooks/useGeolocation';
-import { haversineDistance } from '../utils/haversine';
-import CafeCard from '../components/cafe/CafeCard';
-import Seo from '../components/seo/Seo';
+import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { useShortlist } from "../context/ShortlistContext";
+import { useAuth } from "../context/AuthContext";
+import {
+  useGeolocation,
+  FALLBACK_LAT,
+  FALLBACK_LNG,
+} from "../hooks/useGeolocation";
+import { haversineDistance } from "../utils/haversine";
+import CafeCard from "../components/cafe/CafeCard";
+import Seo from "../components/seo/Seo";
 
-type SortMode = 'recent' | 'distance' | 'rating';
+type SortMode = "recent" | "distance" | "rating";
 
 export default function ShortlistPage() {
-  const { shortlist, removeFromShortlist, clearShortlist, loading } = useShortlist();
+  const { shortlist, removeFromShortlist, clearShortlist, loading } =
+    useShortlist();
   const { user, isLoading: authLoading } = useAuth();
   const geo = useGeolocation();
 
-  const [sortMode, setSortMode] = useState<SortMode>('recent');
+  const [sortMode, setSortMode] = useState<SortMode>("recent");
 
   const sortedShortlist = useMemo(() => {
-    if (sortMode === 'recent') return shortlist;
+    if (sortMode === "recent") return shortlist;
     const lat = geo.latitude ?? FALLBACK_LAT;
     const lng = geo.longitude ?? FALLBACK_LNG;
     const arr = [...shortlist];
-    if (sortMode === 'distance') {
+    if (sortMode === "distance") {
       arr.sort((a, b) => {
         const da = haversineDistance(lat, lng, a.latitude, a.longitude);
         const db = haversineDistance(lat, lng, b.latitude, b.longitude);
         return da - db;
       });
-    } else if (sortMode === 'rating') {
+    } else if (sortMode === "rating") {
       arr.sort((a, b) => (b.googleRating ?? 0) - (a.googleRating ?? 0));
     }
     return arr;
   }, [shortlist, sortMode, geo.latitude, geo.longitude]);
 
   const handleClearAll = () => {
-    if (!confirm(`Hapus semua ${shortlist.length} cafe dari shortlist?`)) return;
+    if (!confirm(`Hapus semua ${shortlist.length} cafe dari shortlist?`))
+      return;
     clearShortlist();
   };
 
@@ -72,7 +78,10 @@ export default function ShortlistPage() {
 
   return (
     <div className="min-h-screen bg-[#FAF9F6] pb-16">
-      <Seo title="My Shortlist" description="Cafe yang kamu simpan untuk dikunjungi nanti" />
+      <Seo
+        title="My Shortlist"
+        description="Cafe yang kamu simpan untuk dikunjungi nanti"
+      />
 
       {/* Hero — full-width on mobile, card on desktop (consistent with TrendingPage) */}
       <div className="lg:max-w-7xl lg:mx-auto lg:px-8 lg:pt-5">
@@ -93,7 +102,7 @@ export default function ShortlistPage() {
                   <span>⭐</span> Shortlist
                 </div>
                 <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#1C1C1A] tracking-tight leading-tight">
-                  Cafe yang{' '}
+                  Cafe yang{" "}
                   <span className="bg-gradient-to-r from-[#F97316] to-[#EA580C] bg-clip-text text-transparent">
                     kamu suka
                   </span>
@@ -101,14 +110,16 @@ export default function ShortlistPage() {
                 <p className="text-sm sm:text-[15px] text-[#5C5A52] mt-2 max-w-xl">
                   {shortlist.length > 0
                     ? `${shortlist.length} cafe disimpan untuk dikunjungi nanti.`
-                    : 'Geser kanan saat Discover untuk menyimpan cafe yang menarik.'}
+                    : "Geser kanan saat Discover untuk menyimpan cafe yang menarik."}
                 </p>
               </div>
               {shortlist.length > 0 && (
                 <span className="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-br from-[#FBBF24] via-[#F97316] to-[#EA580C] text-white text-xs font-extrabold shadow-md shadow-orange-500/20">
                   <span className="text-sm leading-none">⭐</span>
                   <span className="tabular-nums">{shortlist.length}</span>
-                  <span className="text-[10px] opacity-80 font-bold tracking-wider">CAFES</span>
+                  <span className="text-[10px] opacity-80 font-bold tracking-wider">
+                    CAFES
+                  </span>
                 </span>
               )}
             </div>
@@ -125,18 +136,18 @@ export default function ShortlistPage() {
             <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
               <div className="flex items-center gap-1.5 bg-white rounded-full p-1 ring-1 ring-[#F0EDE8] shadow-sm">
                 <SortPill
-                  active={sortMode === 'recent'}
-                  onClick={() => setSortMode('recent')}
+                  active={sortMode === "recent"}
+                  onClick={() => setSortMode("recent")}
                   label="Terbaru"
                 />
                 <SortPill
-                  active={sortMode === 'distance'}
-                  onClick={() => setSortMode('distance')}
+                  active={sortMode === "distance"}
+                  onClick={() => setSortMode("distance")}
                   label="Terdekat"
                 />
                 <SortPill
-                  active={sortMode === 'rating'}
-                  onClick={() => setSortMode('rating')}
+                  active={sortMode === "rating"}
+                  onClick={() => setSortMode("rating")}
                   label="Rating"
                 />
               </div>
@@ -202,8 +213,8 @@ function SortPill({
       onClick={onClick}
       className={`px-3 py-1 rounded-full text-xs font-bold transition-colors ${
         active
-          ? 'bg-[#1C1C1A] text-white'
-          : 'text-[#5C5A52] hover:text-[#1C1C1A] hover:bg-[#F0EDE8]'
+          ? "bg-[#1C1C1A] text-white"
+          : "text-[#5C5A52] hover:text-[#1C1C1A] hover:bg-[#F0EDE8]"
       }`}
     >
       {label}
@@ -216,7 +227,9 @@ function EmptyState() {
     <div className="text-center py-12 sm:py-16 bg-white border border-dashed border-[#E0DCD3] rounded-2xl">
       <div className="relative inline-block mb-4">
         <span className="text-6xl">⭐</span>
-        <span className="absolute -top-1 -right-2 text-2xl animate-bounce">✨</span>
+        <span className="absolute -top-1 -right-2 text-2xl animate-bounce">
+          ✨
+        </span>
       </div>
       <h2 className="text-lg font-extrabold text-[#1C1C1A]">
         Shortlist kamu masih kosong

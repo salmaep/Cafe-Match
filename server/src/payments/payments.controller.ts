@@ -22,7 +22,10 @@ export class PaymentsController {
   @Roles('owner')
   @Post('create')
   createPayment(@Request() req: any, @Body() dto: CreatePaymentDto) {
-    return this.paymentsService.createSnapTransaction(req.user.id, dto.promotionId);
+    return this.paymentsService.createSnapTransaction(
+      req.user.id,
+      dto.promotionId,
+    );
   }
 
   @Public()

@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class RenamePurposeRequirementsFacilityKey1715300000000
-  implements MigrationInterface
-{
+export class RenamePurposeRequirementsFacilityKey1715300000000 implements MigrationInterface {
   async up(queryRunner: QueryRunner): Promise<void> {
     // Rename `facility_key` → `feature_name` and extend length to match
     // `cafe_features.name` (VARCHAR 150). The column now references

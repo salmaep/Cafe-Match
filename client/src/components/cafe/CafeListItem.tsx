@@ -1,12 +1,12 @@
-import { Link } from 'react-router-dom';
-import type { Cafe } from '../../types';
-import { formatDistance } from '../../utils/haversine';
-import { getCafeImage, placeholderImage } from '../../utils/cafeImage';
-import { cafeUrl } from '../../utils/cafeUrl';
-import { getOpenStatus } from '../../utils/openingHours';
-import { buildFacilityChips } from '../../utils/facilities';
-import { formatRating } from '../../utils/rating';
-import { cleanAddress } from '../../utils/address';
+import { Link } from "react-router-dom";
+import type { Cafe } from "../../types";
+import { formatDistance } from "../../utils/haversine";
+import { getCafeImage, placeholderImage } from "../../utils/cafeImage";
+import { cafeUrl } from "../../utils/cafeUrl";
+import { getOpenStatus } from "../../utils/openingHours";
+import { buildFacilityChips } from "../../utils/facilities";
+import { formatRating } from "../../utils/rating";
+import { cleanAddress } from "../../utils/address";
 
 interface Props {
   cafe: Cafe;
@@ -16,7 +16,7 @@ const VISIBLE_CHIPS = 4;
 
 export default function CafeListItem({ cafe }: Props) {
   const open = getOpenStatus(cafe.openingHours);
-  const locality = cleanAddress(cafe.district || cafe.city || '');
+  const locality = cleanAddress(cafe.district || cafe.city || "");
   const allChips = buildFacilityChips(cafe);
   const visibleChips = allChips.slice(0, VISIBLE_CHIPS);
   const overflow = allChips.length - visibleChips.length;
@@ -42,12 +42,12 @@ export default function CafeListItem({ cafe }: Props) {
           <h3 className="text-[15px] font-bold text-[#1C1C1A] truncate">
             {cafe.name}
           </h3>
-          {cafe.activePromotionType === 'new_cafe' && (
+          {cafe.activePromotionType === "new_cafe" && (
             <span className="shrink-0 bg-[#E94B4B] text-white text-[10px] font-bold rounded px-1.5 py-px">
               NEW
             </span>
           )}
-          {cafe.activePromotionType === 'featured_promo' && (
+          {cafe.activePromotionType === "featured_promo" && (
             <span className="shrink-0 bg-[#D48B3A] text-white text-[10px] font-bold rounded px-1.5 py-px">
               Featured
             </span>
@@ -77,7 +77,9 @@ export default function CafeListItem({ cafe }: Props) {
         </div>
 
         {locality && (
-          <p className="text-[12px] text-[#A8A59C] truncate mt-0.5">{locality}</p>
+          <p className="text-[12px] text-[#A8A59C] truncate mt-0.5">
+            {locality}
+          </p>
         )}
 
         <div className="flex flex-wrap gap-1 mt-2">
@@ -85,17 +87,17 @@ export default function CafeListItem({ cafe }: Props) {
             <span
               className={`text-[11px] font-bold rounded-full px-2 py-0.5 ${
                 open.isOpen
-                  ? 'bg-emerald-50 text-emerald-700'
-                  : 'bg-gray-100 text-gray-600'
+                  ? "bg-emerald-50 text-emerald-700"
+                  : "bg-gray-100 text-gray-600"
               }`}
             >
               {open.isOpen
                 ? open.closesAt
                   ? `Buka · tutup ${open.closesAt}`
-                  : 'Buka'
+                  : "Buka"
                 : open.opensAt
-                  ? `Tutup · buka ${open.nextOpenDay === 'today' ? '' : `${open.nextOpenDay} `}${open.opensAt}`
-                  : 'Tutup'}
+                  ? `Tutup · buka ${open.nextOpenDay === "today" ? "" : `${open.nextOpenDay} `}${open.opensAt}`
+                  : "Tutup"}
             </span>
           )}
           {visibleChips.map((c) => (
@@ -115,9 +117,13 @@ export default function CafeListItem({ cafe }: Props) {
 
         {cafe.topReviewText && (
           <p className="text-[12px] text-[#5C5A52] leading-snug mt-2 line-clamp-2 italic">
-            <span className="text-[#8A8880] not-italic">💬</span> "{cafe.topReviewText}"
+            <span className="text-[#8A8880] not-italic">💬</span> "
+            {cafe.topReviewText}"
             {cafe.topReviewAuthor && (
-              <span className="not-italic text-[#A8A59C]"> — {cafe.topReviewAuthor}</span>
+              <span className="not-italic text-[#A8A59C]">
+                {" "}
+                — {cafe.topReviewAuthor}
+              </span>
             )}
           </p>
         )}

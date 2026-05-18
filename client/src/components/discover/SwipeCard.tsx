@@ -1,19 +1,20 @@
-import { useNavigate } from 'react-router-dom';
-import type { Cafe } from '../../types';
-import { getCafeImage, placeholderImage } from '../../utils/cafeImage';
-import { cafeUrl } from '../../utils/cafeUrl';
-import { getOpenStatus } from '../../utils/openingHours';
-import { buildFacilityChips } from '../../utils/facilities';
-import { formatRating } from '../../utils/rating';
-import { cleanAddress } from '../../utils/address';
+import { useNavigate } from "react-router-dom";
+import type { Cafe } from "../../types";
+import { getCafeImage, placeholderImage } from "../../utils/cafeImage";
+import { cafeUrl } from "../../utils/cafeUrl";
+import { getOpenStatus } from "../../utils/openingHours";
+import { buildFacilityChips } from "../../utils/facilities";
+import { formatRating } from "../../utils/rating";
+import { cleanAddress } from "../../utils/address";
 
 interface Props {
   cafe: Cafe;
+  className?: string;
 }
 
 const VISIBLE_CHIPS = 5;
 
-export default function SwipeCard({ cafe }: Props) {
+export default function SwipeCard({ cafe, className }: Props) {
   const navigate = useNavigate();
   const photo = getCafeImage(cafe);
   const distanceKm =
@@ -21,20 +22,19 @@ export default function SwipeCard({ cafe }: Props) {
       ? (cafe.distanceMeters / 1000).toFixed(1)
       : null;
   const open = getOpenStatus(cafe.openingHours);
-  const locality = cleanAddress(cafe.district || cafe.city || '');
+  const locality = cleanAddress(cafe.district || cafe.city || "");
 
   const allChips = buildFacilityChips(cafe);
   const visibleChips = allChips.slice(0, VISIBLE_CHIPS);
   const overflow = allChips.length - visibleChips.length;
   if (cafe.priceRange) {
-    visibleChips.push({ key: '__price', icon: '', label: cafe.priceRange });
+    visibleChips.push({ key: "__price", icon: "", label: cafe.priceRange });
   }
 
   return (
     <div
       onClick={() => navigate(cafeUrl(cafe))}
-      className="relative aspect-[3/4] mx-auto bg-[#F0EDE8] rounded-2xl overflow-hidden cursor-pointer shadow-xl"
-      style={{ width: 'min(100%, 28rem, calc((100dvh - 220px) * 0.75))' }}
+      className={`relative w-full max-w-md mx-auto bg-[#F0EDE8] rounded-2xl overflow-hidden cursor-pointer shadow-xl ${className ?? "aspect-[3/4]"}`}
     >
       <img
         src={photo}
@@ -52,7 +52,9 @@ export default function SwipeCard({ cafe }: Props) {
           <div className="text-white font-bold text-lg leading-tight">
             {Math.round(cafe.matchScore)}%
           </div>
-          <div className="text-white/80 text-[10px] font-semibold leading-tight">Match</div>
+          <div className="text-white/80 text-[10px] font-semibold leading-tight">
+            Match
+          </div>
         </div>
       )}
 
@@ -61,11 +63,11 @@ export default function SwipeCard({ cafe }: Props) {
           <span
             className={`text-[11px] font-bold rounded-full px-2.5 py-1 backdrop-blur-sm ${
               open.isOpen
-                ? 'bg-emerald-500/90 text-white'
-                : 'bg-gray-800/80 text-white'
+                ? "bg-emerald-500/90 text-white"
+                : "bg-gray-800/80 text-white"
             }`}
           >
-            {open.isOpen ? '● Buka' : '● Tutup'}
+            {open.isOpen ? "● Buka" : "● Tutup"}
             {open.isOpen && open.closesAt && ` · ${open.closesAt}`}
           </span>
         )}
@@ -87,8 +89,7 @@ export default function SwipeCard({ cafe }: Props) {
         <p className="text-sm text-white/80 mb-2 line-clamp-1">
           {[locality, distanceKm ? `${distanceKm} km` : null]
             .filter(Boolean)
-            .join(' · ') ||
-            cafe.address}
+            .join(" · ") || cafe.address}
         </p>
         <div className="flex flex-wrap gap-1.5">
           {visibleChips.map((c) => (

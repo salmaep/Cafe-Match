@@ -1,4 +1,4 @@
-import apiClient from './client';
+import apiClient from "./client";
 
 export interface Notification {
   id: number;
@@ -17,8 +17,11 @@ export interface NotificationListResponse {
 
 export const notificationsApi = {
   list: (page = 1) =>
-    apiClient.get<NotificationListResponse>('/notifications', { params: { page } }),
-  unreadCount: () => apiClient.get<{ count: number } | number>('/notifications/unread-count'),
+    apiClient.get<NotificationListResponse>("/notifications", {
+      params: { page },
+    }),
+  unreadCount: () =>
+    apiClient.get<{ count: number } | number>("/notifications/unread-count"),
   markRead: (id: number) => apiClient.put(`/notifications/${id}/read`),
-  markAllRead: () => apiClient.put('/notifications/read-all'),
+  markAllRead: () => apiClient.put("/notifications/read-all"),
 };

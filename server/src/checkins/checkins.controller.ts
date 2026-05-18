@@ -1,4 +1,12 @@
-import { Controller, Post, Get, Body, Param, Query, ParseIntPipe } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  Param,
+  Query,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { CheckinsService } from './checkins.service';
 import { CheckInDto, CheckOutDto } from './dto/checkin.dto';
 import { CurrentUser } from '../common/decorators/current-user.decorator';

@@ -1,13 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 import {
   checkinsApi,
   type GlobalLeaderboardEntry,
   type LeaderboardPeriod,
-} from '../api/checkins.api';
-import Seo from '../components/seo/Seo';
+} from "../api/checkins.api";
+import Seo from "../components/seo/Seo";
 
 export default function LeaderboardPage() {
-  const [period, setPeriod] = useState<LeaderboardPeriod>('month');
+  const [period, setPeriod] = useState<LeaderboardPeriod>("month");
   const [entries, setEntries] = useState<GlobalLeaderboardEntry[] | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -47,27 +47,27 @@ export default function LeaderboardPage() {
               <span>🏆</span> Leaderboard
             </div>
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#1C1C1A] tracking-tight leading-tight">
-              Siapa{' '}
+              Siapa{" "}
               <span className="bg-gradient-to-r from-[#F97316] to-[#EA580C] bg-clip-text text-transparent">
                 paling rajin
-              </span>{' '}
+              </span>{" "}
               ngafe?
             </h1>
             <p className="text-sm sm:text-[15px] text-[#5C5A52] mt-2 max-w-xl">
-              Ranking pengguna berdasarkan jumlah check-in, cafe yang dikunjungi, dan
-              total waktu nongkrong.
+              Ranking pengguna berdasarkan jumlah check-in, cafe yang
+              dikunjungi, dan total waktu nongkrong.
             </p>
 
             {/* Period toggle */}
             <div className="mt-5 inline-flex items-center gap-1 bg-white rounded-full p-1 ring-1 ring-amber-200 shadow-sm">
               <PeriodPill
-                active={period === 'month'}
-                onClick={() => setPeriod('month')}
+                active={period === "month"}
+                onClick={() => setPeriod("month")}
                 label="📅 30 Hari"
               />
               <PeriodPill
-                active={period === 'all'}
-                onClick={() => setPeriod('all')}
+                active={period === "all"}
+                onClick={() => setPeriod("all")}
                 label="🌟 All-time"
               />
             </div>
@@ -93,7 +93,11 @@ export default function LeaderboardPage() {
                 </h2>
                 <div className="bg-white rounded-2xl border border-[#F0EDE8] overflow-hidden">
                   {rest.map((e, i) => (
-                    <ListRow key={e.userId} entry={e} isLast={i === rest.length - 1} />
+                    <ListRow
+                      key={e.userId}
+                      entry={e}
+                      isLast={i === rest.length - 1}
+                    />
                   ))}
                 </div>
               </div>
@@ -124,8 +128,8 @@ function PeriodPill({
       onClick={onClick}
       className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
         active
-          ? 'bg-gradient-to-br from-[#F97316] to-[#EA580C] text-white shadow-sm'
-          : 'text-[#5C5A52] hover:text-[#1C1C1A] hover:bg-[#FFF8EC]'
+          ? "bg-gradient-to-br from-[#F97316] to-[#EA580C] text-white shadow-sm"
+          : "text-[#5C5A52] hover:text-[#1C1C1A] hover:bg-[#FFF8EC]"
       }`}
     >
       {label}
@@ -146,9 +150,9 @@ function Podium({ entries }: { entries: GlobalLeaderboardEntry[] }) {
 }
 
 const STEP_STYLES: Record<number, { gradient: string; emoji: string }> = {
-  1: { gradient: 'from-[#FBBF24] via-[#F59E0B] to-[#EA580C]', emoji: '👑' },
-  2: { gradient: 'from-[#E5E7EB] via-[#9CA3AF] to-[#6B7280]', emoji: '🥈' },
-  3: { gradient: 'from-[#FCD34D] via-[#D97706] to-[#B45309]', emoji: '🥉' },
+  1: { gradient: "from-[#FBBF24] via-[#F59E0B] to-[#EA580C]", emoji: "👑" },
+  2: { gradient: "from-[#E5E7EB] via-[#9CA3AF] to-[#6B7280]", emoji: "🥈" },
+  3: { gradient: "from-[#FCD34D] via-[#D97706] to-[#B45309]", emoji: "🥉" },
 };
 
 function PodiumStep({
@@ -165,7 +169,7 @@ function PodiumStep({
     .split(/\s+/)
     .map((s) => s[0])
     .slice(0, 2)
-    .join('')
+    .join("")
     .toUpperCase();
 
   return (
@@ -237,13 +241,13 @@ function ListRow({
     .split(/\s+/)
     .map((s) => s[0])
     .slice(0, 2)
-    .join('')
+    .join("")
     .toUpperCase();
 
   return (
     <div
       className={`flex items-center gap-3 px-4 py-3.5 ${
-        isLast ? '' : 'border-b border-[#F0EDE8]'
+        isLast ? "" : "border-b border-[#F0EDE8]"
       } hover:bg-[#FAF9F6] transition-colors`}
     >
       {/* Rank */}
@@ -312,9 +316,9 @@ function EmptyState({ period }: { period: LeaderboardPeriod }) {
         Belum ada yang masuk leaderboard
       </h2>
       <p className="text-sm text-[#8A8880] mt-2">
-        {period === 'month'
-          ? 'Belum ada check-in dalam 30 hari terakhir. Yuk mulai!'
-          : 'Belum ada check-in sama sekali. Jadi yang pertama!'}
+        {period === "month"
+          ? "Belum ada check-in dalam 30 hari terakhir. Yuk mulai!"
+          : "Belum ada check-in sama sekali. Jadi yang pertama!"}
       </p>
     </div>
   );
@@ -327,7 +331,10 @@ function SkeletonGrid() {
         {[40, 52, 36].map((h, i) => (
           <div key={i} className="flex flex-col items-center">
             <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-[#F0EDE8] animate-pulse mb-2" />
-            <div className={`w-full h-${h} rounded-t-2xl bg-[#F0EDE8] animate-pulse`} style={{ height: `${h * 4}px` }} />
+            <div
+              className={`w-full h-${h} rounded-t-2xl bg-[#F0EDE8] animate-pulse`}
+              style={{ height: `${h * 4}px` }}
+            />
           </div>
         ))}
       </div>

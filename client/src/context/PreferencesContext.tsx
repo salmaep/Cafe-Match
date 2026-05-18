@@ -6,13 +6,13 @@ import {
   useMemo,
   useState,
   type ReactNode,
-} from 'react';
-import type { WizardPreferences } from '../types/wizard';
-import type { Purpose } from '../types';
-import { purposesApi } from '../api/purposes.api';
+} from "react";
+import type { WizardPreferences } from "../types/wizard";
+import type { Purpose } from "../types";
+import { purposesApi } from "../api/purposes.api";
 
-const PREFS_KEY = 'cm_preferences';
-const COMPLETED_KEY = 'cm_wizard_completed';
+const PREFS_KEY = "cm_preferences";
+const COMPLETED_KEY = "cm_wizard_completed";
 
 interface PreferencesContextType {
   preferences: WizardPreferences | null;
@@ -28,16 +28,18 @@ interface PreferencesContextType {
 const PreferencesContext = createContext<PreferencesContextType | null>(null);
 
 export function PreferencesProvider({ children }: { children: ReactNode }) {
-  const [preferences, setPrefsState] = useState<WizardPreferences | null>(() => {
-    try {
-      const raw = localStorage.getItem(PREFS_KEY);
-      return raw ? JSON.parse(raw) : null;
-    } catch {
-      return null;
-    }
-  });
+  const [preferences, setPrefsState] = useState<WizardPreferences | null>(
+    () => {
+      try {
+        const raw = localStorage.getItem(PREFS_KEY);
+        return raw ? JSON.parse(raw) : null;
+      } catch {
+        return null;
+      }
+    },
+  );
   const [wizardCompleted, setCompletedState] = useState<boolean>(() => {
-    return localStorage.getItem(COMPLETED_KEY) === 'true';
+    return localStorage.getItem(COMPLETED_KEY) === "true";
   });
   const [serverPurposes, setServerPurposes] = useState<Purpose[]>([]);
 
@@ -58,7 +60,7 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
   }, [preferences]);
 
   useEffect(() => {
-    localStorage.setItem(COMPLETED_KEY, wizardCompleted ? 'true' : 'false');
+    localStorage.setItem(COMPLETED_KEY, wizardCompleted ? "true" : "false");
   }, [wizardCompleted]);
 
   const slugToId = useMemo(() => {
@@ -96,6 +98,7 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
 
 export function usePreferences() {
   const ctx = useContext(PreferencesContext);
-  if (!ctx) throw new Error('usePreferences must be used within a PreferencesProvider');
+  if (!ctx)
+    throw new Error("usePreferences must be used within a PreferencesProvider");
   return ctx;
 }

@@ -1,4 +1,4 @@
-import apiClient from './client';
+import apiClient from "./client";
 
 export interface ReviewSummary {
   category: string;
@@ -9,12 +9,12 @@ export interface ReviewSummary {
 export interface CreateReviewDto {
   text?: string;
   ratings: { category: string; score: number }[];
-  media?: { mediaType: 'photo' | 'video'; url: string }[];
+  media?: { mediaType: "photo" | "video"; url: string }[];
 }
 
 export interface ReviewMediaItem {
   id: number;
-  mediaType: 'photo' | 'video';
+  mediaType: "photo" | "video";
   url: string;
   displayOrder: number;
 }
@@ -47,7 +47,7 @@ export interface PaginatedReviews {
   meta: { page: number; limit: number; total: number };
 }
 
-export type ReviewSort = 'helpful' | 'recent';
+export type ReviewSort = "helpful" | "recent";
 
 export const reviewsApi = {
   getSummary: (cafeId: number) =>
@@ -57,8 +57,7 @@ export const reviewsApi = {
   listByCafe: (
     cafeId: number,
     params: { page?: number; limit?: number; sort?: ReviewSort } = {},
-  ) =>
-    apiClient.get<PaginatedReviews>(`/reviews/cafe/${cafeId}`, { params }),
+  ) => apiClient.get<PaginatedReviews>(`/reviews/cafe/${cafeId}`, { params }),
   myVoteIds: (cafeId: number) =>
     apiClient.get<number[]>(`/reviews/cafe/${cafeId}/my-votes`),
   toggleVote: (reviewId: number) =>

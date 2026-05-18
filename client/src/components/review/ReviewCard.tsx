@@ -1,36 +1,36 @@
-import { useState } from 'react';
-import { ThumbsUp, Star } from '../../utils/lucideIcon';
-import type { Review } from '../../api/reviews.api';
-import { reviewsApi } from '../../api/reviews.api';
-import { useAuth } from '../../context/AuthContext';
+import { useState } from "react";
+import { ThumbsUp, Star } from "../../utils/lucideIcon";
+import type { Review } from "../../api/reviews.api";
+import { reviewsApi } from "../../api/reviews.api";
+import { useAuth } from "../../context/AuthContext";
 
 interface Props {
   review: Review;
   /** Whether the current user has voted this review helpful (parent-managed). */
   votedByMe?: boolean;
   /** Compact mode for cafe-detail preview: line-clamp text, hide media list. */
-  variant?: 'preview' | 'full';
+  variant?: "preview" | "full";
   /** Click handler for preview cards (e.g. navigate to full list). */
   onClick?: () => void;
 }
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('id-ID', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
+  return new Date(iso).toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
   });
 }
 
 function overallScore(review: Review): number | null {
-  const overall = review.ratings?.find((r) => r.category === 'overall');
+  const overall = review.ratings?.find((r) => r.category === "overall");
   return overall ? overall.score : null;
 }
 
 export default function ReviewCard({
   review,
   votedByMe = false,
-  variant = 'full',
+  variant = "full",
   onClick,
 }: Props) {
   const { user } = useAuth();
@@ -59,15 +59,17 @@ export default function ReviewCard({
   };
 
   const stars = overallScore(review);
-  const isPreview = variant === 'preview';
-  const Wrapper: any = isPreview && onClick ? 'button' : 'div';
+  const isPreview = variant === "preview";
+  const Wrapper: any = isPreview && onClick ? "button" : "div";
 
   return (
     <Wrapper
-      type={isPreview && onClick ? 'button' : undefined}
+      type={isPreview && onClick ? "button" : undefined}
       onClick={isPreview ? onClick : undefined}
       className={`bg-white rounded-xl border border-[#F0EDE8] p-4 w-full text-left ${
-        isPreview && onClick ? 'hover:border-[#D48B3A] transition-colors cursor-pointer' : ''
+        isPreview && onClick
+          ? "hover:border-[#D48B3A] transition-colors cursor-pointer"
+          : ""
       }`}
     >
       <div className="flex items-start gap-3 mb-2">
@@ -79,13 +81,13 @@ export default function ReviewCard({
           />
         ) : (
           <div className="w-9 h-9 rounded-full bg-[#D48B3A] text-white text-sm font-bold flex items-center justify-center shrink-0">
-            {(review.user?.name ?? '?').charAt(0).toUpperCase()}
+            {(review.user?.name ?? "?").charAt(0).toUpperCase()}
           </div>
         )}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-semibold text-[#1C1C1A] text-sm truncate">
-              {review.user?.name ?? 'Anonim'}
+              {review.user?.name ?? "Anonim"}
             </span>
             {stars != null && (
               <span className="inline-flex items-center gap-0.5 text-[12px] text-[#D48B3A] font-bold">
@@ -94,14 +96,16 @@ export default function ReviewCard({
               </span>
             )}
           </div>
-          <div className="text-[11px] text-[#8A8880]">{formatDate(review.createdAt)}</div>
+          <div className="text-[11px] text-[#8A8880]">
+            {formatDate(review.createdAt)}
+          </div>
         </div>
       </div>
 
       {review.text && (
         <p
           className={`text-sm text-[#1C1C1A] leading-relaxed ${
-            isPreview ? 'line-clamp-3' : ''
+            isPreview ? "line-clamp-3" : ""
           }`}
         >
           {review.text}
@@ -111,7 +115,7 @@ export default function ReviewCard({
       {!isPreview && review.media && review.media.length > 0 && (
         <div className="mt-3 grid grid-cols-3 gap-2">
           {review.media.map((m) =>
-            m.mediaType === 'photo' ? (
+            m.mediaType === "photo" ? (
               <img
                 key={m.id}
                 src={m.url}
@@ -137,13 +141,13 @@ export default function ReviewCard({
           disabled={!user || busy}
           className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
             voted
-              ? 'bg-[#D48B3A] text-white border-[#D48B3A]'
-              : 'bg-white text-[#5C5A52] border-[#E8E4DD] hover:border-[#D48B3A]'
-          } ${!user ? 'opacity-50 cursor-not-allowed' : ''}`}
-          title={user ? 'Helpful?' : 'Login to vote'}
+              ? "bg-[#D48B3A] text-white border-[#D48B3A]"
+              : "bg-white text-[#5C5A52] border-[#E8E4DD] hover:border-[#D48B3A]"
+          } ${!user ? "opacity-50 cursor-not-allowed" : ""}`}
+          title={user ? "Helpful?" : "Login to vote"}
         >
-          <ThumbsUp size={13} fill={voted ? 'currentColor' : 'none'} />
-          {count > 0 ? count : 'Helpful'}
+          <ThumbsUp size={13} fill={voted ? "currentColor" : "none"} />
+          {count > 0 ? count : "Helpful"}
         </button>
       </div>
     </Wrapper>

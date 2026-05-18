@@ -60,7 +60,8 @@ export class SyncCafeDto {
 
   // Frontend pre-processes to final DB format:
   // { mon: "09:00-23:00", sun: "Closed" }
-  @IsOptional() @IsObject()
+  @IsOptional()
+  @IsObject()
   openingHours: Record<string, string> | null;
 
   @IsOptional() @IsString() description: string | null;
@@ -76,7 +77,9 @@ export class SyncCafeDto {
   @IsNumber() rating: number;
   @IsNumber() totalReviews: number;
 
-  @IsOptional() @ValidateNested() @Type(() => ReviewsDistributionDto)
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => ReviewsDistributionDto)
   reviewsDistribution: ReviewsDistributionDto | null;
 
   @IsOptional() @IsString() website: string | null;
@@ -87,27 +90,37 @@ export class SyncCafeDto {
   @IsOptional() @IsBoolean() claimed: boolean;
 
   // Frontend supplies enum directly (no Rp string parsing on server)
-  @IsOptional() @IsEnum(['$', '$$', '$$$'])
+  @IsOptional()
+  @IsEnum(['$', '$$', '$$$'])
   priceRange: '$' | '$$' | '$$$' | null;
 
   // Raw price label from scraper (e.g. "Rp 25", "Rp 30-50") for display.
   // Stored as-is in cafes.pricing_raw, not parsed.
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   pricingRaw: string | null;
 
   @IsArray() @IsString({ each: true }) gallery: string[];
 
-  @IsOptional() @ValidateNested() @Type(() => MenuDto)
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => MenuDto)
   menu: MenuDto | null;
 
   @IsOptional() @IsString() city: string | null;
   @IsOptional() @IsString() district: string | null;
 
-  @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => GoogleReviewDto)
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => GoogleReviewDto)
   reviews: GoogleReviewDto[];
 
   // AI-computed purpose match scores. Server replaces cafe_purpose_tags wholesale
   // for this cafe. If omitted, existing tags remain untouched.
-  @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => PurposeScoreDto)
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => PurposeScoreDto)
   purposeScores?: PurposeScoreDto[];
 }

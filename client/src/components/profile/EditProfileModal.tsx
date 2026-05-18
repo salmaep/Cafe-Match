@@ -1,19 +1,19 @@
-import { useRef, useState, type FormEvent } from 'react';
-import { usersApi } from '../../api/users.api';
-import { useAuth } from '../../context/AuthContext';
+import { useRef, useState, type FormEvent } from "react";
+import { usersApi } from "../../api/users.api";
+import { useAuth } from "../../context/AuthContext";
 
 interface Props {
   open: boolean;
   onClose: () => void;
 }
 
-type Tab = 'profile' | 'password';
+type Tab = "profile" | "password";
 
 const MAX_AVATAR_BYTES = 50_000; // 50KB after compression — fits TEXT column comfortably
 
 export default function EditProfileModal({ open, onClose }: Props) {
   const { user, refresh } = useAuth();
-  const [tab, setTab] = useState<Tab>('profile');
+  const [tab, setTab] = useState<Tab>("profile");
 
   if (!open || !user) return null;
 
@@ -39,16 +39,22 @@ export default function EditProfileModal({ open, onClose }: Props) {
 
         {/* Tabs */}
         <div className="px-5 pt-3 flex items-center gap-1 border-b border-[#F0EDE8]">
-          <TabButton active={tab === 'profile'} onClick={() => setTab('profile')}>
+          <TabButton
+            active={tab === "profile"}
+            onClick={() => setTab("profile")}
+          >
             👤 Profil
           </TabButton>
-          <TabButton active={tab === 'password'} onClick={() => setTab('password')}>
+          <TabButton
+            active={tab === "password"}
+            onClick={() => setTab("password")}
+          >
             🔒 Password
           </TabButton>
         </div>
 
         <div className="flex-1 overflow-y-auto">
-          {tab === 'profile' ? (
+          {tab === "profile" ? (
             <ProfileTab onClose={onClose} onSaved={() => refresh()} />
           ) : (
             <PasswordTab onClose={onClose} />
@@ -74,8 +80,8 @@ function TabButton({
       onClick={onClick}
       className={`px-3 py-2 text-sm font-bold transition-colors border-b-2 -mb-px ${
         active
-          ? 'text-[#D48B3A] border-[#D48B3A]'
-          : 'text-[#8A8880] border-transparent hover:text-[#1C1C1A]'
+          ? "text-[#D48B3A] border-[#D48B3A]"
+          : "text-[#8A8880] border-transparent hover:text-[#1C1C1A]"
       }`}
     >
       {children}
@@ -83,27 +89,33 @@ function TabButton({
   );
 }
 
-function ProfileTab({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
+function ProfileTab({
+  onClose,
+  onSaved,
+}: {
+  onClose: () => void;
+  onSaved: () => void;
+}) {
   const { user } = useAuth();
-  const [name, setName] = useState(user?.name || '');
+  const [name, setName] = useState(user?.name || "");
   const [avatarUrl, setAvatarUrl] = useState<string>(
-    (user as any)?.avatarUrl || '',
+    (user as any)?.avatarUrl || "",
   );
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const initials = (user?.name || '?')
+  const initials = (user?.name || "?")
     .split(/\s+/)
     .map((s) => s[0])
     .slice(0, 2)
-    .join('')
+    .join("")
     .toUpperCase();
 
   const handleFile = async (file: File) => {
-    setError('');
-    if (!file.type.startsWith('image/')) {
-      setError('File harus berupa gambar.');
+    setError("");
+    if (!file.type.startsWith("image/")) {
+      setError("File harus berupa gambar.");
       return;
     }
     try {
@@ -113,7 +125,7 @@ function ProfileTab({ onClose, onSaved }: { onClose: () => void; onSaved: () => 
         // Try once more with lower quality
         const smaller = await compressImage(file, 192, 0.65);
         if (Math.round((smaller.length * 3) / 4) > MAX_AVATAR_BYTES) {
-          setError('Gambar terlalu besar. Pilih gambar lain.');
+          setError("Gambar terlalu besar. Pilih gambar lain.");
           return;
         }
         setAvatarUrl(smaller);
@@ -121,15 +133,15 @@ function ProfileTab({ onClose, onSaved }: { onClose: () => void; onSaved: () => 
         setAvatarUrl(dataUrl);
       }
     } catch {
-      setError('Gagal memproses gambar.');
+      setError("Gagal memproses gambar.");
     }
   };
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
     if (!name.trim() || name.trim().length < 1) {
-      setError('Nama tidak boleh kosong.');
+      setError("Nama tidak boleh kosong.");
       return;
     }
     setSubmitting(true);
@@ -141,7 +153,7 @@ function ProfileTab({ onClose, onSaved }: { onClose: () => void; onSaved: () => 
       onSaved();
       onClose();
     } catch (err: any) {
-      setError(err?.response?.data?.message || 'Gagal menyimpan profil.');
+      setError(err?.response?.data?.message || "Gagal menyimpan profil.");
     } finally {
       setSubmitting(false);
     }
@@ -180,7 +192,7 @@ function ProfileTab({ onClose, onSaved }: { onClose: () => void; onSaved: () => 
           onChange={(e) => {
             const f = e.target.files?.[0];
             if (f) handleFile(f);
-            e.target.value = '';
+            e.target.value = "";
           }}
         />
         <div className="flex items-center gap-2">
@@ -196,7 +208,7 @@ function ProfileTab({ onClose, onSaved }: { onClose: () => void; onSaved: () => 
               <span className="text-[#D9D6CE]">·</span>
               <button
                 type="button"
-                onClick={() => setAvatarUrl('')}
+                onClick={() => setAvatarUrl("")}
                 className="text-xs font-semibold text-red-500 hover:underline"
               >
                 Hapus
@@ -234,7 +246,7 @@ function ProfileTab({ onClose, onSaved }: { onClose: () => void; onSaved: () => 
         </label>
         <input
           type="email"
-          value={user?.email || ''}
+          value={user?.email || ""}
           disabled
           className="w-full px-4 py-3 bg-[#F0EDE8] rounded-xl text-base text-[#8A8880] cursor-not-allowed"
         />
@@ -248,41 +260,41 @@ function ProfileTab({ onClose, onSaved }: { onClose: () => void; onSaved: () => 
         disabled={submitting}
         className="w-full py-3 bg-[#1C1C1A] text-white rounded-xl font-bold text-base hover:bg-black disabled:opacity-60 transition-colors"
       >
-        {submitting ? 'Menyimpan…' : 'Simpan Perubahan'}
+        {submitting ? "Menyimpan…" : "Simpan Perubahan"}
       </button>
     </form>
   );
 }
 
 function PasswordTab({ onClose }: { onClose: () => void }) {
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
     if (newPassword !== confirmPassword) {
-      setError('Konfirmasi password tidak cocok.');
+      setError("Konfirmasi password tidak cocok.");
       return;
     }
     if (newPassword.length < 8) {
-      setError('Password baru minimal 8 karakter.');
+      setError("Password baru minimal 8 karakter.");
       return;
     }
     setSubmitting(true);
     try {
       await usersApi.changePassword({ currentPassword, newPassword });
       setSuccess(true);
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
       setTimeout(() => onClose(), 1500);
     } catch (err: any) {
-      setError(err?.response?.data?.message || 'Gagal mengganti password.');
+      setError(err?.response?.data?.message || "Gagal mengganti password.");
     } finally {
       setSubmitting(false);
     }
@@ -326,10 +338,12 @@ function PasswordTab({ onClose }: { onClose: () => void }) {
 
       <button
         type="submit"
-        disabled={submitting || !currentPassword || !newPassword || !confirmPassword}
+        disabled={
+          submitting || !currentPassword || !newPassword || !confirmPassword
+        }
         className="w-full py-3 bg-[#1C1C1A] text-white rounded-xl font-bold text-base hover:bg-black disabled:opacity-60 transition-colors"
       >
-        {submitting ? 'Mengubah…' : 'Ubah Password'}
+        {submitting ? "Mengubah…" : "Ubah Password"}
       </button>
     </form>
   );
@@ -354,7 +368,7 @@ function PasswordField({
       </label>
       <div className="relative">
         <input
-          type={show ? 'text' : 'password'}
+          type={show ? "text" : "password"}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           required
@@ -365,9 +379,9 @@ function PasswordField({
           type="button"
           onClick={() => setShow((s) => !s)}
           className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full text-[#8A8880] hover:bg-[#E8E4DD] flex items-center justify-center text-base"
-          aria-label={show ? 'Sembunyikan password' : 'Tampilkan password'}
+          aria-label={show ? "Sembunyikan password" : "Tampilkan password"}
         >
-          {show ? '🙈' : '👁️'}
+          {show ? "🙈" : "👁️"}
         </button>
       </div>
     </div>
@@ -376,27 +390,31 @@ function PasswordField({
 
 // Compress an image client-side using canvas to keep the base64 payload under
 // the TEXT column cap. Returns a base64 data URL.
-function compressImage(file: File, maxDim: number, quality: number): Promise<string> {
+function compressImage(
+  file: File,
+  maxDim: number,
+  quality: number,
+): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onerror = () => reject(reader.error);
     reader.onload = () => {
       const img = new Image();
-      img.onerror = () => reject(new Error('image load failed'));
+      img.onerror = () => reject(new Error("image load failed"));
       img.onload = () => {
         const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
         const w = Math.round(img.width * scale);
         const h = Math.round(img.height * scale);
-        const canvas = document.createElement('canvas');
+        const canvas = document.createElement("canvas");
         canvas.width = w;
         canvas.height = h;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext("2d");
         if (!ctx) {
-          reject(new Error('canvas context unavailable'));
+          reject(new Error("canvas context unavailable"));
           return;
         }
         ctx.drawImage(img, 0, 0, w, h);
-        resolve(canvas.toDataURL('image/jpeg', quality));
+        resolve(canvas.toDataURL("image/jpeg", quality));
       };
       img.src = reader.result as string;
     };

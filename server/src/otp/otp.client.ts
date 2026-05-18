@@ -93,7 +93,9 @@ export class OtpClient {
       this.logger.error(
         `OTP request failed for ${maskPhone(phone)}: network error`,
       );
-      throw new ServiceUnavailableException('Tidak dapat menghubungi layanan OTP.');
+      throw new ServiceUnavailableException(
+        'Tidak dapat menghubungi layanan OTP.',
+      );
     }
 
     if (!res.ok) {
@@ -122,7 +124,9 @@ export class OtpClient {
       });
     } catch (err) {
       this.logger.error(`OTP verify failed (id ${otpId}): network error`);
-      throw new ServiceUnavailableException('Tidak dapat menghubungi layanan OTP.');
+      throw new ServiceUnavailableException(
+        'Tidak dapat menghubungi layanan OTP.',
+      );
     }
 
     if (!res.ok) {
@@ -170,4 +174,3 @@ export class OtpClient {
     };
   }
 }
-

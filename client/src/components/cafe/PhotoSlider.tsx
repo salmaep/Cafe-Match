@@ -1,5 +1,5 @@
-import { useRef, useState } from 'react';
-import { placeholderImage } from '../../utils/cafeImage';
+import { useRef, useState } from "react";
+import { placeholderImage } from "../../utils/cafeImage";
 
 interface Props {
   photos: { id: number; url: string; caption?: string | null }[];
@@ -43,8 +43,8 @@ export default function PhotoSlider({
   };
 
   const containerClass = fullBleed
-    ? 'relative w-full h-full overflow-hidden'
-    : 'relative aspect-[4/3] md:aspect-[16/9] w-full bg-[#F0EDE8] rounded-2xl overflow-hidden';
+    ? "relative w-full h-full overflow-hidden"
+    : "relative aspect-[4/3] md:aspect-[16/9] w-full bg-[#F0EDE8] rounded-2xl overflow-hidden";
 
   return (
     <div className={containerClass}>
@@ -56,16 +56,20 @@ export default function PhotoSlider({
         onPointerCancel={() => (movingRef.current = false)}
       >
         {photos.map((photo, i) => (
-          <div key={photo.id} className="shrink-0 w-full h-full relative cursor-pointer">
+          <div
+            key={photo.id}
+            className="shrink-0 w-full h-full relative cursor-pointer"
+          >
             <img
               src={photo.url}
               alt={photo.caption || cafeName}
               referrerPolicy="no-referrer"
               className="absolute inset-0 w-full h-full object-cover select-none"
               draggable={false}
-              loading={i === index ? 'eager' : 'lazy'}
+              loading={i === index ? "eager" : "lazy"}
               onError={(e) => {
-                (e.currentTarget as HTMLImageElement).src = placeholderImage(cafeId);
+                (e.currentTarget as HTMLImageElement).src =
+                  placeholderImage(cafeId);
               }}
             />
           </div>
@@ -107,7 +111,7 @@ export default function PhotoSlider({
                 type="button"
                 onClick={() => setIndex(i)}
                 className={`h-1.5 rounded-full transition-all ${
-                  i === index ? 'bg-white w-5' : 'bg-white/50 w-1.5'
+                  i === index ? "bg-white w-5" : "bg-white/50 w-1.5"
                 }`}
                 aria-label={`Go to photo ${i + 1}`}
               />

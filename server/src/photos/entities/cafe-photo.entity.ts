@@ -38,7 +38,12 @@ export class CafePhoto {
   @Column({ length: 255, nullable: true })
   caption: string;
 
-  @Column({ name: 'display_order', type: 'smallint', unsigned: true, default: 0 })
+  @Column({
+    name: 'display_order',
+    type: 'smallint',
+    unsigned: true,
+    default: 0,
+  })
   displayOrder: number;
 
   @Column({ name: 'is_primary', default: false })

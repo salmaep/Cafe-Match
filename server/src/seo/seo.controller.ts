@@ -12,11 +12,12 @@ interface CafeRow {
   updatedAt: Date;
 }
 
-const STATIC_ROUTES: { path: string; changefreq: string; priority: string }[] = [
-  { path: '/', changefreq: 'daily', priority: '1.0' },
-  { path: '/discover', changefreq: 'daily', priority: '0.8' },
-  { path: '/trending', changefreq: 'daily', priority: '0.8' },
-];
+const STATIC_ROUTES: { path: string; changefreq: string; priority: string }[] =
+  [
+    { path: '/', changefreq: 'daily', priority: '1.0' },
+    { path: '/discover', changefreq: 'daily', priority: '0.8' },
+    { path: '/trending', changefreq: 'daily', priority: '0.8' },
+  ];
 
 @Controller()
 export class SeoController {
@@ -54,9 +55,10 @@ export class SeoController {
 
     for (const cafe of cafes) {
       const slug = cafeSlugOrFallback(cafe);
-      const lastmod = cafe.updatedAt instanceof Date
-        ? cafe.updatedAt.toISOString()
-        : new Date(cafe.updatedAt).toISOString();
+      const lastmod =
+        cafe.updatedAt instanceof Date
+          ? cafe.updatedAt.toISOString()
+          : new Date(cafe.updatedAt).toISOString();
       parts.push('  <url>');
       parts.push(`    <loc>${escapeXml(`${baseUrl}/cafe/${slug}`)}</loc>`);
       parts.push(`    <lastmod>${lastmod}</lastmod>`);
@@ -92,7 +94,8 @@ export class SeoController {
   }
 
   private resolveBaseUrl(): string {
-    const raw = this.config.get<string>('PUBLIC_WEB_URL') ?? 'https://salma.imola.ai';
+    const raw =
+      this.config.get<string>('PUBLIC_WEB_URL') ?? 'https://salma.imola.ai';
     return raw.replace(/\/+$/, '');
   }
 }

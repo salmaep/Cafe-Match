@@ -1,20 +1,20 @@
-import apiClient from './client';
+import apiClient from "./client";
 
 export type AchievementCategory =
-  | 'visit_purpose'
-  | 'visit_general'
-  | 'social'
-  | 'streak'
-  | 'special';
+  | "visit_purpose"
+  | "visit_general"
+  | "social"
+  | "streak"
+  | "special";
 
 export type AchievementTier =
-  | 'bronze_1'
-  | 'bronze_2'
-  | 'silver_1'
-  | 'silver_2'
-  | 'gold_1'
-  | 'gold_2'
-  | 'platinum';
+  | "bronze_1"
+  | "bronze_2"
+  | "silver_1"
+  | "silver_2"
+  | "gold_1"
+  | "gold_2"
+  | "platinum";
 
 export interface Achievement {
   id: number;
@@ -36,6 +36,6 @@ export interface UserAchievement extends Achievement {
 }
 
 export const achievementsApi = {
-  all: () => apiClient.get<Achievement[]>('/achievements'),
-  mine: () => apiClient.get<UserAchievement[]>('/achievements/me'),
+  all: () => apiClient.get<Achievement[]>("/achievements"),
+  mine: () => apiClient.get<UserAchievement[]>("/achievements/me"),
 };

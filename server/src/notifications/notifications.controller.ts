@@ -1,4 +1,13 @@
-import { Controller, Get, Put, Post, Param, Query, Body, ParseIntPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Put,
+  Post,
+  Param,
+  Query,
+  Body,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { NotificationsService } from './notifications.service';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { IsString } from 'class-validator';
@@ -16,7 +25,11 @@ export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
 
   @Get()
-  list(@CurrentUser() user: any, @Query('page') page?: number, @Query('limit') limit?: number) {
+  list(
+    @CurrentUser() user: any,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
     return this.notificationsService.list(user.id, page || 1, limit || 30);
   }
 
@@ -37,6 +50,10 @@ export class NotificationsController {
 
   @Post('register-token')
   registerToken(@CurrentUser() user: any, @Body() dto: RegisterTokenDto) {
-    return this.notificationsService.registerToken(user.id, dto.token, dto.platform);
+    return this.notificationsService.registerToken(
+      user.id,
+      dto.token,
+      dto.platform,
+    );
   }
 }

@@ -1,4 +1,9 @@
-import { Injectable, ForbiddenException, ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  ForbiddenException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { Review } from './entities/review.entity';
@@ -31,7 +36,11 @@ export class ReviewsService {
     try {
       await this.meiliCafes.indexCafe(cafeId);
     } catch (err: any) {
-      console.warn('[reviews] meili reindex failed for cafe', cafeId, err?.message);
+      console.warn(
+        '[reviews] meili reindex failed for cafe',
+        cafeId,
+        err?.message,
+      );
     }
   }
 
@@ -49,8 +58,11 @@ export class ReviewsService {
   }
 
   async create(userId: number, cafeId: number, dto: CreateReviewDto) {
-    const existing = await this.reviewRepo.findOne({ where: { userId, cafeId } });
-    if (existing) throw new ConflictException('Kamu sudah pernah review cafe ini');
+    const existing = await this.reviewRepo.findOne({
+      where: { userId, cafeId },
+    });
+    if (existing)
+      throw new ConflictException('Kamu sudah pernah review cafe ini');
 
     const review = this.reviewRepo.create({
       userId,
@@ -62,7 +74,11 @@ export class ReviewsService {
 
     if (dto.ratings?.length) {
       const ratings = dto.ratings.map((r) =>
-        this.ratingRepo.create({ reviewId: savedId, category: r.category, score: r.score }),
+        this.ratingRepo.create({
+          reviewId: savedId,
+          category: r.category,
+          score: r.score,
+        }),
       );
       await this.ratingRepo.save(ratings);
     }
@@ -83,7 +99,11 @@ export class ReviewsService {
     // Trigger review achievements
     try {
       const total = await this.reviewRepo.count({ where: { userId } });
-      await this.achievementsService.checkSocialAchievements(userId, 'reviews', total);
+      await this.achievementsService.checkSocialAchievements(
+        userId,
+        'reviews',
+        total,
+      );
     } catch (err: any) {
       console.warn('[reviews] achievement check failed:', err?.message);
     }
@@ -106,9 +126,13 @@ export class ReviewsService {
   }
 
   async update(userId: number, reviewId: number, dto: UpdateReviewDto) {
-    const review = await this.reviewRepo.findOne({ where: { id: reviewId }, relations: ['ratings'] });
+    const review = await this.reviewRepo.findOne({
+      where: { id: reviewId },
+      relations: ['ratings'],
+    });
     if (!review) throw new NotFoundException('Review tidak ditemukan');
-    if (review.userId !== userId) throw new ForbiddenException('Bukan review kamu');
+    if (review.userId !== userId)
+      throw new ForbiddenException('Bukan review kamu');
 
     review.text = dto.text ?? null;
     await this.reviewRepo.save(review);
@@ -117,7 +141,11 @@ export class ReviewsService {
     await this.ratingRepo.delete({ reviewId });
     if (dto.ratings?.length) {
       const ratings = dto.ratings.map((r) =>
-        this.ratingRepo.create({ reviewId, category: r.category, score: r.score }),
+        this.ratingRepo.create({
+          reviewId,
+          category: r.category,
+          score: r.score,
+        }),
       );
       await this.ratingRepo.save(ratings);
     }
@@ -152,7 +180,8 @@ export class ReviewsService {
   async delete(userId: number, reviewId: number) {
     const review = await this.reviewRepo.findOne({ where: { id: reviewId } });
     if (!review) throw new NotFoundException('Review tidak ditemukan');
-    if (review.userId !== userId) throw new ForbiddenException('Bukan review kamu');
+    if (review.userId !== userId)
+      throw new ForbiddenException('Bukan review kamu');
     const cafeId = review.cafeId;
     await this.reviewRepo.remove(review);
     try {
@@ -276,8 +305,14 @@ export class ReviewsService {
 
   /** Facility key (from review category) → cafe_features.name */
   private readonly FACILITY_REVIEW_KEYS = new Set([
-    'wifi', 'power_outlet', 'mushola', 'parking',
-    'kid_friendly', 'quiet_atmosphere', 'large_tables', 'outdoor_area',
+    'wifi',
+    'power_outlet',
+    'mushola',
+    'parking',
+    'kid_friendly',
+    'quiet_atmosphere',
+    'large_tables',
+    'outdoor_area',
   ]);
 
   /** Min reviewers agreeing for a signal to be applied */

@@ -24,7 +24,7 @@ import Seo from "../components/seo/Seo";
 
 const AD_INTERVAL = 5;
 const MAX_ADS = 2;
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 7;
 
 interface Filters {
   q: string;
@@ -34,6 +34,16 @@ interface Filters {
 
 // Radius pill options matching mobile native (0.5 / 1 / 2 km in meters)
 const RADIUS_PILLS = [500, 1000, 2000];
+
+function CafeCardSkeleton() {
+  return (
+    <div className="rounded-lg border border-gray-100 bg-white p-3 animate-pulse">
+      <div className="aspect-video rounded-md bg-gray-100 mb-2" />
+      <div className="h-4 w-2/3 bg-gray-100 rounded mb-1" />
+      <div className="h-3 w-1/2 bg-gray-100 rounded" />
+    </div>
+  );
+}
 
 export default function HomePage() {
   const geo = useGeolocation();
@@ -55,6 +65,15 @@ export default function HomePage() {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [radiusSuggestion, setRadiusSuggestion] = useState<{
+    suggested: number | null;
+    totalIfExpanded: number | null;
+  }>({ suggested: null, totalIfExpanded: null });
+  const [isSemanticMode, setIsSemanticMode] = useState(false);
+  // When user clicks "Perluas radius", we switch off AI rerank for the next
+  // fetch so they can browse the full result set via infinite scroll. Resets
+  // on next user search.
+  const [forceListMode, setForceListMode] = useState(false);
   const [center, setCenter] = useState<[number, number] | null>(null);
   // Track whether the current center came from GPS or a manual user action
   // (map click / fallback button). When `gps`, GPS updates may overwrite center;
@@ -145,6 +164,7 @@ export default function HomePage() {
     async (targetPage: number) => {
       if (!center) return;
       setLoading(true);
+      const hasTextQuery = filters.q.trim().length > 0 && !forceListMode;
       try {
         const params: SearchParams = {
           lat: center[0],
@@ -157,20 +177,36 @@ export default function HomePage() {
         if (filters.q) params.q = filters.q;
         if (filters.facilities.length > 0) params.facilities = filters.facilities;
         if (filters.priceRange) params.priceRange = filters.priceRange;
-        const res = await cafesApi.search(params);
-        const incoming = res.data.data ?? [];
-        const totalCount = res.data.meta?.total ?? incoming.length;
-        // Append on page > 1, replace on page 1 (fresh search).
-        setCafes((prev) => (targetPage === 1 ? incoming : [...prev, ...incoming]));
-        setTotal(totalCount);
+
+        if (hasTextQuery) {
+          // Semantic path: AI-rewrite + rerank. Returns a single curated page
+          // (no infinite scroll), plus a radius suggestion when hits are sparse.
+          const res = await cafesApi.semanticSearch(params);
+          setCafes(res.data);
+          setTotal(res.meta?.total ?? res.data.length);
+          setRadiusSuggestion({
+            suggested: res.meta?.suggestedRadius ?? null,
+            totalIfExpanded: res.meta?.totalIfExpanded ?? null,
+          });
+          setIsSemanticMode(true);
+        } else {
+          const res = await cafesApi.search(params);
+          const incoming = res.data.data ?? [];
+          const totalCount = res.data.meta?.total ?? incoming.length;
+          setCafes((prev) => (targetPage === 1 ? incoming : [...prev, ...incoming]));
+          setTotal(totalCount);
+          setRadiusSuggestion({ suggested: null, totalIfExpanded: null });
+          setIsSemanticMode(false);
+        }
       } catch {
         if (targetPage === 1) setCafes([]);
         setTotal(0);
+        setRadiusSuggestion({ suggested: null, totalIfExpanded: null });
       } finally {
         setLoading(false);
       }
     },
-    [center, radius, purposeId, filters],
+    [center, radius, purposeId, filters, forceListMode],
   );
 
   // Reset to page 1 + refetch whenever search inputs change.
@@ -209,7 +245,7 @@ export default function HomePage() {
     };
   }, [center, radius, purposeId, filters]);
 
-  const hasMore = cafes.length < total;
+  const hasMore = !isSemanticMode && cafes.length < total;
 
   const loadMore = () => {
     if (loading || !hasMore) return;
@@ -239,7 +275,10 @@ export default function HomePage() {
 
   const parsedCoords = parseCoords(coordInput);
 
-  const setQ = (q: string) => setFilters((prev) => ({ ...prev, q }));
+  const setQ = (q: string) => {
+    setForceListMode(false);
+    setFilters((prev) => ({ ...prev, q }));
+  };
   const setFacilities = (facilities: string[]) =>
     setFilters((prev) => ({ ...prev, facilities }));
   const setPriceRange = (priceRange: string) =>
@@ -262,6 +301,10 @@ export default function HomePage() {
     setFilters((prev) => ({ ...prev, facilities: features }));
   };
 
+  // Derived from current inputs (not post-fetch state) so the loading label
+  // reflects what the NEXT request will use, not the previous one.
+  const willUseSemantic = filters.q.trim().length > 0 && !forceListMode;
+
   // Feature names linked to the currently active purpose — drive the ⭐
   // marker on FilterPanel chips so users see why those are pre-toggled.
   const autoSelectedFromPurpose: string[] = (() => {
@@ -275,6 +318,7 @@ export default function HomePage() {
   // Debounce mobile search input
   useEffect(() => {
     const t = setTimeout(() => {
+      setForceListMode(false);
       setFilters((prev) => ({ ...prev, q: mobileQuery }));
     }, 350);
     return () => clearTimeout(t);
@@ -705,7 +749,11 @@ export default function HomePage() {
                 </button>
               </div>
               <div className="text-sm text-gray-500 min-w-0 truncate">
-                {loading ? "Searching..." : `${total} cafes found`}
+                {loading
+                  ? willUseSemantic
+                    ? 'Mencari dengan AI…'
+                    : 'Mencari…'
+                  : `${total} cafes found`}
               </div>
             </div>
             {!loading && cafes.length > 0 && (
@@ -720,7 +768,32 @@ export default function HomePage() {
           </div>
 
           <div className="flex-1 overflow-y-auto pb-4">
-            {viewMode === 'grid' ? (
+            {radiusSuggestion.suggested != null &&
+              radiusSuggestion.suggested > radius &&
+              cafes.length < 3 && (
+                <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm flex items-center justify-between gap-3">
+                  <span className="text-amber-900">
+                    Hasil terbatas dalam {(radius / 1000).toFixed(1)} km. Perluas radius untuk melihat lebih banyak cafe — scroll untuk memuat hasil tambahan.
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = radiusSuggestion.suggested!;
+                      setRadiusSuggestion({ suggested: null, totalIfExpanded: null });
+                      setForceListMode(true);
+                      setRadius(next);
+                    }}
+                    className="shrink-0 rounded-md bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-700"
+                  >
+                    Perluas radius
+                  </button>
+                </div>
+              )}
+            {loading && cafes.length === 0 ? (
+              <div className={viewMode === 'grid' ? 'grid grid-cols-1 xl:grid-cols-2 gap-3' : 'space-y-2'}>
+                {[0, 1, 2].map((i) => <CafeCardSkeleton key={i} />)}
+              </div>
+            ) : viewMode === 'grid' ? (
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
                 {cafes.flatMap((cafe, i) => {
                   const slotIdx = Math.floor(i / AD_INTERVAL);

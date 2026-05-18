@@ -70,7 +70,7 @@ export class SemanticSearchDto {
   @Type(() => Number)
   @IsPositive()
   @Max(30)
-  limit?: number = 10;
+  limit?: number = 7;
 
   @IsOptional()
   @IsIn(['distance', 'trending', 'rating', 'newest'])

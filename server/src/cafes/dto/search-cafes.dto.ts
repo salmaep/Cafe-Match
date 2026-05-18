@@ -66,7 +66,7 @@ export class SearchCafesDto {
   @Type(() => Number)
   @IsPositive()
   @Max(2000) // DEV: raised from 100 for testing — show all ~553 cafes on map
-  limit?: number = 50;
+  limit?: number = 7;
 
   // 'trending' = sort by engagement+rating, 'distance' = nearest first (default).
   @IsOptional()

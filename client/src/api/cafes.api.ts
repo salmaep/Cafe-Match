@@ -121,6 +121,23 @@ export interface PaginatedGoogleReviews {
   meta: { page: number; limit: number; total: number };
 }
 
+export interface SemanticSearchMeta {
+  total: number;
+  page: number;
+  limit: number;
+  aiUsed: boolean;
+  cached: boolean;
+  searchedRadius: number;
+  suggestedRadius: number | null;
+  totalIfExpanded: number | null;
+  parsed: unknown;
+}
+
+export interface SemanticSearchResult {
+  data: Cafe[];
+  meta: SemanticSearchMeta;
+}
+
 export const cafesApi = {
   search: async (params: SearchParams) => {
     const { facilities, ...rest } = params;
@@ -137,6 +154,22 @@ export const cafesApi = {
         ...res.data,
         data: (res.data?.data ?? []).map(normalizeHit),
       } as PaginatedResponse<Cafe>,
+    };
+  },
+
+  semanticSearch: async (params: SearchParams): Promise<SemanticSearchResult> => {
+    const { facilities, ...rest } = params;
+    const queryParams: Record<string, unknown> = { ...rest };
+    if (facilities && facilities.length > 0) {
+      queryParams.facilities = facilities.join(',');
+    }
+    const res = await apiClient.get<any>('/cafes/semantic-search', {
+      params: queryParams,
+    });
+    const hits = (res.data?.data ?? []).map((c: MeiliCafeHit) => normalizeHit(c));
+    return {
+      data: hits,
+      meta: res.data?.meta,
     };
   },
 

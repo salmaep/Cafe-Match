@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { MeiliCafesService, CafeHit } from '../meili/meili-cafes.service';
 import { QueryRewriterService } from './query-rewriter.service';
 import { RerankerService } from './reranker.service';
@@ -14,11 +14,20 @@ export interface SemanticSearchResult {
     aiUsed: boolean;
     cached: boolean;
     parsed: ParsedQuery | null;
+    searchedRadius: number;
+    suggestedRadius: number | null;
+    totalIfExpanded: number | null;
   };
 }
 
+const MIN_RESULTS_FOR_EXPAND = 3;
+const EXPAND_FACTOR = 5;
+const MAX_EXPAND_RADIUS = 50000;
+
 @Injectable()
 export class SemanticSearchService {
+  private readonly logger = new Logger(SemanticSearchService.name);
+
   constructor(
     private readonly meili: MeiliCafesService,
     private readonly rewriter: QueryRewriterService,
@@ -32,7 +41,7 @@ export class SemanticSearchService {
       lat,
       lng,
       radius = 2000,
-      limit = 10,
+      limit = 7,
       page = 1,
       sort,
       purposeId,
@@ -55,6 +64,9 @@ export class SemanticSearchService {
           aiUsed: cached.parsed !== null,
           cached: true,
           parsed: cached.parsed,
+          searchedRadius: radius,
+          suggestedRadius: null,
+          totalIfExpanded: null,
         },
       };
     }
@@ -74,8 +86,9 @@ export class SemanticSearchService {
           : undefined;
     const priceRange = dtoPrice ?? parsed?.priceRange ?? undefined;
 
-    const meiliResult = await this.meili.searchCafes({
-      q: parsed?.keywords ?? q,
+    const meiliQ = parsed?.keywords ?? q;
+    let meiliResult = await this.meili.searchCafes({
+      q: meiliQ,
       lat,
       lng,
       radius,
@@ -87,12 +100,78 @@ export class SemanticSearchService {
       limit: 30,
     });
 
+    // Safety net: AI keywords may not match Meili's full-text index (e.g. for
+    // "near me" queries where keywords end up as "terdekat"). When we have geo
+    // params, retry once with empty q so geo filter + sort still apply.
+    if (!meiliResult.data.length && meiliQ && lat != null && lng != null) {
+      this.logger.debug(
+        `Empty result for q="${meiliQ}", retrying with empty q (geo-only)`,
+      );
+      meiliResult = await this.meili.searchCafes({
+        q: '',
+        lat,
+        lng,
+        radius,
+        facilities,
+        priceRange,
+        purposeId,
+        sort,
+        page: 1,
+        limit: 30,
+      });
+    }
+
     let hits: CafeHit[] = meiliResult.data;
+
+    // Radius UX: when results are sparse and geo is set, probe a larger radius
+    // to tell the client how much wider it needs to go for more hits. Probe is
+    // cheap (limit=1) — we only want the total count, not the documents.
+    let suggestedRadius: number | null = null;
+    let totalIfExpanded: number | null = null;
+    if (
+      hits.length < MIN_RESULTS_FOR_EXPAND &&
+      lat != null &&
+      lng != null &&
+      radius < MAX_EXPAND_RADIUS
+    ) {
+      const expandedRadius = Math.min(radius * EXPAND_FACTOR, MAX_EXPAND_RADIUS);
+      try {
+        const probe = await this.meili.searchCafes({
+          q: meiliQ,
+          lat,
+          lng,
+          radius: expandedRadius,
+          facilities,
+          priceRange,
+          purposeId,
+          sort,
+          page: 1,
+          limit: 1,
+        });
+        const probeTotal = probe.meta?.total ?? 0;
+        if (probeTotal > hits.length) {
+          suggestedRadius = expandedRadius;
+          totalIfExpanded = probeTotal;
+        }
+      } catch (err) {
+        this.logger.debug(`Radius probe failed (non-fatal): ${String(err)}`);
+      }
+    }
 
     if (!hits.length) {
       return {
         data: [],
-        meta: { total: 0, page, limit: topN, aiUsed, cached: false, parsed },
+        meta: {
+          total: 0,
+          page,
+          limit: topN,
+          aiUsed,
+          cached: false,
+          parsed,
+          searchedRadius: radius,
+          suggestedRadius,
+          totalIfExpanded,
+        },
       };
     }
 
@@ -110,12 +189,22 @@ export class SemanticSearchService {
 
     return {
       data: hits,
-      meta: { total: hits.length, page, limit: topN, aiUsed, cached: false, parsed },
+      meta: {
+        total: hits.length,
+        page,
+        limit: topN,
+        aiUsed,
+        cached: false,
+        parsed,
+        searchedRadius: radius,
+        suggestedRadius,
+        totalIfExpanded,
+      },
     };
   }
 
   async fallbackSearch(dto: SemanticSearchDto): Promise<SemanticSearchResult> {
-    const { q, lat, lng, radius = 2000, limit = 10, page = 1, sort, purposeId, priceRange, facilities } = dto;
+    const { q, lat, lng, radius = 2000, limit = 7, page = 1, sort, purposeId, priceRange, facilities } = dto;
     const topN = Math.min(limit, 30);
     const result = await this.meili.searchCafes({
       q,
@@ -131,7 +220,17 @@ export class SemanticSearchService {
     });
     return {
       data: result.data,
-      meta: { total: result.meta.total, page, limit: topN, aiUsed: false, cached: false, parsed: null },
+      meta: {
+        total: result.meta.total,
+        page,
+        limit: topN,
+        aiUsed: false,
+        cached: false,
+        parsed: null,
+        searchedRadius: radius,
+        suggestedRadius: null,
+        totalIfExpanded: null,
+      },
     };
   }
 }

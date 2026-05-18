@@ -9,6 +9,7 @@ import type { Cafe } from '../../types';
 import { formatDistance } from '../../utils/haversine';
 import { cafeUrl } from '../../utils/cafeUrl';
 import { getCafeImage, placeholderImage } from '../../utils/cafeImage';
+import CafeClusterMarkers from './CafeClusterMarkers';
 
 const MAP_ID = import.meta.env.VITE_GOOGLE_MAPS_MAP_ID || undefined;
 
@@ -109,73 +110,6 @@ function UserPin() {
   );
 }
 
-function CafePin() {
-  return (
-    <svg width="28" height="38" viewBox="0 0 28 38" xmlns="http://www.w3.org/2000/svg">
-      <path
-        d="M14 0C6.27 0 0 6.27 0 14c0 10.5 14 24 14 24s14-13.5 14-24C28 6.27 21.73 0 14 0z"
-        fill="#d97706"
-      />
-      <circle cx="14" cy="13" r="7" fill="#fff" />
-      <text x="14" y="17" textAnchor="middle" fontSize="13" fill="#d97706">
-        ☕
-      </text>
-    </svg>
-  );
-}
-
-function PromotedCafePin() {
-  return (
-    <div style={{ position: 'relative' }}>
-      <div
-        style={{
-          position: 'absolute',
-          top: -12,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          zIndex: 10,
-          background: 'linear-gradient(135deg,#ef4444,#dc2626)',
-          color: '#fff',
-          fontSize: 8,
-          fontWeight: 800,
-          padding: '1px 5px',
-          borderRadius: 6,
-          letterSpacing: 0.5,
-          whiteSpace: 'nowrap',
-          boxShadow: '0 2px 4px rgba(239,68,68,0.5)',
-          border: '1.5px solid #fff',
-          animation: 'cm-newbounce 2s ease-in-out infinite',
-        }}
-      >
-        NEW!
-      </div>
-      <svg
-        width="28"
-        height="38"
-        viewBox="0 0 28 38"
-        xmlns="http://www.w3.org/2000/svg"
-        style={{ filter: 'drop-shadow(0 2px 4px rgba(239,68,68,0.4))' }}
-      >
-        <defs>
-          <linearGradient id="cm-newGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#f87171" />
-            <stop offset="100%" stopColor="#dc2626" />
-          </linearGradient>
-        </defs>
-        <path
-          d="M14 0C6.27 0 0 6.27 0 14c0 10.5 14 24 14 24s14-13.5 14-24C28 6.27 21.73 0 14 0z"
-          fill="url(#cm-newGrad)"
-        />
-        <circle cx="14" cy="13" r="7" fill="#fff" />
-        <text x="14" y="17" textAnchor="middle" fontSize="13" fontWeight="bold" fill="#dc2626">
-          ☕
-        </text>
-      </svg>
-      <style>{`@keyframes cm-newbounce{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-3px)}}`}</style>
-    </div>
-  );
-}
-
 // ── Main map view ────────────────────────────────────────────────────────────
 export default function MapView({ center, cafes, radius, onMapClick }: Props) {
   const [showCafePins, setShowCafePins] = useState(true);
@@ -236,21 +170,12 @@ export default function MapView({ center, cafes, radius, onMapClick }: Props) {
           </InfoWindow>
         )}
 
-        {showCafePins &&
-          cafes.map((cafe) => {
-            const isPromoted =
-              cafe.hasActivePromotion && cafe.activePromotionType === 'new_cafe';
-            return (
-              <AdvancedMarker
-                key={cafe.id}
-                position={{ lat: cafe.latitude, lng: cafe.longitude }}
-                zIndex={cafe.hasActivePromotion ? 1000 : undefined}
-                onClick={() => setActiveCafeId(cafe.id)}
-              >
-                {isPromoted ? <PromotedCafePin /> : <CafePin />}
-              </AdvancedMarker>
-            );
-          })}
+        {showCafePins && (
+          <CafeClusterMarkers
+            cafes={cafes}
+            onCafeClick={(id) => setActiveCafeId(id)}
+          />
+        )}
 
         {activeCafe && (
           <InfoWindow

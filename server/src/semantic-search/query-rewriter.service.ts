@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-base-to-string */
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { MeridianClient } from './meridian.client';
@@ -45,7 +47,9 @@ export class QueryRewriterService implements OnModuleInit {
 
       const parsed = this.parseJsonOutput(resp.content);
       if (!parsed) {
-        this.logger.warn(`Query rewriter returned unparseable JSON: ${resp.content}`);
+        this.logger.warn(
+          `Query rewriter returned unparseable JSON: ${resp.content}`,
+        );
         return null;
       }
 
@@ -61,7 +65,9 @@ export class QueryRewriterService implements OnModuleInit {
       return result;
     } catch (err) {
       const reason = err instanceof Error ? err.message : String(err);
-      this.logger.warn(`Query rewriter skipped → fallback to raw Meili. Reason: ${reason}`);
+      this.logger.warn(
+        `Query rewriter skipped → fallback to raw Meili. Reason: ${reason}`,
+      );
       return null;
     }
   }
@@ -125,16 +131,47 @@ ALLOWED_FACILITIES: [${facilities}]
 ALLOWED_PURPOSES: [${purposes || 'none'}]
 
 Rules:
-- keywords: 1-5 words max, best fallback for full-text search
-- facilities: only values from ALLOWED_FACILITIES; empty array if none match
-- purposeSlug: one value from ALLOWED_PURPOSES or null
-- priceRange: "$" = budget, "$$" = mid, "$$$" = premium, or null
-- intent: short English label like "remote_work", "date_night", "group_meeting"
-- Output ONLY the JSON object, nothing else`;
+- keywords: 1-5 words for Meili full-text search. Should match cafe name, menu, or review text.
+  IMPORTANT: If the query is purely locational with no specific attribute (e.g. "terdekat",
+  "dekat sini", "near me", "around here", "di sekitar saya", "yang terdekat"), set keywords = "".
+  IMPORTANT: If the query mentions a venue type only (e.g. "restoran", "tempat makan") but no
+  specific attribute, set keywords = "" or to the short intent label only — DO NOT pass the
+  generic word as keywords because our index only contains cafes and the word will not match.
+- facilities: only values from ALLOWED_FACILITIES; empty array if none match.
+- purposeSlug: one value from ALLOWED_PURPOSES or null.
+- priceRange: First normalize any IDR amount in the query to an integer:
+    "50.000", "50000", "50k", "50rb"           → 50000
+    "100.000", "100k", "100rb"                 → 100000
+    "1jt", "1.000.000", "1 juta"               → 1000000
+  Then map per-person budget to tier:
+    ≤ 50000             → "$"
+    50001–100000        → "$$"
+    > 100000            → "$$$"
+  Words: "murah", "budget" without number → "$"; "premium", "mewah" → "$$$". No amount → null.
+- intent: short snake_case English label like "remote_work", "date_night", "family_dining",
+  "group_meeting", "nearby_browse".
+
+Examples:
+Query: "cafe cozy buat kerja remote ada wifi outlet"
+→ {"keywords":"cozy work","facilities":["Wifi","Cozy"],"purposeSlug":null,"priceRange":null,"intent":"remote_work"}
+
+Query: "terdekat dari sini"
+→ {"keywords":"","facilities":[],"purposeSlug":null,"priceRange":null,"intent":"nearby_browse"}
+
+Query: "Cari restoran yang cocok buat keluarga dengan budget 50.000"
+→ {"keywords":"","facilities":[],"purposeSlug":null,"priceRange":"$","intent":"family_dining"}
+
+Query: "kafe premium dengan budget 200rb"
+→ {"keywords":"","facilities":[],"purposeSlug":null,"priceRange":"$$$","intent":"premium_dining"}
+
+Output ONLY the JSON object, nothing else.`;
   }
 
   private parseJsonOutput(raw: string): Record<string, unknown> | null {
-    const cleaned = raw.replace(/```[a-z]*\n?/g, '').replace(/```/g, '').trim();
+    const cleaned = raw
+      .replace(/```[a-z]*\n?/g, '')
+      .replace(/```/g, '')
+      .trim();
     const start = cleaned.indexOf('{');
     const end = cleaned.lastIndexOf('}');
     if (start === -1 || end === -1) return null;
@@ -148,7 +185,10 @@ Rules:
   private filterFacilities(raw: unknown): string[] {
     if (!Array.isArray(raw)) return [];
     return (raw as unknown[])
-      .filter((f): f is string => typeof f === 'string' && this.allowedFacilitySet.has(f))
+      .filter(
+        (f): f is string =>
+          typeof f === 'string' && this.allowedFacilitySet.has(f),
+      )
       .slice(0, 10);
   }
 

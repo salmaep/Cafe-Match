@@ -44,9 +44,9 @@ export class MeridianClient {
     ).replace(/\/+$/, '');
     this.apiKey = config.get<string>('MERIDIAN_API_KEY', '') ?? '';
     this.model = config.get<string>('AI_MODEL', 'claude-haiku-4-5-20251001');
-    this.maxTokens = config.get<number>('AI_MAX_TOKENS_PER_REQUEST', 800);
+    this.maxTokens = Number(config.get('AI_MAX_TOKENS_PER_REQUEST', 800));
     // Meridian's Claude Code SDK cold-start can take 10–30s — keep timeout generous.
-    this.timeoutMs = config.get<number>('AI_REQUEST_TIMEOUT_MS', 30000);
+    this.timeoutMs = Number(config.get('AI_REQUEST_TIMEOUT_MS', 30000));
 
     if (!this.apiKey) {
       this.logger.warn(

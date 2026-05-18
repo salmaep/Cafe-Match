@@ -12,8 +12,10 @@ export class TokenBudgetService {
     private readonly dataSource: DataSource,
     private readonly config: ConfigService,
   ) {
-    this.dailyLimit = config.get<number>('AI_DAILY_TOKEN_LIMIT', 200000);
-    this.maxPerRequest = config.get<number>('AI_MAX_TOKENS_PER_REQUEST', 800);
+    // ConfigService returns string for values from .env — cast explicitly,
+    // otherwise `used + maxPerRequest` becomes string concatenation.
+    this.dailyLimit = Number(config.get('AI_DAILY_TOKEN_LIMIT', 200000));
+    this.maxPerRequest = Number(config.get('AI_MAX_TOKENS_PER_REQUEST', 800));
   }
 
   async canSpend(): Promise<boolean> {

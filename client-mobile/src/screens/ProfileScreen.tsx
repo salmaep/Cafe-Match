@@ -39,7 +39,7 @@ export default function ProfileScreen() {
   const handleLogout = () => {
     Alert.alert(
       'Logout',
-      'Yakin mau logout? Semua data lokal akan dihapus.',
+      'Yakin mau logout? Semua data lokal bakal kehapus.',
       [
         { text: 'Batal', style: 'cancel' },
         {
@@ -67,15 +67,15 @@ export default function ProfileScreen() {
       <View style={styles.container}>
         <View style={styles.centered}>
           <CafeMatchLogo size={40} />
-          <Text style={styles.guestTitle}>Welcome to CafeMatch</Text>
+          <Text style={styles.guestTitle}>Selamat datang di CafeMatch</Text>
           <Text style={styles.guestSubtitle}>
-            Login to access your profile and saved cafes
+            Login dulu buat akses profil sama cafe yang udah kamu simpen
           </Text>
           <TouchableOpacity
             style={styles.loginBtn}
             onPress={() => navigation.navigate('AuthModal')}
           >
-            <Text style={styles.loginBtnText}>Login / Register</Text>
+            <Text style={styles.loginBtnText}>Masuk / Daftar</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -176,7 +176,7 @@ export default function ProfileScreen() {
           <View>
             <Text style={styles.cardTitle}>Ajak teman ke CafeMatch</Text>
             <Text style={styles.cardSubtitle}>
-              Share friend code untuk saling check-in
+              Share friend code biar bisa saling check-in
             </Text>
           </View>
 
@@ -251,17 +251,17 @@ export default function ProfileScreen() {
       </View>
 
       {/* Cafe Saya */}
-      <Section title="CAFE SAYA">
+      <Section title="CAFE KAMU">
         <MenuItem
           icon="❤️"
-          label="My Favorites"
+          label="Favorit Kamu"
           subtitle="Cafe yang kamu suka"
           onPress={() => navigation.navigate('Favorites')}
         />
         <MenuItem
           icon="🔖"
-          label="My Bookmarks"
-          subtitle="Untuk dikunjungi nanti"
+          label="Bookmark Kamu"
+          subtitle="Buat dikunjungi nanti"
           onPress={() => navigation.navigate('Bookmarks')}
         />
         <MenuItem

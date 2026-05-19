@@ -27,7 +27,7 @@ export default function OwnerLoginScreen() {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Alert.alert('Error', 'Isi semua field dulu ya');
       return;
     }
     setLoading(true);
@@ -38,7 +38,7 @@ export default function OwnerLoginScreen() {
       // Navigate to Owner Dashboard
       navigation.replace('OwnerDashboard');
     } else {
-      Alert.alert('Login Failed', result.error || 'Invalid credentials');
+      Alert.alert('Login Gagal', result.error || 'Email atau password salah');
     }
   };
 
@@ -54,14 +54,14 @@ export default function OwnerLoginScreen() {
         {/* Header */}
         <TouchableOpacity style={styles.backRow} onPress={() => navigation.goBack()}>
           <Text style={styles.backArrow}>←</Text>
-          <Text style={styles.backLabel}>Back</Text>
+          <Text style={styles.backLabel}>Kembali</Text>
         </TouchableOpacity>
 
         <View style={styles.badge}>
-          <Text style={styles.badgeText}>Owner Portal</Text>
+          <Text style={styles.badgeText}>Portal Owner</Text>
         </View>
-        <Text style={styles.title}>Owner Login</Text>
-        <Text style={styles.subtitle}>Access your cafe management dashboard</Text>
+        <Text style={styles.title}>Login Owner</Text>
+        <Text style={styles.subtitle}>Akses dashboard kelola cafe kamu</Text>
 
         {/* Form */}
         <View style={styles.form}>
@@ -92,22 +92,22 @@ export default function OwnerLoginScreen() {
           >
             {loading
               ? <ActivityIndicator color={colors.white} />
-              : <Text style={styles.loginBtnText}>Login as Owner</Text>}
+              : <Text style={styles.loginBtnText}>Masuk sebagai Owner</Text>}
           </TouchableOpacity>
         </View>
 
         {/* Register link */}
         <View style={styles.registerRow}>
-          <Text style={styles.registerText}>Don't have an owner account? </Text>
+          <Text style={styles.registerText}>Belum punya akun owner? </Text>
           <TouchableOpacity onPress={() => navigation.navigate('OwnerRegister')}>
-            <Text style={styles.registerLink}>Register Cafe</Text>
+            <Text style={styles.registerLink}>Daftarin Cafe</Text>
           </TouchableOpacity>
         </View>
 
         {/* Divider back to user app */}
         <View style={styles.divider} />
         <TouchableOpacity onPress={() => navigation.navigate('AuthModal')}>
-          <Text style={styles.userLink}>Customer? Login here →</Text>
+          <Text style={styles.userLink}>Customer? Login di sini →</Text>
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>

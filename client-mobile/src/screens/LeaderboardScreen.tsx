@@ -30,7 +30,7 @@ export default function LeaderboardScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.back}>← Back</Text>
+          <Text style={styles.back}>← Kembali</Text>
         </TouchableOpacity>
         <Text style={styles.title} numberOfLines={1}>Leaderboard · {cafeName}</Text>
         <View style={{ width: 50 }} />
@@ -63,7 +63,7 @@ export default function LeaderboardScreen() {
                 </View>
                 <View style={styles.countBox}>
                   <Text style={styles.count}>{item.checkinCount}</Text>
-                  <Text style={styles.countLabel}>visits</Text>
+                  <Text style={styles.countLabel}>kunjungan</Text>
                 </View>
               </View>
             );

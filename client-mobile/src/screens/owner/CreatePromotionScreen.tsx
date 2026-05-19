@@ -43,12 +43,12 @@ interface Props {
 const PACKAGES: PackageOption[] = [
   {
     id: 1,
-    name: 'Starter',
+    name: 'Pemula',
     price: 99000,
     priceAnnual: 89000,
     slots: 50,
     recommended: false,
-    benefits: ['Map pin highlight', 'Cafe card badge', '50 slot views/month'],
+    benefits: ['Pin highlight di map', 'Badge kartu cafe', '50 slot views/bulan'],
   },
   {
     id: 2,
@@ -58,10 +58,10 @@ const PACKAGES: PackageOption[] = [
     slots: 150,
     recommended: true,
     benefits: [
-      'Everything in Starter',
-      'Featured card in Discover',
-      'Promo banner on cafe card',
-      '150 slot views/month',
+      'Semua fitur Pemula',
+      'Kartu featured di Discover',
+      'Banner promo di kartu cafe',
+      '150 slot views/bulan',
     ],
   },
   {
@@ -72,23 +72,23 @@ const PACKAGES: PackageOption[] = [
     slots: 'Unlimited',
     recommended: false,
     benefits: [
-      'Everything in Pro',
-      'Top placement in search',
-      'Priority support',
-      'Unlimited views',
+      'Semua fitur Pro',
+      'Posisi teratas di search',
+      'Support prioritas',
+      'Views unlimited',
     ],
   },
 ];
 
 const FACILITY_OPTIONS: { key: string; label: string; icon: string }[] = [
   { key: 'wifi', label: 'WiFi', icon: '📶' },
-  { key: 'power_outlet', label: 'Power Outlet', icon: '🔌' },
-  { key: 'parking', label: 'Parking', icon: '🅿️' },
+  { key: 'power_outlet', label: 'Stop Kontak', icon: '🔌' },
+  { key: 'parking', label: 'Parkir', icon: '🅿️' },
   { key: 'mushola', label: 'Mushola', icon: '🕌' },
-  { key: 'quiet_atmosphere', label: 'Quiet', icon: '🤫' },
-  { key: 'large_tables', label: 'Large Tables', icon: '🪑' },
+  { key: 'quiet_atmosphere', label: 'Tenang', icon: '🤫' },
+  { key: 'large_tables', label: 'Meja Besar', icon: '🪑' },
   { key: 'outdoor_area', label: 'Outdoor', icon: '🌿' },
-  { key: 'kid_friendly', label: 'Kid Friendly', icon: '👶' },
+  { key: 'kid_friendly', label: 'Ramah Anak', icon: '👶' },
 ];
 
 const formatRupiah = (n: number) => `Rp ${n.toLocaleString('id-ID')}`;
@@ -139,7 +139,7 @@ export default function CreatePromotionScreen({ visible, onClose, ownerCafe }: P
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permission needed', 'Please allow access to your photo library.');
+      Alert.alert('Butuh Izin', 'Izinin akses ke galeri foto kamu dulu ya.');
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -205,8 +205,8 @@ export default function CreatePromotionScreen({ visible, onClose, ownerCafe }: P
 
   const renderStep1 = () => (
     <View style={styles.stepContainer}>
-      <Text style={styles.stepTitle}>Choose Promotion Type</Text>
-      <Text style={styles.stepSubtitle}>Step 1 of 4</Text>
+      <Text style={styles.stepTitle}>Pilih Tipe Promosi</Text>
+      <Text style={styles.stepSubtitle}>Step 1 dari 4</Text>
 
       <TouchableOpacity
         style={[
@@ -218,9 +218,9 @@ export default function CreatePromotionScreen({ visible, onClose, ownerCafe }: P
       >
         <Text style={styles.typeCardIcon}>🆕</Text>
         <View style={styles.typeCardBody}>
-          <Text style={styles.typeCardName}>New Cafe Highlight</Text>
+          <Text style={styles.typeCardName}>Sorotan Cafe Baru</Text>
           <Text style={styles.typeCardDesc}>
-            Show a coral-bordered card in the swipe deck. Best for new cafes ({"<"} 6 months old).
+            Tampilin kartu border coral di deck swipe. Cocok buat cafe baru ({"<"} 6 bulan).
           </Text>
         </View>
         <View style={[styles.radioCircle, selectedType === 'new_cafe' && styles.radioCircleActive]}>
@@ -238,9 +238,9 @@ export default function CreatePromotionScreen({ visible, onClose, ownerCafe }: P
       >
         <Text style={styles.typeCardIcon}>⭐</Text>
         <View style={styles.typeCardBody}>
-          <Text style={styles.typeCardName}>Featured Promo</Text>
+          <Text style={styles.typeCardName}>Promo Unggulan</Text>
           <Text style={styles.typeCardDesc}>
-            Feature your promotion with custom banner + promo content in the discover feed.
+            Tampilin promosi kamu dengan banner custom + konten promo di feed discover.
           </Text>
         </View>
         <View style={[styles.radioCircle, selectedType === 'featured_promo' && styles.radioCircleActive]}>
@@ -256,7 +256,7 @@ export default function CreatePromotionScreen({ visible, onClose, ownerCafe }: P
           disabled={!selectedType}
         >
           <Text style={[styles.nextBtnText, !selectedType && styles.nextBtnTextDisabled]}>
-            Next →
+            Lanjut →
           </Text>
         </TouchableOpacity>
       </View>
@@ -265,8 +265,8 @@ export default function CreatePromotionScreen({ visible, onClose, ownerCafe }: P
 
   const renderStep2 = () => (
     <View style={styles.stepContainer}>
-      <Text style={styles.stepTitle}>Choose Package</Text>
-      <Text style={styles.stepSubtitle}>Step 2 of 4</Text>
+      <Text style={styles.stepTitle}>Pilih Paket</Text>
+      <Text style={styles.stepSubtitle}>Step 2 dari 4</Text>
 
       {/* Billing toggle */}
       <View style={styles.billingToggle}>
@@ -275,7 +275,7 @@ export default function CreatePromotionScreen({ visible, onClose, ownerCafe }: P
           onPress={() => setBilling('monthly')}
         >
           <Text style={[styles.billingBtnText, billing === 'monthly' && styles.billingBtnTextActive]}>
-            Monthly
+            Bulanan
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -283,10 +283,10 @@ export default function CreatePromotionScreen({ visible, onClose, ownerCafe }: P
           onPress={() => setBilling('annual')}
         >
           <Text style={[styles.billingBtnText, billing === 'annual' && styles.billingBtnTextActive]}>
-            Annual
+            Tahunan
           </Text>
           <View style={styles.saveBadge}>
-            <Text style={styles.saveBadgeText}>Save ~15%</Text>
+            <Text style={styles.saveBadgeText}>Hemat ~15%</Text>
           </View>
         </TouchableOpacity>
       </View>
@@ -303,7 +303,7 @@ export default function CreatePromotionScreen({ visible, onClose, ownerCafe }: P
           >
             {pkg.recommended && (
               <View style={styles.recommendedBadge}>
-                <Text style={styles.recommendedBadgeText}>⭐ Recommended</Text>
+                <Text style={styles.recommendedBadgeText}>⭐ Rekomendasi</Text>
               </View>
             )}
             <View style={styles.packageCardHeader}>
@@ -312,7 +312,7 @@ export default function CreatePromotionScreen({ visible, onClose, ownerCafe }: P
                 <Text style={styles.packagePrice}>
                   {formatRupiah(price)}
                   <Text style={styles.packagePricePer}>
-                    /{billing === 'annual' ? 'yr' : 'mo'}
+                    /{billing === 'annual' ? 'thn' : 'bln'}
                   </Text>
                 </Text>
               </View>
@@ -329,7 +329,7 @@ export default function CreatePromotionScreen({ visible, onClose, ownerCafe }: P
 
       <View style={styles.navRow}>
         <TouchableOpacity style={styles.backBtn} onPress={goBack}>
-          <Text style={styles.backBtnText}>← Back</Text>
+          <Text style={styles.backBtnText}>← Kembali</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.nextBtn, !selectedPackage && styles.nextBtnDisabled]}
@@ -337,7 +337,7 @@ export default function CreatePromotionScreen({ visible, onClose, ownerCafe }: P
           disabled={!selectedPackage}
         >
           <Text style={[styles.nextBtnText, !selectedPackage && styles.nextBtnTextDisabled]}>
-            Next →
+            Lanjut →
           </Text>
         </TouchableOpacity>
       </View>
@@ -346,8 +346,8 @@ export default function CreatePromotionScreen({ visible, onClose, ownerCafe }: P
 
   const renderStep3 = () => (
     <View style={styles.stepContainer}>
-      <Text style={styles.stepTitle}>Add Content</Text>
-      <Text style={styles.stepSubtitle}>Step 3 of 4</Text>
+      <Text style={styles.stepTitle}>Tambah Konten</Text>
+      <Text style={styles.stepSubtitle}>Step 3 dari 4</Text>
 
       {selectedType === 'new_cafe' ? (
         <View>
@@ -357,29 +357,29 @@ export default function CreatePromotionScreen({ visible, onClose, ownerCafe }: P
               <View style={styles.newCafeBadge}>
                 <Text style={styles.newCafeBadgeText}>NEW</Text>
               </View>
-              <Text style={styles.newCafeName}>{ownerCafe?.name || 'Your Cafe'}</Text>
-              <Text style={styles.newCafeTagline}>Newly listed on CafeMatch</Text>
+              <Text style={styles.newCafeName}>{ownerCafe?.name || 'Cafe Kamu'}</Text>
+              <Text style={styles.newCafeTagline}>Baru terdaftar di CafeMatch</Text>
             </View>
           </View>
           <Text style={styles.previewCaption}>
-            Your cafe will appear with a coral highlight in the discovery feed.
+            Cafe kamu bakal muncul dengan highlight coral di feed discovery.
           </Text>
         </View>
       ) : (
         <View>
-          <Text style={styles.fieldLabel}>Promotion Title</Text>
+          <Text style={styles.fieldLabel}>Judul Promosi</Text>
           <TextInput
             style={styles.textInput}
-            placeholder="e.g. Buy 1 Get 1 Every Wednesday"
+            placeholder="contoh: Buy 1 Get 1 Tiap Rabu"
             placeholderTextColor={colors.textSecondary}
             value={contentTitle}
             onChangeText={setContentTitle}
           />
 
-          <Text style={styles.fieldLabel}>Description</Text>
+          <Text style={styles.fieldLabel}>Deskripsi</Text>
           <TextInput
             style={[styles.textInput, styles.textInputMulti]}
-            placeholder="Describe your promotion..."
+            placeholder="Jelasin promosi kamu..."
             placeholderTextColor={colors.textSecondary}
             value={contentDescription}
             onChangeText={setContentDescription}
@@ -391,7 +391,7 @@ export default function CreatePromotionScreen({ visible, onClose, ownerCafe }: P
           {/* Facility chips */}
           {ownerCafe?.facilities && ownerCafe.facilities.length > 0 && (
             <View>
-              <Text style={styles.fieldLabel}>Highlight Facilities</Text>
+              <Text style={styles.fieldLabel}>Sorot Fasilitas</Text>
               <View style={styles.chipsContainer}>
                 {FACILITY_OPTIONS.filter((f) =>
                   ownerCafe.facilities!.some(
@@ -421,7 +421,7 @@ export default function CreatePromotionScreen({ visible, onClose, ownerCafe }: P
           )}
 
           {/* Photo upload */}
-          <Text style={styles.fieldLabel}>Promo Photo (optional)</Text>
+          <Text style={styles.fieldLabel}>Foto Promo (opsional)</Text>
           {promoPhotoUri ? (
             <View style={styles.photoPreviewContainer}>
               <Image source={{ uri: promoPhotoUri }} style={styles.photoPreview} />
@@ -429,13 +429,13 @@ export default function CreatePromotionScreen({ visible, onClose, ownerCafe }: P
                 style={styles.removePhotoBtn}
                 onPress={() => setPromoPhotoUri(null)}
               >
-                <Text style={styles.removePhotoBtnText}>✕ Remove</Text>
+                <Text style={styles.removePhotoBtnText}>✕ Hapus</Text>
               </TouchableOpacity>
             </View>
           ) : (
             <TouchableOpacity style={styles.uploadBtn} onPress={pickImage}>
               <Text style={styles.uploadBtnIcon}>📷</Text>
-              <Text style={styles.uploadBtnText}>Upload Photo</Text>
+              <Text style={styles.uploadBtnText}>Upload Foto</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -443,10 +443,10 @@ export default function CreatePromotionScreen({ visible, onClose, ownerCafe }: P
 
       <View style={styles.navRow}>
         <TouchableOpacity style={styles.backBtn} onPress={goBack}>
-          <Text style={styles.backBtnText}>← Back</Text>
+          <Text style={styles.backBtnText}>← Kembali</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.nextBtn} onPress={goNext}>
-          <Text style={styles.nextBtnText}>Next →</Text>
+          <Text style={styles.nextBtnText}>Lanjut →</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -457,12 +457,12 @@ export default function CreatePromotionScreen({ visible, onClose, ownerCafe }: P
       return (
         <View style={[styles.stepContainer, styles.successContainer]}>
           <Text style={styles.successIcon}>✅</Text>
-          <Text style={styles.successTitle}>Submitted!</Text>
+          <Text style={styles.successTitle}>Terkirim!</Text>
           <Text style={styles.successMsg}>
-            Your promotion is pending admin review. We'll notify you once approved.
+            Promosi kamu lagi nunggu direview admin. Nanti dikabarin kalau udah disetujui ya.
           </Text>
           <TouchableOpacity style={styles.doneBtn} onPress={handleClose}>
-            <Text style={styles.doneBtnText}>Done</Text>
+            <Text style={styles.doneBtnText}>Selesai</Text>
           </TouchableOpacity>
         </View>
       );
@@ -470,19 +470,19 @@ export default function CreatePromotionScreen({ visible, onClose, ownerCafe }: P
 
     return (
       <View style={styles.stepContainer}>
-        <Text style={styles.stepTitle}>Review & Submit</Text>
-        <Text style={styles.stepSubtitle}>Step 4 of 4</Text>
+        <Text style={styles.stepTitle}>Review & Kirim</Text>
+        <Text style={styles.stepSubtitle}>Step 4 dari 4</Text>
 
         <View style={styles.summaryCard}>
           {/* Type */}
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Promotion Type</Text>
+            <Text style={styles.summaryLabel}>Tipe Promosi</Text>
             <View style={styles.summaryValueRow}>
               <Text style={styles.summaryValueIcon}>
                 {selectedType === 'new_cafe' ? '🆕' : '⭐'}
               </Text>
               <Text style={styles.summaryValue}>
-                {selectedType === 'new_cafe' ? 'New Cafe Highlight' : 'Featured Promo'}
+                {selectedType === 'new_cafe' ? 'Sorotan Cafe Baru' : 'Promo Unggulan'}
               </Text>
             </View>
           </View>
@@ -491,7 +491,7 @@ export default function CreatePromotionScreen({ visible, onClose, ownerCafe }: P
 
           {/* Package */}
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Package</Text>
+            <Text style={styles.summaryLabel}>Paket</Text>
             <Text style={styles.summaryValue}>{selectedPackage?.name}</Text>
           </View>
 
@@ -499,9 +499,9 @@ export default function CreatePromotionScreen({ visible, onClose, ownerCafe }: P
 
           {/* Billing */}
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Billing</Text>
+            <Text style={styles.summaryLabel}>Tagihan</Text>
             <Text style={styles.summaryValue}>
-              {billing === 'monthly' ? 'Monthly' : 'Annual'}
+              {billing === 'monthly' ? 'Bulanan' : 'Tahunan'}
             </Text>
           </View>
 
@@ -510,7 +510,7 @@ export default function CreatePromotionScreen({ visible, onClose, ownerCafe }: P
             <>
               <View style={styles.summarySeparator} />
               <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Promo Title</Text>
+                <Text style={styles.summaryLabel}>Judul Promo</Text>
                 <Text style={[styles.summaryValue, { flex: 1, textAlign: 'right' }]} numberOfLines={2}>
                   {contentTitle}
                 </Text>
@@ -522,7 +522,7 @@ export default function CreatePromotionScreen({ visible, onClose, ownerCafe }: P
             <>
               <View style={styles.summarySeparator} />
               <View style={styles.summaryColRow}>
-                <Text style={styles.summaryLabel}>Description</Text>
+                <Text style={styles.summaryLabel}>Deskripsi</Text>
                 <Text style={styles.summaryDescText} numberOfLines={3}>
                   {contentDescription}
                 </Text>
@@ -541,13 +541,13 @@ export default function CreatePromotionScreen({ visible, onClose, ownerCafe }: P
 
         <View style={styles.approvalNote}>
           <Text style={styles.approvalNoteText}>
-            ⚡ Payment is collected AFTER admin approval (usually 1-2 business days)
+            ⚡ Pembayaran ditarik SETELAH disetujui admin (biasanya 1-2 hari kerja)
           </Text>
         </View>
 
         <View style={styles.navRow}>
           <TouchableOpacity style={styles.backBtn} onPress={goBack} disabled={submitting}>
-            <Text style={styles.backBtnText}>← Back</Text>
+            <Text style={styles.backBtnText}>← Kembali</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.submitBtn, submitting && styles.submitBtnDisabled]}
@@ -557,7 +557,7 @@ export default function CreatePromotionScreen({ visible, onClose, ownerCafe }: P
             {submitting ? (
               <ActivityIndicator size="small" color={colors.white} />
             ) : (
-              <Text style={styles.submitBtnText}>Submit for Review</Text>
+              <Text style={styles.submitBtnText}>Kirim buat Review</Text>
             )}
           </TouchableOpacity>
         </View>

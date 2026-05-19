@@ -90,7 +90,7 @@ export default function WriteReviewScreen() {
   const pickPhoto = async () => {
     const photoCount = media.filter((m) => m.type === 'photo').length;
     if (photoCount >= 5) {
-      Alert.alert('Maksimal 5 foto', 'Kamu sudah mencapai batas foto.');
+      Alert.alert('Maksimal 5 foto', 'Udah nyampe batas foto nih.');
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -106,7 +106,7 @@ export default function WriteReviewScreen() {
   const pickVideo = async () => {
     const videoCount = media.filter((m) => m.type === 'video').length;
     if (videoCount >= 2) {
-      Alert.alert('Maksimal 2 video', 'Kamu sudah mencapai batas video.');
+      Alert.alert('Maksimal 2 video', 'Udah nyampe batas video nih.');
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -171,7 +171,7 @@ export default function WriteReviewScreen() {
       } catch {}
       navigation.goBack();
     } catch (err: any) {
-      const msg = err?.response?.data?.message || 'Gagal mengirim review';
+      const msg = err?.response?.data?.message || 'Gagal kirim review';
       Alert.alert('Error', typeof msg === 'string' ? msg : msg[0]);
       setSubmitting(false);
     }
@@ -197,7 +197,7 @@ export default function WriteReviewScreen() {
       <View style={styles.header}>
         {step > 0 ? (
           <TouchableOpacity onPress={prev}>
-            <Text style={styles.backText}>Back</Text>
+            <Text style={styles.backText}>Kembali</Text>
           </TouchableOpacity>
         ) : (
           <View style={{ width: 50 }} />
@@ -256,7 +256,7 @@ export default function WriteReviewScreen() {
                 </View>
               ) : facilityOptions.length === 0 ? (
                 <View style={{ padding: spacing.lg, alignItems: 'center' }}>
-                  <Text style={styles.emptyFilterText}>Fasilitas tidak tersedia.</Text>
+                  <Text style={styles.emptyFilterText}>Fasilitas gak tersedia.</Text>
                 </View>
               ) : (
                 <View style={styles.facilityChipWrap}>
@@ -289,7 +289,7 @@ export default function WriteReviewScreen() {
         {step === 2 && (
           <View style={styles.stepContainer}>
             <Text style={styles.stepTitle}>Ceritain pengalaman kamu</Text>
-            <Text style={styles.stepSubtitle}>Opsional — skip aja kalau ga mau nulis</Text>
+            <Text style={styles.stepSubtitle}>Opsional — skip aja kalo gak mau nulis</Text>
             <TextInput
               style={styles.textArea}
               multiline
@@ -382,7 +382,7 @@ export default function WriteReviewScreen() {
           disabled={!canProceed() || submitting}
         >
           <Text style={styles.nextBtnText}>
-            {submitting ? '...' : step === TOTAL_STEPS - 1 ? 'Kirim Review' : 'Next'}
+            {submitting ? '...' : step === TOTAL_STEPS - 1 ? 'Kirim Review' : 'Lanjut'}
           </Text>
         </TouchableOpacity>
       </View>

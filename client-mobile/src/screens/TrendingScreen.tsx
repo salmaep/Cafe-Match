@@ -162,8 +162,8 @@ export default function TrendingScreen() {
   const renderEmpty = () => (
     <View style={styles.emptyContainer}>
       <Text style={styles.emptyEmoji}>🔥</Text>
-      <Text style={styles.emptyTitle}>No trending cafes</Text>
-      <Text style={styles.emptySubtitle}>Try a different filter or check back later</Text>
+      <Text style={styles.emptyTitle}>Belum ada cafe yang lagi trending</Text>
+      <Text style={styles.emptySubtitle}>Coba filter lain atau cek lagi nanti</Text>
     </View>
   );
 
@@ -179,14 +179,14 @@ export default function TrendingScreen() {
           <View style={styles.heroTopRow}>
             <View style={{ flex: 1, minWidth: 0 }}>
               <View style={styles.heroPill}>
-                <Text style={styles.heroPillText}>🔥 TRENDING NOW</Text>
+                <Text style={styles.heroPillText}>🔥 LAGI TRENDING</Text>
               </View>
               <Text style={styles.heroTitle}>
                 Cafe paling <Text style={styles.heroTitleAccent}>hits</Text>{' '}
                 minggu ini
               </Text>
               <Text style={styles.heroSub}>
-                Berdasarkan jumlah favorit & bookmark dari komunitas — update tiap hari.
+                Berdasar jumlah favorit & bookmark dari komunitas — update tiap hari.
               </Text>
             </View>
           </View>
@@ -196,7 +196,7 @@ export default function TrendingScreen() {
               <Text style={styles.heroCountNum}>
                 {totalCount.toLocaleString()}
               </Text>
-              <Text style={styles.heroCountLabel}>CAFES</Text>
+              <Text style={styles.heroCountLabel}>CAFE</Text>
             </View>
             <TouchableOpacity
               style={styles.heroLbBtn}

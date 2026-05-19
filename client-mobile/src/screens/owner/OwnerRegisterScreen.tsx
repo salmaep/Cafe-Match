@@ -30,7 +30,7 @@ export default function OwnerRegisterScreen() {
 
   const handleRegister = async () => {
     if (!name || !email || !password || !cafeName || !cafeAddress) {
-      Alert.alert('Error', 'Please fill in all required fields');
+      Alert.alert('Error', 'Isi semua field wajib dulu ya');
       return;
     }
     setLoading(true);
@@ -44,19 +44,19 @@ export default function OwnerRegisterScreen() {
         phone: phone || undefined,
       });
       Alert.alert(
-        'Registration Successful!',
-        'Your owner account has been created. Please login to access your dashboard.',
+        'Pendaftaran Berhasil!',
+        'Akun owner kamu udah jadi. Login dulu buat akses dashboard.',
         [
           {
-            text: 'Login Now',
+            text: 'Login Sekarang',
             onPress: () => navigation.replace('OwnerLogin'),
           },
         ],
       );
     } catch (err: any) {
       const message =
-        err?.response?.data?.message || 'Registration failed. Please try again.';
-      Alert.alert('Registration Failed', message);
+        err?.response?.data?.message || 'Pendaftaran gagal. Coba lagi ya.';
+      Alert.alert('Pendaftaran Gagal', message);
     } finally {
       setLoading(false);
     }
@@ -77,22 +77,22 @@ export default function OwnerRegisterScreen() {
         {/* Header */}
         <TouchableOpacity style={styles.backRow} onPress={() => navigation.goBack()}>
           <Text style={styles.backArrow}>←</Text>
-          <Text style={styles.backLabel}>Back</Text>
+          <Text style={styles.backLabel}>Kembali</Text>
         </TouchableOpacity>
 
         <View style={styles.badge}>
-          <Text style={styles.badgeText}>Owner Portal</Text>
+          <Text style={styles.badgeText}>Portal Owner</Text>
         </View>
-        <Text style={styles.title}>Register Cafe</Text>
-        <Text style={styles.subtitle}>Create your owner account to start managing your cafe</Text>
+        <Text style={styles.title}>Daftarin Cafe</Text>
+        <Text style={styles.subtitle}>Bikin akun owner buat mulai kelola cafe kamu</Text>
 
         {/* Owner Info */}
-        <Text style={styles.groupLabel}>Your Information</Text>
+        <Text style={styles.groupLabel}>Info Kamu</Text>
         <View style={styles.form}>
-          <Text style={styles.label}>Full Name *</Text>
+          <Text style={styles.label}>Nama Lengkap *</Text>
           <TextInput
             style={styles.input}
-            placeholder="Your full name"
+            placeholder="Nama lengkap kamu"
             placeholderTextColor={colors.textSecondary}
             value={name}
             onChangeText={setName}
@@ -111,7 +111,7 @@ export default function OwnerRegisterScreen() {
           <Text style={styles.label}>Password *</Text>
           <TextInput
             style={styles.input}
-            placeholder="Min. 8 characters"
+            placeholder="Min. 8 karakter"
             placeholderTextColor={colors.textSecondary}
             value={password}
             onChangeText={setPassword}
@@ -120,28 +120,28 @@ export default function OwnerRegisterScreen() {
         </View>
 
         {/* Cafe Info */}
-        <Text style={[styles.groupLabel, { marginTop: spacing.lg }]}>Cafe Information</Text>
+        <Text style={[styles.groupLabel, { marginTop: spacing.lg }]}>Info Cafe</Text>
         <View style={styles.form}>
-          <Text style={styles.label}>Cafe Name *</Text>
+          <Text style={styles.label}>Nama Cafe *</Text>
           <TextInput
             style={styles.input}
-            placeholder="e.g. Kopi Kenangan Sudirman"
+            placeholder="cth. Kopi Kenangan Sudirman"
             placeholderTextColor={colors.textSecondary}
             value={cafeName}
             onChangeText={setCafeName}
             autoCapitalize="words"
           />
-          <Text style={styles.label}>Cafe Address *</Text>
+          <Text style={styles.label}>Alamat Cafe *</Text>
           <TextInput
             style={[styles.input, styles.textArea]}
-            placeholder="Full address of your cafe"
+            placeholder="Alamat lengkap cafe kamu"
             placeholderTextColor={colors.textSecondary}
             value={cafeAddress}
             onChangeText={setCafeAddress}
             multiline
             numberOfLines={3}
           />
-          <Text style={styles.label}>Phone Number</Text>
+          <Text style={styles.label}>Nomor Telepon</Text>
           <TextInput
             style={styles.input}
             placeholder="+62 812 3456 7890"
@@ -160,15 +160,15 @@ export default function OwnerRegisterScreen() {
           {loading ? (
             <ActivityIndicator color={colors.white} />
           ) : (
-            <Text style={styles.registerBtnText}>Create Owner Account</Text>
+            <Text style={styles.registerBtnText}>Bikin Akun Owner</Text>
           )}
         </TouchableOpacity>
 
         {/* Login link */}
         <View style={styles.loginRow}>
-          <Text style={styles.loginText}>Already have an owner account? </Text>
+          <Text style={styles.loginText}>Udah punya akun owner? </Text>
           <TouchableOpacity onPress={() => navigation.navigate('OwnerLogin')}>
-            <Text style={styles.loginLink}>Login</Text>
+            <Text style={styles.loginLink}>Masuk</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

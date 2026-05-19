@@ -70,8 +70,8 @@ export default function GlobalLeaderboardScreen() {
             <Text style={styles.heroTitleAccent}>paling rajin</Text> ngafe?
           </Text>
           <Text style={styles.heroSubtitle}>
-            Ranking pengguna berdasarkan jumlah check-in, cafe yang dikunjungi,
-            dan total waktu nongkrong.
+            Ranking pengguna berdasar jumlah check-in, cafe yang dikunjungi,
+            sama total waktu nongkrong.
           </Text>
 
           <View style={styles.periodWrap}>
@@ -104,7 +104,7 @@ export default function GlobalLeaderboardScreen() {
               <Text style={styles.emptySubtitle}>
                 {period === 'month'
                   ? 'Belum ada check-in dalam 30 hari terakhir. Yuk mulai!'
-                  : 'Belum ada check-in sama sekali. Jadi yang pertama!'}
+                  : 'Belum ada check-in sama sekali. Jadi yang pertama yuk!'}
               </Text>
             </View>
           ) : (

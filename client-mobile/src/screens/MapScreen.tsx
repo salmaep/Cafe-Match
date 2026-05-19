@@ -524,7 +524,7 @@ export default function MapScreen() {
     const p = purposeList.find((x) => x.id === filterPurposeId);
     activeFilters.push({
       key: `purpose-${filterPurposeId}`,
-      label: p ? `${p.icon ?? ''} ${p.name}`.trim() : 'Purpose',
+      label: p ? `${p.icon ?? ''} ${p.name}`.trim() : 'Tujuan',
       remove: () => setFilterPurposeId(null),
     });
   }
@@ -609,7 +609,7 @@ export default function MapScreen() {
           ))}
         </View>
         <View style={styles.searchSwipeHint}>
-          <Text style={styles.searchSwipeHintText}>← Skip | Shortlist →</Text>
+          <Text style={styles.searchSwipeHintText}>← Lewati | Shortlist →</Text>
         </View>
       </View>
     </View>
@@ -666,7 +666,7 @@ export default function MapScreen() {
         {searchActive && displayCafes.length === 0 && !loading && (
           <View style={styles.noResultsBanner}>
             <Text style={styles.noResultsText}>
-              No cafes found for your search
+              Gak ada cafe yang cocok sama pencarian kamu
             </Text>
           </View>
         )}
@@ -773,7 +773,7 @@ export default function MapScreen() {
         <View style={styles.mapLoadingOverlay}>
           <View style={styles.mapLoadingBox}>
             <ActivityIndicator size="large" color={colors.accent} />
-            <Text style={styles.mapLoadingBoxText}>Memuat…</Text>
+            <Text style={styles.mapLoadingBoxText}>Sebentar ya…</Text>
           </View>
         </View>
       )}
@@ -832,9 +832,9 @@ export default function MapScreen() {
 
           <View style={styles.searchPopupHeader}>
             <View style={{ flex: 1, paddingRight: 44 }}>
-              <Text style={styles.searchPopupTitle}>AI Search Results</Text>
+              <Text style={styles.searchPopupTitle}>Hasil Pencarian AI</Text>
               <Text style={styles.searchPopupSub}>
-                {searchResults.length} cafes match
+                {searchResults.length} cafe cocok
               </Text>
             </View>
           </View>
@@ -854,7 +854,7 @@ export default function MapScreen() {
                   AI lagi cari cafe yang cocok…
                 </Text>
                 <Text style={styles.searchPopupHintText}>
-                  Bisa makan 5-10 detik buat query pertama
+                  Bisa makan 5-10 detik buat pencarian pertama
                 </Text>
               </View>
             ) : searchResults.length > 0 && popupCardSize.w > 0 ? (
@@ -891,7 +891,7 @@ export default function MapScreen() {
                       const cafe = searchResults[popupCardIndex];
                       if (dir === 'right' && cafe && !isInShortlist(cafe.id)) {
                         addToShortlist(cafe);
-                        triggerToast(`${cafe.name} added to shortlist ✓`);
+                        triggerToast(`${cafe.name} ditambahin ke shortlist ✓`);
                       }
                       if (popupCardIndex + 1 >= searchResults.length) {
                         dismissSearchPopup(true);
@@ -907,7 +907,7 @@ export default function MapScreen() {
             ) : (
               <View style={styles.searchPopupEmpty}>
                 <Text style={styles.searchPopupEmptyText}>
-                  No cafes match your search
+                  Gak ada cafe yang cocok sama pencarian kamu
                 </Text>
               </View>
             )}
@@ -931,9 +931,9 @@ export default function MapScreen() {
             </Text>
             {emojiTargetFriend.checkInAt && (
               <Text style={styles.emojiPickerDuration}>
-                ⏱️ Checked in {formatDuration(
+                ⏱️ Udah check-in {formatDuration(
                   Math.max(0, Math.floor((Date.now() - new Date(emojiTargetFriend.checkInAt).getTime()) / 1000))
-                )} ago
+                )} yang lalu
               </Text>
             )}
             <View style={styles.emojiRow}>
@@ -972,7 +972,7 @@ export default function MapScreen() {
               </Text>
             </View>
             <Text style={styles.checkinCardName} numberOfLines={1}>
-              {activeCheckin.cafe?.name || activeCheckin.cafeName || 'Active cafe'}
+              {activeCheckin.cafe?.name || activeCheckin.cafeName || 'Cafe aktif'}
             </Text>
           </View>
           <TouchableOpacity
@@ -1042,7 +1042,7 @@ export default function MapScreen() {
                 onPress={() => setSelectedCafe(null)}
                 style={styles.dismissPin}
               >
-                <Text style={styles.dismissPinText}>Clear ×</Text>
+                <Text style={styles.dismissPinText}>Tutup ×</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -1050,7 +1050,7 @@ export default function MapScreen() {
           {/* Featured Today */}
           {featuredCafes.length > 0 && !searchActive && (
             <View style={styles.featuredSection}>
-              <Text style={styles.featuredTitle}>Featured Today ✨</Text>
+              <Text style={styles.featuredTitle}>Pilihan Hari Ini ✨</Text>
               <GHScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -1096,7 +1096,7 @@ export default function MapScreen() {
                         {isNewCafe && (
                           <View style={styles.featuredNewBadgeAbs}>
                             <Text style={styles.featuredNewBadgeText}>
-                              NEW CAFE
+                              CAFE BARU
                             </Text>
                           </View>
                         )}
@@ -1199,7 +1199,7 @@ export default function MapScreen() {
                   style={styles.resetBtn}
                   onPress={resetFilters}
                 >
-                  <Text style={styles.resetText}>Reset All</Text>
+                  <Text style={styles.resetText}>Reset Semua</Text>
                 </TouchableOpacity>
               </ScrollView>
             )}
@@ -1210,13 +1210,13 @@ export default function MapScreen() {
             <View style={styles.listHeader}>
               <Text style={styles.listTitle}>
                 {loading
-                  ? "Loading cafes..."
+                  ? "Lagi muat cafe..."
                   : listTotal === 0
-                    ? "No cafes within this radius"
-                    : `${listTotal} cafes within ${radiusKm} km`}
+                    ? "Gak ada cafe di radius ini"
+                    : `${listTotal} cafe dalam ${radiusKm} km`}
               </Text>
               {searchActive && (
-                <Text style={styles.listSubtitle}>Filtered by search</Text>
+                <Text style={styles.listSubtitle}>Difilter berdasar pencarian</Text>
               )}
               {!searchActive && preferences?.purpose && (
                 <Text style={styles.listSubtitle}>{preferences.purpose}</Text>
@@ -1230,13 +1230,13 @@ export default function MapScreen() {
             ) : listCafes.length === 0 ? (
               <View style={styles.emptyBox}>
                 <Text style={styles.emptyText}>
-                  No cafes found within {radiusKm} km
+                  Gak nemu cafe dalam {radiusKm} km
                 </Text>
                 <TouchableOpacity
                   onPress={resetFilters}
                   style={styles.emptyReset}
                 >
-                  <Text style={styles.emptyResetText}>Reset filters</Text>
+                  <Text style={styles.emptyResetText}>Reset filter</Text>
                 </TouchableOpacity>
               </View>
             ) : (

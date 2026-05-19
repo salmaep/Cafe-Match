@@ -67,18 +67,18 @@ export default function VoteSection({ cafeId }: Props) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>What's this cafe best for?</Text>
+      <Text style={styles.title}>Cafe ini paling cocok buat apa?</Text>
       <Text style={styles.subtitle}>
         {user
           ? `Pilih sampai ${MAX_VOTES} kategori (${selected.length}/${MAX_VOTES})`
-          : 'Login untuk vote'}
+          : 'Login dulu buat vote'}
       </Text>
 
       {purposesQuery.isLoading ? (
         <ActivityIndicator color={colors.accent} style={{ marginVertical: spacing.md }} />
       ) : purposesQuery.isError ? (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyText}>Gagal memuat kategori.</Text>
+          <Text style={styles.emptyText}>Gagal muat kategori.</Text>
           <Pressable onPress={() => purposesQuery.refetch()} style={styles.retryBtn}>
             <Text style={styles.retryText}>Coba lagi</Text>
           </Pressable>

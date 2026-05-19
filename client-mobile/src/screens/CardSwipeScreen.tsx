@@ -144,7 +144,7 @@ export default function CardSwipeScreen() {
         promptLoginRef.current();
       } else {
         addToShortlistRef.current(cafe);
-        setToastMsg(`Added "${cafe.name}" to Shortlist!`);
+        setToastMsg(`"${cafe.name}" masuk Shortlist!`);
         setShowToast(true);
       }
     }
@@ -208,7 +208,7 @@ export default function CardSwipeScreen() {
         )}
         {isTypeB && (
           <View style={[styles.promoBadgeLeft, styles.promoBadgeFeatured]}>
-            <Text style={styles.promoBadgeText}>⭐ Special Offer</Text>
+            <Text style={styles.promoBadgeText}>⭐ Promo Spesial</Text>
           </View>
         )}
 
@@ -238,7 +238,7 @@ export default function CardSwipeScreen() {
                 return;
               }
               addToShortlistRef.current(cafe);
-              setToastMsg(`Added "${cafe.name}" to Shortlist!`);
+              setToastMsg(`"${cafe.name}" masuk Shortlist!`);
               setShowToast(true);
             }}
           >
@@ -261,10 +261,10 @@ export default function CardSwipeScreen() {
                 <Text style={styles.cafeName} numberOfLines={1}>{cafe.name}</Text>
                 {newCafe?.openingSince ? (
                   <Text style={styles.openingSince}>
-                    ✨ Open since {newCafe.openingSince}
+                    ✨ Buka sejak {newCafe.openingSince}
                   </Text>
                 ) : (
-                  <Text style={styles.cafeDistance}>{cafe.distance} km away</Text>
+                  <Text style={styles.cafeDistance}>{cafe.distance} km dari sini</Text>
                 )}
                 {newCafe?.keunggulan && newCafe.keunggulan.length > 0 && (
                   <View style={styles.tagsRow}>
@@ -369,8 +369,8 @@ export default function CardSwipeScreen() {
     return (
       <View style={styles.emptyContainer}>
         <Text style={styles.emptyEmoji}>🗺️</Text>
-        <Text style={styles.emptyTitle}>No match?</Text>
-        <Text style={styles.emptySubtitle}>Let's explore the map!</Text>
+        <Text style={styles.emptyTitle}>Gak ada yang cocok?</Text>
+        <Text style={styles.emptySubtitle}>Yuk explore di map!</Text>
       </View>
     );
   }
@@ -379,7 +379,7 @@ export default function CardSwipeScreen() {
     return (
       <View style={styles.emptyContainer}>
         <ActivityIndicator size="large" color={colors.accent} style={{ marginBottom: spacing.md }} />
-        <Text style={styles.emptyTitle}>Finding cafes...</Text>
+        <Text style={styles.emptyTitle}>Lagi nyari cafe...</Text>
       </View>
     );
   }
@@ -388,7 +388,7 @@ export default function CardSwipeScreen() {
     return (
       <View style={styles.emptyContainer}>
         <Text style={styles.emptyEmoji}>☕</Text>
-        <Text style={styles.emptyTitle}>Tidak ada kafe</Text>
+        <Text style={styles.emptyTitle}>Gak ada cafe</Text>
         <Text style={styles.emptySubtitle}>
           Coba perluas radius atau hapus filter di Explore.
         </Text>

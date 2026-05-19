@@ -126,7 +126,7 @@ export default function NotificationsScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.back}>← Back</Text>
+          <Text style={styles.back}>← Kembali</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Notifikasi</Text>
         <TouchableOpacity onPress={handleMarkAll}>
@@ -163,14 +163,14 @@ export default function NotificationsScreen() {
                   <Text style={styles.icon}>😜</Text>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.rowTitle}>
-                      {item.senderName} mengirim {item.totalCount} emoji
+                      {item.senderName} ngirim {item.totalCount} emoji
                     </Text>
                     <Text style={styles.rowBody} numberOfLines={1}>
                       {latestEmojis}
                       {item.totalCount > 3 ? ` +${item.totalCount - 3} lagi` : ''}
                     </Text>
                     <Text style={styles.rowTime}>
-                      Tap untuk lihat detail
+                      Tap buat liat detail
                     </Text>
                   </View>
                   {anyUnread && <View style={styles.dot} />}

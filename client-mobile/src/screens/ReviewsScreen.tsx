@@ -95,9 +95,9 @@ export default function ReviewsScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.back}>← Back</Text>
+          <Text style={styles.back}>← Kembali</Text>
         </TouchableOpacity>
-        <Text style={styles.title} numberOfLines={1}>Reviews · {cafeName}</Text>
+        <Text style={styles.title} numberOfLines={1}>Ulasan · {cafeName}</Text>
         <TouchableOpacity onPress={goWriteReview}>
           <Text style={styles.writeBtn}>+ Tulis</Text>
         </TouchableOpacity>

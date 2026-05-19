@@ -70,8 +70,8 @@ export default function ShortlistModal() {
           <Text style={styles.title}>Shortlist</Text>
           <Text style={styles.subtitle}>
             {shortlist.length > 0
-              ? `${shortlist.length} cafe disimpan untuk dikunjungi nanti`
-              : 'Swipe kanan di Discover untuk menyimpan cafe'}
+              ? `${shortlist.length} cafe disimpen buat dikunjungi nanti`
+              : 'Swipe kanan di Discover buat simpen cafe'}
           </Text>
         </View>
         {isModal && (
@@ -86,7 +86,7 @@ export default function ShortlistModal() {
           <Text style={styles.emptyEmoji}>⭐</Text>
           <Text style={styles.emptyTitle}>Shortlist masih kosong</Text>
           <Text style={styles.emptySubtitle}>
-            Buka Discover, swipe kanan cafe yang menarik — semua tersimpan di sini.
+            Buka Discover, swipe kanan cafe yang menarik — semua kesimpen di sini.
           </Text>
           <TouchableOpacity
             style={styles.emptyCta}

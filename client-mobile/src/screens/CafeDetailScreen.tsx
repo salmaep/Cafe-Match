@@ -12,7 +12,7 @@ import {
   ActivityIndicator,
   Modal,
   StatusBar,
-  Alert,
+  // Alert,
 } from "react-native";
 import { useRoute, useNavigation, RouteProp } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
@@ -25,7 +25,7 @@ import {
   toggleFavorite,
   trackAnalytics,
   haversineKm,
-  checkInApi,
+  // checkInApi,
 } from "../services/api";
 import { logEvent } from "../utils/analytics";
 import { useCafeDetail } from "../queries/cafes/use-cafe-detail";
@@ -266,7 +266,7 @@ export default function CafeDetailScreen() {
   const [currentPhoto, setCurrentPhoto] = useState(0);
   const inShortlist = isInShortlist(cafe.id);
 
-  const [checkingIn, setCheckingIn] = useState(false);
+  // const [checkingIn, setCheckingIn] = useState(false);
 
   // Merge mood signals from THREE sources into ONE unified list:
   //  - cafe.purposes (scraped name array, e.g. "Family Time") → each counts as +1
@@ -432,39 +432,39 @@ export default function CafeDetailScreen() {
     }
   };
 
-  const handleCheckIn = async () => {
-    setCheckingIn(true);
-    try {
-      const loc = await (
-        await import("expo-location")
-      ).getCurrentPositionAsync({ accuracy: 6 }); // BestForNavigation
-      const result: any = await checkInApi(
-        Number(cafe.id),
-        loc.coords.latitude,
-        loc.coords.longitude,
-      );
-      const togetherWith: { id: number; name: string }[] =
-        result?.togetherWith || [];
-      if (togetherWith.length > 0) {
-        const names = togetherWith.map((f) => f.name).join(", ");
-        Alert.alert(
-          "💥 BARENGAN!",
-          `Kamu lagi di ${cafe.name} bareng ${names}! Seru nih!`,
-          [{ text: "Siap!", style: "default" }],
-        );
-      } else {
-        Alert.alert(
-          "Check-in berhasil! ☕",
-          `Kamu sekarang ada di ${cafe.name}`,
-        );
-      }
-    } catch (err: any) {
-      const msg =
-        err?.response?.data?.message || err?.message || "Gagal check-in";
-      Alert.alert("Oops", typeof msg === "string" ? msg : msg[0]);
-    }
-    setCheckingIn(false);
-  };
+  // const handleCheckIn = async () => {
+  //   setCheckingIn(true);
+  //   try {
+  //     const loc = await (
+  //       await import("expo-location")
+  //     ).getCurrentPositionAsync({ accuracy: 6 });
+  //     const result: any = await checkInApi(
+  //       Number(cafe.id),
+  //       loc.coords.latitude,
+  //       loc.coords.longitude,
+  //     );
+  //     const togetherWith: { id: number; name: string }[] =
+  //       result?.togetherWith || [];
+  //     if (togetherWith.length > 0) {
+  //       const names = togetherWith.map((f) => f.name).join(", ");
+  //       Alert.alert(
+  //         "💥 BARENGAN!",
+  //         `Kamu lagi di ${cafe.name} bareng ${names}! Seru nih!`,
+  //         [{ text: "Siap!", style: "default" }],
+  //       );
+  //     } else {
+  //       Alert.alert(
+  //         "Check-in berhasil! ☕",
+  //         `Kamu sekarang ada di ${cafe.name}`,
+  //       );
+  //     }
+  //   } catch (err: any) {
+  //     const msg =
+  //       err?.response?.data?.message || err?.message || "Gagal check-in";
+  //     Alert.alert("Oops", typeof msg === "string" ? msg : msg[0]);
+  //   }
+  //   setCheckingIn(false);
+  // };
 
   const formatPrice = (price: number) => "Rp " + price.toLocaleString("id-ID");
 
@@ -1125,13 +1125,13 @@ export default function CafeDetailScreen() {
           <Text style={styles.actionIcon}>{isBookmarked ? "🔖" : "📑"}</Text>
           <Text style={styles.actionLabel}>Bookmark</Text>
         </TouchableOpacity>
-        <TouchableOpacity
+        {/* <TouchableOpacity
           style={styles.checkinBtn}
           onPress={handleCheckIn}
           disabled={checkingIn}
         >
           <Text style={styles.checkinBtnText}>{checkingIn ? "..." : "📍"}</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
         <TouchableOpacity
           style={[
             styles.shortlistBtn,
@@ -1571,15 +1571,15 @@ const styles = StyleSheet.create({
   },
   shortlistBtnActive: { backgroundColor: colors.accent },
   shortlistBtnText: { color: colors.white, fontWeight: "700", fontSize: 15 },
-  checkinBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: colors.success,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  checkinBtnText: { fontSize: 20 },
+  // checkinBtn: {
+  //   width: 48,
+  //   height: 48,
+  //   borderRadius: 24,
+  //   backgroundColor: colors.success,
+  //   justifyContent: "center",
+  //   alignItems: "center",
+  // },
+  // checkinBtnText: { fontSize: 20 },
 
   // Reviews + Leaderboard sections
   sectionRow: {

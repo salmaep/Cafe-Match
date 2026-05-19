@@ -37,6 +37,7 @@ import { useLocation } from "../context/LocationContext";
 import { useShortlist } from "../context/ShortlistContext";
 import { checkOutApi, throwEmojiApi } from "../services/api";
 import { useSearchCafes } from "../queries/cafes/use-search-cafes";
+import { useSemanticSearch } from "../queries/cafes/use-semantic-search";
 import { usePromotedCafes } from "../queries/cafes/use-promoted-cafes";
 import { useActiveCheckin, checkinKeys } from "../queries/checkins/use-active-checkin";
 import { useFriendsMap } from "../queries/friends/use-friends-map";
@@ -49,7 +50,7 @@ import { interleaveAds } from "../utils/adInterleave";
 
 const { width, height } = Dimensions.get("window");
 
-const CLUSTER_THRESHOLD = 50;
+const CLUSTER_THRESHOLD = 0;
 type CafeMarkerItem = { kind: "cafe"; cafe: Cafe };
 type ClusterMarkerItem = {
   kind: "cluster";
@@ -472,6 +473,20 @@ export default function MapScreen() {
     }
   };
 
+  const semanticQuery = useSemanticSearch(
+    {
+      q: searchQuery.trim(),
+      lat: center.latitude,
+      lng: center.longitude,
+      radius: radiusMeters,
+      purposeId,
+      ...(facilities.length > 0 ? { facilities } : {}),
+      priceRange: (priceRange as any) || undefined,
+      limit: 8,
+    },
+    searchActive,
+  );
+
   const handleSearch = () => {
     Keyboard.dismiss();
     if (!searchQuery.trim()) {
@@ -479,16 +494,24 @@ export default function MapScreen() {
       return;
     }
     setSearchActive(true);
-    // Server returns the matched cafes; show top 8 in the popup once available.
-    // The popup is opened immediately; the swiper will render once listQuery resolves.
     showSearchPopup([]);
   };
 
-  // When listQuery has results during an active search, populate popup.
   useEffect(() => {
     if (!searchPopupVisible || !searchActive) return;
-    setSearchResults(listCafes.slice(0, 8));
-  }, [listCafes, searchPopupVisible, searchActive]);
+    const semanticHits = semanticQuery.data?.data ?? [];
+    if (semanticHits.length > 0) {
+      setSearchResults(semanticHits);
+    } else if (!semanticQuery.isFetching) {
+      setSearchResults(listCafes.slice(0, 8));
+    }
+  }, [
+    semanticQuery.data,
+    semanticQuery.isFetching,
+    listCafes,
+    searchPopupVisible,
+    searchActive,
+  ]);
 
   const clearSearch = () => {
     setSearchQuery("");
@@ -697,7 +720,7 @@ export default function MapScreen() {
           if (item.kind === "cluster") {
             return (
               <ClusterMarker
-                key={`cluster-${item.id}-${item.count}`}
+                key={`cluster-${item.id}`}
                 lat={item.lat}
                 lng={item.lng}
                 count={item.count}
@@ -824,7 +847,17 @@ export default function MapScreen() {
               h: e.nativeEvent.layout.height,
             })}
           >
-            {searchResults.length > 0 && popupCardSize.w > 0 ? (
+            {semanticQuery.isFetching && searchResults.length === 0 ? (
+              <View style={styles.searchPopupEmpty}>
+                <ActivityIndicator size="large" color={colors.accent} />
+                <Text style={[styles.searchPopupEmptyText, { marginTop: 16 }]}>
+                  AI lagi cari cafe yang cocok…
+                </Text>
+                <Text style={styles.searchPopupHintText}>
+                  Bisa makan 5-10 detik buat query pertama
+                </Text>
+              </View>
+            ) : searchResults.length > 0 && popupCardSize.w > 0 ? (
               <>
                 {searchResults[popupCardIndex + 1] && (
                   <View
@@ -1274,28 +1307,38 @@ const ClusterMarker = React.memo(function ClusterMarker({
   count: number;
   onPress: () => void;
 }) {
-  const [tracking, setTracking] = useState(true);
-  useEffect(() => {
-    const t = setTimeout(() => setTracking(false), 600);
-    return () => clearTimeout(t);
-  }, []);
-  const size = count < 10 ? 36 : count < 50 ? 44 : count < 200 ? 52 : 60;
+  const size = count < 10 ? 38 : count < 50 ? 46 : count < 200 ? 54 : 62;
+  const tailSize = Math.round(size * 0.32);
   return (
     <Marker
       coordinate={{ latitude: lat, longitude: lng }}
-      anchor={{ x: 0.5, y: 0.5 }}
-      tracksViewChanges={tracking}
+      anchor={{ x: 0.5, y: 1 }}
+      tracksViewChanges={false}
       onPress={onPress}
     >
-      <View
-        style={[
-          styles.clusterPin,
-          { width: size, height: size, borderRadius: size / 2 },
-        ]}
-      >
-        <Text style={styles.clusterPinText}>
-          {count >= 1000 ? `${(count / 1000).toFixed(1)}k` : count}
-        </Text>
+      <View style={styles.clusterPinWrap}>
+        <View
+          style={[
+            styles.clusterPin,
+            { width: size, height: size, borderRadius: size / 2 },
+          ]}
+        >
+          <Text style={styles.clusterPinIcon}>☕</Text>
+          <Text style={styles.clusterPinCount}>
+            {count >= 1000 ? `${(count / 1000).toFixed(1)}k` : count}
+          </Text>
+        </View>
+        <View
+          style={[
+            styles.clusterPinTail,
+            {
+              borderLeftWidth: tailSize / 2,
+              borderRightWidth: tailSize / 2,
+              borderTopWidth: tailSize,
+              marginTop: -2,
+            },
+          ]}
+        />
       </View>
     </Marker>
   );
@@ -1897,8 +1940,16 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    paddingHorizontal: spacing.lg,
   },
-  searchPopupEmptyText: { fontSize: 16, color: colors.textSecondary },
+  searchPopupEmptyText: { fontSize: 16, color: colors.textSecondary, textAlign: "center" },
+  searchPopupHintText: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    textAlign: "center",
+    marginTop: 8,
+    fontStyle: "italic",
+  },
   searchPopupCloseX: {
     position: "absolute",
     top: spacing.md,
@@ -2264,6 +2315,10 @@ const styles = StyleSheet.create({
     lineHeight: 15,
     textAlign: "center",
   },
+  clusterPinWrap: {
+    alignItems: "center",
+    justifyContent: "flex-start",
+  },
   clusterPin: {
     backgroundColor: "#D97706",
     borderWidth: 2,
@@ -2272,14 +2327,27 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.3,
     shadowRadius: 3,
-    elevation: 4,
+    elevation: 5,
   },
-  clusterPinText: {
-    color: "#FFFFFF",
+  clusterPinIcon: {
     fontSize: 14,
-    fontWeight: "800",
+    lineHeight: 16,
+    marginBottom: -2,
+  },
+  clusterPinCount: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "900",
+    lineHeight: 14,
+  },
+  clusterPinTail: {
+    width: 0,
+    height: 0,
+    borderLeftColor: "transparent",
+    borderRightColor: "transparent",
+    borderTopColor: "#D97706",
   },
   cafePinNewBadge: {
     backgroundColor: "#EF4444",

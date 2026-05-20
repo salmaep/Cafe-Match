@@ -112,8 +112,6 @@ function UserPin() {
 
 // ── Main map view ────────────────────────────────────────────────────────────
 export default function MapView({ center, cafes, radius, onMapClick }: Props) {
-  const [showCafePins, setShowCafePins] = useState(true);
-  const [showUserPin, setShowUserPin] = useState(true);
   const [activeCafeId, setActiveCafeId] = useState<number | null>(null);
   const [userPopupOpen, setUserPopupOpen] = useState(false);
 
@@ -152,16 +150,14 @@ export default function MapView({ center, cafes, radius, onMapClick }: Props) {
         <RecenterMap center={center} />
         <RadiusCircle center={center} radius={radius} />
 
-        {showUserPin && (
-          <AdvancedMarker
-            position={{ lat: center[0], lng: center[1] }}
-            onClick={() => setUserPopupOpen(true)}
-          >
-            <UserPin />
-          </AdvancedMarker>
-        )}
+        <AdvancedMarker
+          position={{ lat: center[0], lng: center[1] }}
+          onClick={() => setUserPopupOpen(true)}
+        >
+          <UserPin />
+        </AdvancedMarker>
 
-        {showUserPin && userPopupOpen && (
+        {userPopupOpen && (
           <InfoWindow
             position={{ lat: center[0], lng: center[1] }}
             onCloseClick={() => setUserPopupOpen(false)}
@@ -170,12 +166,10 @@ export default function MapView({ center, cafes, radius, onMapClick }: Props) {
           </InfoWindow>
         )}
 
-        {showCafePins && (
-          <CafeClusterMarkers
-            cafes={cafes}
-            onCafeClick={(id) => setActiveCafeId(id)}
-          />
-        )}
+        <CafeClusterMarkers
+          cafes={cafes}
+          onCafeClick={(id) => setActiveCafeId(id)}
+        />
 
         {activeCafe && (
           <InfoWindow
@@ -255,33 +249,6 @@ export default function MapView({ center, cafes, radius, onMapClick }: Props) {
         )}
       </Map>
 
-      {/* Pin toggle buttons (top-right overlay) */}
-      <div className="absolute top-3 right-3 z-[1000] flex flex-col gap-2">
-        <button
-          type="button"
-          onClick={() => setShowCafePins((v) => !v)}
-          title={showCafePins ? "Hide cafe pins" : "Show cafe pins"}
-          className={`w-11 h-11 rounded-full flex items-center justify-center text-xl shadow-md border-2 transition-colors ${
-            showCafePins
-              ? "bg-[#D48B3A] border-[#D48B3A] text-white"
-              : "bg-white border-white text-[#1C1C1A] hover:bg-[#F0EDE8]"
-          }`}
-        >
-          ☕
-        </button>
-        <button
-          type="button"
-          onClick={() => setShowUserPin((v) => !v)}
-          title={showUserPin ? "Hide my location" : "Show my location"}
-          className={`w-11 h-11 rounded-full flex items-center justify-center text-xl shadow-md border-2 transition-colors ${
-            showUserPin
-              ? "bg-[#D48B3A] border-[#D48B3A] text-white"
-              : "bg-white border-white text-[#1C1C1A] hover:bg-[#F0EDE8]"
-          }`}
-        >
-          📍
-        </button>
-      </div>
     </div>
   );
 }

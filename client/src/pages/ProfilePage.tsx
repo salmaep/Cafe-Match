@@ -160,7 +160,7 @@ export default function ProfilePage() {
                   Ajak teman ke CafeMatch
                 </h3>
                 <p className="text-[12px] text-[#8A8880] mt-0.5">
-                  Share friend code untuk saling check-in
+                  Share friend code untuk saling terhubung
                 </p>
               </div>
             </div>
@@ -204,20 +204,14 @@ export default function ProfilePage() {
         )}
 
         {/* Quick actions — uniform muted tiles */}
-        <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+        <div className="grid grid-cols-3 gap-2">
           <QuickAction to="/friends" icon="👥" label="Teman" />
-          <QuickAction to="/leaderboard" icon="🏆" label="Leaderboard" />
           <QuickAction to="/achievements" icon="🎖️" label="Achievement" />
           <QuickAction
             to="/notifications"
             icon="🔔"
             label="Notifikasi"
             badge={unread > 0 ? unread : undefined}
-          />
-          <QuickAction
-            to={`/recap/${new Date().getFullYear()}`}
-            icon="📊"
-            label="Recap"
           />
         </div>
 

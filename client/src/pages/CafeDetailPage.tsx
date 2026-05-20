@@ -25,8 +25,6 @@ import { getOpenStatus, formatHoursTable } from "../utils/openingHours";
 import { buildFacilityChips } from "../utils/facilities";
 import { formatRating } from "../utils/rating";
 import { cleanAddress } from "../utils/address";
-import CheckInButton from "../components/checkin/CheckInButton";
-import CafeLeaderboard from "../components/checkin/CafeLeaderboard";
 import {
   Bookmark,
   Heart,
@@ -628,11 +626,6 @@ export default function CafeDetailPage() {
             </a>
           )}
 
-          {/* Check-In CTA — prominent, between Phone and Opening Hours */}
-          <div className="mt-4">
-            <CheckInButton cafe={cafe} />
-          </div>
-
           {cafe.openingHours && Object.keys(cafe.openingHours).length > 0 && (
             <Section title="Jam Buka">
               <div className="bg-white border border-[#F0EDE8] rounded-2xl overflow-hidden">
@@ -870,11 +863,6 @@ export default function CafeDetailPage() {
                 )}
               </div>
             )}
-          </Section>
-
-          {/* Leaderboard — top check-in users at this cafe */}
-          <Section title="🏆 Top Check-in">
-            <CafeLeaderboard cafeId={cafe.id} />
           </Section>
 
           {/* Vibes — read-only mood chips aggregated from reviews + scraping */}

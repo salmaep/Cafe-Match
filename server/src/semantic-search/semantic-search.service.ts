@@ -1,7 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { MeiliCafesService, CafeHit } from '../meili/meili-cafes.service';
 import { QueryRewriterService } from './query-rewriter.service';
-import { RerankerService } from './reranker.service';
 import { SemanticCacheService } from './semantic-cache.service';
 import { SemanticSearchDto, ParsedQuery } from './dto/semantic-search.dto';
 
@@ -31,7 +30,6 @@ export class SemanticSearchService {
   constructor(
     private readonly meili: MeiliCafesService,
     private readonly rewriter: QueryRewriterService,
-    private readonly reranker: RerankerService,
     private readonly cache: SemanticCacheService,
   ) {}
 
@@ -71,12 +69,12 @@ export class SemanticSearchService {
       };
     }
 
-    // [1+2] Query rewriting via Haiku. rewriter.rewrite() never throws —
+    // [1] Query rewriting via Haiku. rewriter.rewrite() never throws —
     // it logs and returns null on any AI failure, so we don't wrap in try/catch.
     const parsed = await this.rewriter.rewrite(q);
     const aiUsed = parsed !== null;
 
-    // [3] Meili retrieval — 30 candidates.
+    // [2] Meili retrieval — fetch topN directly (no reranking step).
     // User-supplied filters take precedence over AI-inferred ones.
     const facilities = dtoFacilities?.length
       ? dtoFacilities
@@ -96,7 +94,7 @@ export class SemanticSearchService {
       purposeId,
       sort,
       page: 1,
-      limit: 30,
+      limit: topN,
     });
 
     // Safety net: AI keywords may not match Meili's full-text index (e.g. for
@@ -116,7 +114,7 @@ export class SemanticSearchService {
         purposeId,
         sort,
         page: 1,
-        limit: 30,
+        limit: topN,
       });
     }
 
@@ -177,14 +175,9 @@ export class SemanticSearchService {
       };
     }
 
-    // [4] Haiku rerank. reranker.rerank() handles its own errors and
-    // gracefully returns hits.slice(0, topN) on failure.
-    hits =
-      aiUsed && hits.length > 1
-        ? await this.reranker.rerank(q, hits, topN)
-        : hits.slice(0, topN);
+    hits = hits.slice(0, topN);
 
-    // [5] Cache result — only when AI succeeded. We don't want to serve a
+    // [4] Cache result — only when AI succeeded. We don't want to serve a
     // stale fallback result after Meridian recovers.
     if (aiUsed) {
       await this.cache.set(hash, geoBucket, parsed, hits);

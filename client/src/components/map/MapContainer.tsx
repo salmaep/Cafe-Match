@@ -247,7 +247,7 @@ export default function MapView({ center, cafes, radius, onMapClick }: Props) {
                   ))}
                 </div>
                 <div className="mt-2 text-[12px] font-bold text-[#D48B3A]">
-                  Lihat detail →
+                  Cek detail →
                 </div>
               </div>
             </a>

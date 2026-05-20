@@ -51,13 +51,23 @@ function ensureKeyframes() {
   document.head.appendChild(style);
 }
 
+function buildClusterPinSVG(count: number, size: number): string {
+  const height = Math.round(size * (44 / 32));
+  const digits = String(count).length;
+  const fontSize = digits >= 3 ? 11 : digits === 2 ? 13 : 15;
+  return `
+<svg width="${size}" height="${height}" viewBox="0 0 32 44" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
+  <path d="M16 0C7.16 0 0 7.16 0 16c0 12 16 28 16 28s16-16 16-28C32 7.16 24.84 0 16 0z" fill="#d97706" stroke="#fff" stroke-width="1.5"/>
+  <circle cx="16" cy="15" r="11" fill="#fff"/>
+  <text x="16" y="15" text-anchor="middle" dominant-baseline="central" font-family="Arial, sans-serif" font-size="${fontSize}" font-weight="800" fill="#d97706">${count}</text>
+</svg>`;
+}
+
 const clusterRenderer: Renderer = {
   render: ({ count, position }: Cluster) => {
-    const size = count < 10 ? 40 : count < 50 ? 48 : 56;
-    const fontSize = size > 48 ? 16 : 14;
+    const size = count < 10 ? 40 : count < 100 ? 48 : 56;
     const div = document.createElement("div");
-    div.style.cssText = `width:${size}px;height:${size}px;border-radius:50%;background:#d97706;color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.3);font-size:${fontSize}px;`;
-    div.textContent = String(count);
+    div.innerHTML = buildClusterPinSVG(count, size);
     return new google.maps.marker.AdvancedMarkerElement({
       position,
       content: div,

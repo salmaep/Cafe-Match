@@ -6,7 +6,7 @@ import ActiveCheckinBanner from "../checkin/ActiveCheckinBanner";
 // Routes that should be fullscreen on mobile (no top navbar, no bottom tab bar) —
 // matches mobile app behavior where these are dedicated immersive Stack screens
 // (CardSwipe, CafeDetail, Wizard) that sit outside MainTabs.
-const FULLSCREEN_MOBILE_ROUTES = ["/discover", "/wizard", "/cafe"];
+const FULLSCREEN_MOBILE_ROUTES = ["/wizard", "/cafe"];
 
 export default function UserLayout() {
   const { pathname } = useLocation();

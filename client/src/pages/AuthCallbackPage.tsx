@@ -23,7 +23,7 @@ export default function AuthCallbackPage() {
         .then(() =>
           navigate(wizardCompleted ? "/" : "/discover", { replace: true }),
         )
-        .catch(() => setError("Sesi login gagal. Silakan coba lagi."));
+        .catch(() => setError("Sesi login gagal, coba lagi yuk."));
     } else if (twoFa === "1") {
       const otpId = params.get("otpId") || "";
       const expiresAt =
@@ -78,7 +78,7 @@ export default function AuthCallbackPage() {
               onClick={() => navigate("/login", { replace: true })}
               className="mt-4 w-full py-3 bg-[#1C1C1A] text-white rounded-xl font-bold text-base hover:bg-black transition-colors"
             >
-              Kembali ke Login
+              Balik ke Login
             </button>
           </>
         ) : (

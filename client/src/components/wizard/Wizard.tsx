@@ -106,7 +106,7 @@ export default function Wizard({ onComplete, onSkip }: Props = {}) {
     userLat === null;
 
   return (
-    <div className="flex flex-col bg-[#FAF9F6] min-h-screen md:min-h-[calc(100vh-4rem)]">
+    <div className="flex flex-col bg-[#FAF9F6] min-h-[calc(100dvh-8rem)] md:min-h-[calc(100vh-4rem)]">
       <header className="flex items-center justify-between px-6 pt-10 pb-3 max-w-2xl w-full mx-auto">
         {step > 0 ? (
           <button

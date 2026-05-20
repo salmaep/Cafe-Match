@@ -254,7 +254,7 @@ export default function FilterPanel({
 
         {loading && (
           <div className="px-4 py-6 text-sm text-[#8A8880] text-center">
-            Memuat filter…
+            Lagi load filter…
           </div>
         )}
 

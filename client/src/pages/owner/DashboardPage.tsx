@@ -34,7 +34,7 @@ export default function DashboardPage() {
             Belum ada cafe terdaftar
           </p>
           <p className="text-sm text-[#8A8880] mb-4">
-            Daftarkan cafe kamu dulu untuk mulai mengelola.
+            Daftarin cafe kamu dulu buat mulai kelola.
           </p>
           <Link
             to="/owner/cafe"

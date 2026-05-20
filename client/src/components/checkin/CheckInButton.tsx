@@ -85,11 +85,11 @@ export default function CheckInButton({ cafe, className = "" }: Props) {
       (geoErr) => {
         setSubmitting(false);
         if (geoErr.code === geoErr.PERMISSION_DENIED) {
-          setError("Izin lokasi ditolak. Aktifkan GPS untuk check-in.");
+          setError("Izin lokasi ditolak, aktifin GPS dulu ya buat check-in.");
         } else if (geoErr.code === geoErr.POSITION_UNAVAILABLE) {
-          setError("Lokasi tidak tersedia. Coba lagi di luar ruangan.");
+          setError("Lokasi belum kebaca, coba di luar ruangan ya.");
         } else {
-          setError("Gagal dapat lokasi. Coba lagi.");
+          setError("Gagal dapet lokasi, coba lagi yuk.");
         }
       },
       { enableHighAccuracy: true, timeout: 10_000 },

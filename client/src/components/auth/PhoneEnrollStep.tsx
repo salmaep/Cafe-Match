@@ -93,8 +93,8 @@ export default function PhoneEnrollStep({
           Verifikasi Nomor WhatsApp
         </h2>
         <p className="text-sm text-[#8A8880] mt-1">
-          Masukkan nomor WhatsApp aktif Anda. Kami akan mengirim kode OTP untuk
-          memverifikasi akun.
+          Masukin nomor WhatsApp aktif kamu. Kita kirim kode OTP buat
+          verifikasi akun.
         </p>
       </div>
 

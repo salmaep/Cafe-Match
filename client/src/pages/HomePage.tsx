@@ -440,7 +440,7 @@ export default function HomePage() {
         <button
           type="button"
           onClick={() => setCoordInputOpen((v) => !v)}
-          title="Masukkan koordinat"
+          title="Masukin koordinat"
           className={`w-10 h-10 rounded-full shadow-lg border border-[#F0EDE8] flex items-center justify-center text-lg active:scale-95 transition-transform ${
             coordInputOpen
               ? "bg-[#D48B3A] text-white"

@@ -50,7 +50,7 @@ export default function ActiveCheckinBanner() {
     try {
       await checkOut();
     } catch (err: any) {
-      alert(err?.response?.data?.message || "Gagal check out. Coba lagi.");
+      alert(err?.response?.data?.message || "Gagal check out, coba lagi yuk.");
     } finally {
       setSubmitting(false);
     }

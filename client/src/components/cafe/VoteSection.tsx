@@ -90,11 +90,11 @@ export default function VoteSection({ cafeId }: Props) {
 
       {loading ? (
         <div className="text-sm text-gray-400 italic py-4 text-center">
-          Memuat kategori…
+          Lagi load kategori…
         </div>
       ) : loadError ? (
         <div className="py-4 text-center space-y-2">
-          <p className="text-sm text-gray-500 italic">Gagal memuat kategori.</p>
+          <p className="text-sm text-gray-500 italic">Gagal load kategori.</p>
           <button
             onClick={loadPurposes}
             className="text-xs font-semibold text-amber-700 hover:text-amber-800 underline"

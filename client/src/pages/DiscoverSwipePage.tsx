@@ -13,7 +13,7 @@ const SWIPE_THRESHOLD = 120;
 export default function DiscoverSwipePage() {
   const navigate = useNavigate();
   const { preferences, getPurposeId } = usePreferences();
-  const { addToShortlist, shortlist, isInShortlist } = useShortlist();
+  const { addToShortlist, isInShortlist } = useShortlist();
 
   const [cafes, setCafes] = useState<Cafe[]>([]);
   const [index, setIndex] = useState(0);

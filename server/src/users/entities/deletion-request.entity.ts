@@ -10,7 +10,7 @@ export class DeletionRequest {
   @PrimaryGeneratedColumn({ unsigned: true })
   id: number;
 
-  @Column({ length: 255 })
+  @Column({ type: 'varchar', length: 255 })
   email: string;
 
   @Column({ name: 'friend_code', type: 'varchar', length: 8, nullable: true })
@@ -34,7 +34,7 @@ export class DeletionRequest {
   })
   matchedUserId: number | null;
 
-  @Column({ name: 'ip_address', length: 45, nullable: true })
+  @Column({ name: 'ip_address', type: 'varchar', length: 45, nullable: true })
   ipAddress: string | null;
 
   @Column({ name: 'user_agent', type: 'text', nullable: true })

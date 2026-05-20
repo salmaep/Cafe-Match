@@ -30,6 +30,8 @@ import AchievementsPage from "./pages/AchievementsPage";
 import NotificationsPage from "./pages/NotificationsPage";
 import LeaderboardPage from "./pages/LeaderboardPage";
 import RecapPage from "./pages/RecapPage";
+import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
+import AccountDeletionPage from "./pages/AccountDeletionPage";
 
 function App() {
   useTrackPageView();
@@ -83,6 +85,8 @@ function App() {
           <Route path="/notifications" element={<NotificationsPage />} />
           <Route path="/leaderboard" element={<LeaderboardPage />} />
           <Route path="/recap/:year" element={<RecapPage />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+          <Route path="/account-deletion" element={<AccountDeletionPage />} />
         </Route>
       </Routes>
     </div>

@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { notificationsApi } from "../api/notifications.api";
 import { APP_VERSION } from "../config/version";
 import EditProfileModal from "../components/profile/EditProfileModal";
+import DeleteAccountModal from "../components/profile/DeleteAccountModal";
 
 export default function ProfilePage() {
   const { user, logout, isLoading } = useAuth();
@@ -11,6 +12,7 @@ export default function ProfilePage() {
   const [unread, setUnread] = useState(0);
   const [copied, setCopied] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -262,7 +264,7 @@ export default function ProfilePage() {
           <button
             type="button"
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-50 transition-colors text-left"
+            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-50 border-b border-[#F0EDE8] transition-colors text-left"
           >
             <span className="text-lg w-7 text-center">🚪</span>
             <div className="flex-1 min-w-0">
@@ -270,14 +272,48 @@ export default function ProfilePage() {
               <div className="text-[11px] text-[#A8A59C]">Keluar dari akun</div>
             </div>
           </button>
+          <button
+            type="button"
+            onClick={() => setDeleteOpen(true)}
+            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-50 transition-colors text-left"
+          >
+            <span className="text-lg w-7 text-center">🗑️</span>
+            <div className="flex-1 min-w-0">
+              <div className="font-semibold text-sm text-red-600">
+                Hapus Akun
+              </div>
+              <div className="text-[11px] text-[#A8A59C]">
+                Data dihapus permanen setelah 30 hari
+              </div>
+            </div>
+            <span className="text-[#8A8880]">›</span>
+          </button>
         </Section>
 
-        <p className="text-center text-xs text-[#A8A59C] pt-2">
-          CafeMatch v{APP_VERSION}
-        </p>
+        <div className="flex items-center justify-center gap-3 text-[11px] text-[#A8A59C] pt-2 pb-1 flex-wrap">
+          <Link
+            to="/privacy-policy"
+            className="hover:text-[#1C1C1A] hover:underline transition-colors"
+          >
+            Kebijakan Privasi
+          </Link>
+          <span>·</span>
+          <Link
+            to="/account-deletion"
+            className="hover:text-[#1C1C1A] hover:underline transition-colors"
+          >
+            Hapus Akun
+          </Link>
+          <span>·</span>
+          <span>CafeMatch v{APP_VERSION}</span>
+        </div>
       </div>
 
       <EditProfileModal open={editOpen} onClose={() => setEditOpen(false)} />
+      <DeleteAccountModal
+        open={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+      />
     </div>
   );
 }

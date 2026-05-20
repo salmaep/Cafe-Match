@@ -4,6 +4,7 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  DeleteDateColumn,
   OneToMany,
 } from 'typeorm';
 import { Bookmark } from '../../bookmarks/entities/bookmark.entity';
@@ -58,6 +59,9 @@ export class User {
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
+
+  @DeleteDateColumn({ name: 'deleted_at', type: 'timestamp', nullable: true })
+  deletedAt: Date | null;
 
   @OneToMany(() => Bookmark, (bookmark) => bookmark.user)
   bookmarks: Bookmark[];

@@ -13,14 +13,6 @@ export default function PrivacyPolicyPage() {
       />
 
       <div className="max-w-3xl mx-auto px-4 pt-8 pb-4">
-        {/* Back link */}
-        <Link
-          to="/profile"
-          className="inline-flex items-center gap-1.5 text-sm text-[#8A8880] hover:text-[#1C1C1A] transition-colors mb-6"
-        >
-          ← Kembali ke Profil
-        </Link>
-
         {/* Title */}
         <h1
           className="text-4xl font-normal text-[#1C1C1A] leading-tight tracking-tight mb-2"
@@ -169,10 +161,7 @@ export default function PrivacyPolicyPage() {
               <li>
                 <strong>Koreksi</strong>: memperbarui nama, foto profil, dan
                 informasi akun melalui halaman{" "}
-                <Link
-                  to="/profile"
-                  className="text-[#D48B3A] hover:underline"
-                >
+                <Link to="/profile" className="text-[#D48B3A] hover:underline">
                   Edit Profil
                 </Link>
                 .
@@ -210,9 +199,9 @@ export default function PrivacyPolicyPage() {
             <p>
               CafeMatch menggunakan localStorage untuk menyimpan token
               otentikasi secara lokal di perangkat Anda. Kami tidak menggunakan
-              cookie pihak ketiga untuk iklan bertarget. Analitik dasar (tampilan
-              halaman, fitur yang digunakan) dikumpulkan secara anonim untuk
-              meningkatkan pengalaman pengguna.
+              cookie pihak ketiga untuk iklan bertarget. Analitik dasar
+              (tampilan halaman, fitur yang digunakan) dikumpulkan secara anonim
+              untuk meningkatkan pengalaman pengguna.
             </p>
           </Section>
 
@@ -232,8 +221,8 @@ export default function PrivacyPolicyPage() {
           <Section title="9. Perubahan Kebijakan">
             <p>
               Kami dapat memperbarui Kebijakan Privasi ini dari waktu ke waktu.
-              Perubahan signifikan akan diberitahukan melalui notifikasi
-              dalam aplikasi atau email minimal 7 hari sebelum berlaku. Tanggal
+              Perubahan signifikan akan diberitahukan melalui notifikasi dalam
+              aplikasi atau email minimal 7 hari sebelum berlaku. Tanggal
               "Terakhir diperbarui" di bagian atas halaman ini mencerminkan
               versi terkini.
             </p>

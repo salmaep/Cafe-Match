@@ -14,8 +14,6 @@ export class AddUserSoftDelete1713300000000 implements MigrationInterface {
     await queryRunner.query(
       `ALTER TABLE users DROP INDEX idx_users_deleted_at`,
     );
-    await queryRunner.query(
-      `ALTER TABLE users DROP COLUMN deleted_at`,
-    );
+    await queryRunner.query(`ALTER TABLE users DROP COLUMN deleted_at`);
   }
 }

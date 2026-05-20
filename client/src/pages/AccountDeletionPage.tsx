@@ -32,10 +32,11 @@ export default function AccountDeletionPage() {
         acknowledge,
       });
       setSubmitted(true);
-    } catch (err: any) {
+    } catch (err: unknown) {
       const msg =
-        err?.response?.data?.message ?? "Terjadi kesalahan. Coba lagi.";
-      setError(Array.isArray(msg) ? msg.join(", ") : msg);
+        (err as { response?: { data?: { message?: unknown } } })?.response?.data
+          ?.message ?? "Terjadi kesalahan. Coba lagi.";
+      setError(Array.isArray(msg) ? (msg as string[]).join(", ") : String(msg));
     } finally {
       setLoading(false);
     }
@@ -49,14 +50,6 @@ export default function AccountDeletionPage() {
       />
 
       <div className="max-w-2xl mx-auto px-4 pt-8 pb-4">
-        {/* Back */}
-        <Link
-          to="/profile"
-          className="inline-flex items-center gap-1.5 text-sm text-[#8A8880] hover:text-[#1C1C1A] transition-colors mb-6"
-        >
-          ← Kembali ke Profil
-        </Link>
-
         {/* Title */}
         <h1
           className="text-4xl font-normal text-[#1C1C1A] leading-tight tracking-tight mb-2"

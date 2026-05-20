@@ -13,7 +13,7 @@ const SWIPE_THRESHOLD = 120;
 export default function DiscoverSwipePage() {
   const navigate = useNavigate();
   const { preferences, getPurposeId } = usePreferences();
-  const { addToShortlist, shortlist } = useShortlist();
+  const { addToShortlist, shortlist, isInShortlist } = useShortlist();
 
   const [cafes, setCafes] = useState<Cafe[]>([]);
   const [index, setIndex] = useState(0);
@@ -45,7 +45,7 @@ export default function DiscoverSwipePage() {
     setCafes([]);
     setIndex(0);
 
-    const baseParams = { lat, lng, radius, limit: 20, purposeId, priceRange };
+    const baseParams = { lat, lng, radius, limit: 10, purposeId, priceRange };
 
     cafesApi
       .discover({ ...baseParams, facilities })
@@ -57,7 +57,7 @@ export default function DiscoverSwipePage() {
       .then((res) => {
         if (res.data.length > 0) return res;
         // Fallback 2: drop purposeId too, just location + radius
-        return cafesApi.discover({ lat, lng, radius, limit: 20 });
+        return cafesApi.discover({ lat, lng, radius, limit: 10 });
       })
       .then((res) => setCafes(res.data ?? []))
       .catch(() => setCafes([]))
@@ -171,110 +171,65 @@ export default function DiscoverSwipePage() {
     useTransition = true;
   }
 
-  const likeOverlayOpacity = Math.max(0, Math.min(1, dragX / SWIPE_THRESHOLD));
-  const passOverlayOpacity = Math.max(0, Math.min(1, -dragX / SWIPE_THRESHOLD));
-
   return (
-    <div className="h-[calc(100vh-64px)] bg-[#FAF9F6] flex flex-col relative overflow-hidden">
+    <div
+      className="h-[calc(100dvh-3.5rem)] bg-[#f6efe2] flex flex-col relative overflow-hidden"
+      style={{
+        backgroundImage:
+          "radial-gradient(1200px 600px at 80% -20%, #f9e9c8 0%, transparent 60%), radial-gradient(900px 500px at -10% 110%, #f1d9b2 0%, transparent 55%)",
+      }}
+    >
       <Seo
         title="Discover cafes"
         description="Swipe through cafes that match your preferences and shortlist the ones you love."
       />
 
-      {/* Hint banner */}
-      <div className="shrink-0 px-4 pt-3 pb-1 max-w-md mx-auto w-full">
-        <div className="flex items-center justify-between gap-2 bg-white border border-[#F0EDE8] rounded-full px-3 py-1.5 text-[11px] font-semibold text-[#5C5A52] shadow-sm">
-          <span className="flex items-center gap-1 text-red-500">
-            <span className="text-sm">←</span> Geser kiri ={" "}
-            <span className="font-bold">Skip</span>
-          </span>
-          <span className="flex items-center gap-1 text-[#D48B3A]">
-            <span className="font-bold">Shortlist</span> = Geser kanan{" "}
-            <span className="text-sm">→</span>
-          </span>
-        </div>
-      </div>
+      {/* Page header */}
+      <header className="md:absolute md:left-20 shrink-0 w-full max-w-130 md:max-w-275 mx-auto px-4 md:px-8 pt-4 md:pt-8">
+        <h1
+          className="m-0 font-normal text-[#1a1410] leading-[1.05] tracking-tight"
+          style={{
+            fontFamily: "'Instrument Serif', Georgia, serif",
+            fontSize: "clamp(26px, 3.5vw, 40px)",
+          }}
+        >
+          Temukan kafe <em className="italic text-[#b85d04]">favoritmu</em>.
+        </h1>
+        <p className="text-[#8a7a66] text-[13px] md:text-sm mt-1.5">
+          Geser kartu — kanan untuk simpan, kiri untuk lewati.
+        </p>
+      </header>
 
-      {/* Card area — explicit height so card never overflows viewport */}
-      <div className="flex-1 min-h-0 flex items-center justify-center px-4 py-2 overflow-hidden">
+      {/* Card area — mobile: full-width edge-to-edge with available height; desktop: centered with aspect ratio */}
+      <div className="mx-3 md:mx-0 flex-1 min-h-0 flex items-stretch md:items-center justify-center pb-1">
         <div
-          className="relative w-full max-w-sm"
-          style={{ height: "min(560px, calc(100vh - 215px))" }}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerUp}
+          className="touch-none cursor-grab active:cursor-grabbing select-none w-full h-full mx-auto md:w-auto md:h-full md:max-h-[min(78vh,100vh)] md:aspect-[3/4.2]"
+          style={{
+            transform: `translateX(${translateX}px) rotate(${rotate}deg)`,
+            opacity,
+            transition: useTransition
+              ? "transform 0.3s ease-out, opacity 0.3s ease-out"
+              : "none",
+          }}
         >
-          <div
-            onPointerDown={onPointerDown}
-            onPointerMove={onPointerMove}
-            onPointerUp={onPointerUp}
-            onPointerCancel={onPointerUp}
-            className="touch-none cursor-grab active:cursor-grabbing w-full h-full select-none"
-            style={{
-              transform: `translateX(${translateX}px) rotate(${rotate}deg)`,
-              opacity,
-              transition: useTransition
-                ? "transform 0.3s ease-out, opacity 0.3s ease-out"
-                : "none",
-            }}
-          >
-            {current && (
-              <div className="relative h-full">
-                <SwipeCard cafe={current} className="h-full" />
-                <div
-                  className="absolute top-8 left-8 -rotate-12 px-4 py-2 border-4 border-[#D48B3A] rounded-lg pointer-events-none"
-                  style={{ opacity: likeOverlayOpacity }}
-                >
-                  <span className="text-2xl font-extrabold text-[#D48B3A] tracking-wider">
-                    SHORTLIST ★
-                  </span>
-                </div>
-                <div
-                  className="absolute top-8 right-8 rotate-12 px-4 py-2 border-4 border-red-500 rounded-lg pointer-events-none"
-                  style={{ opacity: passOverlayOpacity }}
-                >
-                  <span className="text-2xl font-extrabold text-red-500 tracking-wider">
-                    NOPE
-                  </span>
-                </div>
-              </div>
-            )}
-          </div>
+          {current && (
+            <SwipeCard
+              cafe={current}
+              className="w-full h-full"
+              shortlisted={isInShortlist(current.id)}
+              dragX={dragX}
+              onSkip={() => triggerSwipe("left")}
+              onKeep={() => triggerSwipe("right")}
+              currentIndex={index}
+              total={cafes.length}
+            />
+          )}
         </div>
       </div>
-
-      {/* Shortlist FAB */}
-      <button
-        onClick={() => navigate("/shortlist")}
-        className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-[#D48B3A] text-white shadow-xl flex items-center justify-center hover:bg-[#b87528] transition-colors z-30"
-        title="View Shortlist"
-      >
-        <span className="text-2xl leading-none">★</span>
-        {shortlist.length > 0 && (
-          <span className="absolute -top-1 -right-1 bg-white text-[#D48B3A] text-[11px] font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1 shadow border border-[#D48B3A]">
-            {shortlist.length}
-          </span>
-        )}
-      </button>
-
-      {/* Footer action buttons */}
-      <footer className="shrink-0 flex px-6 pb-6 pt-2 max-w-md w-full mx-auto items-center justify-center gap-10 relative z-20">
-        <button
-          onClick={() => triggerSwipe("left")}
-          disabled={!!exitDir}
-          className="w-16 h-16 rounded-full bg-white shadow-lg flex items-center justify-center text-2xl text-red-500 hover:bg-red-50 transition-colors border-2 border-red-200 disabled:opacity-50"
-          title="Skip / Nope"
-        >
-          ✕
-        </button>
-        <button
-          onClick={() => triggerSwipe("right")}
-          disabled={!!exitDir}
-          className="w-16 h-16 rounded-full bg-[#D48B3A] shadow-lg flex items-center justify-center text-3xl text-white hover:bg-[#b87528] transition-colors disabled:opacity-50"
-          title="Add to Shortlist"
-        >
-          ★
-        </button>
-      </footer>
-
-      {/* Toast */}
       {toast && (
         <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-[#1C1C1A] text-white px-5 py-3 rounded-full shadow-xl z-40 text-sm font-semibold">
           {toast}

@@ -7,7 +7,6 @@ import {
 } from "../hooks/useGeolocation";
 import { cafesApi, type SearchParams } from "../api/cafes.api";
 import { promotionsApi } from "../api/promotions.api";
-import { parseCoords } from "../utils/parseCoords";
 import { usePreferences } from "../context/PreferencesContext";
 import type { Cafe } from "../types";
 import MapView from "../components/map/MapContainer";
@@ -102,8 +101,6 @@ export default function HomePage() {
   const [featuredCafes, setFeaturedCafes] = useState<any[]>([]);
   const [mobileQuery, setMobileQuery] = useState("");
   const [showAllModal, setShowAllModal] = useState(false);
-  const [coordInputOpen, setCoordInputOpen] = useState(false);
-  const [coordInput, setCoordInput] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">(() => {
     if (typeof window === "undefined") return "grid";
     return (localStorage.getItem("cm_home_view") as "grid" | "list") || "grid";
@@ -271,22 +268,6 @@ export default function HomePage() {
     setCenter([lat, lng]);
     setCenterSource("manual");
   };
-
-  const useMyLocation = () => {
-    setCenterSource("gps");
-    geo.refetch();
-  };
-
-  const submitCoords = () => {
-    const parsed = parseCoords(coordInput);
-    if (!parsed) return;
-    setCenter([parsed.lat, parsed.lng]);
-    setCenterSource("manual");
-    setCoordInputOpen(false);
-    setCoordInput("");
-  };
-
-  const parsedCoords = parseCoords(coordInput);
 
   const setQ = (q: string) => {
     setForceListMode(false);

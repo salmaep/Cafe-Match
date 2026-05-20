@@ -50,10 +50,7 @@ export class UsersController {
 
   @Delete('me')
   async deleteAccount(@Request() req: any, @Body() dto: DeleteAccountDto) {
-    await this.usersService.deleteAccount(
-      req.user.userId ?? req.user.id,
-      dto,
-    );
+    await this.usersService.deleteAccount(req.user.userId ?? req.user.id, dto);
     return { ok: true };
   }
 }

@@ -19,8 +19,8 @@ export default function DeleteAccountModal({ open, onClose }: Props) {
 
   if (!open || !user) return null;
 
-  const isOAuth = !(user as any).passwordHash && (user as any).provider !== "local";
-  // Fallback: treat as local if we can't determine (safer to ask password)
+  const u = user as unknown as { passwordHash?: string; provider?: string };
+  const isOAuth = !u.passwordHash && u.provider !== "local";
   const needsEmail = isOAuth;
 
   const isValid = credential.trim().length > 0 && acknowledge;
@@ -46,11 +46,11 @@ export default function DeleteAccountModal({ open, onClose }: Props) {
       });
       logout();
       navigate("/", { replace: true });
-    } catch (err: any) {
+    } catch (err: unknown) {
       const msg =
-        err?.response?.data?.message ??
-        "Terjadi kesalahan. Coba lagi.";
-      setError(Array.isArray(msg) ? msg.join(", ") : msg);
+        (err as { response?: { data?: { message?: unknown } } })?.response?.data
+          ?.message ?? "Terjadi kesalahan. Coba lagi.";
+      setError(Array.isArray(msg) ? (msg as string[]).join(", ") : String(msg));
     } finally {
       setLoading(false);
     }

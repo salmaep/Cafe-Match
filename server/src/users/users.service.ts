@@ -136,7 +136,9 @@ export class UsersService {
 
     if (user.passwordHash) {
       if (!dto.password) {
-        throw new BadRequestException('Password wajib diisi untuk menghapus akun.');
+        throw new BadRequestException(
+          'Password wajib diisi untuk menghapus akun.',
+        );
       }
       const ok = await bcrypt.compare(dto.password, user.passwordHash);
       if (!ok) throw new UnauthorizedException('Password salah.');

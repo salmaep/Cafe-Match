@@ -8,6 +8,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useReviews } from '../queries/reviews/use-reviews';
 import { useReviewSummary } from '../queries/reviews/use-review-summary';
+import { useAuth } from '../context/AuthContext';
 import { colors, spacing, radius } from '../theme';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
@@ -60,6 +61,15 @@ export default function ReviewsScreen() {
   const navigation = useNavigation<StackNavigationProp<any>>();
   const insets = useSafeAreaInsets();
   const { cafeId, cafeName } = route.params;
+  const { user } = useAuth();
+
+  const goWriteReview = () => {
+    if (!user) {
+      navigation.navigate('AuthModal');
+      return;
+    }
+    navigation.navigate('WriteReview', { cafeId, cafeName });
+  };
 
   const reviewsQuery = useReviews(cafeId);
   const summaryQuery = useReviewSummary(cafeId);
@@ -85,10 +95,10 @@ export default function ReviewsScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.back}>← Back</Text>
+          <Text style={styles.back}>← Kembali</Text>
         </TouchableOpacity>
-        <Text style={styles.title} numberOfLines={1}>Reviews · {cafeName}</Text>
-        <TouchableOpacity onPress={() => navigation.navigate('WriteReview', { cafeId, cafeName })}>
+        <Text style={styles.title} numberOfLines={1}>Ulasan · {cafeName}</Text>
+        <TouchableOpacity onPress={goWriteReview}>
           <Text style={styles.writeBtn}>+ Tulis</Text>
         </TouchableOpacity>
       </View>
@@ -115,7 +125,7 @@ export default function ReviewsScreen() {
           <Text style={styles.emptyText}>Belum ada review</Text>
           <TouchableOpacity
             style={styles.emptyBtn}
-            onPress={() => navigation.navigate('WriteReview', { cafeId, cafeName })}
+            onPress={goWriteReview}
           >
             <Text style={styles.emptyBtnText}>Jadi yang pertama review!</Text>
           </TouchableOpacity>

@@ -210,6 +210,9 @@ export interface LeaderboardEntry {
   name: string;
   avatarUrl?: string;
   checkinCount: number;
+  totalDuration: string;
+  totalMinutes: number;
+  score: number;
   badge: string | null;
 }
 

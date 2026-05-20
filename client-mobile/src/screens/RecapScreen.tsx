@@ -37,7 +37,7 @@ export default function RecapScreen() {
     return (
       <View style={[styles.center, { paddingTop: insets.top }]}>
         <ActivityIndicator size="large" color={colors.accent} />
-        <Text style={styles.loadingText}>Generating your recap...</Text>
+        <Text style={styles.loadingText}>Lagi nyiapin recap kamu...</Text>
       </View>
     );
   }
@@ -45,7 +45,7 @@ export default function RecapScreen() {
   if (!recap) {
     return (
       <View style={[styles.center, { paddingTop: insets.top }]}>
-        <Text style={styles.emptyText}>Belum ada data untuk recap tahun ini</Text>
+        <Text style={styles.emptyText}>Belum ada data buat recap tahun ini</Text>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Text style={styles.backBtnText}>Kembali</Text>
         </TouchableOpacity>
@@ -59,12 +59,12 @@ export default function RecapScreen() {
       <Text style={styles.brandSmall}>CafeMatch</Text>
       <Text style={styles.yearBig}>{YEAR}</Text>
       <Text style={styles.yearTitle}>{recap.yearTitle}</Text>
-      <Text style={styles.slideHint}>Swipe untuk lanjut →</Text>
+      <Text style={styles.slideHint}>Swipe buat lanjut →</Text>
     </View>,
 
     // Slide 2: Stats
     <View key="stats" style={[styles.slide, { backgroundColor: '#2C1810' }]}>
-      <Text style={styles.slideLabel}>Statistik Kamu</Text>
+      <Text style={styles.slideLabel}>Statistik kamu</Text>
       <View style={styles.statsGrid}>
         <View style={styles.statBox}>
           <Text style={styles.statNum}>{recap.totalCheckins}</Text>
@@ -80,14 +80,14 @@ export default function RecapScreen() {
         </View>
         <View style={styles.statBox}>
           <Text style={styles.statNum}>{recap.totalReviews}</Text>
-          <Text style={styles.statLabel}>Reviews</Text>
+          <Text style={styles.statLabel}>Ulasan</Text>
         </View>
       </View>
     </View>,
 
     // Slide 3: Top cafes
     <View key="cafes" style={[styles.slide, { backgroundColor: '#1A2C1A' }]}>
-      <Text style={styles.slideLabel}>Top 5 Cafe Kamu</Text>
+      <Text style={styles.slideLabel}>Top 5 Cafe kamu</Text>
       {(recap.topCafes || []).map((c, i) => (
         <View key={c.cafeId || i} style={styles.topCafeRow}>
           <Text style={styles.topCafeRank}>#{i + 1}</Text>
@@ -109,7 +109,7 @@ export default function RecapScreen() {
         </View>
         <View style={styles.statBox}>
           <Text style={styles.statNum}>{recap.friendsMade}</Text>
-          <Text style={styles.statLabel}>Teman baru</Text>
+          <Text style={styles.statLabel}>Temen baru</Text>
         </View>
         <View style={styles.statBox}>
           <Text style={styles.statNum}>{recap.longestStreak}</Text>
@@ -125,14 +125,14 @@ export default function RecapScreen() {
     // Slide 5: Closing
     <View key="close" style={[styles.slide, { backgroundColor: '#2C1C10' }]}>
       <Text style={styles.closingEmoji}>☕</Text>
-      <Text style={styles.closingTitle}>Terima Kasih, {recap.yearTitle}!</Text>
+      <Text style={styles.closingTitle}>Makasih, {recap.yearTitle}!</Text>
       <Text style={styles.closingText}>
-        Tahun ini kamu menghabiskan {recap.totalDurationHours} jam di {recap.totalCafesVisited} cafe berbeda.
-        {'\n\n'}Hari favoritmu? {recap.favoriteDay}.
-        {'\n'}Kategori andalanmu? {recap.topPurpose}.
+        Tahun ini kamu ngabisin {recap.totalDurationHours} jam di {recap.totalCafesVisited} cafe yang beda-beda.
+        {'\n\n'}Hari favorit kamu? {recap.favoriteDay}.
+        {'\n'}Kategori andalan kamu? {recap.topPurpose}.
       </Text>
       <TouchableOpacity style={styles.closeBtn} onPress={() => navigation.goBack()}>
-        <Text style={styles.closeBtnText}>Kembali ke Profil</Text>
+        <Text style={styles.closeBtnText}>Balik ke Profil</Text>
       </TouchableOpacity>
     </View>,
   ];

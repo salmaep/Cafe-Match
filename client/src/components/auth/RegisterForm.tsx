@@ -9,8 +9,16 @@ export default function RegisterForm() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const { register } = useAuth();
+  const { register, login } = useAuth();
   const navigate = useNavigate();
+
+  const goBackAfterAuth = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate("/");
+    }
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -26,7 +34,12 @@ export default function RegisterForm() {
     setLoading(true);
     try {
       await register(email, password, name);
-      navigate("/login?next=wizard");
+      try {
+        await login(email, password);
+        goBackAfterAuth();
+      } catch {
+        navigate("/login");
+      }
     } catch (err: any) {
       setError(err.response?.data?.message || "Registration failed");
     } finally {

@@ -1,7 +1,6 @@
 import { useState, type FormEvent } from "react";
-import { useNavigate, useSearchParams, Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth, type PendingTwoFa } from "../../context/AuthContext";
-import { usePreferences } from "../../context/PreferencesContext";
 import OtpStep from "./OtpStep";
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3084/api/v1";
@@ -13,17 +12,15 @@ export default function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [pending, setPending] = useState<PendingTwoFa | null>(null);
   const { login, verify2fa } = useAuth();
-  const { wizardCompleted } = usePreferences();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const redirect = searchParams.get("redirect");
 
-  const destinationAfterLogin = () =>
-    redirect && redirect.startsWith("/")
-      ? redirect
-      : wizardCompleted
-        ? "/"
-        : "/discover";
+  const goBackAfterAuth = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate("/");
+    }
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -38,7 +35,7 @@ export default function LoginForm() {
       if (twoFa) {
         setPending(twoFa);
       } else {
-        navigate(destinationAfterLogin());
+        goBackAfterAuth();
       }
     } catch (err: any) {
       setError(err.response?.data?.message || "Login failed");
@@ -49,7 +46,7 @@ export default function LoginForm() {
 
   const handleVerify = async (otpId: string, code: string) => {
     await verify2fa(otpId, code);
-    navigate(destinationAfterLogin());
+    goBackAfterAuth();
   };
 
   const socialUrl = (provider: "google" | "facebook") =>
@@ -110,7 +107,7 @@ export default function LoginForm() {
             <div className="flex items-center gap-3 my-4">
               <div className="flex-1 h-px bg-[#F0EDE8]" />
               <span className="text-xs text-[#8A8880]">
-                atau lanjutkan dengan
+                atau pakai
               </span>
               <div className="flex-1 h-px bg-[#F0EDE8]" />
             </div>

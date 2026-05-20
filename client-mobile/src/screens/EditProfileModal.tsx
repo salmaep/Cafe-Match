@@ -39,7 +39,7 @@ export default function EditProfileModal() {
         <View style={styles.handleBar} />
 
         <View style={styles.header}>
-          <Text style={styles.title}>Edit Profile</Text>
+          <Text style={styles.title}>Edit Profil</Text>
           <TouchableOpacity
             style={styles.closeBtn}
             onPress={() => navigation.goBack()}
@@ -109,7 +109,7 @@ function ProfileTab() {
     try {
       const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!perm.granted) {
-        setError('Izin akses galeri ditolak.');
+        setError('Izin akses galeri ditolak nih.');
         return;
       }
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -122,18 +122,18 @@ function ProfileTab() {
       if (result.canceled) return;
       const asset = result.assets?.[0];
       if (!asset?.base64) {
-        setError('Gagal memuat gambar.');
+        setError('Gagal muat gambar.');
         return;
       }
       const dataUrl = `data:image/jpeg;base64,${asset.base64}`;
       // Rough byte estimate: base64 string length * 3/4
       if (asset.base64.length * 0.75 > 65_000) {
-        setError('Gambar terlalu besar. Pilih gambar lain.');
+        setError('Gambarnya kegedean. Pilih yang lain ya.');
         return;
       }
       setAvatarUrl(dataUrl);
     } catch (err: any) {
-      setError(err?.message || 'Gagal memilih gambar.');
+      setError(err?.message || 'Gagal pilih gambar.');
     } finally {
       setPicking(false);
     }
@@ -142,7 +142,7 @@ function ProfileTab() {
   const submit = async () => {
     setError('');
     if (!name.trim()) {
-      setError('Nama tidak boleh kosong.');
+      setError('Nama gak boleh kosong.');
       return;
     }
     setSubmitting(true);
@@ -151,7 +151,7 @@ function ProfileTab() {
       await refresh();
       navigation.goBack();
     } catch (err: any) {
-      setError(err?.response?.data?.message || 'Gagal menyimpan profil.');
+      setError(err?.response?.data?.message || 'Gagal nyimpen profil.');
     } finally {
       setSubmitting(false);
     }
@@ -216,7 +216,7 @@ function ProfileTab() {
           editable={false}
         />
         <Text style={styles.helpText}>
-          Email tidak bisa diubah. Hubungi support kalau perlu ganti.
+          Email gak bisa diubah. Hubungi support kalo perlu ganti.
         </Text>
       </View>
 
@@ -245,7 +245,7 @@ function PasswordTab() {
   const submit = async () => {
     setError('');
     if (newPassword !== confirmPassword) {
-      setError('Konfirmasi password tidak cocok.');
+      setError('Konfirmasi password gak cocok.');
       return;
     }
     if (newPassword.length < 8) {
@@ -260,7 +260,7 @@ function PasswordTab() {
       setNewPassword('');
       setConfirmPassword('');
     } catch (err: any) {
-      setError(err?.response?.data?.message || 'Gagal mengganti password.');
+      setError(err?.response?.data?.message || 'Gagal ganti password.');
     } finally {
       setSubmitting(false);
     }
@@ -306,7 +306,7 @@ function PasswordTab() {
       </View>
 
       <Text style={styles.helpText}>
-        Min. 8 karakter, harus mengandung huruf besar, huruf kecil, dan angka.
+        Min. 8 karakter, harus ada huruf besar, huruf kecil, sama angka.
       </Text>
 
       <TouchableOpacity

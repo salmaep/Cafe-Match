@@ -124,7 +124,7 @@ export default function AuthModal() {
 
     if (isLogin) {
       if (!email || !password) {
-        setErrorMsg('Please fill in all fields');
+        setErrorMsg('Isi semua field dulu ya');
         return;
       }
       setLoading(true);
@@ -146,19 +146,19 @@ export default function AuthModal() {
         setOtpNow(Date.now());
         return;
       }
-      setErrorMsg(result.error || 'Login failed');
+      setErrorMsg(result.error || 'Login gagal');
 
     } else {
       if (!name || !email || !password || !confirmPassword) {
-        setErrorMsg('Please fill in all fields');
+        setErrorMsg('Isi semua field dulu ya');
         return;
       }
       if (password !== confirmPassword) {
-        setErrorMsg('Passwords do not match');
+        setErrorMsg('Password gak sama');
         return;
       }
       if (password.length < 6) {
-        setErrorMsg('Password must be at least 6 characters');
+        setErrorMsg('Password minimal 6 karakter');
         return;
       }
       setLoading(true);
@@ -167,13 +167,13 @@ export default function AuthModal() {
 
       if (result.success) {
         // Match web: don't auto-login — switch to login form with success notice
-        setSuccessMsg('Account created! Please log in.');
+        setSuccessMsg('Akun berhasil dibuat! Login dulu yuk.');
         setIsLogin(true);
         setPassword('');
         setConfirmPassword('');
         return;
       }
-      setErrorMsg(result.error || 'Registration failed');
+      setErrorMsg(result.error || 'Daftar gagal');
     }
   };
 
@@ -182,7 +182,7 @@ export default function AuthModal() {
     if (!otpChallenge) return;
     setOtpError('');
     if (!/^\d{6}$/.test(otpCode)) {
-      setOtpError('Kode harus 6 digit angka.');
+      setOtpError('Kode harus 6 digit angka ya.');
       return;
     }
     setOtpLoading(true);
@@ -200,7 +200,7 @@ export default function AuthModal() {
           setEnrollChallenge(null);
           navigation.goBack();
         } else {
-          setOtpError(r.error || 'Verifikasi gagal.');
+          setOtpError(r.error || 'Verifikasi gagal');
         }
       } else {
         const result = await verify2fa(otpChallenge.otpId, otpCode.trim());
@@ -208,11 +208,11 @@ export default function AuthModal() {
           setOtpChallenge(null);
           navigation.goBack();
         } else {
-          setOtpError(result.error || 'Verifikasi gagal.');
+          setOtpError(result.error || 'Verifikasi gagal');
         }
       }
     } catch (err: any) {
-      setOtpError(err?.response?.data?.message || err?.message || 'Verifikasi gagal.');
+      setOtpError(err?.response?.data?.message || err?.message || 'Verifikasi gagal');
     } finally {
       setOtpLoading(false);
     }
@@ -224,7 +224,7 @@ export default function AuthModal() {
     setEnrollError('');
     const phone = enrollPhone.trim();
     if (!/^[0-9+\-\s]{8,20}$/.test(phone)) {
-      setEnrollError('Nomor telepon tidak valid.');
+      setEnrollError('Nomor telepon gak valid.');
       return;
     }
     setEnrollLoading(true);
@@ -242,7 +242,7 @@ export default function AuthModal() {
       lastSentAt.current = Date.now();
       setOtpNow(Date.now());
     } catch (err: any) {
-      setEnrollError(err?.response?.data?.message || err?.message || 'Tidak dapat mengirim OTP.');
+      setEnrollError(err?.response?.data?.message || err?.message || 'Gagal kirim OTP.');
     } finally {
       setEnrollLoading(false);
     }
@@ -275,11 +275,11 @@ export default function AuthModal() {
           lastSentAt.current = Date.now();
           setOtpNow(Date.now());
         } else {
-          setOtpError(result.error || 'Tidak dapat mengirim ulang kode.');
+          setOtpError(result.error || 'Gagal kirim ulang kode.');
         }
       }
     } catch (err: any) {
-      setOtpError(err?.response?.data?.message || err?.message || 'Tidak dapat mengirim ulang kode.');
+      setOtpError(err?.response?.data?.message || err?.message || 'Gagal kirim ulang kode.');
     } finally {
       setResending(false);
     }
@@ -352,7 +352,7 @@ export default function AuthModal() {
     }
     const r = await loginWithToken(result.accessToken);
     if (r.success) navigation.goBack();
-    else setErrorMsg(r.error || 'Login gagal. Coba lagi.');
+    else setErrorMsg(r.error || 'Login gagal, coba lagi yuk.');
   };
 
   // Google sign-in via native SDK — kicked off from handleSocialLogin below.
@@ -369,7 +369,7 @@ export default function AuthModal() {
       (facebookResponse as any)?.authentication?.accessToken ||
       (facebookResponse.params as any)?.access_token;
     if (!accessToken) {
-      setErrorMsg('Login gagal: access_token tidak diterima dari Facebook.');
+      setErrorMsg('Login gagal: access_token gak diterima dari Facebook.');
       setSocialLoading(null);
       return;
     }
@@ -411,9 +411,9 @@ export default function AuthModal() {
       if (code === statusCodes.SIGN_IN_CANCELLED) {
         // User backed out — silent, no error banner
       } else if (code === statusCodes.IN_PROGRESS) {
-        setErrorMsg('Login Google sedang berjalan, tunggu sebentar.');
+        setErrorMsg('Login Google lagi jalan, tunggu bentar.');
       } else if (code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-        setErrorMsg('Google Play Services tidak tersedia di perangkat ini.');
+        setErrorMsg('Google Play Services gak tersedia di HP ini.');
       } else {
         setErrorMsg(
           err?.response?.data?.message || err?.message || 'Login Google gagal.',
@@ -465,10 +465,10 @@ export default function AuthModal() {
           <View style={styles.otpIcon}>
             <Text style={styles.otpIconText}>📱</Text>
           </View>
-          <Text style={styles.title}>Tambahkan Nomor WhatsApp</Text>
+          <Text style={styles.title}>Tambahin Nomor WhatsApp</Text>
           <Text style={styles.subtitle}>
-            Untuk mengamankan akun Anda, kami perlu memverifikasi nomor WhatsApp
-            sekali saja.
+            Biar akun kamu aman, kami perlu verifikasi nomor WhatsApp kamu
+            sekali aja.
           </Text>
 
           {!!enrollError && (
@@ -535,9 +535,9 @@ export default function AuthModal() {
           </View>
           <Text style={styles.title}>Verifikasi WhatsApp</Text>
           <Text style={styles.subtitle}>
-            Masukkan kode 6-digit yang kami kirim ke{' '}
+            Masukin kode 6-digit yang kami kirim ke{' '}
             <Text style={styles.phoneHint}>
-              {otpChallenge.phoneHint || 'WhatsApp Anda'}
+              {otpChallenge.phoneHint || 'WhatsApp kamu'}
             </Text>
           </Text>
 
@@ -561,10 +561,10 @@ export default function AuthModal() {
           <View style={styles.otpMeta}>
             <Text style={styles.otpMetaLeft}>
               {otpExpired ? (
-                <Text style={styles.expiredText}>Kode kedaluwarsa</Text>
+                <Text style={styles.expiredText}>Kode udah expired</Text>
               ) : expiresMs !== Infinity ? (
                 <>
-                  <Text>Kedaluwarsa dalam </Text>
+                  <Text>Expired dalam </Text>
                   <Text style={styles.expiryTime}>{fmtTime(expiresMs)}</Text>
                 </>
               ) : null}
@@ -622,12 +622,12 @@ export default function AuthModal() {
         <View style={styles.handleBar} />
 
         <Text style={styles.title}>
-          {isLogin ? 'Welcome Back' : 'Create Account'}
+          {isLogin ? 'Selamat Datang Lagi' : 'Bikin Akun Baru'}
         </Text>
         <Text style={styles.subtitle}>
           {isLogin
-            ? 'Login to save your favorites'
-            : 'Join CafeMatch to save your favorites'}
+            ? 'Login dulu buat simpen tempat favorit kamu'
+            : 'Gabung CafeMatch buat simpen tempat favorit kamu'}
         </Text>
 
         {/* Inline error banner */}
@@ -647,7 +647,7 @@ export default function AuthModal() {
         {!isLogin && (
           <TextInput
             style={styles.input}
-            placeholder="Full Name"
+            placeholder="Nama Lengkap"
             placeholderTextColor={colors.textSecondary}
             value={name}
             onChangeText={(t) => { setName(t); setErrorMsg(''); }}
@@ -694,7 +694,7 @@ export default function AuthModal() {
                   styles.inputWithEye,
                   passwordMismatch && styles.inputError,
                 ]}
-                placeholder="Confirm Password"
+                placeholder="Konfirmasi Password"
                 placeholderTextColor={colors.textSecondary}
                 value={confirmPassword}
                 onChangeText={(t) => { setConfirmPassword(t); setErrorMsg(''); }}
@@ -712,7 +712,7 @@ export default function AuthModal() {
               </TouchableOpacity>
             </View>
             {passwordMismatch && (
-              <Text style={styles.mismatchHint}>Passwords do not match</Text>
+              <Text style={styles.mismatchHint}>Password gak sama</Text>
             )}
           </>
         )}
@@ -726,7 +726,7 @@ export default function AuthModal() {
             <ActivityIndicator color={colors.white} />
           ) : (
             <Text style={styles.submitText}>
-              {isLogin ? 'Login' : 'Register'}
+              {isLogin ? 'Masuk' : 'Daftar'}
             </Text>
           )}
         </TouchableOpacity>
@@ -736,7 +736,7 @@ export default function AuthModal() {
           <>
             <View style={styles.socialDivider}>
               <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>atau lanjutkan dengan</Text>
+              <Text style={styles.dividerText}>atau lanjut dengan</Text>
               <View style={styles.dividerLine} />
             </View>
 
@@ -774,9 +774,9 @@ export default function AuthModal() {
 
         <TouchableOpacity style={styles.switchBtn} onPress={switchMode}>
           <Text style={styles.switchText}>
-            {isLogin ? "Don't have an account? " : 'Already have an account? '}
+            {isLogin ? 'Belum punya akun? ' : 'Udah punya akun? '}
             <Text style={styles.switchLink}>
-              {isLogin ? 'Register' : 'Login'}
+              {isLogin ? 'Daftar' : 'Masuk'}
             </Text>
           </Text>
         </TouchableOpacity>

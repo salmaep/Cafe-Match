@@ -175,17 +175,8 @@ export class CafesService {
 
   // ── Discover deck (Meilisearch + shortlist exclusion + promo injection) ────
 
-  async findDiscoverDeck(userId: number | null, dto: DiscoverCafesDto) {
+  async findDiscoverDeck(_userId: number | null, dto: DiscoverCafesDto) {
     const targetSize = dto.limit ?? 7;
-
-    let excludeIds: number[] = [];
-    if (userId != null) {
-      const rows = await this.dataSource.query<{ cafe_id: number }[]>(
-        `SELECT cafe_id FROM shortlists WHERE user_id = ?`,
-        [userId],
-      );
-      excludeIds = rows.map((r) => Number(r.cafe_id));
-    }
 
     const searchResult = await this.meiliCafes.searchCafes({
       lat: dto.lat,
@@ -194,7 +185,6 @@ export class CafesService {
       facilities: dto.facilities,
       priceRange: dto.priceRange,
       purposeId: dto.purposeId,
-      excludeIds,
       page: 1,
       limit: targetSize,
       sort: 'distance',
@@ -209,14 +199,12 @@ export class CafesService {
       };
     }
 
-    const excludeSet = new Set(excludeIds);
     const promoted = await this.findPromotedCafes();
     const promoA = promoted.find(
-      (c: any) => c.activePromotionType === 'new_cafe' && !excludeSet.has(c.id),
+      (c: any) => c.activePromotionType === 'new_cafe',
     );
     const promoB = promoted.find(
-      (c: any) =>
-        c.activePromotionType === 'featured_promo' && !excludeSet.has(c.id),
+      (c: any) => c.activePromotionType === 'featured_promo',
     );
 
     const deck: any[] = [...regular];

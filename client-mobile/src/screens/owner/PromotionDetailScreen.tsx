@@ -15,16 +15,16 @@ import api from '../../services/api';
 import { colors, spacing, radius } from '../../theme';
 
 const STATUS_CONFIG: Record<string, { color: string; icon: string; label: string }> = {
-  active: { color: colors.success, icon: '✅', label: 'ACTIVE' },
-  expired: { color: colors.error, icon: '⏱️', label: 'EXPIRED' },
-  pending_review: { color: colors.accent, icon: '🔍', label: 'IN REVIEW' },
-  pending_payment: { color: '#9B59B6', icon: '💳', label: 'PENDING PAYMENT' },
-  rejected: { color: colors.error, icon: '❌', label: 'REJECTED' },
+  active: { color: colors.success, icon: '✅', label: 'AKTIF' },
+  expired: { color: colors.error, icon: '⏱️', label: 'BERAKHIR' },
+  pending_review: { color: colors.accent, icon: '🔍', label: 'DIREVIEW' },
+  pending_payment: { color: '#9B59B6', icon: '💳', label: 'NUNGGU BAYAR' },
+  rejected: { color: colors.error, icon: '❌', label: 'DITOLAK' },
 };
 
 const PROMO_TYPE_CONFIG: Record<string, { icon: string; label: string; color: string }> = {
-  new_cafe: { icon: '🆕', label: 'New Cafe Highlight', color: '#5B9BD5' },
-  featured_promo: { icon: '⭐', label: 'Featured Promo', color: colors.accent },
+  new_cafe: { icon: '🆕', label: 'Sorotan Cafe Baru', color: '#5B9BD5' },
+  featured_promo: { icon: '⭐', label: 'Promo Unggulan', color: colors.accent },
 };
 
 type RouteParams = { promo: any };
@@ -38,7 +38,7 @@ export default function PromotionDetailScreen() {
   const statusCfg = STATUS_CONFIG[promo.status] || {
     color: colors.textSecondary,
     icon: '•',
-    label: promo.status?.toUpperCase() || 'UNKNOWN',
+    label: promo.status?.toUpperCase() || 'TIDAK DIKETAHUI',
   };
   const typeCfg = PROMO_TYPE_CONFIG[promo.type] || {
     icon: '📢',
@@ -79,19 +79,19 @@ export default function PromotionDetailScreen() {
 
   const handleStopSubscription = () => {
     Alert.alert(
-      'Stop Subscription',
-      'Are you sure you want to stop this promotion? It remains active until the billing period ends.',
+      'Hentikan Langganan',
+      'Yakin mau hentikan promosi ini? Promosi tetap aktif sampai periode tagihan abis.',
       [
-        { text: 'Keep Active', style: 'cancel' },
+        { text: 'Tetap Aktif', style: 'cancel' },
         {
-          text: 'Stop Subscription',
+          text: 'Hentikan',
           style: 'destructive',
           onPress: async () => {
             try {
               await api.patch(`/promotions/${promo.id}/cancel`, {});
               navigation.goBack();
             } catch {
-              Alert.alert('Error', 'Failed to stop subscription. Please try again.');
+              Alert.alert('Error', 'Gagal hentikan langganan. Coba lagi ya.');
             }
           },
         },
@@ -101,19 +101,19 @@ export default function PromotionDetailScreen() {
 
   const handleCancelSubmission = () => {
     Alert.alert(
-      'Cancel Submission',
-      'Cancel this promotion submission? This cannot be undone.',
+      'Batalin Pengajuan',
+      'Batalin pengajuan promosi ini? Gak bisa dibalikin lagi lho.',
       [
-        { text: 'Keep', style: 'cancel' },
+        { text: 'Lanjutin Aja', style: 'cancel' },
         {
-          text: 'Cancel',
+          text: 'Batalin',
           style: 'destructive',
           onPress: async () => {
             try {
               await api.delete(`/promotions/${promo.id}`);
               navigation.goBack();
             } catch {
-              Alert.alert('Error', 'Failed to cancel submission.');
+              Alert.alert('Error', 'Gagal batalin pengajuan.');
             }
           },
         },
@@ -126,9 +126,9 @@ export default function PromotionDetailScreen() {
       {/* Nav bar */}
       <View style={styles.navbar}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Text style={styles.backText}>‹ Back</Text>
+          <Text style={styles.backText}>‹ Kembali</Text>
         </TouchableOpacity>
-        <Text style={styles.navTitle}>Promotion Detail</Text>
+        <Text style={styles.navTitle}>Detail Promosi</Text>
         <View style={{ width: 64 }} />
       </View>
 
@@ -140,7 +140,7 @@ export default function PromotionDetailScreen() {
           </View>
           <View style={styles.headerText}>
             <Text style={styles.typeLabel}>{typeCfg.label}</Text>
-            <Text style={styles.packageName}>{promo.package?.name || 'Standard Package'}</Text>
+            <Text style={styles.packageName}>{promo.package?.name || 'Paket Standar'}</Text>
           </View>
           <View style={[styles.statusPill, { backgroundColor: statusCfg.color + '18' }]}>
             <Text style={styles.statusIcon}>{statusCfg.icon}</Text>
@@ -151,7 +151,7 @@ export default function PromotionDetailScreen() {
         {/* Type B: Promo content preview */}
         {promo.type === 'featured_promo' && (promo.contentTitle || promo.promotionContent) && (
           <View style={styles.section}>
-            <Text style={styles.sectionLabel}>PROMO CONTENT</Text>
+            <Text style={styles.sectionLabel}>KONTEN PROMO</Text>
             {promo.promotionContent?.promoPhoto || promo.promoPhoto ? (
               <Image
                 source={{ uri: promo.promotionContent?.promoPhoto || promo.promoPhoto }}
@@ -168,13 +168,13 @@ export default function PromotionDetailScreen() {
             ) : null}
             {promo.promotionContent?.validHours && (
               <View style={styles.promoMetaRow}>
-                <Text style={styles.promoMetaKey}>Valid Hours</Text>
+                <Text style={styles.promoMetaKey}>Jam Berlaku</Text>
                 <Text style={styles.promoMetaVal}>{promo.promotionContent.validHours}</Text>
               </View>
             )}
             {promo.promotionContent?.validDays && (
               <View style={styles.promoMetaRow}>
-                <Text style={styles.promoMetaKey}>Valid Days</Text>
+                <Text style={styles.promoMetaKey}>Hari Berlaku</Text>
                 <Text style={styles.promoMetaVal}>{promo.promotionContent.validDays}</Text>
               </View>
             )}
@@ -184,18 +184,18 @@ export default function PromotionDetailScreen() {
         {/* Type A: New cafe content */}
         {promo.type === 'new_cafe' && promo.newCafeContent && (
           <View style={styles.section}>
-            <Text style={styles.sectionLabel}>NEW CAFE DETAILS</Text>
+            <Text style={styles.sectionLabel}>DETAIL CAFE BARU</Text>
             {promo.newCafeContent.promoPhoto && (
               <Image source={{ uri: promo.newCafeContent.promoPhoto }} style={styles.promoPhoto} />
             )}
             <Text style={styles.promoTitle}>{promo.newCafeContent.highlightText}</Text>
             <View style={styles.promoMetaRow}>
-              <Text style={styles.promoMetaKey}>Opening Since</Text>
+              <Text style={styles.promoMetaKey}>Buka Sejak</Text>
               <Text style={styles.promoMetaVal}>{promo.newCafeContent.openingSince}</Text>
             </View>
             {promo.newCafeContent.keunggulan?.length > 0 && (
               <View style={styles.keunggulanBox}>
-                <Text style={styles.keunggulanTitle}>Highlights</Text>
+                <Text style={styles.keunggulanTitle}>Keunggulan</Text>
                 {promo.newCafeContent.keunggulan.map((k: string, i: number) => (
                   <Text key={i} style={styles.keunggulanItem}>✓ {k}</Text>
                 ))}
@@ -212,7 +212,7 @@ export default function PromotionDetailScreen() {
         {/* Rejection reason */}
         {isRejected && promo.rejectionReason && (
           <View style={styles.rejectionBox}>
-            <Text style={styles.rejectionLabel}>REJECTION REASON</Text>
+            <Text style={styles.rejectionLabel}>ALASAN DITOLAK</Text>
             <Text style={styles.rejectionText}>{promo.rejectionReason}</Text>
           </View>
         )}
@@ -223,17 +223,17 @@ export default function PromotionDetailScreen() {
             <Text style={styles.sectionLabel}>TIMELINE</Text>
             <View style={styles.timelineRow}>
               <View>
-                <Text style={styles.timelineSmall}>Started</Text>
+                <Text style={styles.timelineSmall}>Mulai</Text>
                 <Text style={styles.timelineDate}>{formatDate(promo.startedAt)}</Text>
               </View>
               {isActive && (
                 <View style={styles.daysLeft}>
                   <Text style={styles.daysLeftNum}>{daysLeft}</Text>
-                  <Text style={styles.daysLeftLabel}>days left</Text>
+                  <Text style={styles.daysLeftLabel}>hari lagi</Text>
                 </View>
               )}
               <View style={{ alignItems: 'flex-end' }}>
-                <Text style={styles.timelineSmall}>{isActive ? 'Expires' : 'Expired'}</Text>
+                <Text style={styles.timelineSmall}>{isActive ? 'Berakhir' : 'Sudah Berakhir'}</Text>
                 <Text style={styles.timelineDate}>{formatDate(promo.expiresAt)}</Text>
               </View>
             </View>
@@ -248,27 +248,27 @@ export default function PromotionDetailScreen() {
                 ]}
               />
             </View>
-            <Text style={styles.progressLabel}>{progressPct}% used</Text>
+            <Text style={styles.progressLabel}>{progressPct}% kepakai</Text>
           </View>
         )}
 
         {/* Billing */}
         {promo.package?.priceMonthly && (
           <View style={styles.section}>
-            <Text style={styles.sectionLabel}>BILLING</Text>
+            <Text style={styles.sectionLabel}>TAGIHAN</Text>
             <View style={styles.billingRow}>
-              <Text style={styles.billingKey}>Package</Text>
+              <Text style={styles.billingKey}>Paket</Text>
               <Text style={styles.billingVal}>{promo.package.name}</Text>
             </View>
             <View style={styles.billingRow}>
-              <Text style={styles.billingKey}>Monthly Cost</Text>
+              <Text style={styles.billingKey}>Biaya Bulanan</Text>
               <Text style={[styles.billingVal, { color: colors.accent, fontWeight: '800' }]}>
-                Rp {Number(promo.package.priceMonthly).toLocaleString('id-ID')}/month
+                Rp {Number(promo.package.priceMonthly).toLocaleString('id-ID')}/bulan
               </Text>
             </View>
             {promo.billingCycle && (
               <View style={styles.billingRow}>
-                <Text style={styles.billingKey}>Billing Cycle</Text>
+                <Text style={styles.billingKey}>Siklus Tagihan</Text>
                 <Text style={styles.billingVal}>{promo.billingCycle}</Text>
               </View>
             )}
@@ -279,27 +279,27 @@ export default function PromotionDetailScreen() {
         <View style={styles.actions}>
           {isActive && (
             <TouchableOpacity style={styles.btnDanger} onPress={handleStopSubscription}>
-              <Text style={styles.btnDangerText}>Stop Subscription</Text>
+              <Text style={styles.btnDangerText}>Hentikan Langganan</Text>
             </TouchableOpacity>
           )}
           {isPendingReview && (
             <>
-              <TouchableOpacity style={styles.btnOutline} onPress={() => Alert.alert('In Review', 'Your promotion is being reviewed by our team. You will be notified once approved.')}>
-                <Text style={styles.btnOutlineText}>Check Review Status</Text>
+              <TouchableOpacity style={styles.btnOutline} onPress={() => Alert.alert('Lagi Direview', 'Promosi kamu lagi direview tim kami. Nanti kamu bakal dikabarin kalau udah disetujui.')}>
+                <Text style={styles.btnOutlineText}>Cek Status Review</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.btnDanger} onPress={handleCancelSubmission}>
-                <Text style={styles.btnDangerText}>Cancel Submission</Text>
+                <Text style={styles.btnDangerText}>Batalin Pengajuan</Text>
               </TouchableOpacity>
             </>
           )}
           {isRejected && (
             <TouchableOpacity style={styles.btnPrimary} onPress={() => navigation.goBack()}>
-              <Text style={styles.btnPrimaryText}>Edit & Resubmit</Text>
+              <Text style={styles.btnPrimaryText}>Edit & Ajukan Ulang</Text>
             </TouchableOpacity>
           )}
           {!isActive && !isPendingReview && !isRejected && (
             <TouchableOpacity style={styles.btnPrimary} onPress={() => navigation.goBack()}>
-              <Text style={styles.btnPrimaryText}>Create New Promotion</Text>
+              <Text style={styles.btnPrimaryText}>Bikin Promosi Baru</Text>
             </TouchableOpacity>
           )}
         </View>

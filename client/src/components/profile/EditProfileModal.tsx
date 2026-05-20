@@ -125,7 +125,7 @@ function ProfileTab({
         // Try once more with lower quality
         const smaller = await compressImage(file, 192, 0.65);
         if (Math.round((smaller.length * 3) / 4) > MAX_AVATAR_BYTES) {
-          setError("Gambar terlalu besar. Pilih gambar lain.");
+          setError("Gambarnya kegedean, pilih yang lain dong.");
           return;
         }
         setAvatarUrl(smaller);
@@ -260,7 +260,7 @@ function ProfileTab({
         disabled={submitting}
         className="w-full py-3 bg-[#1C1C1A] text-white rounded-xl font-bold text-base hover:bg-black disabled:opacity-60 transition-colors"
       >
-        {submitting ? "Menyimpan…" : "Simpan Perubahan"}
+        {submitting ? "Lagi simpan…" : "Simpan"}
       </button>
     </form>
   );

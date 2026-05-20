@@ -42,10 +42,10 @@ export default function FriendsScreen() {
     setSending(true);
     try {
       await sendFriendRequest(friendCode.trim().toUpperCase());
-      Alert.alert('Berhasil!', 'Permintaan pertemanan terkirim');
+      Alert.alert('Berhasil!', 'Permintaan pertemanan udah dikirim');
       setFriendCode('');
     } catch (err: any) {
-      Alert.alert('Error', err?.response?.data?.message || 'Gagal mengirim permintaan');
+      Alert.alert('Error', err?.response?.data?.message || 'Gagal kirim permintaan');
     }
     setSending(false);
   };
@@ -68,7 +68,7 @@ export default function FriendsScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.back}>← Back</Text>
+          <Text style={styles.back}>← Kembali</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Teman</Text>
         <View style={{ width: 50 }} />
@@ -76,9 +76,9 @@ export default function FriendsScreen() {
 
       {/* My friend code */}
       <View style={styles.codeBox}>
-        <Text style={styles.codeLabel}>Kode Pertemanan Kamu</Text>
+        <Text style={styles.codeLabel}>Kode Teman Kamu</Text>
         <Text style={styles.codeText}>{(user as any)?.friendCode || '—'}</Text>
-        <Text style={styles.codeHint}>Bagikan kode ini ke teman kamu</Text>
+        <Text style={styles.codeHint}>Share kode ini ke temen kamu</Text>
       </View>
 
       {/* Tabs */}
@@ -99,7 +99,7 @@ export default function FriendsScreen() {
           data={friends}
           keyExtractor={(f) => String(f.id)}
           contentContainerStyle={styles.list}
-          ListEmptyComponent={<Text style={styles.emptyText}>Belum punya teman. Tambahkan lewat kode!</Text>}
+          ListEmptyComponent={<Text style={styles.emptyText}>Belum punya temen. Tambahin lewat kode!</Text>}
           renderItem={({ item }) => {
             const displayName = (item.name || '').trim() || 'Unknown';
             const code = item.friendCode || '';
@@ -123,7 +123,7 @@ export default function FriendsScreen() {
           data={requests}
           keyExtractor={(r) => String(r.id)}
           contentContainerStyle={styles.list}
-          ListEmptyComponent={<Text style={styles.emptyText}>Tidak ada permintaan masuk</Text>}
+          ListEmptyComponent={<Text style={styles.emptyText}>Gak ada permintaan masuk</Text>}
           renderItem={({ item }) => {
             // Defensive: server returns the full FriendRequest with `sender`
             // populated, but if the join ever drops it we still want a
@@ -159,7 +159,7 @@ export default function FriendsScreen() {
         />
       ) : (
         <View style={styles.addSection}>
-          <Text style={styles.addLabel}>Masukkan kode teman</Text>
+          <Text style={styles.addLabel}>Masukin kode teman</Text>
           <TextInput
             style={styles.addInput}
             placeholder="Contoh: AB12CD34"
@@ -170,7 +170,7 @@ export default function FriendsScreen() {
             autoCapitalize="characters"
           />
           <TouchableOpacity style={styles.addBtn} onPress={handleSendRequest} disabled={sending}>
-            <Text style={styles.addBtnText}>{sending ? 'Mengirim...' : 'Kirim Permintaan'}</Text>
+            <Text style={styles.addBtnText}>{sending ? 'Lagi ngirim...' : 'Kirim Permintaan'}</Text>
           </TouchableOpacity>
         </View>
       )}

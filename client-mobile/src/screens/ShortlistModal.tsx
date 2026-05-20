@@ -7,7 +7,8 @@ import {
   FlatList,
   Alert,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StackNavigationProp } from '@react-navigation/stack';
 import CafeListItem from '../components/cafe/CafeListItem';
 import { useShortlist } from '../context/ShortlistContext';
@@ -22,6 +23,9 @@ type SortMode = 'recent' | 'distance' | 'rating';
 
 export default function ShortlistModal() {
   const navigation = useNavigation<StackNavigationProp<any>>();
+  const route = useRoute();
+  const insets = useSafeAreaInsets();
+  const isModal = route.name === 'ShortlistModal';
   const { shortlist, removeFromShortlist, clearShortlist } = useShortlist();
   const { latitude, longitude } = useLocation();
   const [sortMode, setSortMode] = useState<SortMode>('recent');
@@ -58,21 +62,23 @@ export default function ShortlistModal() {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.handleBar} />
+    <View style={[styles.container, !isModal && { paddingTop: insets.top, borderTopLeftRadius: 0, borderTopRightRadius: 0 }]}>
+      {isModal && <View style={styles.handleBar} />}
 
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <Text style={styles.title}>Shortlist</Text>
           <Text style={styles.subtitle}>
             {shortlist.length > 0
-              ? `${shortlist.length} cafe disimpan untuk dikunjungi nanti`
-              : 'Swipe kanan di Discover untuk menyimpan cafe'}
+              ? `${shortlist.length} cafe disimpen buat dikunjungi nanti`
+              : 'Swipe kanan di Discover buat simpen cafe'}
           </Text>
         </View>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.closeBtn}>Tutup</Text>
-        </TouchableOpacity>
+        {isModal && (
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Text style={styles.closeBtn}>Tutup</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       {shortlist.length === 0 ? (
@@ -80,7 +86,7 @@ export default function ShortlistModal() {
           <Text style={styles.emptyEmoji}>⭐</Text>
           <Text style={styles.emptyTitle}>Shortlist masih kosong</Text>
           <Text style={styles.emptySubtitle}>
-            Buka Discover, swipe kanan cafe yang menarik — semua tersimpan di sini.
+            Buka Discover, swipe kanan cafe yang menarik — semua kesimpen di sini.
           </Text>
           <TouchableOpacity
             style={styles.emptyCta}

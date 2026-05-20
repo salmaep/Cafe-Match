@@ -180,10 +180,10 @@ export default function MobileFilterModal({
 
             {/* Facility groups — collapsible */}
             {groups === null && (
-              <Text style={styles.loadingText}>Memuat filter…</Text>
+              <Text style={styles.loadingText}>Lagi muat filter…</Text>
             )}
             {groups !== null && facilityGroups.length === 0 && (
-              <Text style={styles.loadingText}>Filter tidak tersedia.</Text>
+              <Text style={styles.loadingText}>Filter gak tersedia.</Text>
             )}
             {facilityGroups.map((g) => {
               const isOpen = openGroups[g.key] ?? false;

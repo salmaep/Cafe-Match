@@ -80,6 +80,61 @@ export async function fetchCafeDetail(id: string): Promise<Cafe | null> {
   return mapBackendCafe(data);
 }
 
+export interface SemanticSearchParams {
+  q: string;
+  lat?: number;
+  lng?: number;
+  radius?: number;
+  purposeId?: number;
+  priceRange?: '$' | '$$' | '$$$';
+  facilities?: string[];
+  page?: number;
+  limit?: number;
+  sort?: 'distance' | 'trending' | 'rating' | 'newest';
+}
+
+export interface SemanticSearchMeta {
+  total: number;
+  page: number;
+  limit: number;
+  aiUsed: boolean;
+  cached: boolean;
+  searchedRadius: number;
+  suggestedRadius: number | null;
+  totalIfExpanded: number | null;
+  parsed: unknown;
+}
+
+export interface SemanticSearchResult {
+  data: Cafe[];
+  meta: SemanticSearchMeta;
+}
+
+export async function searchSemanticApi(
+  params: SemanticSearchParams,
+): Promise<SemanticSearchResult> {
+  const { facilities, ...rest } = params;
+  const queryParams: Record<string, unknown> = { ...rest };
+  if (facilities && facilities.length > 0) {
+    queryParams.facilities = facilities.join(',');
+  }
+  const { data } = await http.get<any>(API_PATHS.cafesSemanticSearch, {
+    params: queryParams,
+  });
+  const hits = (data?.data ?? []).map((hit: any) => {
+    const merged = {
+      ...hit,
+      latitude: hit._geo?.lat ?? hit.latitude,
+      longitude: hit._geo?.lng ?? hit.longitude,
+    };
+    return mapBackendCafe(merged, params.lat, params.lng);
+  });
+  return {
+    data: hits,
+    meta: data?.meta,
+  };
+}
+
 export async function fetchPromotedCafes(type?: string): Promise<Cafe[]> {
   const params = type ? { type } : {};
   const { data } = await http.get(API_PATHS.cafesPromoted, { params });

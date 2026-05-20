@@ -91,9 +91,9 @@ export default function OtpStep({
           Verifikasi WhatsApp
         </h2>
         <p className="text-sm text-[#8A8880] mt-1">
-          Masukkan kode 6-digit yang kami kirim ke{" "}
+          Masukin kode 6-digit yang kita kirim ke{" "}
           <span className="font-semibold text-[#1C1C1A]">
-            {pending.phoneHint || "WhatsApp Anda"}
+            {pending.phoneHint || "WhatsApp kamu"}
           </span>
         </p>
       </div>

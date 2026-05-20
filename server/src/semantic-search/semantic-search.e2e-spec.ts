@@ -199,12 +199,15 @@ describe('Semantic Search (e2e, real Meridian + DB + Meili)', () => {
 
     it('"budget 50.000" returns aiUsed=true and priceRange "$"', async () => {
       if (!envReady) return;
+      const t0 = Date.now();
       const res = await request(app.getHttpServer())
         .get('/api/v1/cafes/semantic-search')
         .query({
           q: 'Cari restoran yang cocok buat keluarga dengan budget 50.000',
           limit: 5,
         });
+      const elapsedMs = Date.now() - t0;
+      console.log(`⏱  "budget 50.000" request took ${elapsedMs}ms`);
       expect(res.status).toBe(200);
       expect(res.body.meta.aiUsed).toBe(true);
       expect(res.body.meta.parsed?.priceRange).toBe('$');
@@ -279,6 +282,36 @@ describe('Semantic Search (e2e, real Meridian + DB + Meili)', () => {
       if (first.body.meta.aiUsed) {
         expect(second.body.meta.cached).toBe(true);
       }
+    });
+  });
+
+  // ── Group 3: Latency observation (post-rerank-removal) ─────────────────────
+  // After removing the reranker, only ONE Meridian call per request (rewriter).
+  // We log timings for manual comparison instead of asserting a hard bound —
+  // Meridian (Claude Code SDK proxy) latency varies wildly (~5-30s per call).
+  // Baseline from production log w/ reranker: "cafe terdekat" → 20,751ms.
+
+  describe('Latency (log-only)', () => {
+    it('logs geo-query latency', async () => {
+      if (!envReady) return;
+      const q = `cafe terdekat ${Date.now()}`;
+      const t0 = Date.now();
+      const res = await request(app.getHttpServer())
+        .get('/api/v1/cafes/semantic-search')
+        .query({ q, lat: TEST_LAT, lng: TEST_LNG, radius: 5000, limit: 7 });
+      console.log(`⏱  geo query → ${Date.now() - t0}ms`);
+      expect(res.status).toBe(200);
+    });
+
+    it('logs intent-only query latency', async () => {
+      if (!envReady) return;
+      const q = `cafe buat kerja remote ${Date.now()}`;
+      const t0 = Date.now();
+      const res = await request(app.getHttpServer())
+        .get('/api/v1/cafes/semantic-search')
+        .query({ q, lat: TEST_LAT, lng: TEST_LNG, radius: 5000, limit: 7 });
+      console.log(`⏱  intent query → ${Date.now() - t0}ms`);
+      expect(res.status).toBe(200);
     });
   });
 });

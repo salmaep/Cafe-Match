@@ -12,7 +12,7 @@ import {
   ActivityIndicator,
   Modal,
   StatusBar,
-  Alert,
+  // Alert,
 } from "react-native";
 import { useRoute, useNavigation, RouteProp } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
@@ -25,16 +25,16 @@ import {
   toggleFavorite,
   trackAnalytics,
   haversineKm,
-  checkInApi,
+  // checkInApi,
 } from "../services/api";
 import { logEvent } from "../utils/analytics";
 import { useCafeDetail } from "../queries/cafes/use-cafe-detail";
-import VoteSection from "../components/cafe/VoteSection";
 import { useReviewSummary } from "../queries/reviews/use-review-summary";
 import { useReviews } from "../queries/reviews/use-reviews";
 import { useLeaderboard } from "../queries/checkins/use-leaderboard";
 import { useQueryClient } from "@tanstack/react-query";
 import { reviewKeys } from "../queries/reviews/keys";
+import { cafeKeys } from "../queries/cafes/keys";
 import { Cafe } from "../types";
 import { colors, spacing, radius } from "../theme";
 import { buildFacilityChips } from "../utils/facilities";
@@ -266,7 +266,7 @@ export default function CafeDetailScreen() {
   const [currentPhoto, setCurrentPhoto] = useState(0);
   const inShortlist = isInShortlist(cafe.id);
 
-  const [checkingIn, setCheckingIn] = useState(false);
+  // const [checkingIn, setCheckingIn] = useState(false);
 
   // Merge mood signals from THREE sources into ONE unified list:
   //  - cafe.purposes (scraped name array, e.g. "Family Time") → each counts as +1
@@ -369,6 +369,8 @@ export default function CafeDetailScreen() {
       (route.params as any)?.newReview;
     if (!signal || !initialCafe?.id) return;
     qc.invalidateQueries({ queryKey: reviewKeys.summary(initialCafe.id) });
+    qc.invalidateQueries({ queryKey: reviewKeys.ofCafe(initialCafe.id) });
+    qc.invalidateQueries({ queryKey: cafeKeys.detail(initialCafe.id) });
     navigation.setParams({
       newReviewTimestamp: undefined,
       newReview: undefined,
@@ -430,39 +432,39 @@ export default function CafeDetailScreen() {
     }
   };
 
-  const handleCheckIn = async () => {
-    setCheckingIn(true);
-    try {
-      const loc = await (
-        await import("expo-location")
-      ).getCurrentPositionAsync({ accuracy: 6 }); // BestForNavigation
-      const result: any = await checkInApi(
-        Number(cafe.id),
-        loc.coords.latitude,
-        loc.coords.longitude,
-      );
-      const togetherWith: { id: number; name: string }[] =
-        result?.togetherWith || [];
-      if (togetherWith.length > 0) {
-        const names = togetherWith.map((f) => f.name).join(", ");
-        Alert.alert(
-          "💥 BARENGAN!",
-          `Kamu lagi di ${cafe.name} bareng ${names}! Seru nih!`,
-          [{ text: "Siap!", style: "default" }],
-        );
-      } else {
-        Alert.alert(
-          "Check-in berhasil! ☕",
-          `Kamu sekarang ada di ${cafe.name}`,
-        );
-      }
-    } catch (err: any) {
-      const msg =
-        err?.response?.data?.message || err?.message || "Gagal check-in";
-      Alert.alert("Oops", typeof msg === "string" ? msg : msg[0]);
-    }
-    setCheckingIn(false);
-  };
+  // const handleCheckIn = async () => {
+  //   setCheckingIn(true);
+  //   try {
+  //     const loc = await (
+  //       await import("expo-location")
+  //     ).getCurrentPositionAsync({ accuracy: 6 });
+  //     const result: any = await checkInApi(
+  //       Number(cafe.id),
+  //       loc.coords.latitude,
+  //       loc.coords.longitude,
+  //     );
+  //     const togetherWith: { id: number; name: string }[] =
+  //       result?.togetherWith || [];
+  //     if (togetherWith.length > 0) {
+  //       const names = togetherWith.map((f) => f.name).join(", ");
+  //       Alert.alert(
+  //         "💥 BARENGAN!",
+  //         `Kamu lagi di ${cafe.name} bareng ${names}! Seru nih!`,
+  //         [{ text: "Siap!", style: "default" }],
+  //       );
+  //     } else {
+  //       Alert.alert(
+  //         "Check-in berhasil! ☕",
+  //         `Kamu sekarang ada di ${cafe.name}`,
+  //       );
+  //     }
+  //   } catch (err: any) {
+  //     const msg =
+  //       err?.response?.data?.message || err?.message || "Gagal check-in";
+  //     Alert.alert("Oops", typeof msg === "string" ? msg : msg[0]);
+  //   }
+  //   setCheckingIn(false);
+  // };
 
   const formatPrice = (price: number) => "Rp " + price.toLocaleString("id-ID");
 
@@ -557,7 +559,7 @@ export default function CafeDetailScreen() {
               </>
             )}
             <Text style={styles.ratingMeta}>
-              {realDistance} km from your location
+              {realDistance} km dari lokasi kamu
             </Text>
           </View>
 
@@ -568,7 +570,7 @@ export default function CafeDetailScreen() {
           <TouchableOpacity style={styles.addressRow} onPress={openMaps}>
             <Text style={styles.addressIcon}>📍</Text>
             <Text style={styles.addressText}>{cafe.address}</Text>
-            <Text style={styles.openMaps}>Open in Maps →</Text>
+            <Text style={styles.openMaps}>Buka di Maps →</Text>
           </TouchableOpacity>
 
           {/* Phone — clickable tel: link */}
@@ -582,26 +584,6 @@ export default function CafeDetailScreen() {
               <Text style={styles.phoneCta}>Telepon →</Text>
             </TouchableOpacity>
           )}
-
-          {/* Mood chips from review aggregation — shown under address */}
-          {moodChips.length > 0 && (
-            <View style={styles.moodRow}>
-              <Text style={styles.moodRowLabel}>
-                Atmosphere according to visitors
-              </Text>
-              <View style={styles.tagsRow}>
-                {moodChips.map((m) => (
-                  <View key={m.label} style={styles.moodChip}>
-                    <Text style={styles.moodChipText}>{m.label}</Text>
-                    {m.count > 0 && (
-                      <Text style={styles.moodChipCount}>· {m.count}</Text>
-                    )}
-                  </View>
-                ))}
-              </View>
-            </View>
-          )}
-          {/* Legacy cafe.purposes row removed — now merged into moodChips above */}
 
           {/* Jam Buka — opening hours table, today highlighted */}
           {cafe.openingHours && Object.keys(cafe.openingHours).length > 0 && (
@@ -654,7 +636,7 @@ export default function CafeDetailScreen() {
             </>
           )}
 
-          <Text style={styles.sectionTitle}>Facilities</Text>
+          <Text style={styles.sectionTitle}>Fasilitas</Text>
           {facilityChips.length > 0 ? (
             <View style={styles.facilitiesRow}>
               {facilityChips.map((f) => (
@@ -665,13 +647,13 @@ export default function CafeDetailScreen() {
               ))}
             </View>
           ) : (
-            <Text style={styles.noFacilities}>No facilities listed</Text>
+            <Text style={styles.noFacilities}>Belum ada fasilitas yang terdaftar</Text>
           )}
 
           <View style={styles.statsRow}>
             <View style={styles.stat}>
               <Text style={styles.statNumber}>{cafe.favoritesCount}</Text>
-              <Text style={styles.statLabel}>Favorites</Text>
+              <Text style={styles.statLabel}>Favorit</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.stat}>
@@ -695,7 +677,7 @@ export default function CafeDetailScreen() {
           {starSummary.length > 0 && (
             <>
               <View style={styles.sectionRow}>
-                <Text style={styles.sectionTitle}>Reviews</Text>
+                <Text style={styles.sectionTitle}>Ulasan</Text>
                 <TouchableOpacity
                   onPress={() =>
                     navigation.navigate("Reviews", {
@@ -834,9 +816,6 @@ export default function CafeDetailScreen() {
             </TouchableOpacity>
           )}
 
-          {/* Vote section (cafe is best for…) */}
-          <VoteSection cafeId={Number(cafe.id)} />
-
           {/* Top check-in leaderboard — mirrors web CafeLeaderboard:
               loading skeleton, empty CTA, top 5 with rank emoji badge,
               checkin count + total time, score in pts. */}
@@ -960,7 +939,7 @@ export default function CafeDetailScreen() {
           {(cafe.photos?.length ?? 0) > 0 && (
             <>
               <View style={styles.sectionRow}>
-                <Text style={styles.sectionTitle}>Photos</Text>
+                <Text style={styles.sectionTitle}>Foto</Text>
                 {(cafe.photos?.length ?? 0) > 9 && (
                   <TouchableOpacity onPress={() => openZoom(0)}>
                     <Text style={styles.seeAll}>
@@ -1044,6 +1023,24 @@ export default function CafeDetailScreen() {
             </>
           )}
 
+          {moodChips.length > 0 && (
+            <View style={styles.moodRow}>
+              <Text style={styles.moodRowLabel}>
+                Suasana menurut pengunjung
+              </Text>
+              <View style={styles.tagsRow}>
+                {moodChips.map((m) => (
+                  <View key={m.label} style={styles.moodChip}>
+                    <Text style={styles.moodChipText}>{m.label}</Text>
+                    {m.count > 0 && (
+                      <Text style={styles.moodChipCount}>· {m.count}</Text>
+                    )}
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
+
           <View style={{ height: 120 }} />
         </View>
       </ScrollView>
@@ -1122,19 +1119,19 @@ export default function CafeDetailScreen() {
       <View style={styles.bottomBar}>
         <TouchableOpacity style={styles.actionBtn} onPress={handleFavorite}>
           <Text style={styles.actionIcon}>{isFavorited ? "❤️" : "🤍"}</Text>
-          <Text style={styles.actionLabel}>Favorite</Text>
+          <Text style={styles.actionLabel}>Favorit</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.actionBtn} onPress={handleBookmark}>
           <Text style={styles.actionIcon}>{isBookmarked ? "🔖" : "📑"}</Text>
           <Text style={styles.actionLabel}>Bookmark</Text>
         </TouchableOpacity>
-        <TouchableOpacity
+        {/* <TouchableOpacity
           style={styles.checkinBtn}
           onPress={handleCheckIn}
           disabled={checkingIn}
         >
           <Text style={styles.checkinBtnText}>{checkingIn ? "..." : "📍"}</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
         <TouchableOpacity
           style={[
             styles.shortlistBtn,
@@ -1143,7 +1140,7 @@ export default function CafeDetailScreen() {
           onPress={handleShortlist}
         >
           <Text style={styles.shortlistBtnText}>
-            {inShortlist ? "Added ✓" : "Add to Shortlist"}
+            {inShortlist ? "Udah ditambahin ✓" : "Tambah ke Shortlist"}
           </Text>
         </TouchableOpacity>
       </View>
@@ -1574,15 +1571,15 @@ const styles = StyleSheet.create({
   },
   shortlistBtnActive: { backgroundColor: colors.accent },
   shortlistBtnText: { color: colors.white, fontWeight: "700", fontSize: 15 },
-  checkinBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: colors.success,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  checkinBtnText: { fontSize: 20 },
+  // checkinBtn: {
+  //   width: 48,
+  //   height: 48,
+  //   borderRadius: 24,
+  //   backgroundColor: colors.success,
+  //   justifyContent: "center",
+  //   alignItems: "center",
+  // },
+  // checkinBtnText: { fontSize: 20 },
 
   // Reviews + Leaderboard sections
   sectionRow: {

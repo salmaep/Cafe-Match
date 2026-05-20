@@ -45,19 +45,28 @@ export function mapBackendCafe(
     photos = ['https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800'];
   }
 
-  const rawFacilityLabels: string[] =
-    raw.facilities
-      ?.map((f: any) => {
-        const key = typeof f === 'string' ? f : f.facilityKey;
-        if (!key) return null;
-        return (
-          FACILITY_KEY_MAP[key] ||
-          key
-            .replace(/_/g, ' ')
-            .replace(/\b\w/g, (c: string) => c.toUpperCase())
-        );
-      })
-      .filter(Boolean) || [];
+  const rawFacilitySource: any[] =
+    (Array.isArray(raw.facilities) && raw.facilities.length > 0
+      ? raw.facilities
+      : Array.isArray(raw.features) && raw.features.length > 0
+        ? raw.features
+        : []);
+
+  const rawFacilityLabels: string[] = rawFacilitySource
+    .map((f: any) => {
+      const key =
+        typeof f === 'string'
+          ? f
+          : f?.facilityKey ?? f?.feature?.name ?? f?.name;
+      if (!key) return null;
+      return (
+        FACILITY_KEY_MAP[key] ||
+        key
+          .replace(/_/g, ' ')
+          .replace(/\b\w/g, (c: string) => c.toUpperCase())
+      );
+    })
+    .filter(Boolean) as string[];
 
   const facilities: string[] = Array.from(new Set(rawFacilityLabels));
 
@@ -119,15 +128,16 @@ export function mapBackendCafe(
   }
 
   // Keep raw facilities (rich shape with key + value) for buildFacilityChips.
-  const facilitiesRich = Array.isArray(raw.facilities)
-    ? raw.facilities
-        .map((f: any) => {
-          if (typeof f === 'string') return { facilityKey: f, facilityValue: null };
-          if (f?.facilityKey) return { facilityKey: f.facilityKey, facilityValue: f.facilityValue ?? null };
-          return null;
-        })
-        .filter(Boolean)
-    : [];
+  const facilitiesRich = rawFacilitySource
+    .map((f: any) => {
+      if (typeof f === 'string') return { facilityKey: f, facilityValue: null };
+      if (f?.facilityKey)
+        return { facilityKey: f.facilityKey, facilityValue: f.facilityValue ?? null };
+      const name = f?.feature?.name ?? f?.name;
+      if (name) return { facilityKey: name, facilityValue: null };
+      return null;
+    })
+    .filter(Boolean);
 
   return {
     id: String(raw.id),

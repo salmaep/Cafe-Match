@@ -317,7 +317,7 @@ export default function FriendsPage() {
           <div className="bg-white rounded-2xl p-5 border border-[#F0EDE8]">
             <h3 className="font-extrabold text-[#1C1C1A] mb-3">Tambah Teman</h3>
             <p className="text-xs text-[#8A8880] mb-3">
-              Masukkan kode pertemanan teman Anda (8 karakter)
+              Masukin kode pertemanan temen kamu (8 karakter)
             </p>
             <form onSubmit={sendRequest} className="flex flex-col gap-3">
               <input

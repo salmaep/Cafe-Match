@@ -5,7 +5,6 @@ import { MeiliModule } from '../meili/meili.module';
 import { MeridianClient } from './meridian.client';
 import { TokenBudgetService } from './token-budget.service';
 import { QueryRewriterService } from './query-rewriter.service';
-import { RerankerService } from './reranker.service';
 import { SemanticCacheService } from './semantic-cache.service';
 import { SemanticSearchService } from './semantic-search.service';
 import { MeridianKeepaliveService } from './meridian-keepalive.service';
@@ -26,7 +25,6 @@ import { MeridianKeepaliveService } from './meridian-keepalive.service';
     MeridianClient,
     TokenBudgetService,
     QueryRewriterService,
-    RerankerService,
     SemanticCacheService,
     SemanticSearchService,
     MeridianKeepaliveService,

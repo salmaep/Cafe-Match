@@ -203,7 +203,7 @@ export default function NotificationsPage() {
                 disabled={loading}
                 className="w-full py-3 bg-white border border-[#F0EDE8] rounded-xl font-bold text-sm text-[#1C1C1A] hover:bg-[#FAF9F6] disabled:opacity-50 transition-colors"
               >
-                {loading ? "Memuat…" : "Muat lebih banyak"}
+                {loading ? "Loading…" : "Muat lagi"}
               </button>
             )}
           </div>

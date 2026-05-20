@@ -23,6 +23,7 @@ import { useLocation } from '../context/LocationContext';
 import { useSearchCafes } from '../queries/cafes/use-search-cafes';
 import { hitsToCafes } from '../queries/cafes/api';
 import { usePurposes } from '../queries/purposes/use-purposes';
+import { getPurposeBySlug } from '@shared/constants/purposes';
 import { Cafe } from '../types';
 import { colors, spacing, radius } from '../theme';
 import NativeAdCard from '../components/NativeAdCard';
@@ -161,8 +162,8 @@ export default function TrendingScreen() {
   const renderEmpty = () => (
     <View style={styles.emptyContainer}>
       <Text style={styles.emptyEmoji}>🔥</Text>
-      <Text style={styles.emptyTitle}>No trending cafes</Text>
-      <Text style={styles.emptySubtitle}>Try a different filter or check back later</Text>
+      <Text style={styles.emptyTitle}>Belum ada cafe yang lagi trending</Text>
+      <Text style={styles.emptySubtitle}>Coba filter lain atau cek lagi nanti</Text>
     </View>
   );
 
@@ -178,14 +179,14 @@ export default function TrendingScreen() {
           <View style={styles.heroTopRow}>
             <View style={{ flex: 1, minWidth: 0 }}>
               <View style={styles.heroPill}>
-                <Text style={styles.heroPillText}>🔥 TRENDING NOW</Text>
+                <Text style={styles.heroPillText}>🔥 LAGI TRENDING</Text>
               </View>
               <Text style={styles.heroTitle}>
                 Cafe paling <Text style={styles.heroTitleAccent}>hits</Text>{' '}
                 minggu ini
               </Text>
               <Text style={styles.heroSub}>
-                Berdasarkan jumlah favorit & bookmark dari komunitas — update tiap hari.
+                Berdasar jumlah favorit & bookmark dari komunitas — update tiap hari.
               </Text>
             </View>
           </View>
@@ -195,7 +196,7 @@ export default function TrendingScreen() {
               <Text style={styles.heroCountNum}>
                 {totalCount.toLocaleString()}
               </Text>
-              <Text style={styles.heroCountLabel}>CAFES</Text>
+              <Text style={styles.heroCountLabel}>CAFE</Text>
             </View>
             <TouchableOpacity
               style={styles.heroLbBtn}
@@ -249,6 +250,7 @@ export default function TrendingScreen() {
               </TouchableOpacity>
               {purposes.map((p) => {
                 const active = purposeId === p.id;
+                const emoji = getPurposeBySlug(p.slug)?.emoji ?? p.icon;
                 return (
                   <TouchableOpacity
                     key={p.id}
@@ -256,7 +258,7 @@ export default function TrendingScreen() {
                     style={[styles.purposeChip, active && styles.purposeChipActive]}
                   >
                     <Text style={[styles.purposeChipText, active && styles.purposeChipTextActive]}>
-                      {p.icon ? `${p.icon} ` : ''}{p.name}
+                      {emoji ? `${emoji} ` : ''}{p.name}
                     </Text>
                   </TouchableOpacity>
                 );

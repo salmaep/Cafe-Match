@@ -39,7 +39,7 @@ export default function ShortlistPage() {
   }, [shortlist, sortMode, geo.latitude, geo.longitude]);
 
   const handleClearAll = () => {
-    if (!confirm(`Hapus semua ${shortlist.length} cafe dari shortlist?`))
+    if (!confirm(`Yakin hapus semua ${shortlist.length} cafe dari shortlist?`))
       return;
     clearShortlist();
   };

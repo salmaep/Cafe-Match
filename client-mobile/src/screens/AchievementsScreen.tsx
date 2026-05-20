@@ -47,9 +47,9 @@ export default function AchievementsScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.back}>← Back</Text>
+          <Text style={styles.back}>← Kembali</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>Achievements</Text>
+        <Text style={styles.title}>Pencapaian</Text>
         <View style={{ width: 50 }} />
       </View>
 

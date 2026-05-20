@@ -56,8 +56,8 @@ export default function OwnerDashboardScreen() {
 
   const TABS: { key: TabKey; label: string; icon: string }[] = [
     { key: 'dashboard', label: 'Dashboard', icon: '📊' },
-    { key: 'mycafe', label: 'My Cafe', icon: '☕' },
-    { key: 'promotions', label: 'Promotions', icon: '📢' },
+    { key: 'mycafe', label: 'Cafe Aku', icon: '☕' },
+    { key: 'promotions', label: 'Promosi', icon: '📢' },
   ];
 
   const headerH = insets.top + 56;
@@ -71,14 +71,14 @@ export default function OwnerDashboardScreen() {
             <Text style={styles.ownerBadgeText}>OWNER</Text>
           </View>
           <Text style={styles.headerTitle} numberOfLines={1}>
-            {dashboard?.cafe?.name || 'Owner Portal'}
+            {dashboard?.cafe?.name || 'Portal Owner'}
           </Text>
         </View>
         <TouchableOpacity
           style={styles.backToAppBtn}
           onPress={() => navigation.navigate('MainTabs')}
         >
-          <Text style={styles.backToAppText}>← App</Text>
+          <Text style={styles.backToAppText}>← Aplikasi</Text>
         </TouchableOpacity>
       </View>
 
@@ -153,10 +153,10 @@ function DashboardTab({
         : colors.accent;
 
   const stats = [
-    { icon: '👁️', label: 'Views (30d)', value: analytics.totalViews ?? 0, color: '#5B9BD5' },
-    { icon: '🖱️', label: 'Clicks (30d)', value: analytics.totalClicks ?? 0, color: '#70AD47' },
-    { icon: '❤️', label: 'Favorites', value: cafe?.favoritesCount || 0, color: '#E05252' },
-    { icon: '🔖', label: 'Bookmarks', value: cafe?.bookmarksCount || 0, color: colors.accent },
+    { icon: '👁️', label: 'Dilihat (30 hari)', value: analytics.totalViews ?? 0, color: '#5B9BD5' },
+    { icon: '🖱️', label: 'Diklik (30 hari)', value: analytics.totalClicks ?? 0, color: '#70AD47' },
+    { icon: '❤️', label: 'Favorit', value: cafe?.favoritesCount || 0, color: '#E05252' },
+    { icon: '🔖', label: 'Disimpan', value: cafe?.bookmarksCount || 0, color: colors.accent },
   ];
 
   const ctr =
@@ -168,8 +168,8 @@ function DashboardTab({
     <ScrollView style={styles.tabContent} contentContainerStyle={styles.tabContentInner}>
       {/* Greeting */}
       <View style={styles.greeting}>
-        <Text style={styles.greetingTitle}>Welcome back! 👋</Text>
-        <Text style={styles.greetingSubtitle}>Here's how your cafe is performing</Text>
+        <Text style={styles.greetingTitle}>Selamat datang lagi! 👋</Text>
+        <Text style={styles.greetingSubtitle}>Ini performa cafe kamu</Text>
       </View>
 
       {/* Stats grid */}
@@ -193,12 +193,12 @@ function DashboardTab({
           <Text style={styles.insightValue}>{ctr}%</Text>
         </View>
         <Text style={styles.insightHint}>
-          {ctr >= 30 ? 'Excellent!' : ctr >= 15 ? 'Good' : 'Room to grow'}
+          {ctr >= 30 ? 'Mantap!' : ctr >= 15 ? 'Lumayan' : 'Masih bisa naik'}
         </Text>
       </View>
 
       {/* Promotion status */}
-      <Text style={styles.sectionTitle}>Active Promotion</Text>
+      <Text style={styles.sectionTitle}>Promosi Aktif</Text>
       {activePromotion ? (
         <TouchableOpacity
           style={[styles.promoCard, { borderLeftColor: statusColor }]}
@@ -208,9 +208,9 @@ function DashboardTab({
           <View style={styles.promoCardTop}>
             <View>
               <Text style={styles.promoCardType}>
-                {activePromotion.type === 'new_cafe' ? '🆕  New Cafe Highlight' : '⭐  Featured Promo'}
+                {activePromotion.type === 'new_cafe' ? '🆕  Sorotan Cafe Baru' : '⭐  Promo Unggulan'}
               </Text>
-              <Text style={styles.promoCardPackage}>{activePromotion.packageName ?? 'Promotion'}</Text>
+              <Text style={styles.promoCardPackage}>{activePromotion.packageName ?? 'Promosi'}</Text>
             </View>
             <View style={[styles.statusPill, { backgroundColor: statusColor + '18' }]}>
               <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
@@ -222,10 +222,10 @@ function DashboardTab({
           <View style={styles.promoCardBottom}>
             <Text style={styles.promoExpiryLabel}>
               {(activePromotion.daysRemaining ?? 0) > 0
-                ? `${activePromotion.daysRemaining} days remaining`
-                : 'Expired'}
+                ? `Sisa ${activePromotion.daysRemaining} hari`
+                : 'Sudah berakhir'}
             </Text>
-            <Text style={styles.promoManageLink}>Manage →</Text>
+            <Text style={styles.promoManageLink}>Kelola →</Text>
           </View>
         </TouchableOpacity>
       ) : (
@@ -235,23 +235,23 @@ function DashboardTab({
           activeOpacity={0.8}
         >
           <Text style={styles.noPromoIcon}>📢</Text>
-          <Text style={styles.noPromoTitle}>No active promotion</Text>
-          <Text style={styles.noPromoHint}>Boost visibility by creating a promotion</Text>
+          <Text style={styles.noPromoTitle}>Belum ada promosi aktif</Text>
+          <Text style={styles.noPromoHint}>Bikin promosi biar cafe kamu makin keliatan</Text>
           <View style={styles.noPromoBtn}>
-            <Text style={styles.noPromoBtnText}>View Packages →</Text>
+            <Text style={styles.noPromoBtnText}>Liat Paket →</Text>
           </View>
         </TouchableOpacity>
       )}
 
       {/* Quick nav */}
-      <Text style={styles.sectionTitle}>Manage</Text>
+      <Text style={styles.sectionTitle}>Kelola</Text>
       <TouchableOpacity style={styles.quickCard} onPress={() => onTabChange('mycafe')} activeOpacity={0.8}>
         <View style={[styles.quickIconBg, { backgroundColor: '#D48B3A18' }]}>
           <Text style={styles.quickIcon}>☕</Text>
         </View>
         <View style={styles.quickText}>
-          <Text style={styles.quickTitle}>My Cafe</Text>
-          <Text style={styles.quickSubtitle}>View photos, facilities & menu</Text>
+          <Text style={styles.quickTitle}>Cafe Aku</Text>
+          <Text style={styles.quickSubtitle}>Liat foto, fasilitas & menu</Text>
         </View>
         <Text style={styles.quickArrow}>→</Text>
       </TouchableOpacity>
@@ -260,8 +260,8 @@ function DashboardTab({
           <Text style={styles.quickIcon}>📢</Text>
         </View>
         <View style={styles.quickText}>
-          <Text style={styles.quickTitle}>Promotions</Text>
-          <Text style={styles.quickSubtitle}>View & manage active campaigns</Text>
+          <Text style={styles.quickTitle}>Promosi</Text>
+          <Text style={styles.quickSubtitle}>Liat & kelola kampanye aktif</Text>
         </View>
         <Text style={styles.quickArrow}>→</Text>
       </TouchableOpacity>

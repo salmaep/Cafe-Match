@@ -70,18 +70,18 @@ export default function BookmarksScreen() {
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
             <Text style={styles.backIcon}>←</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>My Bookmarks</Text>
+          <Text style={styles.headerTitle}>Bookmark Kamu</Text>
           <View style={styles.headerRight} />
         </View>
         <View style={styles.guestContainer}>
           <Text style={styles.guestEmoji}>🔖</Text>
-          <Text style={styles.guestTitle}>My Bookmarks</Text>
-          <Text style={styles.guestSubtitle}>Login to see your bookmarked cafes</Text>
+          <Text style={styles.guestTitle}>Bookmark Kamu</Text>
+          <Text style={styles.guestSubtitle}>Login dulu buat liat bookmark cafe kamu</Text>
           <TouchableOpacity
             style={styles.loginBtn}
             onPress={() => navigation.navigate('AuthModal')}
           >
-            <Text style={styles.loginBtnText}>Login</Text>
+            <Text style={styles.loginBtnText}>Masuk</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -96,7 +96,7 @@ export default function BookmarksScreen() {
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
             <Text style={styles.backIcon}>←</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>My Bookmarks</Text>
+          <Text style={styles.headerTitle}>Bookmark Kamu</Text>
           <View style={styles.headerRight} />
         </View>
         <View style={styles.centered}>
@@ -130,8 +130,8 @@ export default function BookmarksScreen() {
   const renderEmpty = () => (
     <View style={styles.emptyContainer}>
       <Text style={styles.emptyEmoji}>🔖</Text>
-      <Text style={styles.emptyTitle}>No bookmarks yet</Text>
-      <Text style={styles.emptySubtitle}>Cafes you bookmark will appear here</Text>
+      <Text style={styles.emptyTitle}>Belum ada bookmark</Text>
+      <Text style={styles.emptySubtitle}>Cafe yang kamu bookmark bakal muncul di sini</Text>
     </View>
   );
 
@@ -142,7 +142,7 @@ export default function BookmarksScreen() {
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
           <Text style={styles.backIcon}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>My Bookmarks</Text>
+        <Text style={styles.headerTitle}>Bookmark Kamu</Text>
         <View style={styles.headerRight}>
           {cafes.length > 0 && (
             <View style={styles.countBadge}>

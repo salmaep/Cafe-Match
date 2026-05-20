@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { BackendPurpose } from '../../types';
+import { getPurposeBySlug } from '@shared/constants/purposes';
 
 interface Props {
   purposes: BackendPurpose[];
@@ -58,7 +59,7 @@ export default function PurposeChips({
             <Pill
               key={p.id}
               label={p.name}
-              icon={p.icon}
+              icon={getPurposeBySlug(p.slug)?.emoji ?? p.icon}
               active={activeId === p.id}
               onPress={() => onSelect(activeId === p.id ? null : p.id)}
             />
@@ -81,7 +82,7 @@ export default function PurposeChips({
           <Pill
             key={p.id}
             label={p.name}
-            icon={p.icon}
+            icon={getPurposeBySlug(p.slug)?.emoji ?? p.icon}
             active={activeId === p.id}
             onPress={() => onSelect(activeId === p.id ? null : p.id)}
           />

@@ -25,17 +25,17 @@ const { width } = Dimensions.get('window');
 
 const FACILITY_KEYS = [
   { key: 'wifi', label: 'WiFi', icon: '📶' },
-  { key: 'power_outlet', label: 'Power Outlet', icon: '🔌' },
+  { key: 'power_outlet', label: 'Stop Kontak', icon: '🔌' },
   { key: 'mushola', label: 'Mushola', icon: '🕌' },
-  { key: 'parking', label: 'Parking', icon: '🅿️' },
-  { key: 'kid_friendly', label: 'Kid-Friendly', icon: '👶' },
-  { key: 'quiet_atmosphere', label: 'Quiet Atmosphere', icon: '🤫' },
-  { key: 'large_tables', label: 'Large Tables', icon: '🪑' },
-  { key: 'outdoor_area', label: 'Outdoor Area', icon: '🌿' },
+  { key: 'parking', label: 'Parkir', icon: '🅿️' },
+  { key: 'kid_friendly', label: 'Ramah Anak', icon: '👶' },
+  { key: 'quiet_atmosphere', label: 'Suasana Tenang', icon: '🤫' },
+  { key: 'large_tables', label: 'Meja Besar', icon: '🪑' },
+  { key: 'outdoor_area', label: 'Area Outdoor', icon: '🌿' },
 ];
 
 const PRICE_OPTIONS = ['$', '$$', '$$$'];
-const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const DAYS = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
 
 const MOCK_OWNER_CAFE = {
   id: 1,
@@ -156,7 +156,7 @@ export default function MyCafeScreen() {
 
   const handleSave = async () => {
     if (!name.trim() || !address.trim()) {
-      Alert.alert('Error', 'Name and address are required');
+      Alert.alert('Error', 'Nama sama alamat wajib diisi');
       return;
     }
     setSaving(true);
@@ -217,7 +217,7 @@ export default function MyCafeScreen() {
 
     if (saved) {
       applyLocalUpdate();
-      showToast('Cafe updated successfully');
+      showToast('Cafe berhasil diupdate');
     } else {
       // Save locally as override
       try {
@@ -229,7 +229,7 @@ export default function MyCafeScreen() {
         // ignore
       }
       applyLocalUpdate();
-      showToast('Changes saved locally');
+      showToast('Perubahan disimpan lokal');
     }
 
     setSaving(false);
@@ -272,10 +272,10 @@ export default function MyCafeScreen() {
   };
 
   const handleDeletePhoto = (photoId: number) => {
-    Alert.alert('Delete Photo', 'Remove this photo from your cafe?', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert('Hapus Foto', 'Hapus foto ini dari cafe kamu?', [
+      { text: 'Batal', style: 'cancel' },
       {
-        text: 'Delete',
+        text: 'Hapus',
         style: 'destructive',
         onPress: async () => {
           try {
@@ -318,7 +318,7 @@ export default function MyCafeScreen() {
 
   const handleSaveMenu = async () => {
     if (!editingMenu.category.trim() || !editingMenu.itemName.trim() || !editingMenu.price) {
-      Alert.alert('Error', 'Category, name, and price are required');
+      Alert.alert('Error', 'Kategori, nama, sama harga wajib diisi');
       return;
     }
     const payload = {
@@ -354,16 +354,16 @@ export default function MyCafeScreen() {
     setMenuModalVisible(false);
     showToast(
       saved
-        ? (editingMenuId ? 'Menu item updated' : 'Menu item added')
-        : 'Menu saved locally',
+        ? (editingMenuId ? 'Menu berhasil diupdate' : 'Menu berhasil ditambah')
+        : 'Menu disimpan lokal',
     );
   };
 
   const handleDeleteMenu = (itemId: number) => {
-    Alert.alert('Delete Item', 'Remove this menu item?', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert('Hapus Menu', 'Hapus menu ini?', [
+      { text: 'Batal', style: 'cancel' },
       {
-        text: 'Delete',
+        text: 'Hapus',
         style: 'destructive',
         onPress: async () => {
           let ok = false;
@@ -372,7 +372,7 @@ export default function MyCafeScreen() {
             ok = true;
           } catch {}
           setMenus((prev) => prev.filter((m) => m.id !== itemId));
-          showToast(ok ? 'Menu item removed' : 'Removed locally');
+          showToast(ok ? 'Menu berhasil dihapus' : 'Dihapus lokal');
         },
       },
     ]);
@@ -389,8 +389,8 @@ export default function MyCafeScreen() {
   if (!cafe) {
     return (
       <View style={styles.loadingContainer}>
-        <Text style={styles.emptyText}>No cafe registered yet</Text>
-        <Text style={styles.emptyHint}>Contact support to link your account</Text>
+        <Text style={styles.emptyText}>Belum ada cafe terdaftar</Text>
+        <Text style={styles.emptyHint}>Hubungi support buat hubungin akun kamu</Text>
       </View>
     );
   }
@@ -412,14 +412,14 @@ export default function MyCafeScreen() {
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         {/* Edit/Save Header */}
         <View style={styles.editHeader}>
-          <Text style={styles.editHeaderTitle}>My Cafe</Text>
+          <Text style={styles.editHeaderTitle}>Cafe Aku</Text>
           {editMode ? (
             <View style={styles.editActions}>
               <TouchableOpacity
                 onPress={() => { populateFields(cafe); setEditMode(false); }}
                 style={styles.cancelBtn}
               >
-                <Text style={styles.cancelBtnText}>Cancel</Text>
+                <Text style={styles.cancelBtnText}>Batal</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={handleSave}
@@ -428,7 +428,7 @@ export default function MyCafeScreen() {
               >
                 {saving
                   ? <ActivityIndicator size="small" color={colors.white} />
-                  : <Text style={styles.saveBtnText}>Save</Text>}
+                  : <Text style={styles.saveBtnText}>Simpan</Text>}
               </TouchableOpacity>
             </View>
           ) : (
@@ -440,7 +440,7 @@ export default function MyCafeScreen() {
 
         {/* Photos */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Photos</Text>
+          <Text style={styles.sectionTitle}>Foto</Text>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -452,10 +452,10 @@ export default function MyCafeScreen() {
                 style={styles.photoWrapper}
                 onLongPress={() => {
                   if (!editMode) return;
-                  Alert.alert('Photo Options', '', [
-                    { text: 'Set as Primary', onPress: () => handleSetPrimary(photo.id) },
-                    { text: 'Delete', style: 'destructive', onPress: () => handleDeletePhoto(photo.id) },
-                    { text: 'Cancel', style: 'cancel' },
+                  Alert.alert('Opsi Foto', '', [
+                    { text: 'Jadiin Utama', onPress: () => handleSetPrimary(photo.id) },
+                    { text: 'Hapus', style: 'destructive', onPress: () => handleDeletePhoto(photo.id) },
+                    { text: 'Batal', style: 'cancel' },
                   ]);
                 }}
                 activeOpacity={editMode ? 0.7 : 1}
@@ -463,12 +463,12 @@ export default function MyCafeScreen() {
                 <Image source={{ uri: photo.url }} style={styles.photo} />
                 {photo.isPrimary && (
                   <View style={styles.primaryBadge}>
-                    <Text style={styles.primaryBadgeText}>★ Primary</Text>
+                    <Text style={styles.primaryBadgeText}>★ Utama</Text>
                   </View>
                 )}
                 {editMode && (
                   <View style={styles.photoEditHint}>
-                    <Text style={styles.photoEditHintText}>Hold to edit</Text>
+                    <Text style={styles.photoEditHintText}>Tahan buat edit</Text>
                   </View>
                 )}
               </TouchableOpacity>
@@ -476,7 +476,7 @@ export default function MyCafeScreen() {
             {editMode && (
               <TouchableOpacity style={styles.addPhotoBtn} onPress={handleAddPhoto}>
                 <Text style={styles.addPhotoBtnIcon}>+</Text>
-                <Text style={styles.addPhotoBtnText}>Add Photo</Text>
+                <Text style={styles.addPhotoBtnText}>Tambah Foto</Text>
               </TouchableOpacity>
             )}
           </ScrollView>
@@ -484,20 +484,20 @@ export default function MyCafeScreen() {
 
         {/* Basic Info */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Basic Info</Text>
+          <Text style={styles.sectionTitle}>Info Dasar</Text>
           <View style={styles.fieldGroup}>
-            <Text style={styles.fieldLabel}>Name</Text>
+            <Text style={styles.fieldLabel}>Nama</Text>
             <TextInput
               style={[styles.fieldInput, !editMode && styles.fieldInputReadonly]}
               value={name}
               onChangeText={setName}
               editable={editMode}
-              placeholder="Cafe name"
+              placeholder="Nama cafe"
               placeholderTextColor={colors.textSecondary}
             />
           </View>
           <View style={styles.fieldGroup}>
-            <Text style={styles.fieldLabel}>Address</Text>
+            <Text style={styles.fieldLabel}>Alamat</Text>
             <TextInput
               style={[styles.fieldInput, styles.fieldTextArea, !editMode && styles.fieldInputReadonly]}
               value={address}
@@ -505,12 +505,12 @@ export default function MyCafeScreen() {
               editable={editMode}
               multiline
               numberOfLines={2}
-              placeholder="Full address"
+              placeholder="Alamat lengkap"
               placeholderTextColor={colors.textSecondary}
             />
           </View>
           <View style={styles.fieldGroup}>
-            <Text style={styles.fieldLabel}>Phone</Text>
+            <Text style={styles.fieldLabel}>Telepon</Text>
             <TextInput
               style={[styles.fieldInput, !editMode && styles.fieldInputReadonly]}
               value={phone}
@@ -522,7 +522,7 @@ export default function MyCafeScreen() {
             />
           </View>
           <View style={styles.fieldGroup}>
-            <Text style={styles.fieldLabel}>Description</Text>
+            <Text style={styles.fieldLabel}>Deskripsi</Text>
             <TextInput
               style={[styles.fieldInput, styles.fieldTextArea, !editMode && styles.fieldInputReadonly]}
               value={description}
@@ -530,7 +530,7 @@ export default function MyCafeScreen() {
               editable={editMode}
               multiline
               numberOfLines={3}
-              placeholder="Describe your cafe..."
+              placeholder="Jelasin cafe kamu..."
               placeholderTextColor={colors.textSecondary}
             />
           </View>
@@ -540,7 +540,7 @@ export default function MyCafeScreen() {
             📍 Koordinat Lokasi
           </Text>
           <Text style={styles.coordHint}>
-            Dibutuhkan agar cafe kamu muncul di peta. Tap "Use current location" untuk isi otomatis.
+            Dibutuhin biar cafe kamu muncul di peta. Tap "Pakai lokasi sekarang" buat isi otomatis.
           </Text>
           <View style={styles.coordRow}>
             <View style={styles.coordField}>
@@ -576,7 +576,7 @@ export default function MyCafeScreen() {
                   const Location = await import('expo-location');
                   const { status } = await Location.requestForegroundPermissionsAsync();
                   if (status !== 'granted') {
-                    Alert.alert('Permission Denied', 'Lokasi diperlukan untuk fitur ini');
+                    Alert.alert('Izin Ditolak', 'Lokasi dibutuhin buat fitur ini');
                     return;
                   }
                   const loc = await Location.getCurrentPositionAsync({
@@ -584,20 +584,20 @@ export default function MyCafeScreen() {
                   });
                   setLatitude(String(loc.coords.latitude));
                   setLongitude(String(loc.coords.longitude));
-                  showToast('Lokasi saat ini terisi');
+                  showToast('Lokasi sekarang udah terisi');
                 } catch (err: any) {
-                  Alert.alert('Error', 'Gagal mengambil lokasi: ' + (err?.message || 'unknown'));
+                  Alert.alert('Error', 'Gagal ambil lokasi: ' + (err?.message || 'unknown'));
                 }
               }}
             >
-              <Text style={styles.useLocationBtnText}>📍 Use current location</Text>
+              <Text style={styles.useLocationBtnText}>📍 Pakai lokasi sekarang</Text>
             </TouchableOpacity>
           )}
         </View>
 
         {/* Price Range */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Price Range</Text>
+          <Text style={styles.sectionTitle}>Range Harga</Text>
           <View style={styles.priceRow}>
             {PRICE_OPTIONS.map((opt) => (
               <TouchableOpacity
@@ -620,7 +620,7 @@ export default function MyCafeScreen() {
 
         {/* Facilities */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Facilities</Text>
+          <Text style={styles.sectionTitle}>Fasilitas</Text>
           <View style={styles.facilitiesGrid}>
             {FACILITY_KEYS.map(({ key, label, icon }) => {
               const isActive = activeFacilities.has(key);
@@ -651,13 +651,13 @@ export default function MyCafeScreen() {
             <Text style={styles.sectionTitle}>Menu</Text>
             {editMode && (
               <TouchableOpacity style={styles.addMenuBtn} onPress={openAddMenu}>
-                <Text style={styles.addMenuBtnText}>+ Add Item</Text>
+                <Text style={styles.addMenuBtnText}>+ Tambah Menu</Text>
               </TouchableOpacity>
             )}
           </View>
 
           {menus.length === 0 ? (
-            <Text style={styles.emptySection}>No menu items yet</Text>
+            <Text style={styles.emptySection}>Belum ada menu</Text>
           ) : (
             Array.from(menuMap.entries()).map(([category, items]) => (
               <View key={category} style={styles.menuCategory}>
@@ -670,7 +670,7 @@ export default function MyCafeScreen() {
                       </Text>
                       {!item.isAvailable && (
                         <View style={styles.unavailablePill}>
-                          <Text style={styles.unavailableText}>Unavailable</Text>
+                          <Text style={styles.unavailableText}>Tidak Tersedia</Text>
                         </View>
                       )}
                     </View>
@@ -704,17 +704,17 @@ export default function MyCafeScreen() {
         <View style={styles.statsRow}>
           <View style={styles.statItem}>
             <Text style={styles.statVal}>{cafe.favoritesCount || 0}</Text>
-            <Text style={styles.statLabel}>Favorites</Text>
+            <Text style={styles.statLabel}>Favorit</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
             <Text style={styles.statVal}>{cafe.bookmarksCount || 0}</Text>
-            <Text style={styles.statLabel}>Bookmarks</Text>
+            <Text style={styles.statLabel}>Disimpan</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
             <Text style={[styles.statVal, { color: colors.accent }]}>{priceRange}</Text>
-            <Text style={styles.statLabel}>Price Range</Text>
+            <Text style={styles.statLabel}>Range Harga</Text>
           </View>
         </View>
 
@@ -731,7 +731,7 @@ export default function MyCafeScreen() {
         <View style={styles.modalContainer}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>
-              {editingMenuId ? 'Edit Menu Item' : 'Add Menu Item'}
+              {editingMenuId ? 'Edit Menu' : 'Tambah Menu'}
             </Text>
             <TouchableOpacity onPress={() => setMenuModalVisible(false)} style={styles.modalClose}>
               <Text style={styles.modalCloseText}>✕</Text>
@@ -739,49 +739,49 @@ export default function MyCafeScreen() {
           </View>
 
           <ScrollView style={styles.modalBody} keyboardShouldPersistTaps="handled">
-            <Text style={styles.modalLabel}>Category</Text>
+            <Text style={styles.modalLabel}>Kategori</Text>
             <TextInput
               style={styles.modalInput}
               value={editingMenu.category}
               onChangeText={(t) => setEditingMenu((p) => ({ ...p, category: t }))}
-              placeholder="e.g. Coffee, Snacks, Food"
+              placeholder="contoh: Kopi, Snack, Makanan"
               placeholderTextColor={colors.textSecondary}
               autoCapitalize="words"
             />
 
-            <Text style={styles.modalLabel}>Item Name</Text>
+            <Text style={styles.modalLabel}>Nama Menu</Text>
             <TextInput
               style={styles.modalInput}
               value={editingMenu.itemName}
               onChangeText={(t) => setEditingMenu((p) => ({ ...p, itemName: t }))}
-              placeholder="e.g. Latte, Croissant"
+              placeholder="contoh: Latte, Croissant"
               placeholderTextColor={colors.textSecondary}
               autoCapitalize="words"
             />
 
-            <Text style={styles.modalLabel}>Price (Rp)</Text>
+            <Text style={styles.modalLabel}>Harga (Rp)</Text>
             <TextInput
               style={styles.modalInput}
               value={editingMenu.price}
               onChangeText={(t) => setEditingMenu((p) => ({ ...p, price: t.replace(/[^0-9]/g, '') }))}
-              placeholder="e.g. 35000"
+              placeholder="contoh: 35000"
               placeholderTextColor={colors.textSecondary}
               keyboardType="numeric"
             />
 
-            <Text style={styles.modalLabel}>Description (optional)</Text>
+            <Text style={styles.modalLabel}>Deskripsi (opsional)</Text>
             <TextInput
               style={[styles.modalInput, styles.modalTextArea]}
               value={editingMenu.description}
               onChangeText={(t) => setEditingMenu((p) => ({ ...p, description: t }))}
-              placeholder="Short description..."
+              placeholder="Deskripsi singkat..."
               placeholderTextColor={colors.textSecondary}
               multiline
               numberOfLines={3}
             />
 
             <View style={styles.modalToggleRow}>
-              <Text style={styles.modalLabel}>Available</Text>
+              <Text style={styles.modalLabel}>Tersedia</Text>
               <Switch
                 value={editingMenu.isAvailable}
                 onValueChange={(v) => setEditingMenu((p) => ({ ...p, isAvailable: v }))}
@@ -792,7 +792,7 @@ export default function MyCafeScreen() {
 
             <TouchableOpacity style={styles.modalSaveBtn} onPress={handleSaveMenu}>
               <Text style={styles.modalSaveBtnText}>
-                {editingMenuId ? 'Update Item' : 'Add Item'}
+                {editingMenuId ? 'Update Menu' : 'Tambah Menu'}
               </Text>
             </TouchableOpacity>
           </ScrollView>

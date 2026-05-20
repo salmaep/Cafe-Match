@@ -148,7 +148,7 @@ function CardView({
             📍 {cafeName}
           </span>
           <span className="text-xs font-bold text-amber-700">
-            Lihat detail →
+            Cek detail →
           </span>
         </div>
       </div>

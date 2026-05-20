@@ -44,7 +44,7 @@ export default function RecapPage() {
       setRecap(res.data);
     } catch (err: any) {
       setError(
-        err?.response?.data?.message || "Gagal generate recap. Coba lagi.",
+        err?.response?.data?.message || "Gagal bikin recap, coba lagi yuk.",
       );
     } finally {
       setGenerating(false);
@@ -124,7 +124,7 @@ export default function RecapPage() {
             to="/profile"
             className="block mt-3 text-sm text-[#8A8880] hover:text-[#1C1C1A] transition-colors"
           >
-            ← Kembali ke Profile
+            ← Balik ke Profile
           </Link>
         </div>
       </div>

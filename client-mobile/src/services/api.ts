@@ -429,6 +429,9 @@ export async function fetchLeaderboard(cafeId: string) {
     name: string;
     avatarUrl?: string;
     checkinCount: number;
+    totalDuration: string;
+    totalMinutes: number;
+    score: number;
     badge: string | null;
   }[];
 }

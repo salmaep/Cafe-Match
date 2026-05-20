@@ -13,7 +13,7 @@ export class DeletionRequest {
   @Column({ length: 255 })
   email: string;
 
-  @Column({ name: 'friend_code', length: 8, nullable: true })
+  @Column({ name: 'friend_code', type: 'varchar', length: 8, nullable: true })
   friendCode: string | null;
 
   @Column({ type: 'text', nullable: true })

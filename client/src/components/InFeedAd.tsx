@@ -51,7 +51,7 @@ export default function InFeedAd({ variant = "card", size = "normal" }: Props) {
           className="adsbygoogle block"
           style={{ display: "block", maxHeight: 120 }}
           data-ad-format="fluid"
-          data-ad-layout-key="-fb+5w+4e-db+86"
+          data-ad-layout-key="+2r+qh+59-1n-85"
           data-ad-client={ADSENSE_CLIENT}
           data-ad-slot={ADSENSE_INFEED_SLOT}
           {...(ADSENSE_TEST_MODE ? { "data-adtest": "on" } : {})}
@@ -68,8 +68,7 @@ export default function InFeedAd({ variant = "card", size = "normal" }: Props) {
       <ins
         className="adsbygoogle block"
         style={{ display: "block" }}
-        data-ad-format="fluid"
-        data-ad-layout-key="-fb+5w+4e-db+86"
+        data-ad-layout-key="+2r+qh+59-1n-85"
         data-ad-client={ADSENSE_CLIENT}
         data-ad-slot={ADSENSE_INFEED_SLOT}
         {...(ADSENSE_TEST_MODE ? { "data-adtest": "on" } : {})}

@@ -8,6 +8,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { PreferencesProvider } from "./context/PreferencesContext";
 import { ShortlistProvider } from "./context/ShortlistContext";
 import { initGA } from "./utils/analytics";
+import "./i18n";
 import "./index.css";
 import App from "./App.tsx";
 

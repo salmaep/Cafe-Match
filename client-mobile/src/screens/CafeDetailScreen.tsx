@@ -1166,7 +1166,6 @@ const styles = StyleSheet.create({
   photo: {
     width: HERO_CARD_W,
     height: 280,
-    borderRadius: 16,
     resizeMode: "cover",
     backgroundColor: "#F0EDE8",
   },

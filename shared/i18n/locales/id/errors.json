@@ -1,0 +1,9 @@
+{
+  "generic": "Ada yang gak beres. Coba lagi.",
+  "network": "Koneksi internet bermasalah.",
+  "notFound": "Gak ketemu.",
+  "unauthorized": "Lo perlu login dulu.",
+  "permissionDenied": "Akses ditolak.",
+  "locationPermission": "Izin lokasi belum dikasih.",
+  "placeNotFound": "Tempat gak ketemu. Coba kata kunci lain."
+}

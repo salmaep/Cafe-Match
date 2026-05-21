@@ -1,0 +1,18 @@
+{
+  "open": "Buka",
+  "closed": "Tutup",
+  "openUntil": "Buka sampai {{time}}",
+  "closeUntil": "Tutup, buka {{time}}",
+  "kmAway": "{{km}} km away",
+  "noReviewYet": "Belum ada ulasan",
+  "writeReview": "Tulis ulasan",
+  "reviews": "Ulasan",
+  "menu": "Menu",
+  "info": "Info",
+  "facilities": "Fasilitas",
+  "googleReviews": "Review Google",
+  "checkin": "Check-in",
+  "shortlist": "Shortlist",
+  "addedToShortlist": "Ditambah ke shortlist",
+  "removedFromShortlist": "Dihapus dari shortlist"
+}

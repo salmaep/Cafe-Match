@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  TextInput,
   ScrollView,
   Dimensions,
   ActivityIndicator,
@@ -13,11 +12,11 @@ import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import MapView, { Circle } from 'react-native-maps';
 import RadiusPickerModal from '../components/cafe/RadiusPickerModal';
+import PlacesAutocompleteInput from '../components/wizard/PlacesAutocompleteInput';
 import { usePreferences } from '../context/PreferencesContext';
 import { colors, spacing, radius } from '../theme';
 import { Purpose, WizardPreferences } from '../types';
 import { useLocation } from '../context/LocationContext';
-import { useDestinations } from '../queries/destinations/use-destinations';
 import { useCafeFilters } from '../queries/cafes/use-cafe-filters';
 import { facilityIconFor } from '../utils/facilities';
 import { WIZARD_PURPOSES, getPurposeBySlug } from '@shared/constants/purposes';
@@ -25,26 +24,6 @@ import { usePurposes } from '../queries/purposes/use-purposes';
 
 const { width } = Dimensions.get('window');
 const TOTAL_STEPS = 4;
-
-// Parse coord strings — supports paste from Google Maps, spreadsheets, plain text.
-// Examples that work:
-//   "-6.9148492, 107.6648254"
-//   "-6.9148492 107.6648254"   (space separator)
-//   "-6.9148492;107.6648254"   (semicolon)
-//   "-6.9148492,107.6648254"   (no space)
-//   "(-6.9148492, 107.6648254)" (parentheses, e.g. from Google Maps)
-//   "  -6.9148492 ,  107.6648254  " (extra whitespace, tabs)
-function parseCoords(input: string): { lat: number; lng: number } | null {
-  // Strip outer whitespace, parentheses, brackets, and curly braces
-  const cleaned = input.trim().replace(/^[\(\[\{]+|[\)\]\}]+$/g, '').trim();
-  const match = cleaned.match(/^(-?\d+(?:\.\d+)?)\s*[,;\s]\s*(-?\d+(?:\.\d+)?)$/);
-  if (!match) return null;
-  const lat = Number(match[1]);
-  const lng = Number(match[2]);
-  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
-  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
-  return { lat, lng };
-}
 
 const PRICE_OPTIONS = [
   { key: '$', label: '$' },
@@ -65,7 +44,6 @@ export default function WizardScreen({ onComplete, onSkip }: WizardScreenProps =
   const navigation = useNavigation<StackNavigationProp<any>>();
   const { setPreferences, setWizardCompleted } = usePreferences();
   const { latitude: userLat, longitude: userLng } = useLocation();
-  const destinationsQuery = useDestinations();
   const filtersQuery = useCafeFilters();
   const filterGroups = filtersQuery.data?.groups ?? [];
   // Mirror web StepPurpose: drive options from server `/purposes` so adding
@@ -96,6 +74,7 @@ export default function WizardScreen({ onComplete, onSkip }: WizardScreenProps =
     const found = purposeList.find((x) => x.slug === slug);
     if (found) setPurposeId(found.id);
   };
+
   const [locationType, setLocationType] = useState<'current' | 'custom'>('current');
   const [customAddress, setCustomAddress] = useState('');
   const [customLat, setCustomLat] = useState<number | null>(null);
@@ -278,63 +257,13 @@ export default function WizardScreen({ onComplete, onSkip }: WizardScreenProps =
             </TouchableOpacity>
           </View>
           {locationType === 'custom' && (
-            <>
-              <TextInput
-                style={styles.textInput}
-                placeholder="Nama daerah atau koordinat (-6.9175, 107.6191)"
-                placeholderTextColor={colors.textSecondary}
-                value={customAddress}
-                onChangeText={(text) => {
-                  setCustomAddress(text);
-                  const coords = parseCoords(text);
-                  if (coords) {
-                    setCustomLat(coords.lat);
-                    setCustomLng(coords.lng);
-                  } else {
-                    setCustomLat(null);
-                    setCustomLng(null);
-                  }
-                }}
-              />
-              {customAddress.length > 0 && (customLat === null || customLng === null) && (
-                <Text style={styles.coordHint}>
-                  ⚠️ Format koordinat: "lat, lng" — atau pilih saran di bawah
-                </Text>
-              )}
-              {customLat !== null && customLng !== null && (
-                <Text style={styles.coordOk}>
-                  ✓ Koordinat: {customLat.toFixed(4)}, {customLng.toFixed(4)}
-                </Text>
-              )}
-              <Text style={styles.suggestLabel}>Saran Tujuan</Text>
-              {destinationsQuery.isLoading ? (
-                <View style={styles.loaderRow}>
-                  <ActivityIndicator color={colors.accent} />
-                </View>
-              ) : (
-                <View style={styles.suggestRow}>
-                  {(destinationsQuery.data ?? []).map((s) => (
-                    <TouchableOpacity
-                      key={s.id}
-                      style={[
-                        styles.suggestChip,
-                        customAddress === s.label && styles.suggestChipActive,
-                      ]}
-                      onPress={() => {
-                        setCustomAddress(s.label);
-                        setCustomLat(s.latitude);
-                        setCustomLng(s.longitude);
-                      }}
-                    >
-                      <Text style={styles.suggestChipMain}>{s.label}</Text>
-                      {s.sublabel ? (
-                        <Text style={styles.suggestChipSub}>{s.sublabel}</Text>
-                      ) : null}
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              )}
-            </>
+            <PlacesAutocompleteInput
+              onSelect={(lat, lng, label) => {
+                setCustomLat(lat);
+                setCustomLng(lng);
+                setCustomAddress(label);
+              }}
+            />
           )}
         </View>
 
@@ -711,62 +640,6 @@ const styles = StyleSheet.create({
   },
   locationIcon: { fontSize: 24, marginRight: spacing.md },
   locationLabel: { fontSize: 15, fontWeight: '600', color: colors.primary },
-  textInput: {
-    marginTop: spacing.md,
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    fontSize: 15,
-    color: colors.primary,
-  },
-  coordHint: {
-    marginTop: spacing.sm,
-    fontSize: 12,
-    color: colors.accent,
-  },
-  coordOk: {
-    marginTop: spacing.sm,
-    fontSize: 12,
-    color: colors.success,
-    fontWeight: '600',
-  },
-  suggestLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.textSecondary,
-    marginTop: spacing.md,
-    marginBottom: spacing.sm,
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-  },
-  suggestRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  suggestChip: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderWidth: 2,
-    borderColor: 'transparent',
-    alignItems: 'center',
-  },
-  suggestChipActive: {
-    borderColor: colors.accent,
-    backgroundColor: '#FDF6EC',
-  },
-  suggestChipMain: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.primary,
-  },
-  suggestChipSub: {
-    fontSize: 11,
-    color: colors.textSecondary,
-    marginTop: 1,
-  },
   // Radius pill row + manual input
   radiusRow: {
     flexDirection: 'row',
@@ -841,10 +714,6 @@ const styles = StyleSheet.create({
     width: 32, height: 32, borderRadius: 16,
     backgroundColor: 'rgba(212, 139, 58, 0.22)',
     zIndex: 1,
-  },
-  loaderRow: {
-    paddingVertical: spacing.lg,
-    alignItems: 'center',
   },
   // Filter card (mirror of web FilterPanel sidebar variant)
   filterCard: {

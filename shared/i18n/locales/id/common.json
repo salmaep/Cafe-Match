@@ -1,0 +1,22 @@
+{
+  "next": "Lanjut",
+  "back": "Kembali",
+  "skip": "Lewati",
+  "save": "Simpan",
+  "cancel": "Batal",
+  "delete": "Hapus",
+  "edit": "Edit",
+  "close": "Tutup",
+  "search": "Cari",
+  "loading": "Memuat...",
+  "retry": "Coba lagi",
+  "yes": "Ya",
+  "no": "Tidak",
+  "ok": "OK",
+  "done": "Selesai",
+  "apply": "Terapkan",
+  "reset": "Reset",
+  "viewAll": "Lihat semua",
+  "seeMore": "Selengkapnya",
+  "seeLess": "Lebih sedikit"
+}

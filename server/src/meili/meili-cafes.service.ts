@@ -438,24 +438,49 @@ export class MeiliCafesService {
          FROM cafe_menus WHERE cafe_id IN (${placeholders}) AND deleted_at IS NULL`,
         cafeIds,
       ),
-      // Latest non-empty review per cafe (with author + overall rating).
+      // Latest non-empty review per cafe. CafeMatch user reviews take priority;
+      // falls back to the highest-rated Google review when no user review exists.
       this.q<TopReviewRow>(
-        `SELECT t.cafe_id AS cafeId, t.text, t.created_at AS createdAt,
-                u.name AS authorName,
-                (SELECT rr.score FROM review_ratings rr
-                  WHERE rr.review_id = t.id AND rr.category = 'overall' LIMIT 1) AS overallScore
+        `SELECT cafeId, text, createdAt, authorName, overallScore
          FROM (
-           SELECT r.id, r.cafe_id, r.user_id, r.text, r.created_at,
-                  ROW_NUMBER() OVER (PARTITION BY r.cafe_id ORDER BY r.created_at DESC) AS rn
-           FROM reviews r
-           WHERE r.cafe_id IN (${placeholders})
-             AND r.deleted_at IS NULL
-             AND r.text IS NOT NULL
-             AND TRIM(r.text) <> ''
-         ) t
-         LEFT JOIN users u ON u.id = t.user_id
-         WHERE t.rn = 1`,
-        cafeIds,
+           SELECT t.cafe_id AS cafeId, t.text, t.created_at AS createdAt,
+                  u.name AS authorName,
+                  (SELECT rr.score FROM review_ratings rr
+                    WHERE rr.review_id = t.id AND rr.category = 'overall' LIMIT 1) AS overallScore,
+                  1 AS priority,
+                  ROW_NUMBER() OVER (PARTITION BY t.cafe_id ORDER BY t.created_at DESC) AS rn
+           FROM reviews t
+           LEFT JOIN users u ON u.id = t.user_id
+           WHERE t.cafe_id IN (${placeholders})
+             AND t.deleted_at IS NULL
+             AND t.text IS NOT NULL
+             AND TRIM(t.text) <> ''
+
+           UNION ALL
+
+           SELECT g.cafe_id AS cafeId, g.comment AS text, g.scraped_at AS createdAt,
+                  g.guest_name AS authorName,
+                  g.rating AS overallScore,
+                  2 AS priority,
+                  ROW_NUMBER() OVER (PARTITION BY g.cafe_id ORDER BY g.rating DESC, g.scraped_at DESC) AS rn
+           FROM cafe_google_reviews g
+           WHERE g.cafe_id IN (${placeholders})
+             AND g.comment IS NOT NULL
+             AND TRIM(g.comment) <> ''
+         ) combined
+         WHERE rn = 1
+           AND (cafeId, priority) IN (
+             SELECT cafeId, MIN(priority)
+             FROM (
+               SELECT cafe_id AS cafeId, 1 AS priority FROM reviews
+               WHERE cafe_id IN (${placeholders}) AND deleted_at IS NULL AND text IS NOT NULL AND TRIM(text) <> ''
+               UNION ALL
+               SELECT cafe_id AS cafeId, 2 AS priority FROM cafe_google_reviews
+               WHERE cafe_id IN (${placeholders}) AND comment IS NOT NULL AND TRIM(comment) <> ''
+             ) src
+             GROUP BY cafeId
+           )`,
+        [...cafeIds, ...cafeIds, ...cafeIds, ...cafeIds],
       ).catch(() => [] as TopReviewRow[]),
     ]);
 

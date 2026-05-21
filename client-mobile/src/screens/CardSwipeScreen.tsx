@@ -1,4 +1,4 @@
-import React, { useRef, useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
 import WizardScreen from './WizardScreen';
 import {
   View,
@@ -6,10 +6,9 @@ import {
   StyleSheet,
   Image,
   TouchableOpacity,
-  Dimensions,
   ActivityIndicator,
+  useWindowDimensions,
 } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import SwipeableCard from '../components/SwipeableCard';
 import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -19,32 +18,46 @@ import { useAuth } from '../context/AuthContext';
 import { useShortlist } from '../context/ShortlistContext';
 import { usePreferences } from '../context/PreferencesContext';
 import { useLocation } from '../context/LocationContext';
-import { useDiscoverDeck } from '../queries/cafes/use-discover-deck';
+import { fetchDiscoverDeck } from '../queries/cafes/api';
 import { usePurposeId } from '../queries/purposes/use-purpose-id';
 import { Cafe } from '../types';
-import { colors, spacing, radius } from '../theme';
+import { spacing } from '../theme';
 import Toast from '../components/Toast';
 import { buildFacilityChips } from '../utils/facilities';
+import { getOpenStatus } from '../utils/openingHours';
+import { formatRating } from '../utils/rating';
+import { cleanAddress } from '../utils/address';
 
-const { width, height } = Dimensions.get('window');
-const CARD_W = width * 0.85;
+const VISIBLE_TAGS = 4;
+const MAX_CARD_W = 480;
+const clamp = (val: number, min: number, max: number) =>
+  Math.max(min, Math.min(max, val));
 
 export default function CardSwipeScreen() {
   const navigation = useNavigation<StackNavigationProp<any>>();
   const route = useRoute();
   const insets = useSafeAreaInsets();
+  const { width, height } = useWindowDimensions();
+  const isCompact = width < 360;
+  const headingSize = clamp(width * 0.075, 22, 32);
+  const subheadingSize = clamp(width * 0.034, 11, 14);
+  const cafeNameSize = clamp(width * 0.07, 22, 30);
+  const cafeMetaSize = clamp(width * 0.034, 12, 14);
+  const chipTextSize = clamp(width * 0.032, 11, 13);
+  const fabSize = clamp(width * 0.12, 40, 52);
   const { user } = useAuth();
-  const { addToShortlist, isInShortlist } = useShortlist();
+  const { addToShortlist, isInShortlist, shortlist } = useShortlist();
   const { preferences } = usePreferences();
   const { latitude, longitude } = useLocation();
   const purposeId = usePurposeId(preferences?.purpose);
   const isStandalone = route.name === 'CardSwipe';
 
+  const [cafes, setCafes] = useState<Cafe[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [index, setIndex] = useState(0);
   const [allSwiped, setAllSwiped] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
   const [showToast, setShowToast] = useState(false);
-  const [sessionId, setSessionId] = useState(0);
-  const [index, setIndex] = useState(0);
 
   const [showWizard, setShowWizard] = useState(!isStandalone);
   useFocusEffect(
@@ -57,58 +70,93 @@ export default function CardSwipeScreen() {
     setShowWizard(false);
     setAllSwiped(false);
     setIndex(0);
-    setSessionId((s) => s + 1);
   }, []);
 
-  const HEADER_H = insets.top + 72;
-  const BOTTOM_H = insets.bottom + 72;
-  const availableH = height - HEADER_H - BOTTOM_H;
-  const CARD_H = Math.min(availableH * 0.88, height * 0.68);
-  const cardTop = Math.max(0, (availableH - CARD_H) / 2);
-  const cardLeft = (width - CARD_W) / 2;
+  const [cardAreaH, setCardAreaH] = useState(0);
+  const [cardAreaW, setCardAreaW] = useState(0);
+  const CARD_SIDE_GAP = clamp(width * 0.025, 8, 16);
+  const CARD_FAB_GAP = spacing.lg;
+  const BOTTOM_RESERVE = fabSize + insets.bottom + spacing.md + CARD_FAB_GAP;
+  const CARD_W = Math.min(cardAreaW - CARD_SIDE_GAP * 2, MAX_CARD_W);
+  const CARD_H = Math.max(0, cardAreaH - BOTTOM_RESERVE);
+  const cardTop = 0;
+  const cardLeft = Math.max(CARD_SIDE_GAP, (cardAreaW - CARD_W) / 2);
 
   const lat = preferences?.location?.latitude ?? latitude;
   const lng = preferences?.location?.longitude ?? longitude;
-  const radKm = preferences?.radius ?? 2;
+  const radiusMeters =
+    preferences?.radius != null ? preferences.radius * 1000 : 9999 * 1000;
 
-  const priceRangeParam = (['$', '$$', '$$$'] as const).includes(
-    preferences?.priceRange as any,
-  )
-    ? (preferences?.priceRange as '$' | '$$' | '$$$')
-    : undefined;
+  const priceRange =
+    (preferences?.priceRange as '$' | '$$' | '$$$' | undefined) || undefined;
+  const facilitiesArr =
+    preferences?.amenities && preferences.amenities.length > 0
+      ? preferences.amenities
+      : undefined;
+  const facilitiesKey = facilitiesArr ? facilitiesArr.join(',') : '';
 
   const purposeReady = preferences?.purpose == null || purposeId != null;
 
-  const deckQuery = useDiscoverDeck(
-    {
-      lat: lat ?? undefined,
-      lng: lng ?? undefined,
-      radius: Math.min(radKm * 1000, 50_000_000),
-      purposeId,
-      facilities:
-        preferences?.amenities && preferences.amenities.length > 0
-          ? preferences.amenities
-          : undefined,
-      priceRange: priceRangeParam,
-      limit: 7,
-    },
-    { enabled: purposeReady },
-  );
+  useEffect(() => {
+    if (showWizard) return;
+    if (!purposeReady) return;
+    if (lat == null || lng == null) return;
 
-  const cafes: Cafe[] = useMemo(() => {
-    const raw = deckQuery.data?.data ?? [];
-    return raw.filter((c) => !isInShortlist(c.id));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [deckQuery.data]);
-  const loading = deckQuery.isPending || deckQuery.isFetching;
+    let cancelled = false;
+    setLoading(true);
+    setCafes([]);
+    setIndex(0);
+    setAllSwiped(false);
+
+    const base = {
+      lat,
+      lng,
+      radius: radiusMeters,
+      limit: 10,
+      purposeId,
+      priceRange,
+    };
+    const facilities = facilitiesKey ? facilitiesKey.split(',') : undefined;
+
+    (async () => {
+      try {
+        let res = await fetchDiscoverDeck({ ...base, facilities });
+        if (res.data.length === 0) {
+          res = await fetchDiscoverDeck(base);
+        }
+        if (res.data.length === 0) {
+          res = await fetchDiscoverDeck({
+            lat,
+            lng,
+            radius: radiusMeters,
+            limit: 10,
+          });
+        }
+        if (!cancelled) setCafes(res.data ?? []);
+      } catch {
+        if (!cancelled) setCafes([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    showWizard,
+    purposeReady,
+    lat,
+    lng,
+    radiusMeters,
+    purposeId,
+    priceRange,
+    facilitiesKey,
+  ]);
 
   useEffect(() => {
     const upcoming = cafes.slice(index, index + 3);
     upcoming.forEach((cafe) => {
-      const url =
-        cafe.promotionContent?.promoPhoto ||
-        cafe.newCafeContent?.promoPhoto ||
-        cafe.photos?.[0];
+      const url = cafe.photos?.[0];
       if (url) Image.prefetch(url);
     });
   }, [cafes, index]);
@@ -121,11 +169,8 @@ export default function CardSwipeScreen() {
   cafesRef.current = cafes;
   const userRef = useRef(user);
   userRef.current = user;
-
-  const promptLoginRef = useRef<() => void>(() => {});
-  promptLoginRef.current = () => navigation.navigate('AuthModal');
-
-  const heartNativeGesture = useMemo(() => Gesture.Native(), []);
+  const indexRef = useRef(0);
+  indexRef.current = index;
 
   useFocusEffect(
     useCallback(() => {
@@ -133,34 +178,34 @@ export default function CardSwipeScreen() {
     }, []),
   );
 
-  const indexRef = useRef(0);
-  indexRef.current = index;
-
-  const advanceIndex = useCallback((dir: 'left' | 'right') => {
-    const i = indexRef.current;
-    const cafe = cafesRef.current[i];
-    if (dir === 'right' && cafe && !isInShortlistRef.current(cafe.id)) {
-      if (!userRef.current) {
-        promptLoginRef.current();
-      } else {
-        addToShortlistRef.current(cafe);
-        setToastMsg(`"${cafe.name}" masuk Shortlist!`);
-        setShowToast(true);
+  const advanceIndex = useCallback(
+    (dir: 'left' | 'right') => {
+      const i = indexRef.current;
+      const cafe = cafesRef.current[i];
+      if (dir === 'right' && cafe && !isInShortlistRef.current(cafe.id)) {
+        if (!userRef.current) {
+          navigation.navigate('AuthModal');
+        } else {
+          addToShortlistRef.current(cafe);
+          setToastMsg(`"${cafe.name}" masuk Shortlist!`);
+          setShowToast(true);
+        }
       }
-    }
-    const next = i + 1;
-    const total = cafesRef.current.length;
-    if (next >= total) {
-      setAllSwiped(true);
-      setTimeout(() => {
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'MainTabs', params: { screen: 'Explore' } }],
-        });
-      }, 1200);
-    }
-    setIndex(next);
-  }, [navigation]);
+      const next = i + 1;
+      const total = cafesRef.current.length;
+      if (next >= total) {
+        setAllSwiped(true);
+        setTimeout(() => {
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'MainTabs', params: { screen: 'Explore' } }],
+          });
+        }, 1200);
+      }
+      setIndex(next);
+    },
+    [navigation],
+  );
 
   const handleTapCard = useCallback(() => {
     const cafe = cafesRef.current[indexRef.current];
@@ -169,186 +214,157 @@ export default function CardSwipeScreen() {
 
   const openShortlist = () => navigation.navigate('ShortlistModal');
 
-  const renderCard = useCallback((cafe: Cafe) => {
-    if (!cafe) return <View />;
-    const saved = isInShortlistRef.current(cafe.id);
-    const isTypeA = cafe.promotionType === 'A' || cafe.activePromotionType === 'new_cafe';
-    const isTypeB = cafe.promotionType === 'B' || cafe.activePromotionType === 'featured_promo';
+  const renderCard = useCallback(
+    (cafe: Cafe, isCurrent: boolean) => {
+      if (!cafe) return <View />;
+      const bgPhoto =
+        cafe.photos?.[0] ||
+        'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800';
+      const open = getOpenStatus(cafe.openingHours);
+      const locality = cleanAddress(cafe.district || cafe.city || '');
+      const distanceKm =
+        cafe.distanceMeters != null
+          ? (cafe.distanceMeters / 1000).toFixed(1)
+          : cafe.distance != null
+            ? cafe.distance.toFixed(1)
+            : null;
+      const rating = formatRating(cafe.googleRating);
+      const shortlisted = isInShortlistRef.current(cafe.id);
+      const allTags = buildFacilityChips(cafe);
+      const visibleTags = allTags.slice(0, VISIBLE_TAGS);
+      const extra = allTags.length - visibleTags.length;
+      const metaParts: string[] = [];
+      if (locality) metaParts.push(`📍 ${locality}`);
+      if (open?.isOpen && open.closesAt) metaParts.push(`🕐 sampai ${open.closesAt}`);
+      if (cafe.priceRange) metaParts.push(cafe.priceRange);
 
-    const bgPhoto =
-      (isTypeB && (cafe.promotionContent?.promoPhoto || cafe.promoPhoto)) ||
-      (isTypeA && cafe.newCafeContent?.promoPhoto) ||
-      cafe.photos?.[0] ||
-      'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800';
+      return (
+        <View style={[styles.card, { width: CARD_W, height: CARD_H }]}>
+          <Image source={{ uri: bgPhoto }} style={styles.cardImage} />
 
-    const promoContent = cafe.promotionContent;
-    const newCafe = cafe.newCafeContent;
+          <LinearGradient
+            colors={['rgba(0,0,0,0.55)', 'transparent']}
+            locations={[0, 0.22]}
+            style={styles.gradTop}
+          />
+          <LinearGradient
+            colors={['transparent', 'rgba(0,0,0,0.92)']}
+            locations={[0, 1]}
+            style={styles.gradBottom}
+          />
 
-    return (
-      <View
-        style={[
-          styles.card,
-          { width: CARD_W, height: CARD_H },
-          isTypeA && styles.cardTypeA,
-          isTypeB && styles.cardTypeB,
-        ]}
-      >
-        <Image source={{ uri: bgPhoto }} style={styles.cardImage} />
-
-        <LinearGradient
-          colors={['transparent', 'rgba(0,0,0,0.55)', 'rgba(0,0,0,0.92)']}
-          locations={[0, 0.4, 1]}
-          style={[styles.gradient, (isTypeA || isTypeB) && styles.gradientPromo]}
-        />
-
-        {isTypeA && (
-          <View style={[styles.promoBadgeLeft, styles.promoBadgeNew]}>
-            <Text style={styles.promoBadgeText}>NEW!</Text>
-          </View>
-        )}
-        {isTypeB && (
-          <View style={[styles.promoBadgeLeft, styles.promoBadgeFeatured]}>
-            <Text style={styles.promoBadgeText}>⭐ Promo Spesial</Text>
-          </View>
-        )}
-
-        {cafe.matchScore != null && !isTypeA && !isTypeB && (
-          <View style={styles.matchBadge}>
-            <Text style={styles.matchText}>{cafe.matchScore}%</Text>
-            <Text style={styles.matchLabel}>Match</Text>
-          </View>
-        )}
-
-        {(isTypeA || isTypeB) && (
-          <View style={styles.distanceBadge}>
-            <Text style={styles.distanceBadgeText}>{cafe.distance} km</Text>
-          </View>
-        )}
-
-        <GestureDetector gesture={heartNativeGesture}>
-          <TouchableOpacity
-            style={[
-              styles.heartBtn,
-              saved && styles.heartBtnActive,
-              (isTypeA || isTypeB) && styles.heartBtnPromo,
-            ]}
-            onPress={() => {
-              if (!userRef.current) {
-                promptLoginRef.current();
-                return;
-              }
-              addToShortlistRef.current(cafe);
-              setToastMsg(`"${cafe.name}" masuk Shortlist!`);
-              setShowToast(true);
-            }}
-          >
-            <Text style={styles.heartIcon}>{saved ? '★' : '☆'}</Text>
-          </TouchableOpacity>
-        </GestureDetector>
-
-        <View style={styles.cardBottom}>
-          {isTypeA && (
-            <>
-              {newCafe?.promoOffer ? (
-                <View style={styles.newCafeOfferBanner}>
-                  <Text style={styles.newCafeOfferText} numberOfLines={2}>
-                    🎉 {newCafe.promoOffer}
-                  </Text>
-                </View>
-              ) : null}
-
-              <View style={styles.cardInfo}>
-                <Text style={styles.cafeName} numberOfLines={1}>{cafe.name}</Text>
-                {newCafe?.openingSince ? (
-                  <Text style={styles.openingSince}>
-                    ✨ Buka sejak {newCafe.openingSince}
-                  </Text>
-                ) : (
-                  <Text style={styles.cafeDistance}>{cafe.distance} km dari sini</Text>
-                )}
-                {newCafe?.keunggulan && newCafe.keunggulan.length > 0 && (
-                  <View style={styles.tagsRow}>
-                    {newCafe.keunggulan.slice(0, 3).map((k) => (
-                      <View key={k} style={styles.keunggulanPill}>
-                        <Text style={styles.keunggulanPillText}>{k}</Text>
-                      </View>
-                    ))}
+          {isCurrent && cafesRef.current.length > 0 && (
+            <View style={styles.progressRow}>
+              {cafesRef.current.map((_, i) => {
+                const active = i < indexRef.current;
+                const isCur = indexRef.current === i;
+                return (
+                  <View key={i} style={styles.progressTrack}>
+                    <View
+                      style={[
+                        styles.progressFill,
+                        {
+                          width: active || isCur ? '100%' : '0%',
+                          opacity: isCur ? 0.95 : active ? 0.85 : 0,
+                        },
+                      ]}
+                    />
                   </View>
-                )}
-                {(!newCafe?.keunggulan || newCafe.keunggulan.length === 0) && (
-                  <View style={styles.tagsRow}>
-                    {(cafe.purposes ?? []).slice(0, 2).map((p) => (
-                      <View key={p} style={styles.tag}>
-                        <Text style={styles.tagText}>{p}</Text>
-                      </View>
-                    ))}
-                  </View>
-                )}
-              </View>
-            </>
-          )}
-
-          {isTypeB && (
-            <>
-              <View style={styles.promoBannerTall}>
-                <Text style={styles.promoBannerTitleLg} numberOfLines={1}>
-                  {promoContent?.title || cafe.promoTitle || 'Special Offer'}
-                </Text>
-                {(promoContent?.description || cafe.promoDescription) ? (
-                  <Text style={styles.promoBannerDescLg} numberOfLines={2}>
-                    {promoContent?.description || cafe.promoDescription}
-                  </Text>
-                ) : null}
-
-                {(promoContent?.validHours || promoContent?.validDays) && (
-                  <View style={styles.validHoursRowPromo}>
-                    <View style={styles.validHoursChipWhite}>
-                      <Text style={styles.validHoursIconWhite}>🕗</Text>
-                      <Text style={styles.validHoursTextWhite}>
-                        {promoContent?.validHours || ''}
-                        {promoContent?.validDays && promoContent?.validHours ? ' · ' : ''}
-                        {promoContent?.validDays || ''}
-                      </Text>
-                    </View>
-                  </View>
-                )}
-              </View>
-
-              <View style={styles.cardInfo}>
-                <Text style={styles.cafeName} numberOfLines={1}>📍 {cafe.name}</Text>
-                <View style={styles.tagsRow}>
-                  {(cafe.purposes ?? []).slice(0, 2).map((p) => (
-                    <View key={p} style={styles.tag}>
-                      <Text style={styles.tagText}>{p}</Text>
-                    </View>
-                  ))}
-                </View>
-              </View>
-            </>
-          )}
-
-          {!isTypeA && !isTypeB && (
-            <View style={styles.cardInfo}>
-              <Text style={styles.cafeName} numberOfLines={1}>{cafe.name}</Text>
-              <Text style={styles.cafeDistance}>{cafe.distance} km away</Text>
-              <View style={styles.tagsRow}>
-                {(cafe.purposes ?? []).slice(0, 2).map((p) => (
-                  <View key={p} style={styles.tag}>
-                    <Text style={styles.tagText}>{p}</Text>
-                  </View>
-                ))}
-                {buildFacilityChips(cafe).slice(0, 2).map((f) => (
-                  <View key={f.key} style={styles.tag}>
-                    <Text style={styles.tagText}>{f.icon} {f.label}</Text>
-                  </View>
-                ))}
-              </View>
+                );
+              })}
             </View>
           )}
+
+          <View style={styles.topChipsCol}>
+            <View style={styles.topChipsRow}>
+              {rating && (
+                <View style={styles.ratingPill}>
+                  <Text style={styles.ratingStar}>★</Text>
+                  <Text style={styles.ratingNum}>{rating}</Text>
+                  {cafe.totalGoogleReviews != null && (
+                    <Text style={styles.ratingCount}>
+                      {' '}
+                      ({cafe.totalGoogleReviews.toLocaleString()})
+                    </Text>
+                  )}
+                </View>
+              )}
+              {open && (
+                <View style={styles.openPill}>
+                  <View
+                    style={[
+                      styles.openDot,
+                      { backgroundColor: open.isOpen ? '#34d399' : '#ef4444' },
+                    ]}
+                  />
+                  <Text style={styles.openText}>
+                    {open.isOpen ? 'Buka' : 'Tutup'}
+                  </Text>
+                </View>
+              )}
+              <View style={{ flex: 1 }} />
+              {distanceKm && (
+                <View style={styles.distancePill}>
+                  <Text style={styles.distanceText}>📍 {distanceKm} km</Text>
+                </View>
+              )}
+            </View>
+            {shortlisted && (
+              <View style={styles.shortlistedBadge}>
+                <Text style={styles.shortlistedText}>★ Sudah di shortlist</Text>
+              </View>
+            )}
+          </View>
+
+          <View
+            style={[
+              styles.cardBottom,
+              { paddingHorizontal: isCompact ? 14 : 18 },
+            ]}
+          >
+            <Text
+              style={[
+                styles.cafeName,
+                { fontSize: cafeNameSize, lineHeight: cafeNameSize + 2 },
+              ]}
+              numberOfLines={2}
+            >
+              {cafe.name}
+            </Text>
+            {metaParts.length > 0 && (
+              <Text
+                style={[styles.cafeMeta, { fontSize: cafeMetaSize }]}
+                numberOfLines={1}
+              >
+                {metaParts.join('  ·  ')}
+              </Text>
+            )}
+            <View style={styles.chipsRow}>
+              {visibleTags.map((t) => (
+                <View key={t.key} style={styles.tagChip}>
+                  <Text
+                    style={[styles.tagChipText, { fontSize: chipTextSize }]}
+                  >
+                    {t.icon ? `${t.icon} ${t.label}` : t.label}
+                  </Text>
+                </View>
+              ))}
+              {extra > 0 && (
+                <View style={styles.extraChip}>
+                  <Text
+                    style={[styles.extraChipText, { fontSize: chipTextSize }]}
+                  >
+                    +{extra}
+                  </Text>
+                </View>
+              )}
+            </View>
+          </View>
         </View>
-      </View>
-    );
-  }, []);
+      );
+    },
+    [CARD_W, CARD_H, isCompact, cafeNameSize, cafeMetaSize, chipTextSize],
+  );
 
   const goExplore = () =>
     navigation.reset({
@@ -358,49 +374,36 @@ export default function CardSwipeScreen() {
 
   if (showWizard) {
     return (
-      <WizardScreen
-        onComplete={dismissWizard}
-        onSkip={dismissWizard}
-      />
-    );
-  }
-
-  if (allSwiped) {
-    return (
-      <View style={styles.emptyContainer}>
-        <Text style={styles.emptyEmoji}>🗺️</Text>
-        <Text style={styles.emptyTitle}>Gak ada yang cocok?</Text>
-        <Text style={styles.emptySubtitle}>Yuk explore di map!</Text>
-      </View>
+      <WizardScreen onComplete={dismissWizard} onSkip={dismissWizard} />
     );
   }
 
   if (loading) {
     return (
-      <View style={styles.emptyContainer}>
-        <ActivityIndicator size="large" color={colors.accent} style={{ marginBottom: spacing.md }} />
-        <Text style={styles.emptyTitle}>Lagi nyari cafe...</Text>
+      <View style={styles.bgWrap}>
+        <View style={styles.fullCentered}>
+          <ActivityIndicator
+            size="large"
+            color="#b85d04"
+            style={{ marginBottom: spacing.md }}
+          />
+          <Text style={styles.fullCenteredTitle}>Lagi nyari cafe...</Text>
+        </View>
       </View>
     );
   }
 
-  if (cafes.length === 0) {
+  if (allSwiped || cafes.length === 0) {
     return (
-      <View style={styles.emptyContainer}>
-        <Text style={styles.emptyEmoji}>☕</Text>
-        <Text style={styles.emptyTitle}>Gak ada cafe</Text>
-        <Text style={styles.emptySubtitle}>
-          Coba perluas radius atau hapus filter di Explore.
-        </Text>
-        <View style={styles.emptyActions}>
-          <TouchableOpacity style={styles.emptyPrimaryBtn} onPress={goExplore}>
-            <Text style={styles.emptyPrimaryBtnText}>🗺️  Buka Map</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.emptySecondaryBtn}
-            onPress={() => deckQuery.refetch()}
-          >
-            <Text style={styles.emptySecondaryBtnText}>↻ Coba Lagi</Text>
+      <View style={styles.bgWrap}>
+        <View style={styles.fullCentered}>
+          <Text style={styles.emptyEmoji}>🗺️</Text>
+          <Text style={styles.fullCenteredTitle}>Semua udah dilihat!</Text>
+          <Text style={styles.fullCenteredSubtitle}>
+            Yuk jelajah cafe lainnya di halaman Explore
+          </Text>
+          <TouchableOpacity style={styles.emptyBtn} onPress={goExplore}>
+            <Text style={styles.emptyBtnText}>Buka Explore 🗺️</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -408,23 +411,33 @@ export default function CardSwipeScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
-        <Text style={styles.headerTitle}>
-          Cafe<Text style={{ color: colors.accent }}>Match</Text>
+    <View style={styles.bgWrap}>
+      <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
+        <Text
+          style={[
+            styles.heading,
+            { fontSize: headingSize, lineHeight: headingSize + 2 },
+          ]}
+        >
+          Temukan kafe{' '}
+          <Text style={[styles.headingAccent, { fontSize: headingSize }]}>
+            favoritmu
+          </Text>
+          .
+        </Text>
+        <Text style={[styles.subheading, { fontSize: subheadingSize }]}>
+          Geser kartu — kanan untuk simpan, kiri untuk lewati.
         </Text>
       </View>
 
       <View
-        style={{
-          position: 'absolute',
-          top: HEADER_H,
-          left: 0,
-          right: 0,
-          bottom: BOTTOM_H,
+        style={{ flex: 1, position: 'relative' }}
+        onLayout={(e) => {
+          setCardAreaH(e.nativeEvent.layout.height);
+          setCardAreaW(e.nativeEvent.layout.width);
         }}
       >
-        {cafes[index + 1] && (
+        {cafes[index + 1] && CARD_H > 0 && (
           <View
             style={{
               position: 'absolute',
@@ -435,350 +448,297 @@ export default function CardSwipeScreen() {
             }}
             pointerEvents="none"
           >
-            {renderCard(cafes[index + 1])}
+            {renderCard(cafes[index + 1], false)}
           </View>
         )}
-
-        {cafes[index] && (
+        {cafes[index] && CARD_H > 0 && (
           <SwipeableCard
-            key={`${sessionId}-${index}`}
+            key={index}
             top={cardTop}
             left={cardLeft}
             width={CARD_W}
             height={CARD_H}
             onSwipeComplete={advanceIndex}
             onTap={handleTapCard}
-            tapFailGesture={heartNativeGesture}
+            leftLabel="Lewati"
+            rightLabel="✓ Simpan"
           >
-            {renderCard(cafes[index])}
+            {renderCard(cafes[index], true)}
           </SwipeableCard>
         )}
+
       </View>
 
       <TouchableOpacity
-        style={[styles.fab, { bottom: insets.bottom + 24 }]}
+        style={[
+          styles.shortlistFab,
+          {
+            width: fabSize,
+            height: fabSize,
+            borderRadius: fabSize / 2,
+            bottom: insets.bottom + spacing.md,
+            right: spacing.md,
+          },
+        ]}
         onPress={openShortlist}
+        activeOpacity={0.85}
       >
-        <Text style={styles.fabIcon}>★</Text>
+        <Text style={[styles.shortlistFabIcon, { fontSize: fabSize * 0.5 }]}>
+          ★
+        </Text>
+        {shortlist.length > 0 && (
+          <View style={styles.shortlistFabBadge}>
+            <Text style={styles.shortlistFabBadgeText}>{shortlist.length}</Text>
+          </View>
+        )}
       </TouchableOpacity>
 
-      <Toast message={toastMsg} visible={showToast} onHide={() => setShowToast(false)} />
+      <Toast
+        message={toastMsg}
+        visible={showToast}
+        onHide={() => setShowToast(false)}
+      />
     </View>
   );
 }
 
-
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  header: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.sm,
-    zIndex: 10,
-  },
-  headerTitle: { fontSize: 22, fontWeight: '700', color: colors.primary },
-
-  card: {
-    borderRadius: radius.lg,
-    overflow: 'hidden',
-    backgroundColor: colors.surface,
-  },
-  cardTypeA: {
-    borderWidth: 2.5,
-    borderColor: colors.promoPin,
-    shadowColor: colors.promoPin,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.4,
-    shadowRadius: 14,
-    elevation: 8,
-  },
-  cardTypeB: {
-    borderWidth: 2,
-    borderColor: colors.accent,
-    shadowColor: colors.accent,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  cardImage: {
-    position: 'absolute',
-    top: 0, left: 0, right: 0, bottom: 0,
-    resizeMode: 'cover',
-  },
-  gradient: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: '65%',
-  },
-  gradientPromo: {
-    height: '75%',
-  },
-
-  promoBadge: {
-    position: 'absolute',
-    top: spacing.md,
-    right: spacing.md,
-    backgroundColor: colors.accent,
-    borderRadius: radius.full,
-    paddingHorizontal: spacing.sm + 4,
-    paddingVertical: spacing.xs + 1,
-  },
-  promoBadgeLeft: {
-    position: 'absolute',
-    top: spacing.md,
-    left: spacing.md,
-    borderRadius: radius.full,
-    paddingHorizontal: spacing.sm + 4,
-    paddingVertical: spacing.xs + 2,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-  },
-  promoBadgeNew: {
-    backgroundColor: colors.promoPin,
-  },
-  promoBadgeFeatured: {
-    backgroundColor: colors.accent,
-  },
-  promoBadgeText: {
-    color: colors.white,
-    fontWeight: '800',
-    fontSize: 12,
-    letterSpacing: 0.4,
-  },
-
-  distanceBadge: {
-    position: 'absolute',
-    top: spacing.md,
-    right: spacing.md,
-    backgroundColor: 'rgba(0,0,0,0.55)',
-    borderRadius: radius.full,
-    paddingHorizontal: spacing.sm + 2,
-    paddingVertical: spacing.xs + 1,
-  },
-  distanceBadgeText: {
-    color: colors.white,
-    fontSize: 12,
-    fontWeight: '700',
-  },
-
-  heartBtnPromo: {
-    left: undefined,
-    right: spacing.md,
-    top: spacing.md + 42,
-  },
-
-  matchBadge: {
-    position: 'absolute',
-    top: spacing.md,
-    right: spacing.md,
-    backgroundColor: colors.accent,
-    borderRadius: radius.sm,
-    paddingHorizontal: spacing.sm + 2,
-    paddingVertical: spacing.xs,
-    alignItems: 'center',
-  },
-  matchText: { color: colors.white, fontWeight: '700', fontSize: 18 },
-  matchLabel: { color: 'rgba(255,255,255,0.8)', fontSize: 11, fontWeight: '600' },
-
-  heartBtn: {
-    position: 'absolute',
-    top: spacing.md,
-    left: spacing.md,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.25)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  heartBtnActive: { backgroundColor: colors.accent },
-  heartIcon: { fontSize: 22, color: colors.white },
-
-  cardBottom: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-  },
-  promoBanner: {
-    backgroundColor: 'rgba(212, 139, 58, 0.92)',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  promoBannerTitle: {
-    color: colors.white,
-    fontWeight: '700',
-    fontSize: 14,
-  },
-  promoBannerDesc: {
-    color: 'rgba(255,255,255,0.9)',
-    fontSize: 12,
-    marginTop: 2,
-  },
-  promoBannerTall: {
-    backgroundColor: 'rgba(212, 139, 58, 0.95)',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-  },
-  promoBannerTitleLg: {
-    color: colors.white,
-    fontWeight: '800',
-    fontSize: 20,
-    letterSpacing: 0.2,
-  },
-  promoBannerDescLg: {
-    color: 'rgba(255,255,255,0.95)',
-    fontSize: 13,
-    marginTop: 4,
-    lineHeight: 18,
-  },
-  validHoursRowPromo: {
-    flexDirection: 'row',
-    marginTop: spacing.sm,
-  },
-  validHoursChipWhite: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.25)',
-    borderRadius: radius.full,
-    paddingHorizontal: spacing.sm + 2,
-    paddingVertical: 4,
-    gap: 4,
-  },
-  validHoursIconWhite: { fontSize: 12 },
-  validHoursTextWhite: {
-    color: colors.white,
-    fontSize: 12,
-    fontWeight: '700',
-  },
-
-  newCafeOfferBanner: {
-    backgroundColor: 'rgba(232, 89, 60, 0.95)',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm + 2,
-  },
-  newCafeOfferText: {
-    color: colors.white,
-    fontWeight: '800',
-    fontSize: 14,
-    letterSpacing: 0.2,
-    lineHeight: 18,
-  },
-  openingSince: {
-    color: 'rgba(255,255,255,0.85)',
-    fontSize: 13,
-    fontWeight: '600',
-    marginBottom: spacing.sm,
-  },
-  keunggulanPill: {
-    backgroundColor: 'rgba(255,255,255,0.25)',
-    borderRadius: radius.full,
-    paddingHorizontal: spacing.sm + 2,
-    paddingVertical: spacing.xs + 1,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.35)',
-  },
-  keunggulanPillText: {
-    color: colors.white,
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  cardInfo: {
-    padding: spacing.lg,
-    paddingTop: spacing.sm,
-  },
-  cafeName: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: colors.white,
-    marginBottom: 2,
-  },
-  cafeDistance: {
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.8)',
-    marginBottom: spacing.sm,
-  },
-  tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  tag: {
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderRadius: radius.full,
-    paddingHorizontal: spacing.sm + 2,
-    paddingVertical: spacing.xs,
-  },
-  tagText: { color: colors.white, fontSize: 12, fontWeight: '600' },
-
-  fab: {
-    position: 'absolute',
-    right: spacing.lg,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: colors.accent,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 6,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
-    zIndex: 20,
-  },
-  fabIcon: { fontSize: 24, color: colors.white },
-
-  emptyContainer: {
+  bgWrap: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#f6efe2',
+  },
+  fullCentered: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: spacing.xl,
   },
-  emptyEmoji: { fontSize: 56, marginBottom: spacing.md },
-  emptyTitle: { fontSize: 24, fontWeight: '700', color: colors.primary, textAlign: 'center' },
-  emptySubtitle: {
+  fullCenteredTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#1a1410',
+    textAlign: 'center',
+  },
+  fullCenteredSubtitle: {
     fontSize: 15,
-    color: colors.textSecondary,
+    color: '#8a7a66',
     marginTop: spacing.xs,
     textAlign: 'center',
     maxWidth: 320,
     lineHeight: 21,
   },
-  emptyActions: {
-    width: '100%',
-    maxWidth: 280,
-    gap: spacing.sm,
+  emptyEmoji: { fontSize: 56, marginBottom: spacing.md },
+  emptyBtn: {
     marginTop: spacing.xl,
-  },
-  emptyPrimaryBtn: {
-    backgroundColor: colors.primary,
-    borderRadius: radius.md,
+    backgroundColor: '#d97706',
+    paddingHorizontal: spacing.xl,
     paddingVertical: spacing.md,
+    borderRadius: 14,
+  },
+  emptyBtnText: { color: '#ffffff', fontWeight: '800', fontSize: 15 },
+
+  header: {
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.sm,
+  },
+  headerRow: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: spacing.sm,
   },
-  emptyPrimaryBtnText: {
-    color: colors.white,
-    fontSize: 15,
-    fontWeight: '800',
-  },
-  emptySecondaryBtn: {
-    backgroundColor: colors.white,
-    borderRadius: radius.md,
-    paddingVertical: spacing.md,
+  shortlistFab: {
+    position: 'absolute',
+    backgroundColor: '#d97706',
     alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: colors.accent,
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 6,
+    zIndex: 30,
   },
-  emptySecondaryBtnText: {
-    color: colors.accent,
-    fontSize: 14,
-    fontWeight: '700',
+  shortlistFabIcon: { fontSize: 22, color: '#ffffff', fontWeight: '700' },
+  shortlistFabBadge: {
+    position: 'absolute',
+    top: -3,
+    right: -3,
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#d97706',
+    paddingHorizontal: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  shortlistFabBadgeText: { color: '#d97706', fontSize: 11, fontWeight: '800' },
+  heading: {
+    fontSize: 28,
+    fontWeight: '600',
+    color: '#1a1410',
+    letterSpacing: -0.5,
+    lineHeight: 30,
+  },
+  headingAccent: {
+    color: '#b85d04',
+    fontStyle: 'italic',
+  },
+  subheading: {
+    fontSize: 13,
+    color: '#8a7a66',
+    marginTop: 6,
   },
 
-  cardStackBehind: {
-    position: 'absolute',
+  card: {
+    borderRadius: 24,
+    overflow: 'hidden',
+    backgroundColor: '#2a2018',
   },
+  cardImage: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    resizeMode: 'cover',
+  },
+  gradTop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '25%',
+  },
+  gradBottom: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: '55%',
+  },
+
+  progressRow: {
+    position: 'absolute',
+    top: 10,
+    left: 12,
+    right: 12,
+    flexDirection: 'row',
+    gap: 4,
+    zIndex: 5,
+  },
+  progressTrack: {
+    flex: 1,
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 2,
+    backgroundColor: '#ffffff',
+  },
+
+  topChipsCol: {
+    position: 'absolute',
+    top: 26,
+    left: 12,
+    right: 12,
+    zIndex: 4,
+    gap: 8,
+  },
+  topChipsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  ratingPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  ratingStar: { color: '#f5b820', fontSize: 12, marginRight: 4 },
+  ratingNum: { color: '#1a1410', fontSize: 12, fontWeight: '800' },
+  ratingCount: { color: '#8a7a66', fontSize: 12, fontWeight: '600' },
+  openPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(20,14,10,0.65)',
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.18)',
+    gap: 6,
+  },
+  openDot: { width: 7, height: 7, borderRadius: 4 },
+  openText: { color: '#ffffff', fontSize: 12, fontWeight: '800' },
+  distancePill: {
+    backgroundColor: 'rgba(20,14,10,0.65)',
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.18)',
+  },
+  distanceText: { color: '#ffffff', fontSize: 12, fontWeight: '800' },
+  shortlistedBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#d97706',
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  shortlistedText: { color: '#ffffff', fontSize: 11, fontWeight: '800' },
+
+  cardBottom: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 18,
+    paddingHorizontal: 18,
+  },
+  cafeName: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#ffffff',
+    lineHeight: 30,
+    marginBottom: 6,
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowRadius: 8,
+  },
+  cafeMeta: {
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.86)',
+    marginBottom: 10,
+  },
+  chipsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  tagChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(20,14,10,0.55)',
+    borderColor: 'rgba(255,255,255,0.16)',
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 11,
+    paddingVertical: 4,
+  },
+  tagChipText: { color: '#ffffff', fontSize: 12, fontWeight: '700' },
+  extraChip: {
+    backgroundColor: 'rgba(217,119,6,0.85)',
+    borderRadius: 999,
+    paddingHorizontal: 11,
+    paddingVertical: 4,
+  },
+  extraChipText: { color: '#ffffff', fontSize: 12, fontWeight: '800' },
+
 });

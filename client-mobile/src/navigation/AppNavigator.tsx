@@ -9,7 +9,7 @@ import { colors } from '../theme';
 import SplashScreen from '../screens/SplashScreen';
 import WizardScreen from '../screens/WizardScreen';
 import CardSwipeScreen from '../screens/CardSwipeScreen';
-import MapScreen from '../screens/MapScreen';
+import MapScreen from '../screens/map/MapScreen';
 import CafeDetailScreen from '../screens/CafeDetailScreen';
 import ShortlistModal from '../screens/ShortlistModal';
 import AuthModal from '../screens/AuthModal';

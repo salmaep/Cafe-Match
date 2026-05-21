@@ -91,7 +91,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     googleMapsApiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY,
     googleMapsMapId: process.env.EXPO_PUBLIC_GOOGLE_MAPS_MAP_ID,
     eas: {
-      projectId: '3a248a2a-407e-49bf-ae6e-16fa84499b98',
+      projectId: '482a9e47-290d-408a-b5b9-413705fc18d0',
     },
   },
 });

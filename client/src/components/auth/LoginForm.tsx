@@ -2,7 +2,7 @@ import { useState, type FormEvent } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth, type PendingTwoFa } from "../../context/AuthContext";
-import { authText, commonText } from "@shared/i18n";
+import { authText } from "@shared/i18n";
 import OtpStep from "./OtpStep";
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3084/api/v1";

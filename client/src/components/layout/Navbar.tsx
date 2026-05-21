@@ -3,7 +3,7 @@ import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../context/AuthContext";
 import { useShortlist } from "../../context/ShortlistContext";
-import { commonText, profileText } from "@shared/i18n";
+import { commonText } from "@shared/i18n";
 
 export default function Navbar() {
   const { t } = useTranslation();

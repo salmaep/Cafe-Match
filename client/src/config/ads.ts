@@ -18,4 +18,7 @@ export const ADSENSE_INFEED_SLOT =
 export const ADSENSE_TEST_MODE =
   import.meta.env.DEV || import.meta.env.VITE_ADSENSE_TEST === "true";
 
-export const ADSENSE_ENABLED = !!ADSENSE_CLIENT && !!ADSENSE_INFEED_SLOT;
+// Disable real AdSense rendering in dev — localhost can't serve ads, so the
+// <ins> tag stays empty and breaks the layout. Show placeholder instead.
+export const ADSENSE_ENABLED =
+  !!ADSENSE_CLIENT && !!ADSENSE_INFEED_SLOT && !import.meta.env.DEV;

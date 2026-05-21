@@ -24,16 +24,23 @@ jobs:
           VITE_ADSENSE_INFEED_SLOT=${{ secrets.VITE_ADSENSE_INFEED_SLOT }}
           EOF
 
-      - name: Copy client/.env to VPS
-        uses: appleboy/scp-action@v0.1.7
+      - name: Sync source to VPS
+        uses: burnett01/rsync-deployments@7.0.1
         with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_SSH_PORT || 22 }}
-          source: client/.env
-          target: /opt/Cafe-Match
-          overwrite: true
+          switches: >-
+            -avzr --delete
+            --exclude='.git'
+            --exclude='**/node_modules'
+            --exclude='server/dist'
+            --exclude='client/dist'
+            --exclude='server/.env'
+            --exclude='.env'
+          path: ./
+          remote_path: /opt/Cafe-Match/
+          remote_host: ${{ secrets.VPS_HOST }}
+          remote_port: ${{ secrets.VPS_SSH_PORT || 22 }}
+          remote_user: ${{ secrets.VPS_USER }}
+          remote_key: ${{ secrets.VPS_SSH_KEY }}
 
       - name: Copy k8s manifests to VPS
         uses: appleboy/scp-action@v0.1.7
@@ -58,17 +65,13 @@ jobs:
             set -e
             cd /opt/Cafe-Match
 
-            echo "==> 1. Pull latest from main"
-            git fetch origin main
-            git reset --hard origin/main
-
-            echo "==> 2. Build client + app (no-cache so VITE_* env are baked fresh)"
+            echo "==> 1. Build client + app (no-cache so VITE_* env are baked fresh)"
             docker compose build --no-cache client app
 
-            echo "==> 3. Recreate containers"
+            echo "==> 2. Recreate containers"
             docker compose up -d --force-recreate client app
 
-            echo "==> 4. Wait for app to be ready"
+            echo "==> 3. Wait for app to be ready"
             for i in $(seq 1 30); do
               if curl -fsS http://localhost:3084/api/v1/health > /dev/null; then
                 echo "App is ready"
@@ -78,10 +81,10 @@ jobs:
               sleep 2
             done
 
-            echo "==> 5. Run database migrations"
+            echo "==> 4. Run database migrations"
             docker compose exec -T app npm run migration:run:prod
 
-            echo "==> 6. Smoke test"
+            echo "==> 5. Smoke test"
             curl -fsS http://localhost:3083 > /dev/null
             echo "  client (3083) OK"
             curl -fsS http://localhost:3084/api/v1/health > /dev/null

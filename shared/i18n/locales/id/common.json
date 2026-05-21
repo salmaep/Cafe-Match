@@ -22,5 +22,13 @@
   "sponsor": "SPONSOR",
   "tapToOpen": "Tap untuk buka",
   "featured": "Featured",
-  "filter": "Filter"
+  "filter": "Filter",
+  "navExplore": "Jelajahi",
+  "navDiscover": "Discover",
+  "navTrending": "Trending",
+  "navShortlist": "Shortlist",
+  "navProfile": "Profil",
+  "login": "Masuk",
+  "register": "Daftar",
+  "logout": "Logout"
 }

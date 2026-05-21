@@ -1,6 +1,8 @@
+import { useTranslation } from "react-i18next";
 import type { PurposeSlug } from "../../constants/purposes";
 import { getPurposeBySlug } from "@shared/constants/purposes";
 import { usePreferences } from "../../context/PreferencesContext";
+import { wizardText } from "@shared/i18n";
 
 interface Props {
   value: PurposeSlug | undefined;
@@ -8,16 +10,17 @@ interface Props {
 }
 
 export default function StepPurpose({ value, onChange }: Props) {
+  const { t } = useTranslation();
   const { serverPurposes } = usePreferences();
   const loading = serverPurposes.length === 0;
 
   return (
     <div className="w-full px-6 pt-6 pb-4">
       <h2 className="text-2xl sm:text-3xl font-bold text-[#1C1C1A] mb-1">
-        What's your vibe today?
+        {t(wizardText.purposeTitle)}
       </h2>
       <p className="text-sm sm:text-base text-[#8A8880] mb-5">
-        Choose one that fits your mood
+        {t(wizardText.purposeSubtitle)}
       </p>
 
       {loading ? (

@@ -16,4 +16,7 @@ export const wizardText = {
   customLocationLabel: 'wizard:customLocationLabel',
   currentLocationLabel: 'wizard:currentLocationLabel',
   searchPlacePlaceholder: 'wizard:searchPlacePlaceholder',
+  custom: 'wizard:custom',
+  amenitiesAutoPickSubtitle: 'wizard:amenitiesAutoPickSubtitle',
+  amenitiesAutoPickBadge: 'wizard:amenitiesAutoPickBadge',
 } as const;

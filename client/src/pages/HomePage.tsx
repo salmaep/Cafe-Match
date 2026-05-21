@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useTranslation } from "react-i18next";
+import { mapText } from "@shared/i18n";
 import { getPurposeBySlug } from "@shared/constants/purposes";
 import {
   useGeolocation,
@@ -49,6 +51,7 @@ function CafeCardSkeleton() {
 }
 
 export default function HomePage() {
+  const { t } = useTranslation();
   const geo = useGeolocation();
   const {
     preferences,
@@ -705,7 +708,7 @@ export default function HomePage() {
                   ? willUseSemantic
                     ? "Mencari dengan AI…"
                     : "Mencari…"
-                  : `${total} cafes found`}
+                  : t(mapText.cafesFound, { count: total })}
               </div>
             </div>
             {!loading && cafes.length > 0 && (
@@ -803,7 +806,7 @@ export default function HomePage() {
             )}
             {!loading && cafes.length === 0 && (
               <p className="text-center text-gray-400 py-8">
-                No cafes found nearby
+                {t(mapText.noCafesNearby)}
               </p>
             )}
             {cafes.length > 0 && (

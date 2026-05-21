@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { Map, AdvancedMarker, useMap } from "@vis.gl/react-google-maps";
+import { useTranslation } from "react-i18next";
 import { RADIUS_OPTIONS } from "./wizardData";
 import {
   useGeolocation,
   FALLBACK_LAT,
   FALLBACK_LNG,
 } from "../../hooks/useGeolocation";
+import { wizardText } from "@shared/i18n";
 
 const MAP_ID = import.meta.env.VITE_GOOGLE_MAPS_MAP_ID || undefined;
 const CUSTOM_MIN = 3;
@@ -17,6 +19,7 @@ interface Props {
 }
 
 export default function StepRadius({ value, onChange }: Props) {
+  const { t } = useTranslation();
   const { latitude, longitude } = useGeolocation();
   const hasRealCoords = latitude != null && longitude != null;
   const center: { lat: number; lng: number } = {
@@ -48,10 +51,10 @@ export default function StepRadius({ value, onChange }: Props) {
   return (
     <div className="w-full px-6 pt-6 pb-4">
       <h2 className="text-2xl sm:text-3xl font-bold text-[#1C1C1A] mb-1">
-        How far are you willing to go?
+        {t(wizardText.radiusTitle)}
       </h2>
       <p className="text-sm sm:text-base text-[#8A8880] mb-5">
-        Select your search radius
+        {t(wizardText.radiusSubtitle)}
       </p>
 
       {/* Preset + Custom buttons */}
@@ -93,7 +96,7 @@ export default function StepRadius({ value, onChange }: Props) {
           <span
             className={`text-base font-bold ${isCustom ? "text-[#D48B3A]" : "text-[#1C1C1A]"}`}
           >
-            {isCustom ? `${customValue} km` : "Custom"}
+            {isCustom ? `${customValue} km` : t(wizardText.custom)}
           </span>
         </button>
       </div>

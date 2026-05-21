@@ -23,4 +23,12 @@ export const commonText = {
   tapToOpen: 'common:tapToOpen',
   featured: 'common:featured',
   filter: 'common:filter',
+  navExplore: 'common:navExplore',
+  navDiscover: 'common:navDiscover',
+  navTrending: 'common:navTrending',
+  navShortlist: 'common:navShortlist',
+  navProfile: 'common:navProfile',
+  login: 'common:login',
+  register: 'common:register',
+  logout: 'common:logout',
 } as const;

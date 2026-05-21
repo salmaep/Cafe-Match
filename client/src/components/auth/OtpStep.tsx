@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { authApi } from "../../api/auth.api";
+import { authText } from "@shared/i18n";
 import type { PendingTwoFa } from "../../context/AuthContext";
 
 interface Props {
@@ -22,6 +24,7 @@ export default function OtpStep({
   onVerify,
   onCancel,
 }: Props) {
+  const { t } = useTranslation();
   const [pending, setPending] = useState<PendingTwoFa>(initial);
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
@@ -46,14 +49,14 @@ export default function OtpStep({
     e.preventDefault();
     setError("");
     if (!/^\d{6}$/.test(code)) {
-      setError("Kode harus 6 digit angka.");
+      setError(t(authText.otpInvalidCode));
       return;
     }
     setSubmitting(true);
     try {
       await onVerify(pending.otpId, code);
     } catch (err: any) {
-      setError(err.response?.data?.message || "Verifikasi gagal.");
+      setError(err.response?.data?.message || t(authText.verifyFailed));
     } finally {
       setSubmitting(false);
     }
@@ -74,7 +77,7 @@ export default function OtpStep({
       setCode("");
     } catch (err: any) {
       setError(
-        err.response?.data?.message || "Tidak dapat mengirim ulang kode.",
+        err.response?.data?.message || t(authText.resendFailed),
       );
     } finally {
       setResending(false);
@@ -88,12 +91,12 @@ export default function OtpStep({
           💬
         </div>
         <h2 className="text-lg font-bold text-[#1C1C1A]">
-          Verifikasi WhatsApp
+          {t(authText.otpTitle)}
         </h2>
         <p className="text-sm text-[#8A8880] mt-1">
-          Masukin kode 6-digit yang kita kirim ke{" "}
+          {t(authText.otpSubtitleBefore)}{" "}
           <span className="font-semibold text-[#1C1C1A]">
-            {pending.phoneHint || "WhatsApp kamu"}
+            {pending.phoneHint || t(authText.yourWhatsApp)}
           </span>
         </p>
       </div>
@@ -119,10 +122,10 @@ export default function OtpStep({
       <div className="flex items-center justify-between text-xs text-[#8A8880]">
         <span>
           {expired ? (
-            <span className="text-red-600 font-semibold">Kode kedaluwarsa</span>
+            <span className="text-red-600 font-semibold">{t(authText.codeExpired)}</span>
           ) : (
             <>
-              Kedaluwarsa dalam{" "}
+              {t(authText.expiresIn)}{" "}
               <span className="font-semibold text-[#1C1C1A]">
                 {fmtTime(expiresMs)}
               </span>
@@ -136,10 +139,10 @@ export default function OtpStep({
           className="font-semibold text-[#D48B3A] hover:underline disabled:opacity-40 disabled:no-underline"
         >
           {cooldownLeft > 0
-            ? `Kirim ulang (${Math.ceil(cooldownLeft / 1000)}s)`
+            ? t(authText.resendCooldown, { sec: Math.ceil(cooldownLeft / 1000) })
             : resending
-              ? "Mengirim…"
-              : "Kirim ulang"}
+              ? t(authText.resending)
+              : t(authText.resend)}
         </button>
       </div>
 
@@ -148,7 +151,7 @@ export default function OtpStep({
         disabled={submitting || expired || code.length !== 6}
         className="w-full py-3 bg-[#1C1C1A] text-white rounded-xl font-bold text-base hover:bg-black disabled:opacity-60 transition-colors"
       >
-        {submitting ? "Memverifikasi…" : "Verifikasi"}
+        {submitting ? t(authText.verifying) : t(authText.verify)}
       </button>
 
       <button
@@ -156,7 +159,7 @@ export default function OtpStep({
         onClick={onCancel}
         className="w-full text-center text-sm text-[#8A8880] hover:text-[#1C1C1A] transition-colors"
       >
-        Batal — kembali ke login
+        {t(authText.cancelBackToLogin)}
       </button>
     </form>
   );

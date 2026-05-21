@@ -1,11 +1,14 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth, type PendingTwoFa } from "../../context/AuthContext";
+import { authText, commonText } from "@shared/i18n";
 import OtpStep from "./OtpStep";
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3084/api/v1";
 
 export default function LoginForm() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -26,7 +29,7 @@ export default function LoginForm() {
     e.preventDefault();
     setError("");
     if (!email || !password) {
-      setError("Please fill in all fields");
+      setError(t(authText.fillAllFields));
       return;
     }
     setLoading(true);
@@ -38,7 +41,7 @@ export default function LoginForm() {
         goBackAfterAuth();
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || "Login failed");
+      setError(err.response?.data?.message || t(authText.loginFailed));
     } finally {
       setLoading(false);
     }
@@ -65,9 +68,9 @@ export default function LoginForm() {
           />
         ) : (
           <>
-            <h1 className="text-2xl font-bold text-[#1C1C1A]">Welcome Back</h1>
+            <h1 className="text-2xl font-bold text-[#1C1C1A]">{t(authText.welcomeBack)}</h1>
             <p className="text-[15px] text-[#8A8880] mt-1 mb-5">
-              Login to save your favorites
+              {t(authText.loginSubtitle)}
             </p>
 
             {error && (
@@ -81,7 +84,7 @@ export default function LoginForm() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Email"
+                placeholder={t(authText.emailPlaceholder)}
                 required
                 autoComplete="email"
                 className="w-full px-4 py-3 bg-[#F0EDE8] rounded-xl text-[15px] text-[#1C1C1A] placeholder:text-[#8A8880] focus:bg-white focus:ring-2 focus:ring-[#D48B3A]/30 outline-none border-none transition-all"
@@ -90,7 +93,7 @@ export default function LoginForm() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Password"
+                placeholder={t(authText.passwordPlaceholder)}
                 required
                 autoComplete="current-password"
                 className="w-full px-4 py-3 bg-[#F0EDE8] rounded-xl text-[15px] text-[#1C1C1A] placeholder:text-[#8A8880] focus:bg-white focus:ring-2 focus:ring-[#D48B3A]/30 outline-none border-none transition-all"
@@ -100,14 +103,14 @@ export default function LoginForm() {
                 disabled={loading}
                 className="w-full py-3 bg-[#1C1C1A] text-white rounded-xl font-bold text-base hover:bg-black disabled:opacity-60 transition-colors mt-2"
               >
-                {loading ? "Logging in…" : "Login"}
+                {loading ? t(authText.loginLoading) : t(authText.loginBtn)}
               </button>
             </form>
 
             <div className="flex items-center gap-3 my-4">
               <div className="flex-1 h-px bg-[#F0EDE8]" />
               <span className="text-xs text-[#8A8880]">
-                atau pakai
+                {t(authText.orWith)}
               </span>
               <div className="flex-1 h-px bg-[#F0EDE8]" />
             </div>
@@ -119,24 +122,24 @@ export default function LoginForm() {
                 className="w-full flex items-center justify-center gap-2 py-3 bg-white border border-[#E8E4DD] rounded-xl text-[#1C1C1A] font-semibold text-sm hover:bg-[#FAF9F6] transition-colors"
               >
                 <GoogleIcon />
-                <span>Google</span>
+                <span>{t(authText.google)}</span>
               </a>
               <a
                 href={socialUrl("facebook")}
                 className="w-full flex items-center justify-center gap-2 py-3 bg-[#1877F2] rounded-xl text-white font-semibold text-sm hover:bg-[#166FE5] transition-colors"
               >
                 <FacebookIcon />
-                <span>Facebook</span>
+                <span>{t(authText.facebook)}</span>
               </a>
             </div>
 
             <div className="text-center text-sm text-[#8A8880] mt-5">
-              Don't have an account?{" "}
+              {t(authText.noAccount)}
               <Link
                 to="/register"
                 className="text-[#D48B3A] font-semibold hover:underline"
               >
-                Register
+                {t(authText.switchToRegister)}
               </Link>
             </div>
 

@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import { wizardText } from "@shared/i18n";
 import FilterPanel from "../search/FilterPanel";
 
 interface Props {
@@ -19,22 +21,23 @@ export default function StepAmenities({
   onPriceRangeChange,
   autoSelectedKeys,
 }: Props) {
+  const { t } = useTranslation();
   const hasAutoPick = (autoSelectedKeys?.length ?? 0) > 0;
 
   return (
     <div className="w-full px-6 pt-6 pb-6">
       <h2 className="text-2xl sm:text-3xl font-bold text-[#1C1C1A] mb-1">
-        Anything specific you need?
+        {t(wizardText.amenitiesTitle)}
       </h2>
       <p className="text-sm sm:text-base text-[#8A8880] mb-3">
         {hasAutoPick
-          ? "Berdasarkan vibe pilihanmu, kami sudah preselect beberapa fitur. Kamu bebas tambah atau hapus."
-          : "Pilih fasilitas atau biarkan kosong — kami tunjukkan semua"}
+          ? t(wizardText.amenitiesAutoPickSubtitle)
+          : t(wizardText.amenitiesSubtitle)}
       </p>
       {hasAutoPick && (
         <div className="mb-4 inline-flex items-center gap-1.5 text-[11px] text-[#B97726] bg-[#FDF6EC] border border-[#F2DAB6] rounded-full px-2.5 py-1 font-semibold">
           <span>⭐</span>
-          <span>Bertanda bintang = direkomendasikan dari pilihan vibe</span>
+          <span>{t(wizardText.amenitiesAutoPickBadge)}</span>
         </div>
       )}
 

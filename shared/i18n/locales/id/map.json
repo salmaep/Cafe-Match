@@ -27,5 +27,7 @@
   "newCafeTag": "CAFE BARU",
   "checkingIn": "LAGI CHECK-IN",
   "checkinAgo": "⏱️ Udah check-in {{time}} yang lalu",
-  "checkOut": "Check Out"
+  "checkOut": "Check Out",
+  "cafesFound": "{{count}} cafe ditemukan",
+  "noCafesNearby": "Gak ada cafe di sekitar kamu"
 }

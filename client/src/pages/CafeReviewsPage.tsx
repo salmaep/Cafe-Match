@@ -449,7 +449,7 @@ export default function CafeReviewsPage() {
             {(sourceTab === "all" || sourceTab === "google") && (
               <div>
                 {(sourceTab === "all" || sourceTab === "google") && (
-                  <div className="flex items-center gap-2 mb-3">
+                  <div className="flex items-center gap-2 my-3">
                     <div className="flex items-center gap-1.5 bg-[#F8F9FF] border border-[#E8E4F0] rounded-full px-3 py-1">
                       <GoogleLogo size={14} />
                       <span className="text-xs font-semibold text-[#5C5A52]">

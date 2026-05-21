@@ -1,6 +1,8 @@
 import { NavLink } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useShortlist } from "../../context/ShortlistContext";
 import { useAuth } from "../../context/AuthContext";
+import { commonText } from "@shared/i18n";
 
 interface Tab {
   to: string;
@@ -11,20 +13,21 @@ interface Tab {
 }
 
 export default function BottomTabBar() {
+  const { t } = useTranslation();
   const { shortlist } = useShortlist();
   const { user } = useAuth();
 
   const TABS: Tab[] = [
-    { to: "/", label: "Explore", icon: "🗺️", exact: true },
-    { to: "/discover", label: "Discover", icon: "🃏" },
-    { to: "/trending", label: "Trending", icon: "🔥" },
+    { to: "/", label: t(commonText.navExplore), icon: "🗺️", exact: true },
+    { to: "/discover", label: t(commonText.navDiscover), icon: "🃏" },
+    { to: "/trending", label: t(commonText.navTrending), icon: "🔥" },
     {
       to: "/shortlist",
-      label: "Shortlist",
+      label: t(commonText.navShortlist),
       icon: "★",
       badge: shortlist.length || undefined,
     },
-    { to: user ? "/profile" : "/login", label: "Profile", icon: "👤" },
+    { to: user ? "/profile" : "/login", label: t(commonText.navProfile), icon: "👤" },
   ];
 
   return (

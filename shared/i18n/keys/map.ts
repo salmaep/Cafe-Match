@@ -28,4 +28,6 @@ export const mapText = {
   checkingIn: 'map:checkingIn',
   checkinAgo: 'map:checkinAgo',
   checkOut: 'map:checkOut',
+  cafesFound: 'map:cafesFound',
+  noCafesNearby: 'map:noCafesNearby',
 } as const;

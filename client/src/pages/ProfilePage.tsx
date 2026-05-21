@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { notificationsApi } from "../api/notifications.api";
 import { APP_VERSION } from "../config/version";
 import EditProfileModal from "../components/profile/EditProfileModal";
+import DeleteAccountModal from "../components/profile/DeleteAccountModal";
 
 export default function ProfilePage() {
   const { user, logout, isLoading } = useAuth();
@@ -11,6 +12,7 @@ export default function ProfilePage() {
   const [unread, setUnread] = useState(0);
   const [copied, setCopied] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -158,7 +160,7 @@ export default function ProfilePage() {
                   Ajak teman ke CafeMatch
                 </h3>
                 <p className="text-[12px] text-[#8A8880] mt-0.5">
-                  Share friend code untuk saling check-in
+                  Share friend code untuk saling terhubung
                 </p>
               </div>
             </div>
@@ -202,20 +204,14 @@ export default function ProfilePage() {
         )}
 
         {/* Quick actions — uniform muted tiles */}
-        <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+        <div className="grid grid-cols-3 gap-2">
           <QuickAction to="/friends" icon="👥" label="Teman" />
-          <QuickAction to="/leaderboard" icon="🏆" label="Leaderboard" />
           <QuickAction to="/achievements" icon="🎖️" label="Achievement" />
           <QuickAction
             to="/notifications"
             icon="🔔"
             label="Notifikasi"
             badge={unread > 0 ? unread : undefined}
-          />
-          <QuickAction
-            to={`/recap/${new Date().getFullYear()}`}
-            icon="📊"
-            label="Recap"
           />
         </div>
 
@@ -262,7 +258,7 @@ export default function ProfilePage() {
           <button
             type="button"
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-50 transition-colors text-left"
+            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-50 border-b border-[#F0EDE8] transition-colors text-left"
           >
             <span className="text-lg w-7 text-center">🚪</span>
             <div className="flex-1 min-w-0">
@@ -270,14 +266,48 @@ export default function ProfilePage() {
               <div className="text-[11px] text-[#A8A59C]">Keluar dari akun</div>
             </div>
           </button>
+          <button
+            type="button"
+            onClick={() => setDeleteOpen(true)}
+            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-50 transition-colors text-left"
+          >
+            <span className="text-lg w-7 text-center">🗑️</span>
+            <div className="flex-1 min-w-0">
+              <div className="font-semibold text-sm text-red-600">
+                Hapus Akun
+              </div>
+              <div className="text-[11px] text-[#A8A59C]">
+                Data dihapus permanen setelah 30 hari
+              </div>
+            </div>
+            <span className="text-[#8A8880]">›</span>
+          </button>
         </Section>
 
-        <p className="text-center text-xs text-[#A8A59C] pt-2">
-          CafeMatch v{APP_VERSION}
-        </p>
+        <div className="flex items-center justify-center gap-3 text-[11px] text-[#A8A59C] pt-2 pb-1 flex-wrap">
+          <Link
+            to="/privacy-policy"
+            className="hover:text-[#1C1C1A] hover:underline transition-colors"
+          >
+            Kebijakan Privasi
+          </Link>
+          <span>·</span>
+          <Link
+            to="/account-deletion"
+            className="hover:text-[#1C1C1A] hover:underline transition-colors"
+          >
+            Hapus Akun
+          </Link>
+          <span>·</span>
+          <span>CafeMatch v{APP_VERSION}</span>
+        </div>
       </div>
 
       <EditProfileModal open={editOpen} onClose={() => setEditOpen(false)} />
+      <DeleteAccountModal
+        open={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+      />
     </div>
   );
 }

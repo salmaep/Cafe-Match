@@ -7,7 +7,6 @@ import {
 } from "../hooks/useGeolocation";
 import { cafesApi, type SearchParams } from "../api/cafes.api";
 import { promotionsApi } from "../api/promotions.api";
-import { parseCoords } from "../utils/parseCoords";
 import { usePreferences } from "../context/PreferencesContext";
 import type { Cafe } from "../types";
 import MapView from "../components/map/MapContainer";
@@ -102,8 +101,6 @@ export default function HomePage() {
   const [featuredCafes, setFeaturedCafes] = useState<any[]>([]);
   const [mobileQuery, setMobileQuery] = useState("");
   const [showAllModal, setShowAllModal] = useState(false);
-  const [coordInputOpen, setCoordInputOpen] = useState(false);
-  const [coordInput, setCoordInput] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">(() => {
     if (typeof window === "undefined") return "grid";
     return (localStorage.getItem("cm_home_view") as "grid" | "list") || "grid";
@@ -272,22 +269,6 @@ export default function HomePage() {
     setCenterSource("manual");
   };
 
-  const useMyLocation = () => {
-    setCenterSource("gps");
-    geo.refetch();
-  };
-
-  const submitCoords = () => {
-    const parsed = parseCoords(coordInput);
-    if (!parsed) return;
-    setCenter([parsed.lat, parsed.lng]);
-    setCenterSource("manual");
-    setCoordInputOpen(false);
-    setCoordInput("");
-  };
-
-  const parsedCoords = parseCoords(coordInput);
-
   const setQ = (q: string) => {
     setForceListMode(false);
     setFilters((prev) => ({ ...prev, q }));
@@ -412,75 +393,6 @@ export default function HomePage() {
               onMapClick={handleMapClick}
             />
           </MapErrorBoundary>
-        )}
-      </div>
-
-      {/* "Use my location" + coord-input floating buttons — mobile only.
-          Sits above the bottom sheet bar. */}
-      <div className="md:hidden fixed right-3 bottom-[calc(55vh+12px)] z-20 flex flex-col items-end gap-2">
-        <button
-          type="button"
-          onClick={useMyLocation}
-          title="Gunakan lokasi saya"
-          className="w-10 h-10 rounded-full bg-white shadow-lg border border-[#F0EDE8] flex items-center justify-center text-lg active:scale-95 transition-transform disabled:opacity-50"
-          disabled={geo.loading}
-        >
-          {geo.loading ? (
-            <div className="w-4 h-4 border-2 border-[#D48B3A] border-t-transparent rounded-full animate-spin" />
-          ) : (
-            <span
-              className={
-                centerSource === "gps" ? "text-[#D48B3A]" : "text-[#8A8880]"
-              }
-            >
-              📍
-            </span>
-          )}
-        </button>
-        <button
-          type="button"
-          onClick={() => setCoordInputOpen((v) => !v)}
-          title="Masukin koordinat"
-          className={`w-10 h-10 rounded-full shadow-lg border border-[#F0EDE8] flex items-center justify-center text-lg active:scale-95 transition-transform ${
-            coordInputOpen
-              ? "bg-[#D48B3A] text-white"
-              : "bg-white text-[#8A8880]"
-          }`}
-        >
-          📌
-        </button>
-        {coordInputOpen && (
-          <div className="bg-white rounded-xl shadow-xl border border-[#F0EDE8] p-2.5 w-[260px]">
-            <input
-              type="text"
-              value={coordInput}
-              onChange={(e) => setCoordInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") submitCoords();
-              }}
-              placeholder="-6.9175, 107.6191"
-              autoFocus
-              className="w-full bg-[#F0EDE8] rounded-lg px-3 py-2 text-sm text-[#1C1C1A] outline-none focus:ring-2 focus:ring-[#D48B3A] placeholder:text-[#8A8880]"
-            />
-            {coordInput.length > 0 && !parsedCoords && (
-              <p className="text-[11px] text-[#B58A2C] mt-1.5">
-                ⚠️ Format: "lat, lng"
-              </p>
-            )}
-            {parsedCoords && (
-              <p className="text-[11px] text-[#2F8F4E] mt-1.5">
-                ✓ {parsedCoords.lat.toFixed(4)}, {parsedCoords.lng.toFixed(4)}
-              </p>
-            )}
-            <button
-              type="button"
-              onClick={submitCoords}
-              disabled={!parsedCoords}
-              className="w-full mt-2 bg-[#1C1C1A] text-white text-xs font-bold py-2 rounded-lg disabled:opacity-40"
-            >
-              Pakai koordinat ini
-            </button>
-          </div>
         )}
       </div>
 

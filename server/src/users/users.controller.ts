@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Patch,
   Post,
@@ -10,6 +11,7 @@ import {
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { UsersService } from './users.service';
 import { ChangePasswordDto, UpdateProfileDto } from './dto/update-profile.dto';
+import { DeleteAccountDto } from './dto/delete-account.dto';
 
 @Controller('users')
 @UseGuards(JwtAuthGuard)
@@ -43,6 +45,12 @@ export class UsersController {
       dto.currentPassword,
       dto.newPassword,
     );
+    return { ok: true };
+  }
+
+  @Delete('me')
+  async deleteAccount(@Request() req: any, @Body() dto: DeleteAccountDto) {
+    await this.usersService.deleteAccount(req.user.userId ?? req.user.id, dto);
     return { ok: true };
   }
 }

@@ -1,0 +1,10 @@
+{
+  "searchHere": "Cari di sini",
+  "searching": "Lagi cari...",
+  "noResults": "Gak nemu cafe dalam {{radius}} km",
+  "resultsInRadius": "{{count}} cafe dalam {{radius}} km",
+  "loadingCafes": "Lagi muat cafe...",
+  "filteredBySearch": "Difilter berdasar pencarian",
+  "resetFilters": "Reset filter",
+  "endOfList": "Itu semua dalam {{radius}} km ✓"
+}

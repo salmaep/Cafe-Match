@@ -1,0 +1,15 @@
+{
+  "purposeTitle": "Vibe kamu hari ini apa?",
+  "purposeSubtitle": "Pilih yang paling sesuai mood kamu",
+  "locationTitle": "Mau ke mana nih?",
+  "locationSubtitle": "Kita cariin cafe di deket kamu",
+  "useCurrentLocation": "Pakai lokasi sekarang",
+  "useCustomLocation": "Masukin tujuan sendiri",
+  "radiusTitle": "Mau cari sejauh apa?",
+  "radiusSubtitle": "Pilih radius pencarian kamu",
+  "amenitiesTitle": "Ada yang spesifik kamu butuhin?",
+  "amenitiesSubtitle": "Pilih fasilitas atau biarin kosong — kita tunjukin semuanya",
+  "findCafes": "Cariin Cafe-nya",
+  "priceHeader": "HARGA",
+  "noFilters": "Filter gak tersedia."
+}

@@ -15,6 +15,7 @@ import { AuthProvider } from './src/context/AuthContext';
 import { ShortlistProvider } from './src/context/ShortlistContext';
 import { PreferencesProvider } from './src/context/PreferencesContext';
 import { LocationProvider } from './src/context/LocationContext';
+import './src/i18n';
 import AppNavigator from './src/navigation/AppNavigator';
 import InAppNotificationBanner from './src/components/InAppNotificationBanner';
 // NotificationProvider disabled for Expo Go testing — expo-notifications doesn't

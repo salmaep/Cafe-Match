@@ -12,6 +12,8 @@ import CafeListItem from '../components/cafe/CafeListItem';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
+import { listsText } from '@shared/i18n/keys';
 import { useAuth } from '../context/AuthContext';
 import { fetchBookmarks, toggleBookmark } from '../services/api';
 import { Cafe } from '../types';
@@ -19,6 +21,7 @@ import { colors, spacing, radius } from '../theme';
 
 export default function BookmarksScreen() {
   const navigation = useNavigation<StackNavigationProp<any>>();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
 
@@ -70,18 +73,18 @@ export default function BookmarksScreen() {
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
             <Text style={styles.backIcon}>←</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Bookmark Kamu</Text>
+          <Text style={styles.headerTitle}>{t(listsText.bookmarksTitle)}</Text>
           <View style={styles.headerRight} />
         </View>
         <View style={styles.guestContainer}>
           <Text style={styles.guestEmoji}>🔖</Text>
-          <Text style={styles.guestTitle}>Bookmark Kamu</Text>
-          <Text style={styles.guestSubtitle}>Login dulu buat liat bookmark cafe kamu</Text>
+          <Text style={styles.guestTitle}>{t(listsText.bookmarksTitle)}</Text>
+          <Text style={styles.guestSubtitle}>{t(listsText.bookmarksGuestSubtitle)}</Text>
           <TouchableOpacity
             style={styles.loginBtn}
             onPress={() => navigation.navigate('AuthModal')}
           >
-            <Text style={styles.loginBtnText}>Masuk</Text>
+            <Text style={styles.loginBtnText}>{t(listsText.guestLogin)}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -96,7 +99,7 @@ export default function BookmarksScreen() {
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
             <Text style={styles.backIcon}>←</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Bookmark Kamu</Text>
+          <Text style={styles.headerTitle}>{t(listsText.bookmarksTitle)}</Text>
           <View style={styles.headerRight} />
         </View>
         <View style={styles.centered}>
@@ -130,8 +133,8 @@ export default function BookmarksScreen() {
   const renderEmpty = () => (
     <View style={styles.emptyContainer}>
       <Text style={styles.emptyEmoji}>🔖</Text>
-      <Text style={styles.emptyTitle}>Belum ada bookmark</Text>
-      <Text style={styles.emptySubtitle}>Cafe yang kamu bookmark bakal muncul di sini</Text>
+      <Text style={styles.emptyTitle}>{t(listsText.bookmarksEmpty)}</Text>
+      <Text style={styles.emptySubtitle}>{t(listsText.bookmarksEmptySubtitle)}</Text>
     </View>
   );
 

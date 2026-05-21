@@ -1,8 +1,11 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../../context/AuthContext";
+import { authText } from "@shared/i18n";
 
 export default function RegisterForm() {
+  const { t } = useTranslation();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -24,11 +27,11 @@ export default function RegisterForm() {
     e.preventDefault();
     setError("");
     if (!name || !email || !password) {
-      setError("Please fill in all fields");
+      setError(t(authText.fillAllFields));
       return;
     }
     if (password !== confirmPassword) {
-      setError("Passwords do not match");
+      setError(t(authText.passwordMismatch));
       return;
     }
     setLoading(true);
@@ -41,7 +44,7 @@ export default function RegisterForm() {
         navigate("/login");
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || "Registration failed");
+      setError(err.response?.data?.message || t(authText.registrationFailed));
     } finally {
       setLoading(false);
     }
@@ -54,9 +57,9 @@ export default function RegisterForm() {
       <div className="w-full max-w-md bg-white md:rounded-2xl rounded-t-3xl shadow-[0_-12px_32px_rgba(0,0,0,0.06)] md:shadow-xl p-6 md:p-8">
         <div className="md:hidden mx-auto w-10 h-1 rounded-full bg-[#D6CFC2] mb-5" />
 
-        <h1 className="text-2xl font-bold text-[#1C1C1A]">Create Account</h1>
+        <h1 className="text-2xl font-bold text-[#1C1C1A]">{t(authText.createAccount)}</h1>
         <p className="text-[15px] text-[#8A8880] mt-1 mb-5">
-          Join CafeMatch to save your favorites
+          {t(authText.registerSubtitle)}
         </p>
 
         {error && (
@@ -70,7 +73,7 @@ export default function RegisterForm() {
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Full Name"
+            placeholder={t(authText.namePlaceholder)}
             required
             autoComplete="name"
             className="w-full px-4 py-3 bg-[#F0EDE8] rounded-xl text-[15px] text-[#1C1C1A] placeholder:text-[#8A8880] focus:bg-white focus:ring-2 focus:ring-[#D48B3A]/30 outline-none border-none transition-all"
@@ -79,7 +82,7 @@ export default function RegisterForm() {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="Email"
+            placeholder={t(authText.emailPlaceholder)}
             required
             autoComplete="email"
             className="w-full px-4 py-3 bg-[#F0EDE8] rounded-xl text-[15px] text-[#1C1C1A] placeholder:text-[#8A8880] focus:bg-white focus:ring-2 focus:ring-[#D48B3A]/30 outline-none border-none transition-all"
@@ -88,7 +91,7 @@ export default function RegisterForm() {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="Password"
+            placeholder={t(authText.passwordPlaceholder)}
             required
             minLength={6}
             autoComplete="new-password"
@@ -99,7 +102,7 @@ export default function RegisterForm() {
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Confirm Password"
+              placeholder={t(authText.confirmPasswordPlaceholder)}
               required
               minLength={6}
               autoComplete="new-password"
@@ -111,7 +114,7 @@ export default function RegisterForm() {
             />
             {passwordMismatch && (
               <p className="text-xs text-red-500 mt-1.5 ml-1">
-                Passwords do not match
+                {t(authText.passwordMismatch)}
               </p>
             )}
           </div>
@@ -120,17 +123,17 @@ export default function RegisterForm() {
             disabled={loading}
             className="w-full py-3 bg-[#1C1C1A] text-white rounded-xl font-bold text-base hover:bg-black disabled:opacity-60 transition-colors mt-2"
           >
-            {loading ? "Creating account…" : "Register"}
+            {loading ? t(authText.registerLoading) : t(authText.registerBtn)}
           </button>
         </form>
 
         <div className="text-center text-sm text-[#8A8880] mt-4">
-          Already have an account?{" "}
+          {t(authText.hasAccount)}
           <Link
             to="/login"
             className="text-[#D48B3A] font-semibold hover:underline"
           >
-            Login
+            {t(authText.switchToLogin)}
           </Link>
         </div>
 

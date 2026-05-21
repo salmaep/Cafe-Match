@@ -1,0 +1,15 @@
+{
+  "title": "Shortlist",
+  "subtitleWithCount": "{{count}} cafe disimpen buat dikunjungi nanti",
+  "subtitleEmpty": "Swipe kanan di Discover buat simpen cafe",
+  "emptyTitle": "Shortlist masih kosong",
+  "emptySubtitle": "Buka Discover, swipe kanan cafe yang menarik — semua kesimpen di sini.",
+  "startDiscover": "🃏 Mulai Discover",
+  "sortRecent": "Terbaru",
+  "sortDistance": "Terdekat",
+  "sortRating": "Rating",
+  "clearAll": "🗑️ Hapus semua",
+  "clearAllConfirmTitle": "Hapus semua?",
+  "clearAllConfirmBody": "Hapus semua {{count}} cafe dari shortlist?",
+  "clearAllAction": "Hapus semua"
+}

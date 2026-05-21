@@ -1,5 +1,7 @@
 import React from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
+import { useTranslation } from "react-i18next";
+import { mapText } from "@shared/i18n/keys";
 import { colors, spacing, radius } from "../../../theme";
 
 type Props = {
@@ -25,6 +27,7 @@ function MapSearchBar({
   activeFilterCount,
   showNoResultsBanner,
 }: Props) {
+  const { t } = useTranslation();
   return (
     <View style={[styles.container, { top: topInset + 8 }]}>
       <View style={styles.row}>
@@ -32,7 +35,7 @@ function MapSearchBar({
           <Text style={styles.searchIcon}>🔍</Text>
           <TextInput
             style={styles.searchInput}
-            placeholder="Cari kafe, alamat, atau fasilitas…"
+            placeholder={t(mapText.searchPlaceholder)}
             placeholderTextColor={colors.textSecondary}
             value={searchQuery}
             onChangeText={onSearchQueryChange}
@@ -74,7 +77,7 @@ function MapSearchBar({
       {showNoResultsBanner && (
         <View style={styles.noResultsBanner}>
           <Text style={styles.noResultsText}>
-            Gak ada cafe yang cocok sama pencarian kamu
+            {t(mapText.noMatchSearch)}
           </Text>
         </View>
       )}

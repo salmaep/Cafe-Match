@@ -14,6 +14,8 @@ import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/nativ
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTranslation } from 'react-i18next';
+import { cafeText, discoverText } from '@shared/i18n/keys';
 import { useAuth } from '../context/AuthContext';
 import { useShortlist } from '../context/ShortlistContext';
 import { usePreferences } from '../context/PreferencesContext';
@@ -36,6 +38,7 @@ const clamp = (val: number, min: number, max: number) =>
 export default function CardSwipeScreen() {
   const navigation = useNavigation<StackNavigationProp<any>>();
   const route = useRoute();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const isCompact = width < 360;
@@ -187,7 +190,7 @@ export default function CardSwipeScreen() {
           navigation.navigate('AuthModal');
         } else {
           addToShortlistRef.current(cafe);
-          setToastMsg(`"${cafe.name}" masuk Shortlist!`);
+          setToastMsg(t(discoverText.addedToShortlistToast, { name: cafe.name }));
           setShowToast(true);
         }
       }
@@ -235,7 +238,7 @@ export default function CardSwipeScreen() {
       const extra = allTags.length - visibleTags.length;
       const metaParts: string[] = [];
       if (locality) metaParts.push(`📍 ${locality}`);
-      if (open?.isOpen && open.closesAt) metaParts.push(`🕐 sampai ${open.closesAt}`);
+      if (open?.isOpen && open.closesAt) metaParts.push(t(discoverText.openUntilTime, { time: open.closesAt }));
       if (cafe.priceRange) metaParts.push(cafe.priceRange);
 
       return (
@@ -298,7 +301,7 @@ export default function CardSwipeScreen() {
                     ]}
                   />
                   <Text style={styles.openText}>
-                    {open.isOpen ? 'Buka' : 'Tutup'}
+                    {open.isOpen ? t(cafeText.open) : t(cafeText.closed)}
                   </Text>
                 </View>
               )}
@@ -311,7 +314,7 @@ export default function CardSwipeScreen() {
             </View>
             {shortlisted && (
               <View style={styles.shortlistedBadge}>
-                <Text style={styles.shortlistedText}>★ Sudah di shortlist</Text>
+                <Text style={styles.shortlistedText}>{t(discoverText.alreadyInShortlist)}</Text>
               </View>
             )}
           </View>
@@ -340,12 +343,12 @@ export default function CardSwipeScreen() {
               </Text>
             )}
             <View style={styles.chipsRow}>
-              {visibleTags.map((t) => (
-                <View key={t.key} style={styles.tagChip}>
+              {visibleTags.map((tag) => (
+                <View key={tag.key} style={styles.tagChip}>
                   <Text
                     style={[styles.tagChipText, { fontSize: chipTextSize }]}
                   >
-                    {t.icon ? `${t.icon} ${t.label}` : t.label}
+                    {tag.icon ? `${tag.icon} ${tag.label}` : tag.label}
                   </Text>
                 </View>
               ))}
@@ -363,7 +366,7 @@ export default function CardSwipeScreen() {
         </View>
       );
     },
-    [CARD_W, CARD_H, isCompact, cafeNameSize, cafeMetaSize, chipTextSize],
+    [CARD_W, CARD_H, isCompact, cafeNameSize, cafeMetaSize, chipTextSize, t],
   );
 
   const goExplore = () =>
@@ -387,7 +390,7 @@ export default function CardSwipeScreen() {
             color="#b85d04"
             style={{ marginBottom: spacing.md }}
           />
-          <Text style={styles.fullCenteredTitle}>Lagi nyari cafe...</Text>
+          <Text style={styles.fullCenteredTitle}>{t(discoverText.searchingCafes)}</Text>
         </View>
       </View>
     );
@@ -398,12 +401,12 @@ export default function CardSwipeScreen() {
       <View style={styles.bgWrap}>
         <View style={styles.fullCentered}>
           <Text style={styles.emptyEmoji}>🗺️</Text>
-          <Text style={styles.fullCenteredTitle}>Semua udah dilihat!</Text>
+          <Text style={styles.fullCenteredTitle}>{t(discoverText.allSeenTitle)}</Text>
           <Text style={styles.fullCenteredSubtitle}>
-            Yuk jelajah cafe lainnya di halaman Explore
+            {t(discoverText.allSeenSubtitle)}
           </Text>
           <TouchableOpacity style={styles.emptyBtn} onPress={goExplore}>
-            <Text style={styles.emptyBtnText}>Buka Explore 🗺️</Text>
+            <Text style={styles.emptyBtnText}>{t(discoverText.openExplore)}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -419,14 +422,14 @@ export default function CardSwipeScreen() {
             { fontSize: headingSize, lineHeight: headingSize + 2 },
           ]}
         >
-          Temukan kafe{' '}
+          {t(discoverText.headingBefore)}
           <Text style={[styles.headingAccent, { fontSize: headingSize }]}>
-            favoritmu
+            {t(discoverText.headingAccent)}
           </Text>
-          .
+          {t(discoverText.headingSuffix)}
         </Text>
         <Text style={[styles.subheading, { fontSize: subheadingSize }]}>
-          Geser kartu — kanan untuk simpan, kiri untuk lewati.
+          {t(discoverText.subheading)}
         </Text>
       </View>
 
@@ -460,8 +463,8 @@ export default function CardSwipeScreen() {
             height={CARD_H}
             onSwipeComplete={advanceIndex}
             onTap={handleTapCard}
-            leftLabel="Lewati"
-            rightLabel="✓ Simpan"
+            leftLabel={t(discoverText.swipeLeft)}
+            rightLabel={t(discoverText.swipeRight)}
           >
             {renderCard(cafes[index], true)}
           </SwipeableCard>

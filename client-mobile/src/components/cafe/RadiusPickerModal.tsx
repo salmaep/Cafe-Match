@@ -10,6 +10,8 @@ import {
   TextInput,
   StyleSheet,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { commonText, filtersText } from '@shared/i18n/keys';
 import { colors, spacing, radius } from '../../theme';
 
 interface Props {
@@ -27,6 +29,7 @@ export default function RadiusPickerModal({
   onClose,
   onApply,
 }: Props) {
+  const { t } = useTranslation();
   const [draft, setDraft] = React.useState<string>(String(initial));
 
   React.useEffect(() => {
@@ -57,13 +60,13 @@ export default function RadiusPickerModal({
           <View style={styles.handle} />
 
           <View style={styles.header}>
-            <Text style={styles.title}>Pilih Radius</Text>
+            <Text style={styles.title}>{t(filtersText.radiusTitle)}</Text>
             <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
               <Text style={styles.closeBtnText}>✕</Text>
             </TouchableOpacity>
           </View>
 
-          <Text style={styles.sectionTitle}>PILIHAN CEPAT</Text>
+          <Text style={styles.sectionTitle}>{t(filtersText.quickPick)}</Text>
           <View style={styles.pillRow}>
             {ALL_OPTIONS.map((r) => {
               const active = parsed === r;
@@ -83,13 +86,13 @@ export default function RadiusPickerModal({
             })}
           </View>
 
-          <Text style={styles.sectionTitle}>KETIK MANUAL</Text>
+          <Text style={styles.sectionTitle}>{t(filtersText.manualInput)}</Text>
           <View style={styles.inputBox}>
             <TextInput
               style={styles.input}
               keyboardType="decimal-pad"
               value={draft}
-              placeholder="0.5–10"
+              placeholder={t(filtersText.radiusInputPlaceholder)}
               placeholderTextColor="#A8A59C"
               onChangeText={setDraft}
               maxLength={5}
@@ -97,7 +100,7 @@ export default function RadiusPickerModal({
             />
             <Text style={styles.unit}>km</Text>
           </View>
-          <Text style={styles.helpText}>Min 0.5 km · Max 10 km</Text>
+          <Text style={styles.helpText}>{t(filtersText.radiusHelp)}</Text>
 
           <TouchableOpacity
             style={[styles.applyBtn, parsed === null && styles.applyBtnDisabled]}
@@ -105,7 +108,7 @@ export default function RadiusPickerModal({
             disabled={parsed === null}
           >
             <Text style={styles.applyBtnText}>
-              Terapkan {parsed !== null ? `(${parsed} km)` : ''}
+              {parsed !== null ? t(filtersText.applyWithValue, { value: parsed }) : t(commonText.apply)}
             </Text>
           </TouchableOpacity>
         </View>

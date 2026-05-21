@@ -18,5 +18,17 @@
   "reset": "Reset",
   "viewAll": "Lihat semua",
   "seeMore": "Selengkapnya",
-  "seeLess": "Lebih sedikit"
+  "seeLess": "Lebih sedikit",
+  "sponsor": "SPONSOR",
+  "tapToOpen": "Tap untuk buka",
+  "featured": "Featured",
+  "filter": "Filter",
+  "navExplore": "Jelajahi",
+  "navDiscover": "Discover",
+  "navTrending": "Trending",
+  "navShortlist": "Shortlist",
+  "navProfile": "Profil",
+  "login": "Masuk",
+  "register": "Daftar",
+  "logout": "Logout"
 }

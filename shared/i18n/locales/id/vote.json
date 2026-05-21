@@ -1,0 +1,11 @@
+{
+  "voteTitle": "Cafe ini paling cocok buat apa?",
+  "loginToVote": "Login dulu buat vote",
+  "pickUpTo": "Pilih sampai {{max}} kategori ({{current}}/{{max}})",
+  "loadCategoriesFailed": "Gagal muat kategori.",
+  "noCategories": "Belum ada kategori tersedia.",
+  "voteCountPct": "{{count}} vote ({{pct}}%)",
+  "voteCountPct_other": "{{count}} votes ({{pct}}%)",
+  "saving": "Menyimpan…",
+  "submitVote": "Submit Vote"
+}

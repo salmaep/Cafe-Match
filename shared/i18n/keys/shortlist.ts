@@ -1,0 +1,15 @@
+export const shortlistText = {
+  title: 'shortlist:title',
+  subtitleWithCount: 'shortlist:subtitleWithCount',
+  subtitleEmpty: 'shortlist:subtitleEmpty',
+  emptyTitle: 'shortlist:emptyTitle',
+  emptySubtitle: 'shortlist:emptySubtitle',
+  startDiscover: 'shortlist:startDiscover',
+  sortRecent: 'shortlist:sortRecent',
+  sortDistance: 'shortlist:sortDistance',
+  sortRating: 'shortlist:sortRating',
+  clearAll: 'shortlist:clearAll',
+  clearAllConfirmTitle: 'shortlist:clearAllConfirmTitle',
+  clearAllConfirmBody: 'shortlist:clearAllConfirmBody',
+  clearAllAction: 'shortlist:clearAllAction',
+} as const;

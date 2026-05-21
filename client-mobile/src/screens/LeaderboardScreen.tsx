@@ -4,6 +4,8 @@ import {
 } from 'react-native';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
+import { notificationsText, socialText } from '@shared/i18n/keys';
 import { fetchLeaderboard } from '../services/api';
 import { LeaderboardEntry } from '../types';
 import { colors, spacing, radius } from '../theme';
@@ -16,6 +18,7 @@ const RANK_EMOJIS: Record<number, string> = { 1: '👑', 2: '🥈', 3: '🥉' };
 export default function LeaderboardScreen() {
   const route = useRoute<RouteProp<RouteParams, 'Leaderboard'>>();
   const navigation = useNavigation();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { cafeId, cafeName } = route.params;
 
@@ -30,9 +33,9 @@ export default function LeaderboardScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.back}>← Kembali</Text>
+          <Text style={styles.back}>{t(notificationsText.back)}</Text>
         </TouchableOpacity>
-        <Text style={styles.title} numberOfLines={1}>Leaderboard · {cafeName}</Text>
+        <Text style={styles.title} numberOfLines={1}>{t(socialText.leaderboardCafe, { name: cafeName })}</Text>
         <View style={{ width: 50 }} />
       </View>
 
@@ -40,7 +43,7 @@ export default function LeaderboardScreen() {
         <ActivityIndicator size="large" color={colors.accent} style={{ marginTop: 60 }} />
       ) : entries.length === 0 ? (
         <View style={styles.empty}>
-          <Text style={styles.emptyText}>Belum ada data check-in</Text>
+          <Text style={styles.emptyText}>{t(socialText.leaderboardEmpty)}</Text>
         </View>
       ) : (
         <FlatList
@@ -63,7 +66,7 @@ export default function LeaderboardScreen() {
                 </View>
                 <View style={styles.countBox}>
                   <Text style={styles.count}>{item.checkinCount}</Text>
-                  <Text style={styles.countLabel}>kunjungan</Text>
+                  <Text style={styles.countLabel}>{t(socialText.visitsSuffix)}</Text>
                 </View>
               </View>
             );

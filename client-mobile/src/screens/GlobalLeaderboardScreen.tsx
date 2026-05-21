@@ -11,6 +11,8 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
+import { socialText } from '@shared/i18n/keys';
 import {
   fetchGlobalLeaderboard,
   type LeaderboardPeriod,
@@ -30,6 +32,7 @@ const PODIUM_STYLE: Record<
 
 export default function GlobalLeaderboardScreen() {
   const navigation = useNavigation<StackNavigationProp<any>>();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const [period, setPeriod] = useState<LeaderboardPeriod>('month');
   const [entries, setEntries] = useState<Entry[] | null>(null);
@@ -52,7 +55,7 @@ export default function GlobalLeaderboardScreen() {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerBtn}>
           <Text style={styles.headerBtnText}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Leaderboard</Text>
+        <Text style={styles.headerTitle}>{t(socialText.globalLbTitle)}</Text>
         <View style={styles.headerBtn} />
       </View>
 
@@ -63,26 +66,25 @@ export default function GlobalLeaderboardScreen() {
         {/* Hero strip */}
         <View style={styles.hero}>
           <View style={styles.heroBadge}>
-            <Text style={styles.heroBadgeText}>🏆 LEADERBOARD</Text>
+            <Text style={styles.heroBadgeText}>{t(socialText.globalLbBadge)}</Text>
           </View>
           <Text style={styles.heroTitle}>
             Siapa{' '}
-            <Text style={styles.heroTitleAccent}>paling rajin</Text> ngafe?
+            <Text style={styles.heroTitleAccent}>{t(socialText.globalLbAccent)}</Text>{t(socialText.globalLbSuffix)}
           </Text>
           <Text style={styles.heroSubtitle}>
-            Ranking pengguna berdasar jumlah check-in, cafe yang dikunjungi,
-            sama total waktu nongkrong.
+            {t(socialText.globalLbSubtitle)}
           </Text>
 
           <View style={styles.periodWrap}>
             <PeriodPill
               active={period === 'month'}
-              label="📅 30 Hari"
+              label={t(socialText.period30Days)}
               onPress={() => setPeriod('month')}
             />
             <PeriodPill
               active={period === 'all'}
-              label="🌟 All-time"
+              label={t(socialText.periodAllTime)}
               onPress={() => setPeriod('all')}
             />
           </View>
@@ -99,12 +101,10 @@ export default function GlobalLeaderboardScreen() {
             <View style={styles.empty}>
               <Text style={styles.emptyEmoji}>🏆</Text>
               <Text style={styles.emptyTitle}>
-                Belum ada yang masuk leaderboard
+                {t(socialText.globalLbEmpty)}
               </Text>
               <Text style={styles.emptySubtitle}>
-                {period === 'month'
-                  ? 'Belum ada check-in dalam 30 hari terakhir. Yuk mulai!'
-                  : 'Belum ada check-in sama sekali. Jadi yang pertama yuk!'}
+                {period === 'month' ? t(socialText.globalLbEmptyMonth) : t(socialText.globalLbEmptyAll)}
               </Text>
             </View>
           ) : (
@@ -114,7 +114,7 @@ export default function GlobalLeaderboardScreen() {
               {rest.length > 0 && (
                 <View style={{ marginTop: spacing.lg }}>
                   <Text style={styles.listHeader}>
-                    PERINGKAT 4 – {entries?.length}
+                    {t(socialText.rankingRange, { total: entries?.length })}
                   </Text>
                   <View style={styles.listCard}>
                     {rest.map((e, i) => (
@@ -174,6 +174,7 @@ function Podium({ entries }: { entries: Entry[] }) {
 }
 
 function PodiumStep({ entry, isWinner }: { entry: Entry; isWinner?: boolean }) {
+  const { t } = useTranslation();
   const style = PODIUM_STYLE[entry.rank] || PODIUM_STYLE[3];
   const initials = entry.name
     .split(/\s+/)
@@ -221,7 +222,7 @@ function PodiumStep({ entry, isWinner }: { entry: Entry; isWinner?: boolean }) {
         )}
         <View style={styles.pedestalScore}>
           <Text style={styles.pedestalScoreNum}>{Math.round(entry.score)}</Text>
-          <Text style={styles.pedestalScoreLabel}>PTS</Text>
+          <Text style={styles.pedestalScoreLabel}>{t(socialText.ptsLabel)}</Text>
         </View>
       </View>
     </View>
@@ -229,6 +230,7 @@ function PodiumStep({ entry, isWinner }: { entry: Entry; isWinner?: boolean }) {
 }
 
 function ListRow({ entry, isLast }: { entry: Entry; isLast: boolean }) {
+  const { t } = useTranslation();
   const initials = entry.name
     .split(/\s+/)
     .map((s) => s[0])
@@ -266,7 +268,7 @@ function ListRow({ entry, isLast }: { entry: Entry; isLast: boolean }) {
       </View>
       <View style={styles.listScoreBox}>
         <Text style={styles.listScoreNum}>{Math.round(entry.score)}</Text>
-        <Text style={styles.listScoreLabel}>PTS</Text>
+        <Text style={styles.listScoreLabel}>{t(socialText.ptsLabel)}</Text>
       </View>
     </View>
   );

@@ -1,5 +1,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from "react-native";
+import { useTranslation } from "react-i18next";
+import { mapText } from "@shared/i18n/keys";
 import { colors, spacing, radius } from "../../../theme";
 
 export type ActiveFilter = {
@@ -27,11 +29,12 @@ function RadiusControls({
   hasAnyFilter,
   onResetFilters,
 }: Props) {
+  const { t } = useTranslation();
   const isCustomRadius = !QUICK_RADII.includes(radiusKm);
   return (
     <View style={styles.section}>
       <View style={styles.radiusRow}>
-        <Text style={styles.label}>Radius</Text>
+        <Text style={styles.label}>{t(mapText.radius)}</Text>
         <View style={styles.pillsWrap}>
           {QUICK_RADII.map((r) => (
             <TouchableOpacity
@@ -79,7 +82,7 @@ function RadiusControls({
             </TouchableOpacity>
           ))}
           <TouchableOpacity style={styles.resetBtn} onPress={onResetFilters}>
-            <Text style={styles.resetText}>Reset Semua</Text>
+            <Text style={styles.resetText}>{t(mapText.resetAll)}</Text>
           </TouchableOpacity>
         </ScrollView>
       )}

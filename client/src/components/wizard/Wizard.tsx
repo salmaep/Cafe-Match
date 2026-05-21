@@ -1,5 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { commonText, wizardText } from "@shared/i18n";
 import {
   useQueryStates,
   parseAsInteger,
@@ -23,6 +25,7 @@ interface Props {
 }
 
 export default function Wizard({ onComplete, onSkip }: Props = {}) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { setPreferences, setWizardCompleted, serverPurposes } =
     usePreferences();
@@ -114,7 +117,7 @@ export default function Wizard({ onComplete, onSkip }: Props = {}) {
             onClick={handleBack}
             className="text-sm font-medium text-[#1C1C1A] w-12 text-left hover:text-amber-600 transition-colors"
           >
-            Back
+            {t(commonText.back)}
           </button>
         ) : (
           <span className="w-12" />
@@ -138,7 +141,7 @@ export default function Wizard({ onComplete, onSkip }: Props = {}) {
           onClick={handleSkip}
           className="text-sm text-gray-500 w-12 text-right hover:text-gray-700 transition-colors"
         >
-          Skip
+          {t(commonText.skip)}
         </button>
       </header>
 
@@ -184,7 +187,7 @@ export default function Wizard({ onComplete, onSkip }: Props = {}) {
           disabled={isNextDisabled}
           className="w-full py-4 bg-[#1C1C1A] hover:bg-black text-white font-bold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#1C1C1A]"
         >
-          {step === TOTAL_STEPS - 1 ? "Find My Cafe" : "Next"}
+          {step === TOTAL_STEPS - 1 ? t(wizardText.findCafes) : t(commonText.next)}
         </button>
       </footer>
     </div>

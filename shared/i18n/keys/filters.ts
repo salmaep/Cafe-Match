@@ -1,0 +1,15 @@
+export const filtersText = {
+  modalTitle: 'filters:modalTitle',
+  purposeSection: 'filters:purposeSection',
+  priceSection: 'filters:priceSection',
+  loadingFilters: 'filters:loadingFilters',
+  noFilters: 'filters:noFilters',
+  radiusTitle: 'filters:radiusTitle',
+  quickPick: 'filters:quickPick',
+  manualInput: 'filters:manualInput',
+  radiusInputPlaceholder: 'filters:radiusInputPlaceholder',
+  radiusHelp: 'filters:radiusHelp',
+  defaultPurposeTitle: 'filters:defaultPurposeTitle',
+  applyWithValue: 'filters:applyWithValue',
+  activeCount: 'filters:activeCount',
+} as const;

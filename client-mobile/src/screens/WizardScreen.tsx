@@ -10,6 +10,8 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
+import { useTranslation } from 'react-i18next';
+import { commonText, wizardText } from '@shared/i18n/keys';
 import MapView, { Circle } from 'react-native-maps';
 import RadiusPickerModal from '../components/cafe/RadiusPickerModal';
 import PlacesAutocompleteInput from '../components/wizard/PlacesAutocompleteInput';
@@ -42,6 +44,7 @@ interface WizardScreenProps {
 
 export default function WizardScreen({ onComplete, onSkip }: WizardScreenProps = {}) {
   const navigation = useNavigation<StackNavigationProp<any>>();
+  const { t } = useTranslation();
   const { setPreferences, setWizardCompleted } = usePreferences();
   const { latitude: userLat, longitude: userLng } = useLocation();
   const filtersQuery = useCafeFilters();
@@ -138,7 +141,7 @@ export default function WizardScreen({ onComplete, onSkip }: WizardScreenProps =
         type: locationType,
         latitude: useCustomCoords ? customLat! : userLat,
         longitude: useCustomCoords ? customLng! : userLng,
-        label: locationType === 'custom' ? customAddress || 'Tujuan Custom' : 'Lokasi Sekarang',
+        label: locationType === 'custom' ? customAddress || t(wizardText.customLocationLabel) : t(wizardText.currentLocationLabel),
       },
       radius: radiusVal,
       amenities: amenities.length > 0 ? amenities : undefined,
@@ -182,14 +185,14 @@ export default function WizardScreen({ onComplete, onSkip }: WizardScreenProps =
       <View style={styles.header}>
         {step > 0 ? (
           <TouchableOpacity onPress={handleBack}>
-            <Text style={styles.backText}>Kembali</Text>
+            <Text style={styles.backText}>{t(commonText.back)}</Text>
           </TouchableOpacity>
         ) : (
           <View style={{ width: 50 }} />
         )}
         {renderProgressDots()}
         <TouchableOpacity onPress={handleSkip}>
-          <Text style={styles.skipText}>Lewati</Text>
+          <Text style={styles.skipText}>{t(commonText.skip)}</Text>
         </TouchableOpacity>
       </View>
 
@@ -198,8 +201,8 @@ export default function WizardScreen({ onComplete, onSkip }: WizardScreenProps =
       <View style={{ flex: 1 }}>
         {step === 0 && (
         <View style={styles.stepContainer}>
-          <Text style={styles.stepTitle}>Vibe kamu hari ini apa?</Text>
-          <Text style={styles.stepSubtitle}>Pilih yang paling sesuai mood kamu</Text>
+          <Text style={styles.stepTitle}>{t(wizardText.purposeTitle)}</Text>
+          <Text style={styles.stepSubtitle}>{t(wizardText.purposeSubtitle)}</Text>
           <ScrollView
             contentContainerStyle={styles.optionsGrid}
             showsVerticalScrollIndicator={false}
@@ -234,8 +237,8 @@ export default function WizardScreen({ onComplete, onSkip }: WizardScreenProps =
         )}
         {step === 1 && (
         <View style={styles.stepContainer}>
-          <Text style={styles.stepTitle}>Mau ke mana nih?</Text>
-          <Text style={styles.stepSubtitle}>Kita cariin cafe di deket kamu</Text>
+          <Text style={styles.stepTitle}>{t(wizardText.locationTitle)}</Text>
+          <Text style={styles.stepSubtitle}>{t(wizardText.locationSubtitle)}</Text>
           <View style={styles.locationOptions}>
             <TouchableOpacity
               style={[styles.locationCard, locationType === 'current' && styles.optionCardActive]}
@@ -243,7 +246,7 @@ export default function WizardScreen({ onComplete, onSkip }: WizardScreenProps =
             >
               <Text style={styles.locationIcon}>📍</Text>
               <Text style={[styles.locationLabel, locationType === 'current' && styles.optionLabelActive]}>
-                Pakai lokasi sekarang
+                {t(wizardText.useCurrentLocation)}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -252,7 +255,7 @@ export default function WizardScreen({ onComplete, onSkip }: WizardScreenProps =
             >
               <Text style={styles.locationIcon}>🔍</Text>
               <Text style={[styles.locationLabel, locationType === 'custom' && styles.optionLabelActive]}>
-                Masukin tujuan sendiri
+                {t(wizardText.useCustomLocation)}
               </Text>
             </TouchableOpacity>
           </View>
@@ -275,8 +278,8 @@ export default function WizardScreen({ onComplete, onSkip }: WizardScreenProps =
             showsVerticalScrollIndicator={false}
             style={{ flex: 1 }}
           >
-            <Text style={styles.stepTitle}>Mau cari sejauh apa?</Text>
-            <Text style={styles.stepSubtitle}>Pilih radius pencarian kamu</Text>
+            <Text style={styles.stepTitle}>{t(wizardText.radiusTitle)}</Text>
+            <Text style={styles.stepSubtitle}>{t(wizardText.radiusSubtitle)}</Text>
 
             {/* Quick pick — 3 common values + a "More" pill that opens a modal */}
             <View style={styles.radiusRow}>
@@ -324,7 +327,7 @@ export default function WizardScreen({ onComplete, onSkip }: WizardScreenProps =
                   <View style={styles.mapPreviewFallback}>
                     <ActivityIndicator color={colors.accent} />
                     <Text style={styles.mapPreviewFallbackText}>
-                      Nunggu lokasi…
+                      {t(wizardText.waitingLocation)}
                     </Text>
                   </View>
                 );
@@ -394,10 +397,8 @@ export default function WizardScreen({ onComplete, onSkip }: WizardScreenProps =
         {step === 3 && (
         /* Step 4: Amenities — mirrors web FilterPanel sidebar variant */
         <View style={styles.stepContainer}>
-          <Text style={styles.stepTitle}>Ada yang spesifik kamu butuhin?</Text>
-          <Text style={styles.stepSubtitle}>
-            Pilih fasilitas atau biarin kosong — kita tunjukin semuanya
-          </Text>
+          <Text style={styles.stepTitle}>{t(wizardText.amenitiesTitle)}</Text>
+          <Text style={styles.stepSubtitle}>{t(wizardText.amenitiesSubtitle)}</Text>
           <View style={{ flex: 1 }}>
           <ScrollView
             contentContainerStyle={{ paddingBottom: spacing.xxl }}
@@ -410,7 +411,7 @@ export default function WizardScreen({ onComplete, onSkip }: WizardScreenProps =
             <View style={styles.filterCard}>
               {/* Price section */}
               <View style={styles.filterGroup}>
-                <Text style={styles.filterGroupTitle}>HARGA</Text>
+                <Text style={styles.filterGroupTitle}>{t(wizardText.priceHeader)}</Text>
                 <View style={styles.filterChipWrap}>
                   {PRICE_OPTIONS.map((p) => {
                     const active = priceRange === p.key;
@@ -450,7 +451,7 @@ export default function WizardScreen({ onComplete, onSkip }: WizardScreenProps =
               ) : filterGroups.length === 0 ? (
                 <View style={{ padding: spacing.lg, alignItems: 'center' }}>
                   <Text style={styles.emptyFilterText}>
-                    Filter gak tersedia.
+                    {t(wizardText.noFilters)}
                   </Text>
                 </View>
               ) : (
@@ -542,7 +543,7 @@ export default function WizardScreen({ onComplete, onSkip }: WizardScreenProps =
           disabled={isNextDisabled}
         >
           <Text style={styles.nextBtnText}>
-            {step === TOTAL_STEPS - 1 ? 'Cariin Cafe-nya' : 'Lanjut'}
+            {step === TOTAL_STEPS - 1 ? t(wizardText.findCafes) : t(commonText.next)}
           </Text>
         </TouchableOpacity>
       </View>

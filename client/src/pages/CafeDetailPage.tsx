@@ -362,6 +362,13 @@ export default function CafeDetailPage() {
       .getSummary(cafe.id)
       .then((res) => setReviewSummary(res.data ?? []))
       .catch(() => {});
+    reviewsApi
+      .listByCafe(cafe.id, { page: 1, limit: 3, sort: "helpful" })
+      .then((res) => {
+        setReviewPreviews(res.data?.data ?? []);
+        setReviewTotal(res.data?.meta?.total ?? 0);
+      })
+      .catch(() => {});
   };
 
   const seoImage = validPhotos[0]?.url ?? placeholderImage(cafe.id);

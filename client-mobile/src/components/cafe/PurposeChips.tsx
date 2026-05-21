@@ -1,5 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { filtersText, trendingText } from '@shared/i18n/keys';
 import { BackendPurpose } from '../../types';
 import { getPurposeBySlug } from '@shared/constants/purposes';
 
@@ -18,8 +20,11 @@ export default function PurposeChips({
   activeId,
   onSelect,
   horizontal,
-  title = 'Tujuan',
+  title,
 }: Props) {
+  const { t } = useTranslation();
+  const resolvedTitle = title ?? t(filtersText.defaultPurposeTitle);
+  const allLabel = t(trendingText.allFilter);
   const Pill = ({
     label,
     icon,
@@ -33,7 +38,7 @@ export default function PurposeChips({
   }) => (
     <TouchableOpacity
       onPress={onPress}
-      style={[styles.pill, active && (label === 'Semua' ? styles.pillActiveDark : styles.pillActive)]}
+      style={[styles.pill, active && (label === allLabel ? styles.pillActiveDark : styles.pillActive)]}
     >
       <Text style={[styles.pillText, active && styles.pillTextActive]}>
         {icon ? `${icon} ` : ''}{label}
@@ -44,14 +49,14 @@ export default function PurposeChips({
   if (horizontal) {
     return (
       <View>
-        {!!title && <Text style={styles.title}>{title}</Text>}
+        {!!resolvedTitle && <Text style={styles.title}>{resolvedTitle}</Text>}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
           <Pill
-            label="Semua"
+            label={allLabel}
             active={activeId === null}
             onPress={() => onSelect(null)}
           />
@@ -71,10 +76,10 @@ export default function PurposeChips({
 
   return (
     <View>
-      {!!title && <Text style={styles.title}>{title}</Text>}
+      {!!resolvedTitle && <Text style={styles.title}>{resolvedTitle}</Text>}
       <View style={styles.wrap}>
         <Pill
-          label="Semua"
+          label={allLabel}
           active={activeId === null}
           onPress={() => onSelect(null)}
         />

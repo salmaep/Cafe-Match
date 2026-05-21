@@ -4,6 +4,8 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
+import { notificationsText, socialText } from '@shared/i18n/keys';
 import { useAuth } from '../context/AuthContext';
 import {
   fetchFriendsList, fetchPendingRequests, sendFriendRequest,
@@ -13,6 +15,7 @@ import { colors, spacing, radius } from '../theme';
 
 export default function FriendsScreen() {
   const navigation = useNavigation();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
 
@@ -42,10 +45,10 @@ export default function FriendsScreen() {
     setSending(true);
     try {
       await sendFriendRequest(friendCode.trim().toUpperCase());
-      Alert.alert('Berhasil!', 'Permintaan pertemanan udah dikirim');
+      Alert.alert(t(socialText.successTitle), t(socialText.friendRequestSent));
       setFriendCode('');
     } catch (err: any) {
-      Alert.alert('Error', err?.response?.data?.message || 'Gagal kirim permintaan');
+      Alert.alert(t(socialText.errorTitle), err?.response?.data?.message || t(socialText.friendRequestFailed));
     }
     setSending(false);
   };
@@ -68,25 +71,29 @@ export default function FriendsScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.back}>← Kembali</Text>
+          <Text style={styles.back}>{t(notificationsText.back)}</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>Teman</Text>
+        <Text style={styles.title}>{t(socialText.friendsTitle)}</Text>
         <View style={{ width: 50 }} />
       </View>
 
       {/* My friend code */}
       <View style={styles.codeBox}>
-        <Text style={styles.codeLabel}>Kode Teman Kamu</Text>
+        <Text style={styles.codeLabel}>{t(socialText.yourFriendCode)}</Text>
         <Text style={styles.codeText}>{(user as any)?.friendCode || '—'}</Text>
-        <Text style={styles.codeHint}>Share kode ini ke temen kamu</Text>
+        <Text style={styles.codeHint}>{t(socialText.shareCodeHint)}</Text>
       </View>
 
       {/* Tabs */}
       <View style={styles.tabs}>
-        {(['friends', 'requests', 'add'] as const).map((t) => (
-          <TouchableOpacity key={t} style={[styles.tab, tab === t && styles.tabActive]} onPress={() => setTab(t)}>
-            <Text style={[styles.tabText, tab === t && styles.tabTextActive]}>
-              {t === 'friends' ? `Teman (${friends.length})` : t === 'requests' ? `Permintaan (${requests.length})` : '+ Tambah'}
+        {(['friends', 'requests', 'add'] as const).map((tabKey) => (
+          <TouchableOpacity key={tabKey} style={[styles.tab, tab === tabKey && styles.tabActive]} onPress={() => setTab(tabKey)}>
+            <Text style={[styles.tabText, tab === tabKey && styles.tabTextActive]}>
+              {tabKey === 'friends'
+                ? t(socialText.tabFriends, { count: friends.length })
+                : tabKey === 'requests'
+                  ? t(socialText.tabRequests, { count: requests.length })
+                  : t(socialText.tabAdd)}
             </Text>
           </TouchableOpacity>
         ))}
@@ -99,7 +106,7 @@ export default function FriendsScreen() {
           data={friends}
           keyExtractor={(f) => String(f.id)}
           contentContainerStyle={styles.list}
-          ListEmptyComponent={<Text style={styles.emptyText}>Belum punya temen. Tambahin lewat kode!</Text>}
+          ListEmptyComponent={<Text style={styles.emptyText}>{t(socialText.noFriendsYet)}</Text>}
           renderItem={({ item }) => {
             const displayName = (item.name || '').trim() || 'Unknown';
             const code = item.friendCode || '';
@@ -123,7 +130,7 @@ export default function FriendsScreen() {
           data={requests}
           keyExtractor={(r) => String(r.id)}
           contentContainerStyle={styles.list}
-          ListEmptyComponent={<Text style={styles.emptyText}>Gak ada permintaan masuk</Text>}
+          ListEmptyComponent={<Text style={styles.emptyText}>{t(socialText.noPendingRequests)}</Text>}
           renderItem={({ item }) => {
             // Defensive: server returns the full FriendRequest with `sender`
             // populated, but if the join ever drops it we still want a
@@ -148,10 +155,10 @@ export default function FriendsScreen() {
                   )}
                 </View>
                 <TouchableOpacity style={styles.acceptBtn} onPress={() => handleAccept(item.id)}>
-                  <Text style={styles.acceptText}>Terima</Text>
+                  <Text style={styles.acceptText}>{t(socialText.accept)}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.rejectBtn} onPress={() => handleReject(item.id)}>
-                  <Text style={styles.rejectText}>Tolak</Text>
+                  <Text style={styles.rejectText}>{t(socialText.reject)}</Text>
                 </TouchableOpacity>
               </View>
             );
@@ -159,18 +166,18 @@ export default function FriendsScreen() {
         />
       ) : (
         <View style={styles.addSection}>
-          <Text style={styles.addLabel}>Masukin kode teman</Text>
+          <Text style={styles.addLabel}>{t(socialText.addByCode)}</Text>
           <TextInput
             style={styles.addInput}
-            placeholder="Contoh: AB12CD34"
+            placeholder={t(socialText.codePlaceholder)}
             placeholderTextColor={colors.textSecondary}
             value={friendCode}
-            onChangeText={(t) => setFriendCode(t.toUpperCase())}
+            onChangeText={(val) => setFriendCode(val.toUpperCase())}
             maxLength={8}
             autoCapitalize="characters"
           />
           <TouchableOpacity style={styles.addBtn} onPress={handleSendRequest} disabled={sending}>
-            <Text style={styles.addBtnText}>{sending ? 'Lagi ngirim...' : 'Kirim Permintaan'}</Text>
+            <Text style={styles.addBtnText}>{sending ? t(socialText.sending) : t(socialText.sendRequest)}</Text>
           </TouchableOpacity>
         </View>
       )}

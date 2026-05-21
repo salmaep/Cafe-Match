@@ -7,6 +7,8 @@ import {
   ScrollView,
   StyleSheet,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { commonText, filtersText } from '@shared/i18n/keys';
 import {
   fetchFilterCatalog,
   type FilterCatalogGroup,
@@ -70,6 +72,7 @@ export default function MobileFilterModal({
   onPriceRangeChange,
   autoSelectedKeys,
 }: Props) {
+  const { t } = useTranslation();
   const [groups, setGroups] = useState<FilterCatalogGroup[] | null>(catalogCache);
   // Mirror web mobile modal: groups collapsible, default `amenity` open.
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
@@ -128,16 +131,16 @@ export default function MobileFilterModal({
         <View style={styles.sheet}>
           <View style={styles.header}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.title}>Filter</Text>
+              <Text style={styles.title}>{t(filtersText.modalTitle)}</Text>
               {activeCount > 0 && (
                 <Text style={styles.subtitle}>
-                  {activeCount} filter aktif
+                  {t(filtersText.activeCount, { count: activeCount })}
                 </Text>
               )}
             </View>
             {activeCount > 0 && (
               <TouchableOpacity onPress={clearAll} style={styles.clearBtn}>
-                <Text style={styles.clearBtnText}>Reset</Text>
+                <Text style={styles.clearBtnText}>{t(commonText.reset)}</Text>
               </TouchableOpacity>
             )}
             <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
@@ -151,7 +154,7 @@ export default function MobileFilterModal({
           >
             {/* Tujuan */}
             <View style={styles.flatSection}>
-              <Text style={styles.smallSectionTitle}>TUJUAN</Text>
+              <Text style={styles.smallSectionTitle}>{t(filtersText.purposeSection)}</Text>
               <PurposeChips
                 purposes={purposes}
                 activeId={activePurposeId}
@@ -162,7 +165,7 @@ export default function MobileFilterModal({
 
             {/* Harga — click active to clear (no "Semua" chip) */}
             <View style={styles.flatSection}>
-              <Text style={styles.smallSectionTitle}>HARGA</Text>
+              <Text style={styles.smallSectionTitle}>{t(filtersText.priceSection)}</Text>
               <View style={styles.chipWrap}>
                 {PRICE_OPTIONS.map((opt) => {
                   const active = priceRange === opt.key;
@@ -180,10 +183,10 @@ export default function MobileFilterModal({
 
             {/* Facility groups — collapsible */}
             {groups === null && (
-              <Text style={styles.loadingText}>Lagi muat filter…</Text>
+              <Text style={styles.loadingText}>{t(filtersText.loadingFilters)}</Text>
             )}
             {groups !== null && facilityGroups.length === 0 && (
-              <Text style={styles.loadingText}>Filter gak tersedia.</Text>
+              <Text style={styles.loadingText}>{t(filtersText.noFilters)}</Text>
             )}
             {facilityGroups.map((g) => {
               const isOpen = openGroups[g.key] ?? false;

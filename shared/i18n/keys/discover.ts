@@ -1,0 +1,15 @@
+export const discoverText = {
+  searchingCafes: 'discover:searchingCafes',
+  allSeenTitle: 'discover:allSeenTitle',
+  allSeenSubtitle: 'discover:allSeenSubtitle',
+  openExplore: 'discover:openExplore',
+  headingBefore: 'discover:headingBefore',
+  headingAccent: 'discover:headingAccent',
+  headingSuffix: 'discover:headingSuffix',
+  subheading: 'discover:subheading',
+  swipeLeft: 'discover:swipeLeft',
+  swipeRight: 'discover:swipeRight',
+  addedToShortlistToast: 'discover:addedToShortlistToast',
+  alreadyInShortlist: 'discover:alreadyInShortlist',
+  openUntilTime: 'discover:openUntilTime',
+} as const;

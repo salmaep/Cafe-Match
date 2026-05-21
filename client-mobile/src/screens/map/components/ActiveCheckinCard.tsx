@@ -1,5 +1,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { useTranslation } from "react-i18next";
+import { mapText } from "@shared/i18n/keys";
 import { colors, spacing, radius } from "../../../theme";
 import { formatDuration } from "../utils";
 
@@ -18,6 +20,7 @@ function ActiveCheckinCard({
   checkoutLoading,
   onCheckOut,
 }: Props) {
+  const { t } = useTranslation();
   return (
     <View style={[styles.card, { top: topInset + 80 }]}>
       <View style={styles.left}>
@@ -25,7 +28,7 @@ function ActiveCheckinCard({
       </View>
       <View style={styles.body}>
         <View style={styles.labelRow}>
-          <Text style={styles.label}>LAGI CHECK-IN</Text>
+          <Text style={styles.label}>{t(mapText.checkingIn)}</Text>
           <Text style={styles.duration}>{formatDuration(durationSec)}</Text>
         </View>
         <Text style={styles.cafeName} numberOfLines={1}>
@@ -39,7 +42,7 @@ function ActiveCheckinCard({
         activeOpacity={0.8}
       >
         <Text style={styles.checkoutBtnText}>
-          {checkoutLoading ? "..." : "Check Out"}
+          {checkoutLoading ? "..." : t(mapText.checkOut)}
         </Text>
       </TouchableOpacity>
     </View>

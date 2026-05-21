@@ -1,0 +1,17 @@
+export { commonText } from './common';
+export { wizardText } from './wizard';
+export { cafeText } from './cafe';
+export { mapText } from './map';
+export { errorsText } from './errors';
+export { discoverText } from './discover';
+export { trendingText } from './trending';
+export { shortlistText } from './shortlist';
+export { authText } from './auth';
+export { profileText } from './profile';
+export { notificationsText } from './notifications';
+export { recapText } from './recap';
+export { filtersText } from './filters';
+export { voteText } from './vote';
+export { socialText } from './social';
+export { listsText } from './lists';
+export { reviewsText } from './reviews';

@@ -1,0 +1,15 @@
+{
+  "modalTitle": "Filter",
+  "purposeSection": "TUJUAN",
+  "priceSection": "HARGA",
+  "loadingFilters": "Lagi muat filter…",
+  "noFilters": "Filter gak tersedia.",
+  "radiusTitle": "Pilih Radius",
+  "quickPick": "PILIHAN CEPAT",
+  "manualInput": "KETIK MANUAL",
+  "radiusInputPlaceholder": "0.5–10",
+  "radiusHelp": "Min 0.5 km · Max 10 km",
+  "defaultPurposeTitle": "Tujuan",
+  "applyWithValue": "Terapkan ({{value}} km)",
+  "activeCount": "{{count}} filter aktif"
+}

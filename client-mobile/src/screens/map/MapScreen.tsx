@@ -22,6 +22,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
+import { mapText } from "@shared/i18n/keys";
 
 import { usePreferences } from "../../context/PreferencesContext";
 import { useLocation } from "../../context/LocationContext";
@@ -62,6 +64,7 @@ const { height } = Dimensions.get("window");
 
 export default function MapScreen() {
   const navigation = useNavigation<StackNavigationProp<any>>();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { preferences } = usePreferences();
   const { latitude: userLat, longitude: userLng } = useLocation();
@@ -515,7 +518,7 @@ export default function MapScreen() {
         <View style={styles.mapLoadingOverlay}>
           <View style={styles.mapLoadingBox}>
             <ActivityIndicator size="large" color={colors.accent} />
-            <Text style={styles.mapLoadingBoxText}>Sebentar ya…</Text>
+            <Text style={styles.mapLoadingBoxText}>{t(mapText.loadingMap)}</Text>
           </View>
         </View>
       )}

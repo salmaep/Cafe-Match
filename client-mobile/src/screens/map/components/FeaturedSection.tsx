@@ -1,6 +1,8 @@
 import React from "react";
 import { View, Text, TouchableOpacity, Image, StyleSheet } from "react-native";
 import { ScrollView as GHScrollView } from "react-native-gesture-handler";
+import { useTranslation } from "react-i18next";
+import { mapText } from "@shared/i18n/keys";
 import { Cafe } from "../../../types";
 import { colors, spacing } from "../../../theme";
 import { isNewCafePromo } from "../utils";
@@ -11,10 +13,11 @@ type Props = {
 };
 
 function FeaturedSection({ cafes, onCafePress }: Props) {
+  const { t } = useTranslation();
   if (cafes.length === 0) return null;
   return (
     <View style={styles.section}>
-      <Text style={styles.title}>Pilihan Hari Ini ✨</Text>
+      <Text style={styles.title}>{t(mapText.todayPicks)}</Text>
       <GHScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -52,7 +55,7 @@ function FeaturedSection({ cafes, onCafePress }: Props) {
                 <Image source={{ uri: promoImage }} style={styles.image} />
                 {isNewCafe && (
                   <View style={styles.newBadge}>
-                    <Text style={styles.newBadgeText}>CAFE BARU</Text>
+                    <Text style={styles.newBadgeText}>{t(mapText.newCafeTag)}</Text>
                   </View>
                 )}
               </View>

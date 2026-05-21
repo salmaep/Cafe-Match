@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../../context/AuthContext";
 import { useShortlist } from "../../context/ShortlistContext";
+import { commonText, profileText } from "@shared/i18n";
 
 export default function Navbar() {
+  const { t } = useTranslation();
   const { user, logout } = useAuth();
   const { shortlist } = useShortlist();
   const navigate = useNavigate();
@@ -57,15 +60,15 @@ export default function Navbar() {
 
           {/* Primary nav — centered */}
           <div className="flex items-center justify-center gap-1">
-            <NavItem to="/" label="Explore" exact />
-            <NavItem to="/discover" label="Discover" />
-            <NavItem to="/trending" label="Trending" />
+            <NavItem to="/" label={t(commonText.navExplore)} exact />
+            <NavItem to="/discover" label={t(commonText.navDiscover)} />
+            <NavItem to="/trending" label={t(commonText.navTrending)} />
             <NavItem
               to="/shortlist"
-              label="Shortlist"
+              label={t(commonText.navShortlist)}
               badge={shortlist.length || undefined}
             />
-            {user && <NavItem to="/profile" label="Profile" />}
+            {user && <NavItem to="/profile" label={t(commonText.navProfile)} />}
           </div>
 
           {/* Auth */}
@@ -117,7 +120,7 @@ export default function Navbar() {
                   <MenuLink
                     to="/profile"
                     icon="👤"
-                    label="Profile"
+                    label={t(commonText.navProfile)}
                     onClick={() => setMenuOpen(false)}
                   />
                   <div className="h-px bg-[#F0EDE8] my-1" />
@@ -128,7 +131,7 @@ export default function Navbar() {
                     className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
                   >
                     <span className="text-base">↩</span>
-                    <span className="font-semibold">Logout</span>
+                    <span className="font-semibold">{t(commonText.logout)}</span>
                   </button>
                 </div>
               )}
@@ -145,7 +148,7 @@ export default function Navbar() {
                   }`
                 }
               >
-                Login
+                {t(commonText.login)}
               </NavLink>
               <NavLink
                 to="/register"
@@ -157,7 +160,7 @@ export default function Navbar() {
                   }`
                 }
               >
-                Register
+                {t(commonText.register)}
               </NavLink>
             </div>
           )}

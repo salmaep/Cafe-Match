@@ -1,0 +1,15 @@
+{
+  "searchingCafes": "Lagi nyari cafe...",
+  "allSeenTitle": "Semua udah dilihat!",
+  "allSeenSubtitle": "Yuk jelajah cafe lainnya di halaman Explore",
+  "openExplore": "Buka Explore 🗺️",
+  "headingBefore": "Temukan kafe ",
+  "headingAccent": "favoritmu",
+  "headingSuffix": ".",
+  "subheading": "Geser kartu — kanan untuk simpan, kiri untuk lewati.",
+  "swipeLeft": "Lewati",
+  "swipeRight": "✓ Simpan",
+  "addedToShortlistToast": "\"{{name}}\" masuk Shortlist!",
+  "alreadyInShortlist": "★ Sudah di shortlist",
+  "openUntilTime": "🕐 sampai {{time}}"
+}

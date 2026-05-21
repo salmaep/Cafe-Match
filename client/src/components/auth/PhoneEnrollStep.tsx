@@ -1,6 +1,8 @@
 import { useState, type FormEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { authApi } from "../../api/auth.api";
 import { useAuth, type PendingTwoFa } from "../../context/AuthContext";
+import { authText } from "@shared/i18n";
 import OtpStep from "./OtpStep";
 
 interface Props {
@@ -27,6 +29,7 @@ export default function PhoneEnrollStep({
   onDone,
   onCancel,
 }: Props) {
+  const { t } = useTranslation();
   const { loginWithToken } = useAuth();
   const [phone, setPhone] = useState("");
   const [error, setError] = useState("");
@@ -39,9 +42,7 @@ export default function PhoneEnrollStep({
     e.preventDefault();
     setError("");
     if (normalized.length < 10 || normalized.length > 15) {
-      setError(
-        "Nomor HP tidak valid. Contoh: 081234567890 atau 6281234567890.",
-      );
+      setError(t(authText.invalidPhoneNumber));
       return;
     }
     setSubmitting(true);
@@ -56,7 +57,7 @@ export default function PhoneEnrollStep({
         phoneHint: normalized.slice(0, 4) + "***" + normalized.slice(-2),
       });
     } catch (err: any) {
-      setError(err.response?.data?.message || "Gagal mengirim kode OTP.");
+      setError(err.response?.data?.message || t(authText.otpSendFailed));
     } finally {
       setSubmitting(false);
     }
@@ -90,11 +91,10 @@ export default function PhoneEnrollStep({
           📱
         </div>
         <h2 className="text-lg font-bold text-[#1C1C1A]">
-          Verifikasi Nomor WhatsApp
+          {t(authText.phoneEnrollTitle)}
         </h2>
         <p className="text-sm text-[#8A8880] mt-1">
-          Masukin nomor WhatsApp aktif kamu. Kita kirim kode OTP buat
-          verifikasi akun.
+          {t(authText.phoneEnrollSubtitle)}
         </p>
       </div>
 
@@ -117,13 +117,11 @@ export default function PhoneEnrollStep({
             .replace(/(?!^)\+/g, "");
           setPhone(cleaned);
         }}
-        placeholder="cth. 081234567890 / 6281234567890"
+        placeholder={t(authText.phoneExamplePlaceholder)}
         className="w-full px-4 py-3 bg-[#F0EDE8] rounded-xl text-base font-semibold text-[#1C1C1A] focus:bg-white focus:ring-2 focus:ring-[#D48B3A]/30 outline-none border-none transition-all"
       />
       <p className="text-xs text-[#8A8880]">
-        Bisa mulai dengan <span className="font-semibold">+62</span>,{" "}
-        <span className="font-semibold">62</span>, atau{" "}
-        <span className="font-semibold">08</span>
+        {t(authText.phoneFormatHint)}
       </p>
 
       <button
@@ -131,7 +129,7 @@ export default function PhoneEnrollStep({
         disabled={submitting || normalized.length < 10}
         className="w-full py-3 bg-[#1C1C1A] text-white rounded-xl font-bold text-base hover:bg-black disabled:opacity-60 transition-colors"
       >
-        {submitting ? "Mengirim kode…" : "Kirim Kode OTP"}
+        {submitting ? t(authText.sendingCode) : t(authText.sendWhatsAppCode)}
       </button>
 
       <button
@@ -139,7 +137,7 @@ export default function PhoneEnrollStep({
         onClick={onCancel}
         className="w-full text-center text-sm text-[#8A8880] hover:text-[#1C1C1A] transition-colors"
       >
-        Batal — kembali ke login
+        {t(authText.cancelBackToLogin)}
       </button>
     </form>
   );

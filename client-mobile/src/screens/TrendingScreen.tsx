@@ -19,6 +19,8 @@ import { cleanAddress } from '../utils/address';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
+import { cafeText, trendingText } from '@shared/i18n/keys';
 import { useLocation } from '../context/LocationContext';
 import { useSearchCafes } from '../queries/cafes/use-search-cafes';
 import { hitsToCafes } from '../queries/cafes/api';
@@ -40,6 +42,7 @@ const RANK_COLORS: Record<number, string> = {
 
 export default function TrendingScreen() {
   const navigation = useNavigation<StackNavigationProp<any>>();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { latitude, longitude } = useLocation();
 
@@ -162,8 +165,8 @@ export default function TrendingScreen() {
   const renderEmpty = () => (
     <View style={styles.emptyContainer}>
       <Text style={styles.emptyEmoji}>🔥</Text>
-      <Text style={styles.emptyTitle}>Belum ada cafe yang lagi trending</Text>
-      <Text style={styles.emptySubtitle}>Coba filter lain atau cek lagi nanti</Text>
+      <Text style={styles.emptyTitle}>{t(trendingText.emptyTitle)}</Text>
+      <Text style={styles.emptySubtitle}>{t(trendingText.emptySubtitle)}</Text>
     </View>
   );
 
@@ -179,14 +182,15 @@ export default function TrendingScreen() {
           <View style={styles.heroTopRow}>
             <View style={{ flex: 1, minWidth: 0 }}>
               <View style={styles.heroPill}>
-                <Text style={styles.heroPillText}>🔥 LAGI TRENDING</Text>
+                <Text style={styles.heroPillText}>{t(trendingText.heroPill)}</Text>
               </View>
               <Text style={styles.heroTitle}>
-                Cafe paling <Text style={styles.heroTitleAccent}>hits</Text>{' '}
-                minggu ini
+                {t(trendingText.heroTitleBefore)}
+                <Text style={styles.heroTitleAccent}>{t(trendingText.heroTitleAccent)}</Text>
+                {t(trendingText.heroTitleAfter)}
               </Text>
               <Text style={styles.heroSub}>
-                Berdasar jumlah favorit & bookmark dari komunitas — update tiap hari.
+                {t(trendingText.heroSubtitle)}
               </Text>
             </View>
           </View>
@@ -196,13 +200,13 @@ export default function TrendingScreen() {
               <Text style={styles.heroCountNum}>
                 {totalCount.toLocaleString()}
               </Text>
-              <Text style={styles.heroCountLabel}>CAFE</Text>
+              <Text style={styles.heroCountLabel}>{t(trendingText.cafeCountLabel)}</Text>
             </View>
             <TouchableOpacity
               style={styles.heroLbBtn}
               onPress={() => navigation.navigate('GlobalLeaderboard')}
             >
-              <Text style={styles.heroLbBtnText}>🏆 Leaderboard</Text>
+              <Text style={styles.heroLbBtnText}>{t(trendingText.leaderboardBtn)}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[
@@ -217,7 +221,7 @@ export default function TrendingScreen() {
                   activeFilterCount > 0 && styles.heroFilterBtnTextActive,
                 ]}
               >
-                ⚙️ Filter
+                {t(trendingText.filterBtn)}
               </Text>
               {activeFilterCount > 0 && (
                 <View style={styles.heroFilterBadge}>
@@ -245,7 +249,7 @@ export default function TrendingScreen() {
                 style={[styles.purposeChip, purposeId === null && styles.purposeChipDarkActive]}
               >
                 <Text style={[styles.purposeChipText, purposeId === null && styles.purposeChipTextActive]}>
-                  Semua
+                  {t(trendingText.allFilter)}
                 </Text>
               </TouchableOpacity>
               {purposes.map((p) => {
@@ -296,7 +300,7 @@ export default function TrendingScreen() {
                     <ActivityIndicator color={colors.accent} />
                   </View>
                 ) : !cafesQuery.hasNextPage && cafes.length > 0 ? (
-                  <Text style={styles.endHint}>Itu semua untuk filter ini ✓</Text>
+                  <Text style={styles.endHint}>{t(trendingText.endHint)}</Text>
                 ) : null
               }
             />
@@ -322,6 +326,7 @@ export default function TrendingScreen() {
 // ─── Top podium cards — full data parity with web TrendingPage ─────────────
 
 function WinnerCard({ cafe, onPress }: { cafe: Cafe; onPress: () => void }) {
+  const { t } = useTranslation();
   const open = getOpenStatus(cafe.openingHours);
   const locality = cleanAddress(cafe.district || cafe.city || '');
   const rating = formatRating(cafe.googleRating);
@@ -354,11 +359,11 @@ function WinnerCard({ cafe, onPress }: { cafe: Cafe; onPress: () => void }) {
           <View style={cardStyles.winnerTopLeft}>
             <View style={cardStyles.winnerCrown}>
               <Text style={cardStyles.winnerCrownEmoji}>👑</Text>
-              <Text style={cardStyles.winnerCrownText}>#1 TRENDING</Text>
+              <Text style={cardStyles.winnerCrownText}>{t(trendingText.winnerCrown)}</Text>
             </View>
             {isHot && (
               <View style={cardStyles.hotPulse}>
-                <Text style={cardStyles.hotPulseText}>🔥 HOT</Text>
+                <Text style={cardStyles.hotPulseText}>{t(trendingText.hotBadge)}</Text>
               </View>
             )}
           </View>
@@ -411,8 +416,8 @@ function WinnerCard({ cafe, onPress }: { cafe: Cafe; onPress: () => void }) {
                 >
                   <Text style={cardStyles.winnerOpenText}>
                     ● {open.isOpen
-                      ? `Buka${open.closesAt ? ` · ${open.closesAt}` : ''}`
-                      : 'Tutup'}
+                      ? `${t(cafeText.open)}${open.closesAt ? ` · ${open.closesAt}` : ''}`
+                      : t(cafeText.closed)}
                   </Text>
                 </View>
               )}
@@ -451,6 +456,7 @@ function RunnerUpCard({
   rank: number;
   onPress: () => void;
 }) {
+  const { t } = useTranslation();
   const open = getOpenStatus(cafe.openingHours);
   const locality = cleanAddress(cafe.district || cafe.city || '');
   const rating = formatRating(cafe.googleRating);
@@ -483,7 +489,7 @@ function RunnerUpCard({
           <View style={[cardStyles.runnerRankBubble, { backgroundColor: rankBg }]}>
             <Text style={cardStyles.runnerRankBubbleText}>{rank}</Text>
           </View>
-          <Text style={cardStyles.runnerRankLabel}>TOP</Text>
+          <Text style={cardStyles.runnerRankLabel}>{t(trendingText.rankLabel)}</Text>
         </View>
 
         {/* Distance pill */}
@@ -539,11 +545,11 @@ function RunnerUpCard({
                 >
                   {open.isOpen
                     ? open.closesAt
-                      ? `Buka · ${open.closesAt}`
-                      : 'Buka'
+                      ? `${t(cafeText.open)} · ${open.closesAt}`
+                      : t(cafeText.open)
                     : open.opensAt
-                      ? `Tutup · ${open.opensAt}`
-                      : 'Tutup'}
+                      ? `${t(cafeText.closed)} · ${open.opensAt}`
+                      : t(cafeText.closed)}
                 </Text>
               </View>
             )}

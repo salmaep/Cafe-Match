@@ -2,6 +2,8 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
+import { useTranslation } from 'react-i18next';
+import { commonText, mapText } from '@shared/i18n/keys';
 import CafePhoto from '../CafePhoto';
 import { Cafe } from '../../types';
 import { cleanAddress } from '../../utils/address';
@@ -21,6 +23,7 @@ const VISIBLE_CHIPS = 3;
 
 export default function CafeListItem({ cafe, onPress, rightAccessory }: Props) {
   const navigation = useNavigation<StackNavigationProp<any>>();
+  const { t } = useTranslation();
   const open = getOpenStatus(cafe.openingHours);
   const locality = cleanAddress(cafe.district || cafe.city || '');
   const allChips = buildFacilityChips(cafe);
@@ -36,9 +39,9 @@ export default function CafeListItem({ cafe, onPress, rightAccessory }: Props) {
 
   const promoLabel =
     cafe.activePromotionType === 'new_cafe'
-      ? 'NEW'
+      ? t(mapText.newBadge)
       : cafe.activePromotionType === 'featured_promo'
-        ? 'Featured'
+        ? t(commonText.featured)
         : null;
   const promoBg =
     cafe.activePromotionType === 'new_cafe' ? '#E94B4B' : '#D48B3A';

@@ -14,6 +14,8 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
+import { useTranslation } from 'react-i18next';
+import { profileText } from '@shared/i18n/keys';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../context/AuthContext';
 import { updateProfileApi, changePasswordApi } from '../services/api';
@@ -23,6 +25,7 @@ type Tab = 'profile' | 'password';
 
 export default function EditProfileModal() {
   const navigation = useNavigation<StackNavigationProp<any>>();
+  const { t } = useTranslation();
   const [tab, setTab] = useState<Tab>('profile');
 
   return (
@@ -39,7 +42,7 @@ export default function EditProfileModal() {
         <View style={styles.handleBar} />
 
         <View style={styles.header}>
-          <Text style={styles.title}>Edit Profil</Text>
+          <Text style={styles.title}>{t(profileText.editProfile)}</Text>
           <TouchableOpacity
             style={styles.closeBtn}
             onPress={() => navigation.goBack()}
@@ -88,6 +91,7 @@ function TabBtn({
 }
 
 function ProfileTab() {
+  const { t } = useTranslation();
   const navigation = useNavigation<StackNavigationProp<any>>();
   const { user, refresh } = useAuth();
   const [name, setName] = useState(user?.name || '');
@@ -109,7 +113,7 @@ function ProfileTab() {
     try {
       const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!perm.granted) {
-        setError('Izin akses galeri ditolak nih.');
+        setError(t(profileText.galleryPermissionDenied));
         return;
       }
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -122,18 +126,18 @@ function ProfileTab() {
       if (result.canceled) return;
       const asset = result.assets?.[0];
       if (!asset?.base64) {
-        setError('Gagal muat gambar.');
+        setError(t(profileText.imageLoadFailed));
         return;
       }
       const dataUrl = `data:image/jpeg;base64,${asset.base64}`;
       // Rough byte estimate: base64 string length * 3/4
       if (asset.base64.length * 0.75 > 65_000) {
-        setError('Gambarnya kegedean. Pilih yang lain ya.');
+        setError(t(profileText.imageTooLarge));
         return;
       }
       setAvatarUrl(dataUrl);
     } catch (err: any) {
-      setError(err?.message || 'Gagal pilih gambar.');
+      setError(err?.message || t(profileText.imagePickFailed));
     } finally {
       setPicking(false);
     }
@@ -142,7 +146,7 @@ function ProfileTab() {
   const submit = async () => {
     setError('');
     if (!name.trim()) {
-      setError('Nama gak boleh kosong.');
+      setError(t(profileText.nameRequired));
       return;
     }
     setSubmitting(true);
@@ -151,7 +155,7 @@ function ProfileTab() {
       await refresh();
       navigation.goBack();
     } catch (err: any) {
-      setError(err?.response?.data?.message || 'Gagal nyimpen profil.');
+      setError(err?.response?.data?.message || t(profileText.profileSaveFailed));
     } finally {
       setSubmitting(false);
     }
@@ -183,7 +187,7 @@ function ProfileTab() {
             <>
               <Text style={styles.avatarActionDivider}>·</Text>
               <TouchableOpacity onPress={() => setAvatarUrl('')}>
-                <Text style={styles.avatarActionRemove}>Hapus</Text>
+                <Text style={styles.avatarActionRemove}>{t(profileText.removeAvatar)}</Text>
               </TouchableOpacity>
             </>
           )}
@@ -197,19 +201,19 @@ function ProfileTab() {
       )}
 
       <View>
-        <Text style={styles.fieldLabel}>NAMA</Text>
+        <Text style={styles.fieldLabel}>{t(profileText.fieldName)}</Text>
         <TextInput
           style={styles.input}
           value={name}
           onChangeText={(t) => { setName(t); setError(''); }}
           maxLength={100}
-          placeholder="Nama lengkap"
+          placeholder={t(profileText.namePlaceholder)}
           placeholderTextColor={colors.textSecondary}
         />
       </View>
 
       <View>
-        <Text style={styles.fieldLabel}>EMAIL</Text>
+        <Text style={styles.fieldLabel}>{t(profileText.fieldEmail)}</Text>
         <TextInput
           style={[styles.input, styles.inputDisabled]}
           value={user?.email || ''}
@@ -228,7 +232,7 @@ function ProfileTab() {
         {submitting ? (
           <ActivityIndicator color={colors.white} />
         ) : (
-          <Text style={styles.submitText}>Simpan Perubahan</Text>
+          <Text style={styles.submitText}>{t(profileText.saveChanges)}</Text>
         )}
       </TouchableOpacity>
     </View>
@@ -236,6 +240,7 @@ function ProfileTab() {
 }
 
 function PasswordTab() {
+  const { t } = useTranslation();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -245,22 +250,22 @@ function PasswordTab() {
   const submit = async () => {
     setError('');
     if (newPassword !== confirmPassword) {
-      setError('Konfirmasi password gak cocok.');
+      setError(t(profileText.confirmPasswordMismatch));
       return;
     }
     if (newPassword.length < 8) {
-      setError('Password baru minimal 8 karakter.');
+      setError(t(profileText.newPasswordMin8));
       return;
     }
     setSubmitting(true);
     try {
       await changePasswordApi({ currentPassword, newPassword });
-      Alert.alert('Berhasil', 'Password berhasil diubah!');
+      Alert.alert(t(profileText.successTitle), t(profileText.passwordChanged));
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
     } catch (err: any) {
-      setError(err?.response?.data?.message || 'Gagal ganti password.');
+      setError(err?.response?.data?.message || t(profileText.changePasswordFailed));
     } finally {
       setSubmitting(false);
     }
@@ -275,7 +280,7 @@ function PasswordTab() {
       )}
 
       <View>
-        <Text style={styles.fieldLabel}>PASSWORD LAMA</Text>
+        <Text style={styles.fieldLabel}>{t(profileText.fieldOldPassword)}</Text>
         <TextInput
           style={styles.input}
           value={currentPassword}
@@ -285,7 +290,7 @@ function PasswordTab() {
         />
       </View>
       <View>
-        <Text style={styles.fieldLabel}>PASSWORD BARU</Text>
+        <Text style={styles.fieldLabel}>{t(profileText.fieldNewPassword)}</Text>
         <TextInput
           style={styles.input}
           value={newPassword}
@@ -295,7 +300,7 @@ function PasswordTab() {
         />
       </View>
       <View>
-        <Text style={styles.fieldLabel}>KONFIRMASI PASSWORD</Text>
+        <Text style={styles.fieldLabel}>{t(profileText.fieldConfirmPassword)}</Text>
         <TextInput
           style={styles.input}
           value={confirmPassword}
@@ -321,7 +326,7 @@ function PasswordTab() {
         {submitting ? (
           <ActivityIndicator color={colors.white} />
         ) : (
-          <Text style={styles.submitText}>Ubah Password</Text>
+          <Text style={styles.submitText}>{t(profileText.changePassword)}</Text>
         )}
       </TouchableOpacity>
     </View>

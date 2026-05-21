@@ -5,5 +5,10 @@
   "unauthorized": "Lo perlu login dulu.",
   "permissionDenied": "Akses ditolak.",
   "locationPermission": "Izin lokasi belum dikasih.",
-  "placeNotFound": "Tempat gak ketemu. Coba kata kunci lain."
+  "placeNotFound": "Tempat gak ketemu. Coba kata kunci lain.",
+  "googleMapsKeyMissing": "API key Google Maps belum di-set.",
+  "searchPlaceFailed": "Gagal cari tempat.",
+  "placeDetailsFailed": "Gagal ambil detail tempat.",
+  "searchFailedWithStatus": "Gagal cari ({{status}}).",
+  "detailsFailedWithStatus": "Gagal ambil detail ({{status}})."
 }

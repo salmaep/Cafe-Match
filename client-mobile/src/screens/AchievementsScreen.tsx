@@ -4,6 +4,8 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
+import { notificationsText, socialText } from '@shared/i18n/keys';
 import { fetchMyAchievements } from '../services/api';
 import { AchievementDef } from '../types';
 import { colors, spacing, radius } from '../theme';
@@ -28,6 +30,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 export default function AchievementsScreen() {
   const navigation = useNavigation();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const [achievements, setAchievements] = useState<AchievementDef[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,9 +50,9 @@ export default function AchievementsScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.back}>← Kembali</Text>
+          <Text style={styles.back}>{t(notificationsText.back)}</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>Pencapaian</Text>
+        <Text style={styles.title}>{t(socialText.achievementsTitle)}</Text>
         <View style={{ width: 50 }} />
       </View>
 

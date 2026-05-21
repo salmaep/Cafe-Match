@@ -11,5 +11,9 @@
   "amenitiesSubtitle": "Pilih fasilitas atau biarin kosong — kita tunjukin semuanya",
   "findCafes": "Cariin Cafe-nya",
   "priceHeader": "HARGA",
-  "noFilters": "Filter gak tersedia."
+  "noFilters": "Filter gak tersedia.",
+  "waitingLocation": "Nunggu lokasi…",
+  "customLocationLabel": "Tujuan Custom",
+  "currentLocationLabel": "Lokasi Sekarang",
+  "searchPlacePlaceholder": "Cari alamat atau nama tempat…"
 }

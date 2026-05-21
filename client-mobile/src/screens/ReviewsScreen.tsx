@@ -6,6 +6,8 @@ import {
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
+import { reviewsText } from '@shared/i18n/keys';
 import { useReviews } from '../queries/reviews/use-reviews';
 import { useReviewSummary } from '../queries/reviews/use-review-summary';
 import { useAuth } from '../context/AuthContext';
@@ -57,6 +59,7 @@ function prettyCategory(key: string): string {
 }
 
 export default function ReviewsScreen() {
+  const { t } = useTranslation();
   const route = useRoute<RouteProp<RouteParams, 'Reviews'>>();
   const navigation = useNavigation<StackNavigationProp<any>>();
   const insets = useSafeAreaInsets();
@@ -122,12 +125,12 @@ export default function ReviewsScreen() {
         <ActivityIndicator size="large" color={colors.accent} style={{ marginTop: 40 }} />
       ) : reviews.length === 0 ? (
         <View style={styles.empty}>
-          <Text style={styles.emptyText}>Belum ada review</Text>
+          <Text style={styles.emptyText}>{t(reviewsText.listEmpty)}</Text>
           <TouchableOpacity
             style={styles.emptyBtn}
             onPress={goWriteReview}
           >
-            <Text style={styles.emptyBtnText}>Jadi yang pertama review!</Text>
+            <Text style={styles.emptyBtnText}>{t(reviewsText.beTheFirst)}</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -275,7 +278,7 @@ export default function ReviewsScreen() {
                   ) : (
                     <View style={styles.zoomVideoBox}>
                       <Text style={styles.zoomVideoIcon}>🎥</Text>
-                      <Text style={styles.zoomVideoHint}>Video preview</Text>
+                      <Text style={styles.zoomVideoHint}>{t(reviewsText.videoPreview)}</Text>
                     </View>
                   )}
                 </ScrollView>

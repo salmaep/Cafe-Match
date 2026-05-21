@@ -4,6 +4,8 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
+import { commonText, notificationsText } from '@shared/i18n/keys';
 import { fetchNotifications, markNotificationRead, markAllNotificationsRead } from '../services/api';
 import { AppNotification } from '../types';
 import { colors, spacing, radius } from '../theme';
@@ -80,6 +82,7 @@ function groupEmojiSpam(notifs: AppNotification[]): GroupedItem[] {
 
 export default function NotificationsScreen() {
   const navigation = useNavigation();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [loading, setLoading] = useState(true);
@@ -126,11 +129,11 @@ export default function NotificationsScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.back}>← Kembali</Text>
+          <Text style={styles.back}>{t(notificationsText.back)}</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>Notifikasi</Text>
+        <Text style={styles.title}>{t(notificationsText.title)}</Text>
         <TouchableOpacity onPress={handleMarkAll}>
-          <Text style={styles.readAll}>Baca semua</Text>
+          <Text style={styles.readAll}>{t(notificationsText.markAllRead)}</Text>
         </TouchableOpacity>
       </View>
 
@@ -139,7 +142,7 @@ export default function NotificationsScreen() {
       ) : notifications.length === 0 ? (
         <View style={styles.empty}>
           <Text style={styles.emptyIcon}>🔔</Text>
-          <Text style={styles.emptyText}>Belum ada notifikasi</Text>
+          <Text style={styles.emptyText}>{t(notificationsText.empty)}</Text>
         </View>
       ) : (
         <FlatList
@@ -163,14 +166,14 @@ export default function NotificationsScreen() {
                   <Text style={styles.icon}>😜</Text>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.rowTitle}>
-                      {item.senderName} ngirim {item.totalCount} emoji
+                      {t(notificationsText.emojiGroupTitle, { senderName: item.senderName, totalCount: item.totalCount })}
                     </Text>
                     <Text style={styles.rowBody} numberOfLines={1}>
                       {latestEmojis}
-                      {item.totalCount > 3 ? ` +${item.totalCount - 3} lagi` : ''}
+                      {item.totalCount > 3 ? t(notificationsText.emojiMoreSuffix, { count: item.totalCount - 3 }) : ''}
                     </Text>
                     <Text style={styles.rowTime}>
-                      Tap buat liat detail
+                      {t(notificationsText.tapForDetails)}
                     </Text>
                   </View>
                   {anyUnread && <View style={styles.dot} />}
@@ -215,8 +218,7 @@ export default function NotificationsScreen() {
             {emojiGroupDetail && (
               <>
                 <Text style={styles.modalTitle}>
-                  {emojiGroupDetail.totalCount} emoji dari{' '}
-                  {emojiGroupDetail.senderName}
+                  {t(notificationsText.modalEmojiCount, { count: emojiGroupDetail.totalCount, senderName: emojiGroupDetail.senderName })}
                 </Text>
                 <View style={styles.emojiWall}>
                   {emojiGroupDetail.emojis.map((e, i) => (
@@ -224,7 +226,7 @@ export default function NotificationsScreen() {
                   ))}
                 </View>
                 <Text style={styles.modalSubtitle}>
-                  Mulai dari{' '}
+                  {t(notificationsText.startedFrom)}
                   {new Date(
                     emojiGroupDetail.items[emojiGroupDetail.items.length - 1].createdAt,
                   ).toLocaleString('id-ID', {
@@ -235,7 +237,7 @@ export default function NotificationsScreen() {
                   style={styles.modalCloseBtn}
                   onPress={() => setEmojiGroupDetail(null)}
                 >
-                  <Text style={styles.modalCloseText}>Tutup</Text>
+                  <Text style={styles.modalCloseText}>{t(commonText.close)}</Text>
                 </TouchableOpacity>
               </>
             )}

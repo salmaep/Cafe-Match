@@ -1,0 +1,12 @@
+{
+  "title": "Notifikasi",
+  "markAllRead": "Baca semua",
+  "empty": "Belum ada notifikasi",
+  "back": "← Kembali",
+  "emojiGroupTitle": "{{senderName}} ngirim {{totalCount}} emoji",
+  "emojiMoreSuffix": " +{{count}} lagi",
+  "tapForDetails": "Tap buat liat detail",
+  "modalEmojiCount": "{{count}} emoji dari {{senderName}}",
+  "startedFrom": "Mulai dari ",
+  "bannerNewCount": "{{count}} notifikasi baru"
+}

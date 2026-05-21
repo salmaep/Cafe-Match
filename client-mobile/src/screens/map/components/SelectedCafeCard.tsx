@@ -1,5 +1,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { useTranslation } from "react-i18next";
+import { cafeText, mapText } from "@shared/i18n/keys";
 import CafePhoto from "../../../components/CafePhoto";
 import { Cafe } from "../../../types";
 import { colors, spacing, radius } from "../../../theme";
@@ -11,6 +13,7 @@ type Props = {
 };
 
 function SelectedCafeCard({ cafe, onPress, onDismiss }: Props) {
+  const { t } = useTranslation();
   return (
     <View style={styles.section}>
       <TouchableOpacity style={styles.card} activeOpacity={0.85} onPress={onPress}>
@@ -19,7 +22,7 @@ function SelectedCafeCard({ cafe, onPress, onDismiss }: Props) {
           <Text style={styles.name} numberOfLines={1}>
             {cafe.name}
           </Text>
-          <Text style={styles.dist}>{cafe.distance} km away</Text>
+          <Text style={styles.dist}>{t(cafeText.kmAway, { km: cafe.distance })}</Text>
           <View style={styles.tags}>
             {(cafe.purposes ?? []).slice(0, 2).map((p) => (
               <View key={p} style={styles.tag}>
@@ -31,7 +34,7 @@ function SelectedCafeCard({ cafe, onPress, onDismiss }: Props) {
         <Text style={styles.arrow}>›</Text>
       </TouchableOpacity>
       <TouchableOpacity onPress={onDismiss} style={styles.dismiss}>
-        <Text style={styles.dismissText}>Tutup ×</Text>
+        <Text style={styles.dismissText}>{t(mapText.selectedClose)}</Text>
       </TouchableOpacity>
     </View>
   );

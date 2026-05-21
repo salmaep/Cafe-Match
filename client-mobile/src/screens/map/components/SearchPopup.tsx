@@ -8,6 +8,8 @@ import {
   ActivityIndicator,
   Dimensions,
 } from "react-native";
+import { useTranslation } from "react-i18next";
+import { mapText } from "@shared/i18n/keys";
 import CafePhoto from "../../../components/CafePhoto";
 import SwipeableCard from "../../../components/SwipeableCard";
 import { Cafe } from "../../../types";
@@ -28,7 +30,7 @@ type Props = {
   onTapCard: (cafe: Cafe) => void;
 };
 
-function renderCard(cafe: Cafe) {
+function renderCard(cafe: Cafe, t: (k: string) => string) {
   return (
     <View style={styles.card}>
       <CafePhoto photos={cafe.photos} name={cafe.name} style={styles.image} />
@@ -39,7 +41,7 @@ function renderCard(cafe: Cafe) {
           </Text>
           {cafe.promotionType === "A" && (
             <View style={styles.newBadge}>
-              <Text style={styles.newBadgeText}>NEW</Text>
+              <Text style={styles.newBadgeText}>{t(mapText.newBadge)}</Text>
             </View>
           )}
         </View>
@@ -61,7 +63,7 @@ function renderCard(cafe: Cafe) {
           ))}
         </View>
         <View style={styles.hint}>
-          <Text style={styles.hintText}>← Lewati | Shortlist →</Text>
+          <Text style={styles.hintText}>{t(mapText.swipeHint)}</Text>
         </View>
       </View>
     </View>
@@ -80,6 +82,7 @@ function SearchPopup({
   onSwipeComplete,
   onTapCard,
 }: Props) {
+  const { t } = useTranslation();
   if (!visible) return null;
 
   return (
@@ -97,8 +100,8 @@ function SearchPopup({
 
       <View style={styles.header}>
         <View style={{ flex: 1, paddingRight: 44 }}>
-          <Text style={styles.title}>Hasil Pencarian AI</Text>
-          <Text style={styles.sub}>{results.length} cafe cocok</Text>
+          <Text style={styles.title}>{t(mapText.aiSearchResults)}</Text>
+          <Text style={styles.sub}>{t(mapText.cafesMatched, { count: results.length })}</Text>
         </View>
       </View>
 
@@ -115,10 +118,10 @@ function SearchPopup({
           <View style={styles.empty}>
             <ActivityIndicator size="large" color={colors.accent} />
             <Text style={[styles.emptyText, { marginTop: 16 }]}>
-              AI lagi cari cafe yang cocok…
+              {t(mapText.aiSearching)}
             </Text>
             <Text style={styles.hintLine}>
-              Bisa makan 5-10 detik buat pencarian pertama
+              {t(mapText.aiFirstSearchHint)}
             </Text>
           </View>
         ) : results.length > 0 && cardSize.w > 0 ? (
@@ -134,7 +137,7 @@ function SearchPopup({
                 }}
                 pointerEvents="none"
               >
-                {renderCard(results[cardIndex + 1])}
+                {renderCard(results[cardIndex + 1], t)}
               </View>
             )}
             {results[cardIndex] && (
@@ -144,19 +147,19 @@ function SearchPopup({
                 left={0}
                 width={cardSize.w}
                 height={cardSize.h}
-                leftLabel="SKIP"
-                rightLabel="SHORTLIST ★"
+                leftLabel={t(mapText.swipeSkip)}
+                rightLabel={t(mapText.swipeShortlist)}
                 onTap={() => onTapCard(results[cardIndex])}
                 onSwipeComplete={onSwipeComplete}
               >
-                {renderCard(results[cardIndex])}
+                {renderCard(results[cardIndex], t)}
               </SwipeableCard>
             )}
           </>
         ) : (
           <View style={styles.empty}>
             <Text style={styles.emptyText}>
-              Gak ada cafe yang cocok sama pencarian kamu
+              {t(mapText.noMatchSearch)}
             </Text>
           </View>
         )}

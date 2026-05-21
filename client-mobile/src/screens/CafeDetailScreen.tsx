@@ -17,6 +17,8 @@ import {
 import { useRoute, useNavigation, RouteProp } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTranslation } from "react-i18next";
+import { cafeText } from "@shared/i18n/keys";
 import { useShortlist } from "../context/ShortlistContext";
 import { useAuth } from "../context/AuthContext";
 import { useLocation } from "../context/LocationContext";
@@ -219,6 +221,7 @@ export default function CafeDetailScreen() {
   const route = useRoute<RouteProp<RouteParams, "CafeDetail">>();
   const navigation = useNavigation<StackNavigationProp<any>>();
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   // Defensive: route.params or route.params.cafe may be undefined after nav
   // merges (e.g. when returning from WriteReviewScreen with only a timestamp).
   const initialCafe: Cafe =
@@ -559,7 +562,7 @@ export default function CafeDetailScreen() {
               </>
             )}
             <Text style={styles.ratingMeta}>
-              {realDistance} km dari lokasi kamu
+              {t(cafeText.kmFromYou, { km: realDistance })}
             </Text>
           </View>
 
@@ -570,7 +573,7 @@ export default function CafeDetailScreen() {
           <TouchableOpacity style={styles.addressRow} onPress={openMaps}>
             <Text style={styles.addressIcon}>📍</Text>
             <Text style={styles.addressText}>{cafe.address}</Text>
-            <Text style={styles.openMaps}>Buka di Maps →</Text>
+            <Text style={styles.openMaps}>{t(cafeText.openInMaps)}</Text>
           </TouchableOpacity>
 
           {/* Phone — clickable tel: link */}
@@ -581,14 +584,14 @@ export default function CafeDetailScreen() {
             >
               <Text style={styles.phoneIcon}>📞</Text>
               <Text style={styles.phoneText}>{cafe.phone}</Text>
-              <Text style={styles.phoneCta}>Telepon →</Text>
+              <Text style={styles.phoneCta}>{t(cafeText.call)}</Text>
             </TouchableOpacity>
           )}
 
           {/* Jam Buka — opening hours table, today highlighted */}
           {cafe.openingHours && Object.keys(cafe.openingHours).length > 0 && (
             <>
-              <Text style={styles.sectionTitle}>Jam Buka</Text>
+              <Text style={styles.sectionTitle}>{t(cafeText.openingHours)}</Text>
               <View style={styles.hoursCard}>
                 {(() => {
                   const todayIdx = new Date().getDay();
@@ -618,7 +621,7 @@ export default function CafeDetailScreen() {
                           ]}
                         >
                           {row.day}
-                          {isToday ? '  (Hari ini)' : ''}
+                          {isToday ? `  (${t(cafeText.today)})` : ''}
                         </Text>
                         <Text
                           style={[
@@ -636,7 +639,7 @@ export default function CafeDetailScreen() {
             </>
           )}
 
-          <Text style={styles.sectionTitle}>Fasilitas</Text>
+          <Text style={styles.sectionTitle}>{t(cafeText.facilities)}</Text>
           {facilityChips.length > 0 ? (
             <View style={styles.facilitiesRow}>
               {facilityChips.map((f) => (
@@ -647,18 +650,18 @@ export default function CafeDetailScreen() {
               ))}
             </View>
           ) : (
-            <Text style={styles.noFacilities}>Belum ada fasilitas yang terdaftar</Text>
+            <Text style={styles.noFacilities}>{t(cafeText.noFacilitiesListed)}</Text>
           )}
 
           <View style={styles.statsRow}>
             <View style={styles.stat}>
               <Text style={styles.statNumber}>{cafe.favoritesCount}</Text>
-              <Text style={styles.statLabel}>Favorit</Text>
+              <Text style={styles.statLabel}>{t(cafeText.favorites)}</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.stat}>
               <Text style={styles.statNumber}>{cafe.bookmarksCount}</Text>
-              <Text style={styles.statLabel}>Bookmarks</Text>
+              <Text style={styles.statLabel}>{t(cafeText.bookmarks)}</Text>
             </View>
             {cafe.matchScore ? (
               <>
@@ -667,7 +670,7 @@ export default function CafeDetailScreen() {
                   <Text style={[styles.statNumber, { color: colors.accent }]}>
                     {cafe.matchScore}%
                   </Text>
-                  <Text style={styles.statLabel}>Match</Text>
+                  <Text style={styles.statLabel}>{t(cafeText.match)}</Text>
                 </View>
               </>
             ) : null}
@@ -677,7 +680,7 @@ export default function CafeDetailScreen() {
           {starSummary.length > 0 && (
             <>
               <View style={styles.sectionRow}>
-                <Text style={styles.sectionTitle}>Ulasan</Text>
+                <Text style={styles.sectionTitle}>{t(cafeText.reviews)}</Text>
                 <TouchableOpacity
                   onPress={() =>
                     navigation.navigate("Reviews", {
@@ -686,7 +689,7 @@ export default function CafeDetailScreen() {
                     })
                   }
                 >
-                  <Text style={styles.seeAll}>Lihat semua →</Text>
+                  <Text style={styles.seeAll}>{t(cafeText.seeAllArrow)}</Text>
                 </TouchableOpacity>
               </View>
               {starSummary.slice(0, 4).map((s) => (
@@ -796,7 +799,7 @@ export default function CafeDetailScreen() {
                   })
                 }
               >
-                <Text style={styles.writeReviewText}>+ Tulis Review</Text>
+                <Text style={styles.writeReviewText}>{t(cafeText.writeReviewCTA)}</Text>
               </TouchableOpacity>
             </>
           )}
@@ -811,7 +814,7 @@ export default function CafeDetailScreen() {
               }
             >
               <Text style={styles.writeReviewText}>
-                Jadi yang pertama review!
+                {t(cafeText.beTheFirstReview)}
               </Text>
             </TouchableOpacity>
           )}
@@ -820,7 +823,7 @@ export default function CafeDetailScreen() {
               loading skeleton, empty CTA, top 5 with rank emoji badge,
               checkin count + total time, score in pts. */}
           <View style={styles.sectionRow}>
-            <Text style={styles.sectionTitle}>Top check-in</Text>
+            <Text style={styles.sectionTitle}>{t(cafeText.topCheckin)}</Text>
             {leaderboard.length > 0 && (
               <TouchableOpacity
                 onPress={() =>
@@ -830,7 +833,7 @@ export default function CafeDetailScreen() {
                   })
                 }
               >
-                <Text style={styles.seeAll}>Selengkapnya →</Text>
+                <Text style={styles.seeAll}>{t(cafeText.moreArrow)}</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -844,9 +847,9 @@ export default function CafeDetailScreen() {
           ) : leaderboard.length === 0 ? (
             <View style={styles.lbEmpty}>
               <Text style={styles.lbEmptyEmoji}>🏆</Text>
-              <Text style={styles.lbEmptyTitle}>Belum ada yang check-in</Text>
+              <Text style={styles.lbEmptyTitle}>{t(cafeText.noCheckinYet)}</Text>
               <Text style={styles.lbEmptyHint}>
-                Jadi yang pertama, tunjukkan namamu di leaderboard!
+                {t(cafeText.noCheckinHint)}
               </Text>
             </View>
           ) : (
@@ -912,7 +915,7 @@ export default function CafeDetailScreen() {
                       </View>
                       <View style={styles.lbMetaRow}>
                         <Text style={styles.lbMeta}>
-                          {e.checkinCount}× check-in
+                          {t(cafeText.checkinCountSuffix, { count: e.checkinCount })}
                         </Text>
                         {durationText && (
                           <>
@@ -925,7 +928,7 @@ export default function CafeDetailScreen() {
 
                     <View style={styles.lbScore}>
                       <Text style={styles.lbScoreNum}>{e.score}</Text>
-                      <Text style={styles.lbScoreLabel}>PTS</Text>
+                      <Text style={styles.lbScoreLabel}>{t(cafeText.ptsLabel)}</Text>
                     </View>
                   </View>
                 );
@@ -939,11 +942,11 @@ export default function CafeDetailScreen() {
           {(cafe.photos?.length ?? 0) > 0 && (
             <>
               <View style={styles.sectionRow}>
-                <Text style={styles.sectionTitle}>Foto</Text>
+                <Text style={styles.sectionTitle}>{t(cafeText.photos)}</Text>
                 {(cafe.photos?.length ?? 0) > 9 && (
                   <TouchableOpacity onPress={() => openZoom(0)}>
                     <Text style={styles.seeAll}>
-                      Lihat semua ({cafe.photos!.length})
+                      {t(cafeText.viewAllPhotos, { count: cafe.photos!.length })}
                     </Text>
                   </TouchableOpacity>
                 )}
@@ -979,7 +982,7 @@ export default function CafeDetailScreen() {
 
           {(cafe.menu?.length ?? 0) > 0 && (
             <>
-              <Text style={styles.sectionTitle}>Menu</Text>
+              <Text style={styles.sectionTitle}>{t(cafeText.menu)}</Text>
               <View style={styles.menuCard}>
                 {(cafe.menu ?? []).map((category, ci) => (
                   <View
@@ -1026,7 +1029,7 @@ export default function CafeDetailScreen() {
           {moodChips.length > 0 && (
             <View style={styles.moodRow}>
               <Text style={styles.moodRowLabel}>
-                Suasana menurut pengunjung
+                {t(cafeText.moodHeader)}
               </Text>
               <View style={styles.tagsRow}>
                 {moodChips.map((m) => (
@@ -1119,11 +1122,11 @@ export default function CafeDetailScreen() {
       <View style={styles.bottomBar}>
         <TouchableOpacity style={styles.actionBtn} onPress={handleFavorite}>
           <Text style={styles.actionIcon}>{isFavorited ? "❤️" : "🤍"}</Text>
-          <Text style={styles.actionLabel}>Favorit</Text>
+          <Text style={styles.actionLabel}>{t(cafeText.favorites)}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.actionBtn} onPress={handleBookmark}>
           <Text style={styles.actionIcon}>{isBookmarked ? "🔖" : "📑"}</Text>
-          <Text style={styles.actionLabel}>Bookmark</Text>
+          <Text style={styles.actionLabel}>{t(cafeText.bookmarks)}</Text>
         </TouchableOpacity>
         {/* <TouchableOpacity
           style={styles.checkinBtn}
@@ -1140,7 +1143,7 @@ export default function CafeDetailScreen() {
           onPress={handleShortlist}
         >
           <Text style={styles.shortlistBtnText}>
-            {inShortlist ? "Udah ditambahin ✓" : "Tambah ke Shortlist"}
+            {inShortlist ? t(cafeText.shortlistAdded) : t(cafeText.shortlistAdd)}
           </Text>
         </TouchableOpacity>
       </View>

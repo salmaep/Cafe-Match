@@ -1,5 +1,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet } from "react-native";
+import { useTranslation } from "react-i18next";
+import { mapText } from "@shared/i18n/keys";
 import CafeListItem from "../../../components/cafe/CafeListItem";
 import NativeAdCard from "../../../components/NativeAdCard";
 import { Cafe } from "../../../types";
@@ -36,18 +38,19 @@ function CafeList({
   hasNextPage,
   onResetFilters,
 }: Props) {
+  const { t } = useTranslation();
   return (
     <View style={styles.section}>
       <View style={styles.header}>
         <Text style={styles.title}>
           {loading
-            ? "Lagi muat cafe..."
+            ? t(mapText.loadingCafes)
             : listTotal === 0
-              ? "Gak ada cafe di radius ini"
-              : `${listTotal} cafe dalam ${radiusKm} km`}
+              ? t(mapText.noResultsInRadius)
+              : t(mapText.resultsInRadius, { count: listTotal, radius: radiusKm })}
         </Text>
         {searchActive && (
-          <Text style={styles.subtitle}>Difilter berdasar pencarian</Text>
+          <Text style={styles.subtitle}>{t(mapText.filteredBySearch)}</Text>
         )}
         {!searchActive && preferencePurpose && (
           <Text style={styles.subtitle}>{preferencePurpose}</Text>
@@ -60,9 +63,9 @@ function CafeList({
         </View>
       ) : cafes.length === 0 ? (
         <View style={styles.emptyBox}>
-          <Text style={styles.emptyText}>Gak nemu cafe dalam {radiusKm} km</Text>
+          <Text style={styles.emptyText}>{t(mapText.noResults, { radius: radiusKm })}</Text>
           <TouchableOpacity onPress={onResetFilters} style={styles.emptyReset}>
-            <Text style={styles.emptyResetText}>Reset filter</Text>
+            <Text style={styles.emptyResetText}>{t(mapText.resetFilters)}</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -94,7 +97,7 @@ function CafeList({
             </View>
           )}
           {!hasNextPage && cafes.length > 0 && (
-            <Text style={styles.endHint}>Itu semua dalam {radiusKm} km ✓</Text>
+            <Text style={styles.endHint}>{t(mapText.endOfList, { radius: radiusKm })}</Text>
           )}
         </>
       )}

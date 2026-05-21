@@ -1,5 +1,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { useTranslation } from "react-i18next";
+import { commonText, mapText } from "@shared/i18n/keys";
 import { colors, spacing, radius } from "../../../theme";
 import { formatDuration } from "../utils";
 
@@ -19,6 +21,7 @@ type Props = {
 const EMOJIS = ["👋", "☕", "🔥", "💥", "😂", "❤️", "🎉", "😎"];
 
 function EmojiPickerModal({ friend, onDismiss, onPickEmoji }: Props) {
+  const { t } = useTranslation();
   if (!friend) return null;
   const durationSec = friend.checkInAt
     ? Math.max(0, Math.floor((Date.now() - new Date(friend.checkInAt).getTime()) / 1000))
@@ -35,7 +38,7 @@ function EmojiPickerModal({ friend, onDismiss, onPickEmoji }: Props) {
         <Text style={styles.sub}>📍 {friend.currentCafe?.name}</Text>
         {friend.checkInAt && (
           <Text style={styles.duration}>
-            ⏱️ Udah check-in {formatDuration(durationSec)} yang lalu
+            {t(mapText.checkinAgo, { time: formatDuration(durationSec) })}
           </Text>
         )}
         <View style={styles.row}>
@@ -51,7 +54,7 @@ function EmojiPickerModal({ friend, onDismiss, onPickEmoji }: Props) {
           ))}
         </View>
         <TouchableOpacity style={styles.cancelBtn} onPress={onDismiss}>
-          <Text style={styles.cancelText}>Batal</Text>
+          <Text style={styles.cancelText}>{t(commonText.cancel)}</Text>
         </TouchableOpacity>
       </View>
     </TouchableOpacity>

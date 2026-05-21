@@ -6,6 +6,8 @@ import {
   Pressable,
   ActivityIndicator,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { commonText, voteText } from '@shared/i18n/keys';
 import { useAuth } from '../../context/AuthContext';
 import { usePurposes } from '../../queries/purposes/use-purposes';
 import {
@@ -27,6 +29,7 @@ const MAX_VOTES = 3;
 // <Star> if unknown.
 
 export default function VoteSection({ cafeId }: Props) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const purposesQuery = usePurposes();
   const talliesQuery = useVoteTallies(cafeId);
@@ -42,9 +45,9 @@ export default function VoteSection({ cafeId }: Props) {
 
   const purposes = purposesQuery.data ?? [];
   const tallies = talliesQuery.data ?? [];
-  const totalVotes = tallies.reduce((sum, t) => sum + t.count, 0);
+  const totalVotes = tallies.reduce((sum, tally) => sum + tally.count, 0);
   const getCount = (purposeId: number) =>
-    tallies.find((t) => t.purposeId === purposeId)?.count ?? 0;
+    tallies.find((tally) => tally.purposeId === purposeId)?.count ?? 0;
   const getPercentage = (purposeId: number) =>
     totalVotes > 0 ? Math.round((getCount(purposeId) / totalVotes) * 100) : 0;
 
@@ -67,25 +70,25 @@ export default function VoteSection({ cafeId }: Props) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Cafe ini paling cocok buat apa?</Text>
+      <Text style={styles.title}>{t(voteText.voteTitle)}</Text>
       <Text style={styles.subtitle}>
         {user
-          ? `Pilih sampai ${MAX_VOTES} kategori (${selected.length}/${MAX_VOTES})`
-          : 'Login dulu buat vote'}
+          ? t(voteText.pickUpTo, { max: MAX_VOTES, current: selected.length })
+          : t(voteText.loginToVote)}
       </Text>
 
       {purposesQuery.isLoading ? (
         <ActivityIndicator color={colors.accent} style={{ marginVertical: spacing.md }} />
       ) : purposesQuery.isError ? (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyText}>Gagal muat kategori.</Text>
+          <Text style={styles.emptyText}>{t(voteText.loadCategoriesFailed)}</Text>
           <Pressable onPress={() => purposesQuery.refetch()} style={styles.retryBtn}>
-            <Text style={styles.retryText}>Coba lagi</Text>
+            <Text style={styles.retryText}>{t(commonText.retry)}</Text>
           </Pressable>
         </View>
       ) : sortedPurposes.length === 0 ? (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyText}>Belum ada kategori tersedia.</Text>
+          <Text style={styles.emptyText}>{t(voteText.noCategories)}</Text>
         </View>
       ) : (
         <View style={styles.list}>
@@ -131,7 +134,7 @@ export default function VoteSection({ cafeId }: Props) {
                     </Text>
                   </View>
                   <Text style={styles.rowCount}>
-                    {count} vote{count !== 1 ? 's' : ''} ({pct}%)
+                    {t(voteText.voteCountPct, { count, pct })}
                   </Text>
                 </View>
               </Pressable>
@@ -151,7 +154,7 @@ export default function VoteSection({ cafeId }: Props) {
           ]}
         >
           <Text style={styles.submitText}>
-            {castVote.isPending ? 'Menyimpan…' : 'Submit Vote'}
+            {castVote.isPending ? t(voteText.saving) : t(voteText.submitVote)}
           </Text>
         </Pressable>
       )}

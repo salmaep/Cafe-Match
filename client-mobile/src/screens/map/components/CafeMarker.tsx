@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useState } from "react";
 import { View, Text, StyleSheet, Animated } from "react-native";
 import { Marker } from "react-native-maps";
 import Svg, { Path } from "react-native-svg";
+import { useTranslation } from "react-i18next";
+import { mapText } from "@shared/i18n/keys";
 import { Cafe } from "../../../types";
 import { colors, radius } from "../../../theme";
 import { TEARDROP_PATH } from "../utils";
@@ -23,6 +25,7 @@ const CafeMarker = React.memo(function CafeMarker({
   bounceAnim,
   onPress,
 }: Props) {
+  const { t } = useTranslation();
   const [tracks, setTracks] = useState(true);
   useEffect(() => {
     if (isPromoted) return;
@@ -52,7 +55,7 @@ const CafeMarker = React.memo(function CafeMarker({
           <Animated.View
             style={[styles.newBadge, { transform: [{ translateY: bounceAnim }] }]}
           >
-            <Text style={styles.newBadgeText}>NEW!</Text>
+            <Text style={styles.newBadgeText}>{t(mapText.newBadgeExcited)}</Text>
           </Animated.View>
         )}
         {friendCount > 0 && (

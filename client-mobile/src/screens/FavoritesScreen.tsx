@@ -12,12 +12,15 @@ import CafeListItem from '../components/cafe/CafeListItem';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
+import { listsText } from '@shared/i18n/keys';
 import { useAuth } from '../context/AuthContext';
 import { fetchFavorites, toggleFavorite, FavoriteEntry } from '../services/api';
 import { colors, spacing, radius } from '../theme';
 
 export default function FavoritesScreen() {
   const navigation = useNavigation<StackNavigationProp<any>>();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
 
@@ -71,18 +74,18 @@ export default function FavoritesScreen() {
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
             <Text style={styles.backIcon}>←</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Favorit Kamu</Text>
+          <Text style={styles.headerTitle}>{t(listsText.favoritesTitle)}</Text>
           <View style={styles.headerRight} />
         </View>
         <View style={styles.guestContainer}>
           <Text style={styles.guestEmoji}>❤️</Text>
-          <Text style={styles.guestTitle}>Favorit Kamu</Text>
-          <Text style={styles.guestSubtitle}>Login dulu buat liat cafe favorit kamu</Text>
+          <Text style={styles.guestTitle}>{t(listsText.favoritesTitle)}</Text>
+          <Text style={styles.guestSubtitle}>{t(listsText.favoritesGuestSubtitle)}</Text>
           <TouchableOpacity
             style={styles.loginBtn}
             onPress={() => navigation.navigate('AuthModal')}
           >
-            <Text style={styles.loginBtnText}>Masuk</Text>
+            <Text style={styles.loginBtnText}>{t(listsText.guestLogin)}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -97,7 +100,7 @@ export default function FavoritesScreen() {
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
             <Text style={styles.backIcon}>←</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Favorit Kamu</Text>
+          <Text style={styles.headerTitle}>{t(listsText.favoritesTitle)}</Text>
           <View style={styles.headerRight} />
         </View>
         <View style={styles.centered}>
@@ -128,8 +131,8 @@ export default function FavoritesScreen() {
   const renderEmpty = () => (
     <View style={styles.emptyContainer}>
       <Text style={styles.emptyEmoji}>❤️</Text>
-      <Text style={styles.emptyTitle}>Belum ada favorit</Text>
-      <Text style={styles.emptySubtitle}>Cafe yang kamu favoritin bakal muncul di sini</Text>
+      <Text style={styles.emptyTitle}>{t(listsText.favoritesEmpty)}</Text>
+      <Text style={styles.emptySubtitle}>{t(listsText.favoritesEmptySubtitle)}</Text>
     </View>
   );
 

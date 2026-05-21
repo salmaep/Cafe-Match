@@ -6,6 +6,8 @@ import {
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
+import { commonText, reviewsText } from '@shared/i18n/keys';
 import * as ImagePicker from 'expo-image-picker';
 import { createReview } from '../services/api';
 import { colors, spacing, radius } from '../theme';
@@ -25,6 +27,7 @@ const TOTAL_STEPS = 5;
 type MediaItem = { uri: string; type: 'photo' | 'video' };
 
 export default function WriteReviewScreen() {
+  const { t } = useTranslation();
   const route = useRoute<RouteProp<RouteParams, 'WriteReview'>>();
   const navigation = useNavigation<StackNavigationProp<any>>();
   const insets = useSafeAreaInsets();
@@ -197,23 +200,23 @@ export default function WriteReviewScreen() {
       <View style={styles.header}>
         {step > 0 ? (
           <TouchableOpacity onPress={prev}>
-            <Text style={styles.backText}>Kembali</Text>
+            <Text style={styles.backText}>{t(commonText.back)}</Text>
           </TouchableOpacity>
         ) : (
           <View style={{ width: 50 }} />
         )}
         {renderProgressDots()}
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.skipText}>Tutup</Text>
+          <Text style={styles.skipText}>{t(commonText.close)}</Text>
         </TouchableOpacity>
       </View>
 
       <View style={{ flex: 1 }}>
         {step === 0 && (
           <View style={styles.stepContainer}>
-            <Text style={styles.stepTitle}>Mood kamu pas di sini?</Text>
+            <Text style={styles.stepTitle}>{t(reviewsText.writeMoodTitle)}</Text>
             <Text style={styles.stepSubtitle}>
-              Review {cafeName} — pilih satu yang paling cocok
+              {t(reviewsText.writeMoodSubtitle, { cafeName })}
             </Text>
             <ScrollView
               contentContainerStyle={styles.optionsGrid}
@@ -242,8 +245,8 @@ export default function WriteReviewScreen() {
 
         {step === 1 && (
           <View style={styles.stepContainer}>
-            <Text style={styles.stepTitle}>Fasilitas apa yang kamu pake?</Text>
-            <Text style={styles.stepSubtitle}>Pilih semua yang relevan — opsional</Text>
+            <Text style={styles.stepTitle}>{t(reviewsText.writeFacilitiesTitle)}</Text>
+            <Text style={styles.stepSubtitle}>{t(reviewsText.writeFacilitiesSubtitle)}</Text>
             <ScrollView
               contentContainerStyle={{ paddingBottom: spacing.xxl }}
               showsVerticalScrollIndicator
@@ -256,7 +259,7 @@ export default function WriteReviewScreen() {
                 </View>
               ) : facilityOptions.length === 0 ? (
                 <View style={{ padding: spacing.lg, alignItems: 'center' }}>
-                  <Text style={styles.emptyFilterText}>Fasilitas gak tersedia.</Text>
+                  <Text style={styles.emptyFilterText}>{t(reviewsText.writeFacilitiesEmpty)}</Text>
                 </View>
               ) : (
                 <View style={styles.facilityChipWrap}>
@@ -288,13 +291,13 @@ export default function WriteReviewScreen() {
 
         {step === 2 && (
           <View style={styles.stepContainer}>
-            <Text style={styles.stepTitle}>Ceritain pengalaman kamu</Text>
-            <Text style={styles.stepSubtitle}>Opsional — skip aja kalo gak mau nulis</Text>
+            <Text style={styles.stepTitle}>{t(reviewsText.writeStoryTitle)}</Text>
+            <Text style={styles.stepSubtitle}>{t(reviewsText.writeStorySubtitle)}</Text>
             <TextInput
               style={styles.textArea}
               multiline
               numberOfLines={6}
-              placeholder="Cafe ini bikin ku ..."
+              placeholder={t(reviewsText.writeStoryPlaceholder)}
               placeholderTextColor={colors.textSecondary}
               value={text}
               onChangeText={setText}
@@ -309,16 +312,16 @@ export default function WriteReviewScreen() {
           const videoCount = media.filter((m) => m.type === 'video').length;
           return (
             <View style={styles.stepContainer}>
-              <Text style={styles.stepTitle}>Upload foto & video</Text>
-              <Text style={styles.stepSubtitle}>Maksimal 5 foto, 2 video · opsional</Text>
+              <Text style={styles.stepTitle}>{t(reviewsText.writeMediaTitle)}</Text>
+              <Text style={styles.stepSubtitle}>{t(reviewsText.writeMediaSubtitle)}</Text>
               <View style={styles.mediaButtonsRow}>
                 <TouchableOpacity style={styles.mediaBtn} onPress={pickPhoto} disabled={photoCount >= 5}>
                   <Camera size={28} strokeWidth={1.8} color={colors.accent} style={{ marginBottom: 6 }} />
-                  <Text style={styles.mediaBtnText}>Foto ({photoCount}/5)</Text>
+                  <Text style={styles.mediaBtnText}>{t(reviewsText.photoCount, { current: photoCount, max: 5 })}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.mediaBtn} onPress={pickVideo} disabled={videoCount >= 2}>
                   <VideoIcon size={28} strokeWidth={1.8} color={colors.accent} style={{ marginBottom: 6 }} />
-                  <Text style={styles.mediaBtnText}>Video ({videoCount}/2)</Text>
+                  <Text style={styles.mediaBtnText}>{t(reviewsText.videoCount, { current: videoCount, max: 2 })}</Text>
                 </TouchableOpacity>
               </View>
 
@@ -346,8 +349,8 @@ export default function WriteReviewScreen() {
 
         {step === 4 && (
           <View style={styles.stepContainer}>
-            <Text style={styles.stepTitle}>Rating overall</Text>
-            <Text style={styles.stepSubtitle}>Seberapa bagus cafe ini?</Text>
+            <Text style={styles.stepTitle}>{t(reviewsText.writeRatingTitle)}</Text>
+            <Text style={styles.stepSubtitle}>{t(reviewsText.writeRatingSubtitle)}</Text>
             <View style={styles.bigStars}>
               {[1, 2, 3, 4, 5].map((s) => {
                 const filled = rating >= s;
@@ -364,12 +367,12 @@ export default function WriteReviewScreen() {
               })}
             </View>
             <Text style={styles.ratingLabel}>
-              {rating === 0 ? 'Pilih bintang' :
-               rating === 5 ? '🔥 Mantap jiwa!' :
-               rating === 4 ? '😊 Bagus banget' :
-               rating === 3 ? '👍 Oke lah' :
-               rating === 2 ? '😐 Biasa aja' :
-               '😕 Kurang'}
+              {rating === 0 ? t(reviewsText.pickStar) :
+               rating === 5 ? t(reviewsText.rating5) :
+               rating === 4 ? t(reviewsText.rating4) :
+               rating === 3 ? t(reviewsText.rating3) :
+               rating === 2 ? t(reviewsText.rating2) :
+               t(reviewsText.rating1)}
             </Text>
           </View>
         )}
@@ -382,7 +385,7 @@ export default function WriteReviewScreen() {
           disabled={!canProceed() || submitting}
         >
           <Text style={styles.nextBtnText}>
-            {submitting ? '...' : step === TOTAL_STEPS - 1 ? 'Kirim Review' : 'Lanjut'}
+            {submitting ? '...' : step === TOTAL_STEPS - 1 ? t(reviewsText.submitReview) : t(commonText.next)}
           </Text>
         </TouchableOpacity>
       </View>

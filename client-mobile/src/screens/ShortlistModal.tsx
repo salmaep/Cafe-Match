@@ -10,6 +10,8 @@ import {
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StackNavigationProp } from '@react-navigation/stack';
+import { useTranslation } from 'react-i18next';
+import { commonText, shortlistText } from '@shared/i18n/keys';
 import CafeListItem from '../components/cafe/CafeListItem';
 import { useShortlist } from '../context/ShortlistContext';
 import { useLocation } from '../context/LocationContext';
@@ -24,6 +26,7 @@ type SortMode = 'recent' | 'distance' | 'rating';
 export default function ShortlistModal() {
   const navigation = useNavigation<StackNavigationProp<any>>();
   const route = useRoute();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const isModal = route.name === 'ShortlistModal';
   const { shortlist, removeFromShortlist, clearShortlist } = useShortlist();
@@ -48,12 +51,12 @@ export default function ShortlistModal() {
   const handleClearAll = () => {
     if (shortlist.length === 0) return;
     Alert.alert(
-      'Hapus semua?',
-      `Hapus semua ${shortlist.length} cafe dari shortlist?`,
+      t(shortlistText.clearAllConfirmTitle),
+      t(shortlistText.clearAllConfirmBody, { count: shortlist.length }),
       [
-        { text: 'Batal', style: 'cancel' },
+        { text: t(commonText.cancel), style: 'cancel' },
         {
-          text: 'Hapus semua',
+          text: t(shortlistText.clearAllAction),
           style: 'destructive',
           onPress: () => clearShortlist(),
         },
@@ -67,16 +70,16 @@ export default function ShortlistModal() {
 
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Text style={styles.title}>Shortlist</Text>
+          <Text style={styles.title}>{t(shortlistText.title)}</Text>
           <Text style={styles.subtitle}>
             {shortlist.length > 0
-              ? `${shortlist.length} cafe disimpen buat dikunjungi nanti`
-              : 'Swipe kanan di Discover buat simpen cafe'}
+              ? t(shortlistText.subtitleWithCount, { count: shortlist.length })
+              : t(shortlistText.subtitleEmpty)}
           </Text>
         </View>
         {isModal && (
           <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Text style={styles.closeBtn}>Tutup</Text>
+            <Text style={styles.closeBtn}>{t(commonText.close)}</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -84,9 +87,9 @@ export default function ShortlistModal() {
       {shortlist.length === 0 ? (
         <View style={styles.emptyState}>
           <Text style={styles.emptyEmoji}>⭐</Text>
-          <Text style={styles.emptyTitle}>Shortlist masih kosong</Text>
+          <Text style={styles.emptyTitle}>{t(shortlistText.emptyTitle)}</Text>
           <Text style={styles.emptySubtitle}>
-            Buka Discover, swipe kanan cafe yang menarik — semua kesimpen di sini.
+            {t(shortlistText.emptySubtitle)}
           </Text>
           <TouchableOpacity
             style={styles.emptyCta}
@@ -95,7 +98,7 @@ export default function ShortlistModal() {
               navigation.navigate('MainTabs', { screen: 'Discover' });
             }}
           >
-            <Text style={styles.emptyCtaText}>🃏 Mulai Discover</Text>
+            <Text style={styles.emptyCtaText}>{t(shortlistText.startDiscover)}</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -106,17 +109,17 @@ export default function ShortlistModal() {
               <SortPill
                 active={sortMode === 'recent'}
                 onPress={() => setSortMode('recent')}
-                label="Terbaru"
+                label={t(shortlistText.sortRecent)}
               />
               <SortPill
                 active={sortMode === 'distance'}
                 onPress={() => setSortMode('distance')}
-                label="Terdekat"
+                label={t(shortlistText.sortDistance)}
               />
               <SortPill
                 active={sortMode === 'rating'}
                 onPress={() => setSortMode('rating')}
-                label="Rating"
+                label={t(shortlistText.sortRating)}
               />
             </View>
             <TouchableOpacity
@@ -124,7 +127,7 @@ export default function ShortlistModal() {
               onPress={handleClearAll}
               hitSlop={6}
             >
-              <Text style={styles.clearBtnText}>🗑️ Hapus semua</Text>
+              <Text style={styles.clearBtnText}>{t(shortlistText.clearAll)}</Text>
             </TouchableOpacity>
           </View>
 

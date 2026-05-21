@@ -12,6 +12,8 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
+import { useTranslation } from 'react-i18next';
+import { authText } from '@shared/i18n/keys';
 import * as WebBrowser from 'expo-web-browser';
 import * as Facebook from 'expo-auth-session/providers/facebook';
 import { makeRedirectUri } from 'expo-auth-session';
@@ -58,6 +60,7 @@ function fmtTime(ms: number): string {
 
 export default function AuthModal() {
   const navigation = useNavigation<StackNavigationProp<any>>();
+  const { t } = useTranslation();
   const { login, register, loginWithToken, verify2fa, resend2fa } = useAuth();
 
   // ─── Form state ──────────────────────────────────────────────────────────
@@ -124,7 +127,7 @@ export default function AuthModal() {
 
     if (isLogin) {
       if (!email || !password) {
-        setErrorMsg('Isi semua field dulu ya');
+        setErrorMsg(t(authText.fillAllFields));
         return;
       }
       setLoading(true);
@@ -150,15 +153,15 @@ export default function AuthModal() {
 
     } else {
       if (!name || !email || !password || !confirmPassword) {
-        setErrorMsg('Isi semua field dulu ya');
+        setErrorMsg(t(authText.fillAllFields));
         return;
       }
       if (password !== confirmPassword) {
-        setErrorMsg('Password gak sama');
+        setErrorMsg(t(authText.passwordMismatch));
         return;
       }
       if (password.length < 6) {
-        setErrorMsg('Password minimal 6 karakter');
+        setErrorMsg(t(authText.passwordMin6));
         return;
       }
       setLoading(true);
@@ -167,7 +170,7 @@ export default function AuthModal() {
 
       if (result.success) {
         // Match web: don't auto-login — switch to login form with success notice
-        setSuccessMsg('Akun berhasil dibuat! Login dulu yuk.');
+        setSuccessMsg(t(authText.accountCreated));
         setIsLogin(true);
         setPassword('');
         setConfirmPassword('');
@@ -369,7 +372,7 @@ export default function AuthModal() {
       (facebookResponse as any)?.authentication?.accessToken ||
       (facebookResponse.params as any)?.access_token;
     if (!accessToken) {
-      setErrorMsg('Login gagal: access_token gak diterima dari Facebook.');
+      setErrorMsg(t(authText.facebookTokenFailed));
       setSocialLoading(null);
       return;
     }
@@ -411,9 +414,9 @@ export default function AuthModal() {
       if (code === statusCodes.SIGN_IN_CANCELLED) {
         // User backed out — silent, no error banner
       } else if (code === statusCodes.IN_PROGRESS) {
-        setErrorMsg('Login Google lagi jalan, tunggu bentar.');
+        setErrorMsg(t(authText.googleAlreadyRunning));
       } else if (code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-        setErrorMsg('Google Play Services gak tersedia di HP ini.');
+        setErrorMsg(t(authText.googlePlayUnavailable));
       } else {
         setErrorMsg(
           err?.response?.data?.message || err?.message || 'Login Google gagal.',
@@ -465,10 +468,9 @@ export default function AuthModal() {
           <View style={styles.otpIcon}>
             <Text style={styles.otpIconText}>📱</Text>
           </View>
-          <Text style={styles.title}>Tambahin Nomor WhatsApp</Text>
+          <Text style={styles.title}>{t(authText.phoneEnrollTitle)}</Text>
           <Text style={styles.subtitle}>
-            Biar akun kamu aman, kami perlu verifikasi nomor WhatsApp kamu
-            sekali aja.
+            {t(authText.phoneEnrollSubtitle)}
           </Text>
 
           {!!enrollError && (
@@ -479,7 +481,7 @@ export default function AuthModal() {
 
           <TextInput
             style={styles.input}
-            placeholder="08xxxxxxxxxx"
+            placeholder={t(authText.phonePlaceholder)}
             placeholderTextColor={colors.textSecondary}
             value={enrollPhone}
             onChangeText={(t) => { setEnrollPhone(t); setEnrollError(''); }}
@@ -499,7 +501,7 @@ export default function AuthModal() {
             {enrollLoading ? (
               <ActivityIndicator color={colors.white} />
             ) : (
-              <Text style={styles.submitText}>Kirim Kode WhatsApp</Text>
+              <Text style={styles.submitText}>{t(authText.sendWhatsAppCode)}</Text>
             )}
           </TouchableOpacity>
         </View>
@@ -533,11 +535,11 @@ export default function AuthModal() {
           <View style={styles.otpIcon}>
             <Text style={styles.otpIconText}>💬</Text>
           </View>
-          <Text style={styles.title}>Verifikasi WhatsApp</Text>
+          <Text style={styles.title}>{t(authText.otpTitle)}</Text>
           <Text style={styles.subtitle}>
-            Masukin kode 6-digit yang kami kirim ke{' '}
+            {t(authText.otpSubtitleBefore)}
             <Text style={styles.phoneHint}>
-              {otpChallenge.phoneHint || 'WhatsApp kamu'}
+              {otpChallenge.phoneHint || t(authText.yourWhatsApp)}
             </Text>
           </Text>
 
@@ -561,10 +563,10 @@ export default function AuthModal() {
           <View style={styles.otpMeta}>
             <Text style={styles.otpMetaLeft}>
               {otpExpired ? (
-                <Text style={styles.expiredText}>Kode udah expired</Text>
+                <Text style={styles.expiredText}>{t(authText.codeExpired)}</Text>
               ) : expiresMs !== Infinity ? (
                 <>
-                  <Text>Expired dalam </Text>
+                  <Text>{t(authText.expiresIn)}</Text>
                   <Text style={styles.expiryTime}>{fmtTime(expiresMs)}</Text>
                 </>
               ) : null}
@@ -575,10 +577,10 @@ export default function AuthModal() {
             >
               <Text style={[styles.resendBtn, (cooldownLeft > 0 || resending) && styles.resendBtnDisabled]}>
                 {cooldownLeft > 0
-                  ? `Kirim ulang (${Math.ceil(cooldownLeft / 1000)}s)`
+                  ? t(authText.resendCooldown, { sec: Math.ceil(cooldownLeft / 1000) })
                   : resending
-                    ? 'Mengirim…'
-                    : 'Kirim ulang'}
+                    ? t(authText.resending)
+                    : t(authText.resend)}
               </Text>
             </TouchableOpacity>
           </View>
@@ -594,7 +596,7 @@ export default function AuthModal() {
             {otpLoading ? (
               <ActivityIndicator color={colors.white} />
             ) : (
-              <Text style={styles.submitText}>Verifikasi</Text>
+              <Text style={styles.submitText}>{t(authText.verify)}</Text>
             )}
           </TouchableOpacity>
         </View>
@@ -622,12 +624,10 @@ export default function AuthModal() {
         <View style={styles.handleBar} />
 
         <Text style={styles.title}>
-          {isLogin ? 'Selamat Datang Lagi' : 'Bikin Akun Baru'}
+          {isLogin ? t(authText.welcomeBack) : t(authText.createAccount)}
         </Text>
         <Text style={styles.subtitle}>
-          {isLogin
-            ? 'Login dulu buat simpen tempat favorit kamu'
-            : 'Gabung CafeMatch buat simpen tempat favorit kamu'}
+          {isLogin ? t(authText.loginSubtitle) : t(authText.registerSubtitle)}
         </Text>
 
         {/* Inline error banner */}
@@ -647,7 +647,7 @@ export default function AuthModal() {
         {!isLogin && (
           <TextInput
             style={styles.input}
-            placeholder="Nama Lengkap"
+            placeholder={t(authText.namePlaceholder)}
             placeholderTextColor={colors.textSecondary}
             value={name}
             onChangeText={(t) => { setName(t); setErrorMsg(''); }}
@@ -657,7 +657,7 @@ export default function AuthModal() {
 
         <TextInput
           style={styles.input}
-          placeholder="Email"
+          placeholder={t(authText.emailPlaceholder)}
           placeholderTextColor={colors.textSecondary}
           value={email}
           onChangeText={(t) => { setEmail(t); setErrorMsg(''); }}
@@ -669,7 +669,7 @@ export default function AuthModal() {
         <View style={styles.passwordWrap}>
           <TextInput
             style={[styles.input, styles.inputWithEye]}
-            placeholder="Password"
+            placeholder={t(authText.passwordPlaceholder)}
             placeholderTextColor={colors.textSecondary}
             value={password}
             onChangeText={(t) => { setPassword(t); setErrorMsg(''); }}
@@ -694,7 +694,7 @@ export default function AuthModal() {
                   styles.inputWithEye,
                   passwordMismatch && styles.inputError,
                 ]}
-                placeholder="Konfirmasi Password"
+                placeholder={t(authText.confirmPasswordPlaceholder)}
                 placeholderTextColor={colors.textSecondary}
                 value={confirmPassword}
                 onChangeText={(t) => { setConfirmPassword(t); setErrorMsg(''); }}
@@ -712,7 +712,7 @@ export default function AuthModal() {
               </TouchableOpacity>
             </View>
             {passwordMismatch && (
-              <Text style={styles.mismatchHint}>Password gak sama</Text>
+              <Text style={styles.mismatchHint}>{t(authText.passwordMismatch)}</Text>
             )}
           </>
         )}
@@ -726,7 +726,7 @@ export default function AuthModal() {
             <ActivityIndicator color={colors.white} />
           ) : (
             <Text style={styles.submitText}>
-              {isLogin ? 'Masuk' : 'Daftar'}
+              {isLogin ? t(authText.loginBtn) : t(authText.registerBtn)}
             </Text>
           )}
         </TouchableOpacity>
@@ -736,7 +736,7 @@ export default function AuthModal() {
           <>
             <View style={styles.socialDivider}>
               <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>atau lanjut dengan</Text>
+              <Text style={styles.dividerText}>{t(authText.orContinueWith)}</Text>
               <View style={styles.dividerLine} />
             </View>
 
@@ -750,7 +750,7 @@ export default function AuthModal() {
               ) : (
                 <>
                   <GoogleIcon />
-                  <Text style={styles.googleText}>Google</Text>
+                  <Text style={styles.googleText}>{t(authText.google)}</Text>
                 </>
               )}
             </TouchableOpacity>
@@ -765,7 +765,7 @@ export default function AuthModal() {
               ) : (
                 <>
                   <FacebookIcon />
-                  <Text style={styles.fbText}>Facebook</Text>
+                  <Text style={styles.fbText}>{t(authText.facebook)}</Text>
                 </>
               )}
             </TouchableOpacity>
@@ -774,9 +774,9 @@ export default function AuthModal() {
 
         <TouchableOpacity style={styles.switchBtn} onPress={switchMode}>
           <Text style={styles.switchText}>
-            {isLogin ? 'Belum punya akun? ' : 'Udah punya akun? '}
+            {isLogin ? t(authText.noAccount) : t(authText.hasAccount)}
             <Text style={styles.switchLink}>
-              {isLogin ? 'Daftar' : 'Masuk'}
+              {isLogin ? t(authText.switchToRegister) : t(authText.switchToLogin)}
             </Text>
           </Text>
         </TouchableOpacity>

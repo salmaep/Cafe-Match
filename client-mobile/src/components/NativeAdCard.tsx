@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Image, StyleSheet, ActivityIndicator } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { commonText } from '@shared/i18n/keys';
 import type { NativeAd as NativeAdType } from 'react-native-google-mobile-ads';
 import {
   adsAvailable,
@@ -29,6 +31,7 @@ const C = {
 };
 
 export default function NativeAdCard() {
+  const { t } = useTranslation();
   const [ad, setAd] = useState<NativeAdType | null>(null);
   const [failed, setFailed] = useState(false);
 
@@ -131,7 +134,7 @@ export default function NativeAdCard() {
             </Text>
           </NativeAsset>
           <View style={styles.sponsorBadge}>
-            <Text style={styles.sponsorBadgeText}>SPONSOR</Text>
+            <Text style={styles.sponsorBadgeText}>{t(commonText.sponsor)}</Text>
           </View>
         </View>
 

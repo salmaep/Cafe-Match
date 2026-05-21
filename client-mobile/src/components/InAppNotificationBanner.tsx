@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated, AppState, Platform } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { commonText, notificationsText } from '@shared/i18n/keys';
 import { useAuth } from '../context/AuthContext';
 import { fetchUnreadCount } from '../services/api';
 import { colors, spacing, radius } from '../theme';
@@ -11,6 +13,7 @@ import { colors, spacing, radius } from '../theme';
  * Wrap this at the root level (inside NavigationContainer).
  */
 export default function InAppNotificationBanner({ onTap }: { onTap?: () => void }) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [visible, setVisible] = useState(false);
   const [message, setMessage] = useState('');
@@ -45,7 +48,7 @@ export default function InAppNotificationBanner({ onTap }: { onTap?: () => void 
         if (count > lastUnread && lastUnread > 0) {
           // New notifications arrived while app is open
           const diff = count - lastUnread;
-          showBanner(`${diff} notifikasi baru`);
+          showBanner(t(notificationsText.bannerNewCount, { count: diff }));
         }
         setLastUnread(count);
       } catch {}
@@ -70,7 +73,7 @@ export default function InAppNotificationBanner({ onTap }: { onTap?: () => void 
       >
         <Text style={styles.bellIcon}>🔔</Text>
         <Text style={styles.bannerText} numberOfLines={1}>{message}</Text>
-        <Text style={styles.tapHint}>Tap untuk buka</Text>
+        <Text style={styles.tapHint}>{t(commonText.tapToOpen)}</Text>
       </TouchableOpacity>
     </Animated.View>
   );

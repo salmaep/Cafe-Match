@@ -1,0 +1,21 @@
+{
+  "loading": "Lagi nyiapin recap kamu...",
+  "empty": "Belum ada data buat recap tahun ini",
+  "brand": "CafeMatch",
+  "swipeHint": "Swipe buat lanjut →",
+  "statsSlide": "Statistik kamu",
+  "checkinsLabel": "Check-ins",
+  "cafesVisitedLabel": "Cafe dikunjungi",
+  "totalHoursLabel": "Total jam",
+  "reviewsLabel": "Ulasan",
+  "topCafesSlide": "Top 5 Cafe kamu",
+  "visitsSuffix": "{{count}} kunjungan",
+  "socialSlide": "Pencapaian Sosial",
+  "achievementsLabel": "Achievement",
+  "newFriendsLabel": "Temen baru",
+  "longestStreakLabel": "Streak terpanjang",
+  "favoriteDayLabel": "Hari favorit",
+  "closingTitle": "Makasih, {{yearTitle}}!",
+  "closingBody": "Tahun ini kamu ngabisin {{hours}} jam di {{cafes}} cafe yang beda-beda.\n\nHari favorit kamu? {{day}}.\nKategori andalan kamu? {{category}}.",
+  "backToProfile": "Balik ke Profil"
+}

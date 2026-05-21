@@ -13,6 +13,8 @@ import {
 import { CommonActions, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
+import { commonText, profileText } from '@shared/i18n/keys';
 import { useAuth } from '../context/AuthContext';
 import { useShortlist } from '../context/ShortlistContext';
 import { usePreferences } from '../context/PreferencesContext';
@@ -23,6 +25,7 @@ import { APP_VERSION } from '../constant/version';
 
 export default function ProfileScreen() {
   const navigation = useNavigation<StackNavigationProp<any>>();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { user, logout } = useAuth();
   const { clearShortlist } = useShortlist();
@@ -38,12 +41,12 @@ export default function ProfileScreen() {
 
   const handleLogout = () => {
     Alert.alert(
-      'Logout',
-      'Yakin mau logout? Semua data lokal bakal kehapus.',
+      t(profileText.logoutTitle),
+      t(profileText.logoutBody),
       [
-        { text: 'Batal', style: 'cancel' },
+        { text: t(commonText.cancel), style: 'cancel' },
         {
-          text: 'Logout',
+          text: t(profileText.logoutAction),
           style: 'destructive',
           onPress: async () => {
             await logout();
@@ -67,15 +70,15 @@ export default function ProfileScreen() {
       <View style={styles.container}>
         <View style={styles.centered}>
           <CafeMatchLogo size={40} />
-          <Text style={styles.guestTitle}>Selamat datang di CafeMatch</Text>
+          <Text style={styles.guestTitle}>{t(profileText.guestWelcome)}</Text>
           <Text style={styles.guestSubtitle}>
-            Login dulu buat akses profil sama cafe yang udah kamu simpen
+            {t(profileText.guestSubtitle)}
           </Text>
           <TouchableOpacity
             style={styles.loginBtn}
             onPress={() => navigation.navigate('AuthModal')}
           >
-            <Text style={styles.loginBtnText}>Masuk / Daftar</Text>
+            <Text style={styles.loginBtnText}>{t(profileText.guestLoginBtn)}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -95,14 +98,14 @@ export default function ProfileScreen() {
     if (!friendCode) return;
     try {
       await Share.share({
-        message: `Yuk gabung CafeMatch! Pakai friend code ku: ${friendCode}\n\nDownload di salma.imola.ai`,
+        message: t(profileText.shareMessage, { code: friendCode }),
       });
     } catch {}
   };
 
   const shareWhatsApp = async () => {
     if (!friendCode) return;
-    const text = `Yuk gabung CafeMatch! Pakai friend code ku: ${friendCode}\n\nDownload di salma.imola.ai`;
+    const text = t(profileText.shareMessage, { code: friendCode });
     const url = `whatsapp://send?text=${encodeURIComponent(text)}`;
     try {
       const supported = await Linking.canOpenURL(url);
@@ -174,15 +177,15 @@ export default function ProfileScreen() {
       {!!friendCode && (
         <View style={styles.inviteCard}>
           <View>
-            <Text style={styles.cardTitle}>Ajak teman ke CafeMatch</Text>
+            <Text style={styles.cardTitle}>{t(profileText.inviteTitle)}</Text>
             <Text style={styles.cardSubtitle}>
-              Share friend code biar bisa saling check-in
+              {t(profileText.inviteSubtitle)}
             </Text>
           </View>
 
           <View style={styles.codeRow}>
             <View style={styles.codeBox}>
-              <Text style={styles.codeLabel}>FRIEND CODE</Text>
+              <Text style={styles.codeLabel}>{t(profileText.friendCodeLabel)}</Text>
               <Text
                 style={styles.codeValue}
                 numberOfLines={1}
@@ -193,7 +196,7 @@ export default function ProfileScreen() {
               </Text>
             </View>
             <TouchableOpacity style={styles.copyBtn} onPress={copyCode}>
-              <Text style={styles.copyBtnText}>📋 Salin</Text>
+              <Text style={styles.copyBtnText}>{t(profileText.copy)}</Text>
             </TouchableOpacity>
           </View>
 
@@ -203,7 +206,7 @@ export default function ProfileScreen() {
               onPress={shareWhatsApp}
             >
               <Text style={styles.shareBtnTextWhite} numberOfLines={1}>
-                💬 WhatsApp
+                {t(profileText.shareWhatsApp)}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -211,7 +214,7 @@ export default function ProfileScreen() {
               onPress={shareNative}
             >
               <Text style={styles.shareBtnTextWhite} numberOfLines={1}>
-                📤 Bagikan
+                {t(profileText.shareNative)}
               </Text>
             </TouchableOpacity>
           </View>
@@ -222,28 +225,28 @@ export default function ProfileScreen() {
       <View style={styles.quickGrid}>
         <QuickAction
           icon="👥"
-          label="Teman"
+          label={t(profileText.quickFriends)}
           onPress={() => navigation.navigate('Friends')}
         />
         <QuickAction
           icon="🏆"
-          label="Leaderboard"
+          label={t(profileText.quickLeaderboard)}
           onPress={() => navigation.navigate('GlobalLeaderboard')}
         />
         <QuickAction
           icon="🎖️"
-          label="Achievement"
+          label={t(profileText.quickAchievement)}
           onPress={() => navigation.navigate('Achievements')}
         />
         <QuickAction
           icon="🔔"
-          label="Notifikasi"
+          label={t(profileText.quickNotifications)}
           badge={unread > 0 ? unread : undefined}
           onPress={() => navigation.navigate('Notifications')}
         />
         <QuickAction
           icon="📊"
-          label="Recap"
+          label={t(profileText.quickRecap)}
           onPress={() =>
             navigation.navigate('Recap', { year: new Date().getFullYear() })
           }
@@ -251,47 +254,47 @@ export default function ProfileScreen() {
       </View>
 
       {/* Cafe Saya */}
-      <Section title="CAFE KAMU">
+      <Section title={t(profileText.sectionMyCafe)}>
         <MenuItem
           icon="❤️"
-          label="Favorit Kamu"
-          subtitle="Cafe yang kamu suka"
+          label={t(profileText.menuFavorites)}
+          subtitle={t(profileText.menuFavoritesSub)}
           onPress={() => navigation.navigate('Favorites')}
         />
         <MenuItem
           icon="🔖"
-          label="Bookmark Kamu"
-          subtitle="Buat dikunjungi nanti"
+          label={t(profileText.menuBookmarks)}
+          subtitle={t(profileText.menuBookmarksSub)}
           onPress={() => navigation.navigate('Bookmarks')}
         />
         <MenuItem
           icon="⭐"
-          label="Shortlist"
-          subtitle="Hasil swipe Discover"
+          label={t(profileText.menuShortlist)}
+          subtitle={t(profileText.menuShortlistSub)}
           onPress={() => navigation.navigate('ShortlistModal')}
           isLast
         />
       </Section>
 
       {/* Akun */}
-      <Section title="AKUN">
+      <Section title={t(profileText.sectionAccount)}>
         <MenuItem
           icon="⚙️"
-          label="Edit Profil"
-          subtitle="Nama, foto, password"
+          label={t(profileText.menuEditProfile)}
+          subtitle={t(profileText.menuEditProfileSub)}
           onPress={() => navigation.navigate('EditProfileModal')}
         />
         <MenuItem
           icon="🚪"
-          label="Logout"
-          subtitle="Keluar dari akun"
+          label={t(profileText.menuLogout)}
+          subtitle={t(profileText.menuLogoutSub)}
           onPress={handleLogout}
           danger
           isLast
         />
       </Section>
 
-      <Text style={styles.versionText}>CafeMatch v{APP_VERSION}</Text>
+      <Text style={styles.versionText}>{t(profileText.appVersion, { version: APP_VERSION })}</Text>
     </ScrollView>
   );
 }

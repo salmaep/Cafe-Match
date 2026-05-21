@@ -9,6 +9,8 @@ import {
   FlatList,
 } from 'react-native';
 import Constants from 'expo-constants';
+import { useTranslation } from 'react-i18next';
+import { errorsText, wizardText } from '@shared/i18n/keys';
 import { colors, radius, spacing } from '../../theme';
 
 interface Props {
@@ -32,9 +34,11 @@ function randomToken(): string {
 
 export default function PlacesAutocompleteInput({
   onSelect,
-  placeholder = 'Cari alamat atau nama tempat…',
+  placeholder,
   country = 'id',
 }: Props) {
+  const { t } = useTranslation();
+  const resolvedPlaceholder = placeholder ?? t(wizardText.searchPlacePlaceholder);
   const apiKey = useMemo(() => {
     const extra = (Constants.expoConfig?.extra ?? {}) as {
       googleMapsApiKey?: string;
@@ -62,7 +66,7 @@ export default function PlacesAutocompleteInput({
 
   const fetchPredictions = async (value: string) => {
     if (!apiKey) {
-      setError('API key Google Maps belum di-set.');
+      setError(t(errorsText.googleMapsKeyMissing));
       setPredictions([]);
       return;
     }
@@ -89,7 +93,7 @@ export default function PlacesAutocompleteInput({
       });
       const json = await res.json();
       if (json.status !== 'OK' && json.status !== 'ZERO_RESULTS') {
-        setError(json.error_message || `Gagal cari (${json.status}).`);
+        setError(json.error_message || t(errorsText.searchFailedWithStatus, { status: json.status }));
         setPredictions([]);
         return;
       }
@@ -102,7 +106,7 @@ export default function PlacesAutocompleteInput({
       setPredictions(items);
     } catch (err: any) {
       if (err?.name === 'AbortError') return;
-      setError(err?.message || 'Gagal cari tempat.');
+      setError(err?.message || t(errorsText.searchPlaceFailed));
       setPredictions([]);
     } finally {
       setLoading(false);
@@ -133,7 +137,7 @@ export default function PlacesAutocompleteInput({
       const res = await fetch(`${DETAILS_URL}?${params.toString()}`);
       const json = await res.json();
       if (json.status !== 'OK' || !json.result?.geometry?.location) {
-        setError(json.error_message || `Gagal ambil detail (${json.status}).`);
+        setError(json.error_message || t(errorsText.detailsFailedWithStatus, { status: json.status }));
         return;
       }
       const lat = json.result.geometry.location.lat;
@@ -147,7 +151,7 @@ export default function PlacesAutocompleteInput({
       sessionTokenRef.current = randomToken();
       onSelect(lat, lng, label);
     } catch (err: any) {
-      setError(err?.message || 'Gagal ambil detail tempat.');
+      setError(err?.message || t(errorsText.placeDetailsFailed));
     } finally {
       setLoading(false);
     }
@@ -158,7 +162,7 @@ export default function PlacesAutocompleteInput({
       <View style={styles.inputRow}>
         <TextInput
           style={styles.input}
-          placeholder={placeholder}
+          placeholder={resolvedPlaceholder}
           placeholderTextColor={colors.textSecondary}
           value={input}
           onChangeText={handleInputChange}

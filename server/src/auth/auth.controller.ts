@@ -6,6 +6,7 @@ import {
   UseGuards,
   Request,
   Res,
+  HttpCode,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ConfigService } from '@nestjs/config';
@@ -152,6 +153,19 @@ export class AuthController {
       body.accessToken,
     );
     return this.authService.socialLogin(profile);
+  }
+
+  // Facebook Data Deletion Callback
+  // Register this URL in Facebook Developer Console →
+  // App Settings → Basic → User Data Deletion → "Data Deletion Callback URL"
+  // URL: https://<your-api-domain>/api/v1/auth/facebook/data-deletion
+  @Public()
+  @Post('facebook/data-deletion')
+  @HttpCode(200)
+  async facebookDataDeletion(@Body() body: Record<string, string>) {
+    return this.authService.handleFacebookDataDeletion(
+      body.signed_request ?? '',
+    );
   }
 
   private redirectToFrontend(req: any, res: Response, result: any) {

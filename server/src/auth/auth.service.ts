@@ -6,10 +6,11 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
-import { randomUUID } from 'crypto';
+import { randomUUID, createHmac, timingSafeEqual } from 'crypto';
 import { OAuth2Client } from 'google-auth-library';
 import { UsersService } from '../users/users.service';
 import { RegisterDto } from './dto/register.dto';
@@ -38,6 +39,7 @@ export class AuthService {
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
+    private readonly config: ConfigService,
     @InjectRepository(Cafe)
     private readonly cafesRepo: Repository<Cafe>,
     private readonly otpClient: OtpClient,
@@ -461,5 +463,63 @@ export class AuthService {
     const user = await this.usersService.findById(enroll.userId);
     if (!user) throw new NotFoundException('User tidak ditemukan.');
     return this.signJwt(user);
+  }
+
+  // ── Facebook Data Deletion Callback ───────────────────────────────────────
+  // Called by Facebook when a user removes the app via Facebook settings.
+  // https://developers.facebook.com/docs/development/create-an-app/app-dashboard/data-deletion-callback
+  async handleFacebookDataDeletion(
+    signedRequest: string,
+  ): Promise<{ url: string; confirmation_code: string }> {
+    const appSecret = this.config.get<string>('FB_APP_SECRET');
+    if (!appSecret) {
+      throw new UnauthorizedException('Server missing FB_APP_SECRET');
+    }
+
+    const parts = signedRequest.split('.');
+    if (parts.length !== 2) {
+      throw new BadRequestException('Invalid signed_request format');
+    }
+    const [encodedSig, payload] = parts;
+
+    // Verify HMAC-SHA256 signature
+    const expectedSigBuf = createHmac('sha256', appSecret)
+      .update(payload)
+      .digest();
+    const receivedSigBuf = Buffer.from(encodedSig, 'base64url');
+    if (
+      receivedSigBuf.length !== expectedSigBuf.length ||
+      !timingSafeEqual(receivedSigBuf, expectedSigBuf)
+    ) {
+      throw new UnauthorizedException('Invalid signed_request signature');
+    }
+
+    const data = JSON.parse(
+      Buffer.from(payload, 'base64url').toString('utf8'),
+    ) as { user_id?: string; algorithm?: string };
+
+    const fbUserId = data.user_id;
+    const confirmationCode = randomUUID().replace(/-/g, '').slice(0, 16);
+
+    if (fbUserId) {
+      const user = await this.usersService.findByProvider('facebook', fbUserId);
+      if (user) {
+        await this.usersService.createDeletionRequest(
+          {
+            email: user.email,
+            reason: 'Facebook data deletion callback',
+            acknowledge: true,
+          },
+          { ip: null, userAgent: 'Facebook-DataDeletion-Callback' },
+        );
+      }
+    }
+
+    const webUrl =
+      this.config.get<string>('PUBLIC_WEB_URL') || 'https://salma.imola.ai';
+    return {
+      url: `${webUrl}/account-deletion?confirmation=${confirmationCode}`,
+      confirmation_code: confirmationCode,
+    };
   }
 }

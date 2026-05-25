@@ -62,8 +62,20 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     favicon: './assets/favicon.png',
   },
   plugins: [
-    // '@react-native-firebase/app', // disabled in Expo Go — re-enable when using dev build
+    '@react-native-firebase/app',
     '@react-native-google-signin/google-signin',
+    [
+      'react-native-fbsdk-next',
+      {
+        appID: process.env.EXPO_PUBLIC_FB_APP_ID,
+        clientToken: process.env.EXPO_PUBLIC_FB_CLIENT_TOKEN,
+        displayName: 'CafeMatch',
+        scheme: `fb${process.env.EXPO_PUBLIC_FB_APP_ID}`,
+        advertiserIDCollectionEnabled: false,
+        autoLogAppEventsEnabled: false,
+        isAutoInitEnabled: true,
+      },
+    ],
     'expo-web-browser',
     [
       'expo-build-properties',

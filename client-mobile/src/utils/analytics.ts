@@ -10,40 +10,42 @@
 
 import { NativeModules } from 'react-native';
 
-type AnalyticsModule = {
-  default?: () => {
-    logEvent: (name: string, params?: Record<string, unknown>) => Promise<void>;
-    logScreenView: (params: { screen_name: string; screen_class?: string }) => Promise<void>;
-  };
+type AnalyticsInstance = {
+  logEvent: (name: string, params?: Record<string, unknown>) => Promise<void>;
+  logScreenView: (params: { screen_name: string; screen_class?: string }) => Promise<void>;
 };
 
-let analyticsModule: AnalyticsModule | null = null;
+let analyticsInstance: AnalyticsInstance | null = null;
 let attempted = false;
 
-function getAnalytics() {
-  if (attempted) return analyticsModule;
+function getInstance(): AnalyticsInstance | null {
+  if (attempted) return analyticsInstance;
   attempted = true;
-  // Skip the require entirely if the native module isn't linked (e.g. Expo Go).
-  // This avoids the noisy "Native module RNFBAppModule not found" error that
-  // Firebase prints from inside its own initializer.
-  if (!NativeModules?.RNFBAppModule) {
-    analyticsModule = null;
-    return analyticsModule;
-  }
+  // Skip entirely if the native module isn't linked (e.g. Expo Go).
+  if (!NativeModules?.RNFBAppModule) return null;
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    analyticsModule = require('@react-native-firebase/analytics') as AnalyticsModule;
+    const { getApp } = require('@react-native-firebase/app') as {
+      getApp: () => unknown;
+    };
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const analytics = require('@react-native-firebase/analytics') as {
+      default: (app: unknown) => AnalyticsInstance;
+    };
+    // Pass the app explicitly — avoids the deprecated no-arg `app()` call
+    // that triggers the "use getApp() instead" warning in v21+.
+    analyticsInstance = analytics.default(getApp());
   } catch {
-    analyticsModule = null;
+    analyticsInstance = null;
   }
-  return analyticsModule;
+  return analyticsInstance;
 }
 
 export async function logScreenView(screenName: string, screenClass?: string): Promise<void> {
-  const mod = getAnalytics();
-  if (!mod?.default) return;
+  const analytics = getInstance();
+  if (!analytics) return;
   try {
-    await mod.default().logScreenView({
+    await analytics.logScreenView({
       screen_name: screenName,
       screen_class: screenClass ?? screenName,
     });
@@ -53,10 +55,10 @@ export async function logScreenView(screenName: string, screenClass?: string): P
 }
 
 export async function logEvent(name: string, params?: Record<string, unknown>): Promise<void> {
-  const mod = getAnalytics();
-  if (!mod?.default) return;
+  const analytics = getInstance();
+  if (!analytics) return;
   try {
-    await mod.default().logEvent(name, params);
+    await analytics.logEvent(name, params);
   } catch {
     // Swallow.
   }

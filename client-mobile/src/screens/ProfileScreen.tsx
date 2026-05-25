@@ -19,6 +19,7 @@ import { useAuth } from '../context/AuthContext';
 import { useShortlist } from '../context/ShortlistContext';
 import { usePreferences } from '../context/PreferencesContext';
 import CafeMatchLogo from '../components/CafeMatchLogo';
+import DeleteAccountModal from '../components/DeleteAccountModal';
 import { fetchUnreadCount } from '../services/api';
 import { colors, spacing, radius } from '../theme';
 import { APP_VERSION } from '../constant/version';
@@ -31,6 +32,7 @@ export default function ProfileScreen() {
   const { clearShortlist } = useShortlist();
   const { setPreferences, setWizardCompleted } = usePreferences();
   const [unread, setUnread] = useState(0);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -38,6 +40,20 @@ export default function ProfileScreen() {
       .then((c) => setUnread(c))
       .catch(() => setUnread(0));
   }, [user]);
+
+  const handleAccountDeleted = async () => {
+    setDeleteOpen(false);
+    await logout();
+    await clearShortlist();
+    setPreferences(null);
+    setWizardCompleted(false);
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [{ name: 'Splash' }],
+      }),
+    );
+  };
 
   const handleLogout = () => {
     Alert.alert(
@@ -221,18 +237,20 @@ export default function ProfileScreen() {
         </View>
       )}
 
-      {/* Quick actions */}
+      {/* Quick actions — Leaderboard & Recap hidden to mirror web b5acbe27 */}
       <View style={styles.quickGrid}>
         <QuickAction
           icon="👥"
           label={t(profileText.quickFriends)}
           onPress={() => navigation.navigate('Friends')}
         />
-        <QuickAction
-          icon="🏆"
-          label={t(profileText.quickLeaderboard)}
-          onPress={() => navigation.navigate('GlobalLeaderboard')}
-        />
+        {false && (
+          <QuickAction
+            icon="🏆"
+            label={t(profileText.quickLeaderboard)}
+            onPress={() => navigation.navigate('GlobalLeaderboard')}
+          />
+        )}
         <QuickAction
           icon="🎖️"
           label={t(profileText.quickAchievement)}
@@ -244,13 +262,15 @@ export default function ProfileScreen() {
           badge={unread > 0 ? unread : undefined}
           onPress={() => navigation.navigate('Notifications')}
         />
-        <QuickAction
-          icon="📊"
-          label={t(profileText.quickRecap)}
-          onPress={() =>
-            navigation.navigate('Recap', { year: new Date().getFullYear() })
-          }
-        />
+        {false && (
+          <QuickAction
+            icon="📊"
+            label={t(profileText.quickRecap)}
+            onPress={() =>
+              navigation.navigate('Recap', { year: new Date().getFullYear() })
+            }
+          />
+        )}
       </View>
 
       {/* Cafe Saya */}
@@ -290,11 +310,24 @@ export default function ProfileScreen() {
           subtitle={t(profileText.menuLogoutSub)}
           onPress={handleLogout}
           danger
+        />
+        <MenuItem
+          icon="🗑️"
+          label={t(profileText.menuDeleteAccount)}
+          subtitle={t(profileText.menuDeleteAccountSub)}
+          onPress={() => setDeleteOpen(true)}
+          danger
           isLast
         />
       </Section>
 
       <Text style={styles.versionText}>{t(profileText.appVersion, { version: APP_VERSION })}</Text>
+
+      <DeleteAccountModal
+        visible={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        onDeleted={handleAccountDeleted}
+      />
     </ScrollView>
   );
 }

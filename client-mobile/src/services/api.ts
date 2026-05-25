@@ -122,6 +122,7 @@ function mapAuthResponse(data: any): AuthResponse {
       role: data.user.role,
       friendCode: data.user.friendCode,
       avatarUrl: data.user.avatarUrl,
+      provider: data.user.provider,
     },
   };
 }
@@ -249,6 +250,7 @@ export async function fetchMe(): Promise<User> {
     role: data.role,
     friendCode: data.friendCode,
     avatarUrl: data.avatarUrl,
+    provider: data.provider,
   };
 }
 
@@ -274,6 +276,14 @@ export async function changePasswordApi(payload: {
   newPassword: string;
 }): Promise<void> {
   await api.post("/users/me/password", payload);
+}
+
+export async function deleteAccountApi(payload: {
+  password?: string;
+  emailConfirmation?: string;
+  acknowledge: boolean;
+}): Promise<void> {
+  await api.delete("/users/me", { data: payload });
 }
 
 // ─── Bookmarks & Favorites ───

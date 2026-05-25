@@ -17,6 +17,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { useTranslation } from 'react-i18next';
 import { profileText } from '@shared/i18n/keys';
 import * as ImagePicker from 'expo-image-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
 import { useAuth } from '../context/AuthContext';
 import { updateProfileApi, changePasswordApi } from '../services/api';
 import { colors, spacing, radius } from '../theme';
@@ -120,18 +121,37 @@ function ProfileTab() {
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [1, 1],
-        quality: 0.55,
-        base64: true,
+        quality: 1,
       });
       if (result.canceled) return;
       const asset = result.assets?.[0];
-      if (!asset?.base64) {
+      if (!asset?.uri) {
         setError(t(profileText.imageLoadFailed));
         return;
       }
-      const dataUrl = `data:image/jpeg;base64,${asset.base64}`;
-      // Rough byte estimate: base64 string length * 3/4
-      if (asset.base64.length * 0.75 > 65_000) {
+
+      const MAX_BYTES = 58_000;
+      const sizes = [512, 384, 256];
+      const qualities = [0.7, 0.5, 0.3, 0.2];
+      let dataUrl: string | null = null;
+      for (const size of sizes) {
+        for (const q of qualities) {
+          const out = await ImageManipulator.manipulateAsync(
+            asset.uri,
+            [{ resize: { width: size } }],
+            { compress: q, format: ImageManipulator.SaveFormat.JPEG, base64: true },
+          );
+          if (!out.base64) continue;
+          const bytes = out.base64.length * 0.75;
+          if (bytes <= MAX_BYTES) {
+            dataUrl = `data:image/jpeg;base64,${out.base64}`;
+            break;
+          }
+        }
+        if (dataUrl) break;
+      }
+
+      if (!dataUrl) {
         setError(t(profileText.imageTooLarge));
         return;
       }

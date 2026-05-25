@@ -819,9 +819,8 @@ export default function CafeDetailScreen() {
             </TouchableOpacity>
           )}
 
-          {/* Top check-in leaderboard — mirrors web CafeLeaderboard:
-              loading skeleton, empty CTA, top 5 with rank emoji badge,
-              checkin count + total time, score in pts. */}
+          {/* Hidden — check-in feature disabled. Mirrors web b5acbe27. */}
+          {false && (<>
           <View style={styles.sectionRow}>
             <Text style={styles.sectionTitle}>{t(cafeText.topCheckin)}</Text>
             {leaderboard.length > 0 && (
@@ -935,6 +934,7 @@ export default function CafeDetailScreen() {
               })}
             </View>
           )}
+          </>)}
 
           {/* Photos — clean 3-column grid (square tiles, rounded, subtle
               shadow). Cap visible at 9 with a "+N more" overlay; tap any

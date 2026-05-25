@@ -14,9 +14,7 @@ import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useTranslation } from 'react-i18next';
 import { authText } from '@shared/i18n/keys';
-import * as WebBrowser from 'expo-web-browser';
-import * as Facebook from 'expo-auth-session/providers/facebook';
-import { makeRedirectUri } from 'expo-auth-session';
+import { LoginManager, AccessToken } from 'react-native-fbsdk-next';
 import {
   GoogleSignin,
   statusCodes,
@@ -33,7 +31,6 @@ import {
   isPhoneEnrollChallenge,
 } from '../services/api';
 
-WebBrowser.maybeCompleteAuthSession();
 
 interface OtpChallenge {
   otpId: string;
@@ -312,20 +309,6 @@ export default function AuthModal() {
     });
   }, []);
 
-  // Pin Facebook's redirect URI to the app's deep link (`cafematch://...`).
-  // Without this, expo-auth-session picks a default that varies between Expo
-  // Go and dev client, which makes "Valid OAuth Redirect URIs" maintenance
-  // in the FB dashboard a moving target. Whatever this prints in the Metro
-  // log, paste verbatim into Facebook → Login → Settings.
-  const fbRedirectUri = makeRedirectUri({ scheme: 'cafematch' });
-  if (__DEV__) {
-    // eslint-disable-next-line no-console
-    console.log('[FB OAuth] redirectUri =', fbRedirectUri);
-  }
-  const [, facebookResponse, facebookPromptAsync] = Facebook.useAuthRequest({
-    clientId: process.env.EXPO_PUBLIC_FB_APP_ID ?? '',
-    redirectUri: fbRedirectUri,
-  });
 
   // Common server-response handler — same shapes (twoFa / phoneEnroll /
   // success) the legacy redirect flow returned, just received via JSON now.
@@ -359,34 +342,6 @@ export default function AuthModal() {
   };
 
   // Google sign-in via native SDK — kicked off from handleSocialLogin below.
-
-  // Facebook response → server verify
-  useEffect(() => {
-    if (facebookResponse?.type !== 'success') {
-      if (facebookResponse?.type === 'error' || facebookResponse?.type === 'dismiss') {
-        setSocialLoading(null);
-      }
-      return;
-    }
-    const accessToken =
-      (facebookResponse as any)?.authentication?.accessToken ||
-      (facebookResponse.params as any)?.access_token;
-    if (!accessToken) {
-      setErrorMsg(t(authText.facebookTokenFailed));
-      setSocialLoading(null);
-      return;
-    }
-    (async () => {
-      try {
-        const r = await facebookTokenLoginApi(accessToken);
-        await consumeSocialResult(r);
-      } catch (err: any) {
-        setErrorMsg(err?.response?.data?.message || err?.message || 'Login Facebook gagal.');
-      } finally {
-        setSocialLoading(null);
-      }
-    })();
-  }, [facebookResponse]);
 
   const handleGoogleLogin = async () => {
     setErrorMsg('');
@@ -435,10 +390,23 @@ export default function AuthModal() {
     setErrorMsg('');
     setSocialLoading('facebook');
     try {
-      await facebookPromptAsync();
+      const result = await LoginManager.logInWithPermissions(['public_profile', 'email']);
+      if (result.isCancelled) {
+        setSocialLoading(null);
+        return;
+      }
+      const data = await AccessToken.getCurrentAccessToken();
+      if (!data?.accessToken) {
+        setErrorMsg(t(authText.facebookTokenFailed));
+        setSocialLoading(null);
+        return;
+      }
+      const r = await facebookTokenLoginApi(data.accessToken);
+      await consumeSocialResult(r);
     } catch (err: any) {
+      setErrorMsg(err?.response?.data?.message || err?.message || 'Login Facebook gagal.');
+    } finally {
       setSocialLoading(null);
-      setErrorMsg(err?.message || 'Login dengan facebook gagal.');
     }
   };
 

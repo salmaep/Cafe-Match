@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "494345060368",
+    "project_id": "cafe-match-id",
+    "storage_bucket": "cafe-match-id.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:494345060368:android:b3e3e92b07610fb47eca95",
+        "android_client_info": {
+          "package_name": "com.anonymous.cafematch"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDRnnpvlT73UbFuzOjoFkLmwuSecWtNOKY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

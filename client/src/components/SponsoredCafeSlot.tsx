@@ -7,6 +7,7 @@ import {
   pickPromotion,
 } from "../hooks/useActivePromotions";
 import InFeedAd from "./InFeedAd";
+import { MapPin, Zap } from "../utils/lucideIcon";
 
 type Variant = "card" | "list";
 type Size = "normal" | "compact";
@@ -96,7 +97,7 @@ function CardView({
         className="relative block bg-gradient-to-br from-amber-50 to-white rounded-xl shadow-sm ring-1 ring-amber-400 overflow-hidden hover:shadow-md hover:ring-amber-500 transition-all"
       >
         <span className="absolute top-1.5 left-1.5 z-10 inline-flex items-center gap-0.5 text-[9px] font-extrabold tracking-wider uppercase bg-amber-400 text-stone-900 px-1.5 py-0.5 rounded shadow">
-          ⚡ Sponsored
+          <Zap size={10} strokeWidth={2.5} fill="currentColor" /> Sponsored
         </span>
         <img
           src={photo}
@@ -113,7 +114,7 @@ function CardView({
           </p>
           <div className="flex items-center justify-between mt-1.5">
             <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-amber-800 bg-amber-100 rounded-full px-1.5 py-0.5 truncate">
-              📍 {cafeName}
+              <MapPin size={11} strokeWidth={2} className="inline-block" /> {cafeName}
             </span>
             <span className="shrink-0 text-[10px] font-bold text-amber-700 ml-1">
               Lihat →
@@ -130,7 +131,7 @@ function CardView({
       className="relative block bg-gradient-to-br from-amber-50 to-white rounded-2xl shadow-md ring-2 ring-amber-400 ring-offset-2 ring-offset-[#FAF9F6] overflow-hidden hover:shadow-xl hover:ring-amber-500 transition-all"
     >
       <span className="absolute top-2.5 left-2.5 z-10 inline-flex items-center gap-1 text-[11px] font-extrabold tracking-wider uppercase bg-amber-400 text-stone-900 px-2.5 py-1 rounded-md shadow">
-        ⚡ Sponsored
+        <Zap size={10} strokeWidth={2.5} fill="currentColor" /> Sponsored
       </span>
       <img
         src={photo}
@@ -145,7 +146,7 @@ function CardView({
         <p className="text-[13px] text-gray-600 line-clamp-2 mt-1">{subline}</p>
         <div className="flex items-center justify-between mt-3">
           <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-800 bg-amber-100 rounded-full px-2.5 py-1">
-            📍 {cafeName}
+            <MapPin size={11} strokeWidth={2} className="inline-block" /> {cafeName}
           </span>
           <span className="text-xs font-bold text-amber-700">
             Cek detail →
@@ -181,7 +182,7 @@ function ListView({
         className="relative flex items-stretch gap-2.5 bg-gradient-to-br from-amber-50 to-white rounded-xl border border-amber-400 shadow-sm p-2 pt-5 hover:border-amber-500 hover:shadow-md transition-all"
       >
         <span className="absolute top-1 left-1 z-10 inline-flex items-center gap-0.5 text-[9px] font-extrabold tracking-wider uppercase bg-amber-400 text-stone-900 px-1.5 py-0.5 rounded shadow">
-          ⚡ Sponsored
+          <Zap size={10} strokeWidth={2.5} fill="currentColor" /> Sponsored
         </span>
         <img
           src={photo}
@@ -199,7 +200,7 @@ function ListView({
           </p>
           <div className="flex items-center justify-between mt-1">
             <span className="inline-flex items-center gap-0.5 bg-amber-100 text-amber-800 text-[10px] font-bold rounded-full px-1.5 py-0 truncate">
-              📍 {cafeName}
+              <MapPin size={11} strokeWidth={2} className="inline-block" /> {cafeName}
             </span>
             <span className="shrink-0 text-[10px] font-bold text-amber-700 ml-1">
               Lihat →
@@ -216,7 +217,7 @@ function ListView({
       className="relative flex items-stretch gap-4 bg-gradient-to-br from-amber-50 to-white rounded-2xl border-2 border-amber-400 shadow-md p-3.5 pt-7 hover:border-amber-500 hover:shadow-lg transition-all"
     >
       <span className="absolute top-2 left-2 z-10 inline-flex items-center gap-1 text-[10px] font-extrabold tracking-wider uppercase bg-amber-400 text-stone-900 px-2 py-0.5 rounded-md shadow">
-        ⚡ Sponsored
+        <Zap size={10} strokeWidth={2.5} fill="currentColor" /> Sponsored
       </span>
       <img
         src={photo}
@@ -236,7 +237,7 @@ function ListView({
         </div>
         <div className="flex items-center justify-between mt-2">
           <span className="inline-flex items-center gap-1 bg-amber-100 text-amber-800 text-[11px] font-bold rounded-full px-2.5 py-0.5">
-            📍 {cafeName}
+            <MapPin size={11} strokeWidth={2} className="inline-block" /> {cafeName}
           </span>
           <span className="text-[11px] font-bold text-amber-700">Lihat →</span>
         </div>

@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import type { LucideIcon } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useShortlist } from "../../context/ShortlistContext";
 import { commonText } from "@shared/i18n";
+import { Coffee, LogOut, User } from "../../utils/lucideIcon";
+import { ChevronDown } from "lucide-react";
 
 export default function Navbar() {
   const { t } = useTranslation();
@@ -50,8 +53,8 @@ export default function Navbar() {
         <div className="grid grid-cols-[auto_1fr_auto] items-center h-16 gap-6">
           {/* Brand */}
           <Link to="/" className="flex items-center gap-2.5 shrink-0 group">
-            <span className="w-9 h-9 rounded-xl bg-[#1C1C1A] flex items-center justify-center text-base shadow-sm group-hover:shadow-md transition-shadow">
-              ☕
+            <span className="w-9 h-9 rounded-xl bg-[#1C1C1A] flex items-center justify-center text-[#D48B3A] shadow-sm group-hover:shadow-md transition-shadow">
+              <Coffee size={18} strokeWidth={2} />
             </span>
             <span className="text-[19px] font-extrabold tracking-tight text-[#1C1C1A]">
               Cafe<span className="text-[#D48B3A]">Match</span>
@@ -95,13 +98,13 @@ export default function Navbar() {
                 <span className="text-sm font-semibold text-[#1C1C1A] max-w-[140px] truncate">
                   {user.name}
                 </span>
-                <span
-                  className={`text-[10px] text-[#8A8880] transition-transform ${
+                <ChevronDown
+                  size={14}
+                  strokeWidth={2}
+                  className={`text-[#8A8880] transition-transform ${
                     menuOpen ? "rotate-180" : ""
                   }`}
-                >
-                  ▼
-                </span>
+                />
               </button>
 
               {menuOpen && (
@@ -119,7 +122,7 @@ export default function Navbar() {
                   </div>
                   <MenuLink
                     to="/profile"
-                    icon="👤"
+                    icon={User}
                     label={t(commonText.navProfile)}
                     onClick={() => setMenuOpen(false)}
                   />
@@ -130,7 +133,7 @@ export default function Navbar() {
                     role="menuitem"
                     className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
                   >
-                    <span className="text-base">↩</span>
+                    <LogOut size={16} strokeWidth={2} />
                     <span className="font-semibold">{t(commonText.logout)}</span>
                   </button>
                 </div>
@@ -205,12 +208,12 @@ function NavItem({
 
 function MenuLink({
   to,
-  icon,
+  icon: Icon,
   label,
   onClick,
 }: {
   to: string;
-  icon: string;
+  icon: LucideIcon;
   label: string;
   onClick?: () => void;
 }) {
@@ -221,7 +224,7 @@ function MenuLink({
       role="menuitem"
       className="flex items-center gap-3 px-4 py-2 text-sm text-[#1C1C1A] hover:bg-[#F0EDE8] transition-colors"
     >
-      <span className="text-base w-5 text-center">{icon}</span>
+      <Icon size={16} strokeWidth={2} className="text-[#5C5A52]" />
       <span className="font-semibold">{label}</span>
     </Link>
   );

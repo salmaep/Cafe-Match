@@ -4,6 +4,7 @@ import { authApi } from "../../api/auth.api";
 import { useAuth, type PendingTwoFa } from "../../context/AuthContext";
 import { authText } from "@shared/i18n";
 import OtpStep from "./OtpStep";
+import { Smartphone } from "../../utils/lucideIcon";
 
 interface Props {
   enrollmentId: string;
@@ -87,8 +88,8 @@ export default function PhoneEnrollStep({
   return (
     <form onSubmit={submit} className="space-y-3">
       <div className="text-center mb-2">
-        <div className="inline-flex w-12 h-12 rounded-full bg-[#FFF1E0] items-center justify-center text-2xl mb-2">
-          📱
+        <div className="inline-flex w-12 h-12 rounded-full bg-[#FFF1E0] items-center justify-center text-[#D48B3A] mb-2">
+          <Smartphone size={22} strokeWidth={2} />
         </div>
         <h2 className="text-lg font-bold text-[#1C1C1A]">
           {t(authText.phoneEnrollTitle)}

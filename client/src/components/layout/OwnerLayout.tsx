@@ -1,10 +1,12 @@
 import { NavLink, Outlet } from "react-router-dom";
+import type { LucideIcon } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import { Coffee, Home, Star } from "../../utils/lucideIcon";
 
-const navItems = [
-  { to: "/owner/dashboard", label: "Dashboard", icon: "🏠" },
-  { to: "/owner/cafe", label: "My Cafe", icon: "☕" },
-  { to: "/owner/promotion", label: "Promotion", icon: "⭐" },
+const navItems: { to: string; label: string; icon: LucideIcon }[] = [
+  { to: "/owner/dashboard", label: "Dashboard", icon: Home },
+  { to: "/owner/cafe", label: "My Cafe", icon: Coffee },
+  { to: "/owner/promotion", label: "Promotion", icon: Star },
 ];
 
 export default function OwnerLayout() {
@@ -60,7 +62,7 @@ export default function OwnerLayout() {
                 }`
               }
             >
-              <span className="text-base">{item.icon}</span>
+              <item.icon size={18} strokeWidth={2} />
               {item.label}
             </NavLink>
           ))}
@@ -101,7 +103,7 @@ export default function OwnerLayout() {
               }`
             }
           >
-            <span className="text-base leading-none">{item.icon}</span>
+            <item.icon size={20} strokeWidth={2} />
             <span>{item.label}</span>
           </NavLink>
         ))}

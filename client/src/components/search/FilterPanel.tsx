@@ -1,7 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { cafesApi, type FilterGroup } from "../../api/cafes.api";
-import { LucideIcon, lucideForFacility, X } from "../../utils/lucideIcon";
+import {
+  Check,
+  LucideIcon,
+  lucideForFacility,
+  Star,
+  X,
+} from "../../utils/lucideIcon";
 
 export interface FilterPanelProps {
   facilities: string[];
@@ -87,15 +93,16 @@ function Chip({
       }`}
     >
       {autoSelected ? (
-        <span
-          className="text-[11px] leading-none shrink-0"
+        <Star
+          size={11}
+          strokeWidth={2}
+          className="shrink-0 text-amber-500"
+          fill="currentColor"
           aria-label="Direkomendasikan"
-        >
-          ⭐
-        </span>
+        />
       ) : active ? (
-        <span className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-white text-[#D48B3A] text-[9px] font-extrabold shrink-0">
-          ✓
+        <span className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-white text-[#D48B3A] shrink-0">
+          <Check size={9} strokeWidth={3} />
         </span>
       ) : icon ? (
         <LucideIcon

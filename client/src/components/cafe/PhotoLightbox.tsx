@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { X } from "../../utils/lucideIcon";
 
 interface Props {
   photos: { url: string; caption?: string | null }[];
@@ -42,10 +43,10 @@ export default function PhotoLightbox({
           e.stopPropagation();
           onClose();
         }}
-        className="absolute top-4 right-4 w-11 h-11 rounded-full bg-white/15 hover:bg-white/30 text-white text-2xl flex items-center justify-center transition-colors z-10"
+        className="absolute top-4 right-4 w-11 h-11 rounded-full bg-white/15 hover:bg-white/30 text-white flex items-center justify-center transition-colors z-10"
         title="Close (Esc)"
       >
-        ✕
+        <X size={22} strokeWidth={2.5} />
       </button>
 
       <div className="absolute top-4 left-4 text-white/80 text-sm font-medium">

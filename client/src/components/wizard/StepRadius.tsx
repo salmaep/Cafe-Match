@@ -8,6 +8,7 @@ import {
   FALLBACK_LNG,
 } from "../../hooks/useGeolocation";
 import { wizardText } from "@shared/i18n";
+import { MapPin } from "../../utils/lucideIcon";
 
 const MAP_ID = import.meta.env.VITE_GOOGLE_MAPS_MAP_ID || undefined;
 const CUSTOM_MIN = 3;
@@ -238,8 +239,8 @@ function RadiusCircle({
 function CenterPin() {
   return (
     <div className="relative">
-      <div className="w-7 h-7 rounded-full bg-[#D48B3A] ring-4 ring-white shadow-lg flex items-center justify-center text-white text-sm font-bold">
-        📍
+      <div className="w-7 h-7 rounded-full bg-[#D48B3A] ring-4 ring-white shadow-lg flex items-center justify-center text-white">
+        <MapPin size={14} strokeWidth={2.5} fill="currentColor" />
       </div>
     </div>
   );

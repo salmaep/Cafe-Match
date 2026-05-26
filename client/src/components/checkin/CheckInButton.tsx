@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useActiveCheckin } from "../../context/ActiveCheckinContext";
 import { useAuth } from "../../context/AuthContext";
 import type { Cafe } from "../../types";
+import { AlertTriangle, Check, MapPin } from "../../utils/lucideIcon";
 
 interface Props {
   cafe: Cafe;
@@ -28,7 +29,7 @@ export default function CheckInButton({ cafe, className = "" }: Props) {
         to={`/login?redirect=${encodeURIComponent(window.location.pathname)}`}
         className={`inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#1C1C1A] text-white font-bold text-sm hover:bg-black transition-colors ${className}`}
       >
-        📍 Login untuk Check In
+        <MapPin size={16} strokeWidth={2} /> Login untuk Check In
       </Link>
     );
   }
@@ -39,7 +40,7 @@ export default function CheckInButton({ cafe, className = "" }: Props) {
       <div
         className={`inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-emerald-50 text-emerald-700 font-bold text-sm ring-1 ring-emerald-200 ${className}`}
       >
-        ✓ Sedang Check-In Di Sini
+        <Check size={16} strokeWidth={2.5} /> Sedang Check-In Di Sini
       </div>
     );
   }
@@ -50,7 +51,7 @@ export default function CheckInButton({ cafe, className = "" }: Props) {
     return (
       <div className={`flex flex-col items-stretch gap-1 ${className}`}>
         <div className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-amber-50 text-amber-800 font-bold text-sm ring-1 ring-amber-200">
-          ⚠️ Check out dulu dari {otherName}
+          <AlertTriangle size={14} strokeWidth={2} /> Check out dulu dari {otherName}
         </div>
       </div>
     );
@@ -110,7 +111,9 @@ export default function CheckInButton({ cafe, className = "" }: Props) {
             Check In…
           </>
         ) : (
-          "📍 Check In Sekarang"
+          <>
+            <MapPin size={16} strokeWidth={2} /> Check In Sekarang
+          </>
         )}
       </button>
       {error && (

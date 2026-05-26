@@ -1,5 +1,6 @@
 import React from "react";
-import { View, Text, TouchableOpacity, Image, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { Image } from "expo-image";
 import { ScrollView as GHScrollView } from "react-native-gesture-handler";
 import { useTranslation } from "react-i18next";
 import { mapText } from "@shared/i18n/keys";
@@ -52,7 +53,13 @@ function FeaturedSection({ cafes, onCafePress }: Props) {
               onPress={() => onCafePress(cafe)}
             >
               <View style={styles.imageWrap}>
-                <Image source={{ uri: promoImage }} style={styles.image} />
+                <Image
+                  source={{ uri: promoImage }}
+                  style={styles.image}
+                  cachePolicy="memory-disk"
+                  transition={200}
+                  contentFit="cover"
+                />
                 {isNewCafe && (
                   <View style={styles.newBadge}>
                     <Text style={styles.newBadgeText}>{t(mapText.newCafeTag)}</Text>

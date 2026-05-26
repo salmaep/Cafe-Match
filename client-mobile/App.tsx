@@ -7,6 +7,9 @@ LogBox.ignoreLogs([
 ]);
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { NavigationContainer, NavigationContainerRef } from '@react-navigation/native';
+import { Settings as FBSettings } from 'react-native-fbsdk-next';
+
+FBSettings.initializeSDK();
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from './src/lib/query-client';
 import { mobileAds, adsAvailable } from './src/lib/ads';

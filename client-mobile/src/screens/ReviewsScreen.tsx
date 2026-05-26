@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator,
-  Image, Modal, Dimensions, ScrollView, StatusBar,
+  Modal, Dimensions, ScrollView, StatusBar,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -223,7 +224,13 @@ export default function ReviewsScreen() {
                         onPress={() => setZoomMedia({ list: media, index: i })}
                       >
                         {m.mediaType === 'photo' ? (
-                          <Image source={{ uri: m.url }} style={styles.mediaThumb} />
+                          <Image
+                            source={{ uri: m.url }}
+                            style={styles.mediaThumb}
+                            cachePolicy="memory-disk"
+                            transition={200}
+                            contentFit="cover"
+                          />
                         ) : (
                           <View style={[styles.mediaThumb, styles.videoThumb]}>
                             <Text style={styles.videoPlay}>▶</Text>
@@ -274,7 +281,13 @@ export default function ReviewsScreen() {
                   showsHorizontalScrollIndicator={false}
                 >
                   {item.mediaType === 'photo' ? (
-                    <Image source={{ uri: item.url }} style={styles.zoomImage} resizeMode="contain" />
+                    <Image
+                      source={{ uri: item.url }}
+                      style={styles.zoomImage}
+                      contentFit="contain"
+                      cachePolicy="memory-disk"
+                      transition={200}
+                    />
                   ) : (
                     <View style={styles.zoomVideoBox}>
                       <Text style={styles.zoomVideoIcon}>🎥</Text>

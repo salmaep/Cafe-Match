@@ -101,6 +101,7 @@ export interface DiscoverParams {
   priceRange?: string;
   facilities?: string[];
   limit?: number;
+  excludeIds?: number[];
 }
 
 export interface DiscoverResult {
@@ -184,10 +185,13 @@ export const cafesApi = {
 
 
   discover: async (params: DiscoverParams): Promise<DiscoverResult> => {
-    const { facilities, ...rest } = params;
+    const { facilities, excludeIds, ...rest } = params;
     const queryParams: Record<string, unknown> = { ...rest };
     if (facilities && facilities.length > 0) {
       queryParams.facilities = facilities.join(",");
+    }
+    if (excludeIds && excludeIds.length > 0) {
+      queryParams.excludeIds = excludeIds.join(",");
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const res = await apiClient.get<any>("/cafes/discover", {

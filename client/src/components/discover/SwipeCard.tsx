@@ -16,8 +16,6 @@ interface Props {
   dragX?: number;
   onSkip?: () => void;
   onKeep?: () => void;
-  currentIndex?: number;
-  total?: number;
 }
 
 const VISIBLE_TAGS = 4;
@@ -29,8 +27,6 @@ export default function SwipeCard({
   dragX = 0,
   onSkip,
   onKeep,
-  currentIndex,
-  total,
 }: Props) {
   const navigate = useNavigate();
   const photo = getCafeImage(cafe);
@@ -79,31 +75,6 @@ export default function SwipeCard({
             "linear-gradient(180deg, rgba(0,0,0,.55) 0%, rgba(0,0,0,0) 22%, rgba(0,0,0,0) 45%, rgba(0,0,0,.92) 100%)",
         }}
       />
-
-      {/* Story progress indicators (Instagram-style) */}
-      {total != null && total > 0 && (
-        <div className="absolute top-2 left-3 right-3 md:top-2.5 md:left-4 md:right-4 z-5 flex gap-1">
-          {Array.from({ length: total }).map((_, i) => {
-            const active = currentIndex != null && i < currentIndex;
-            const isCurrent = currentIndex === i;
-            return (
-              <div
-                key={i}
-                className="flex-1 h-0.75 rounded-full bg-white/30 overflow-hidden"
-              >
-                <div
-                  className="h-full rounded-full bg-white"
-                  style={{
-                    width: active || isCurrent ? "100%" : "0%",
-                    opacity: isCurrent ? 0.95 : active ? 0.85 : 0,
-                    transition: "width .3s ease, opacity .3s ease",
-                  }}
-                />
-              </div>
-            );
-          })}
-        </div>
-      )}
 
       {/* Top chips + shortlisted badge */}
       <div className="absolute top-6 left-3 right-3 md:top-7 md:left-4 md:right-4 z-[4] flex flex-col gap-2 items-start">

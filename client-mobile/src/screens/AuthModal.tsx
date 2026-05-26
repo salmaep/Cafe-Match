@@ -20,6 +20,7 @@ import {
   statusCodes,
 } from '@react-native-google-signin/google-signin';
 import Svg, { Path } from 'react-native-svg';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { colors, spacing, radius } from '../theme';
 import {
@@ -59,6 +60,7 @@ export default function AuthModal() {
   const navigation = useNavigation<StackNavigationProp<any>>();
   const { t } = useTranslation();
   const { login, register, loginWithToken, verify2fa, resend2fa } = useAuth();
+  const insets = useSafeAreaInsets();
 
   // ─── Form state ──────────────────────────────────────────────────────────
   const [isLogin, setIsLogin] = useState(true);
@@ -585,7 +587,7 @@ export default function AuthModal() {
       />
       <ScrollView
         style={styles.sheetScroll}
-        contentContainerStyle={styles.sheet}
+        contentContainerStyle={[styles.sheet, { paddingBottom: 40 + insets.bottom }]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >

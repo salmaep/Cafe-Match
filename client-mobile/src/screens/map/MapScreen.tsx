@@ -67,7 +67,7 @@ export default function MapScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { preferences } = usePreferences();
-  const { latitude: userLat, longitude: userLng } = useLocation();
+  const { latitude: userLat, longitude: userLng, isLoading: locationLoading } = useLocation();
   const { addToShortlist, isInShortlist } = useShortlist();
   const mapRef = useRef<any>(null);
   const sheetRef = useRef<BottomSheet>(null);
@@ -156,6 +156,27 @@ export default function MapScreen() {
     return () => task.cancel();
   }, []);
 
+  const didCenterOnGps = useRef(false);
+  useEffect(() => {
+    if (locationLoading || didCenterOnGps.current || manualCenter) return;
+    if (preferences?.location?.type === 'custom') {
+      didCenterOnGps.current = true;
+      return;
+    }
+    if (!mapRef.current) return;
+    didCenterOnGps.current = true;
+    const delta = Math.max(0.02, (radiusKm * 2.4) / 111);
+    mapRef.current.animateToRegion(
+      {
+        latitude: userLat,
+        longitude: userLng,
+        latitudeDelta: delta,
+        longitudeDelta: delta,
+      },
+      500,
+    );
+  }, [locationLoading, userLat, userLng, manualCenter, preferences, radiusKm]);
+
   const friendsByCafe = useMemo(() => {
     const map = new Map<number, any[]>();
     for (const f of friendsOnMap) {
@@ -189,9 +210,10 @@ export default function MapScreen() {
     return () => loop.stop();
   }, [bounceAnim]);
 
+  const useLiveGps = preferences?.location?.type !== 'custom';
   const center = manualCenter ?? {
-    latitude: preferences?.location?.latitude ?? userLat,
-    longitude: preferences?.location?.longitude ?? userLng,
+    latitude: useLiveGps ? userLat : (preferences?.location?.latitude ?? userLat),
+    longitude: useLiveGps ? userLng : (preferences?.location?.longitude ?? userLng),
   };
 
   const snapPoints = useMemo(() => ["12%", "50%", "92%"], []);
@@ -446,8 +468,8 @@ export default function MapScreen() {
         style={StyleSheet.absoluteFill}
         initialRegion={{
           ...center,
-          latitudeDelta: 0.24,
-          longitudeDelta: 0.24,
+          latitudeDelta: Math.max(0.02, (radiusKm * 2.4) / 111),
+          longitudeDelta: Math.max(0.02, (radiusKm * 2.4) / 111),
         }}
         showsUserLocation
         radius={40}
@@ -583,10 +605,7 @@ export default function MapScreen() {
         enablePanDownToClose={false}
       >
         <BottomSheetScrollView
-          contentContainerStyle={[
-            styles.sheetContent,
-            { paddingBottom: insets.bottom + 24 },
-          ]}
+          contentContainerStyle={styles.sheetContent}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
           onScroll={handleSheetScroll}

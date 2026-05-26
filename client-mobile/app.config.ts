@@ -67,10 +67,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     [
       'react-native-fbsdk-next',
       {
-        appID: process.env.EXPO_PUBLIC_FB_APP_ID,
-        clientToken: process.env.EXPO_PUBLIC_FB_CLIENT_TOKEN,
+        appID: process.env.EXPO_PUBLIC_FB_APP_ID ?? '805065779071148',
+        clientToken:
+          process.env.EXPO_PUBLIC_FB_CLIENT_TOKEN ?? 'cf15a6aeb63968ce1bae60a2e2bfbbbb',
         displayName: 'CafeMatch',
-        scheme: `fb${process.env.EXPO_PUBLIC_FB_APP_ID}`,
+        scheme: `fb${process.env.EXPO_PUBLIC_FB_APP_ID ?? '805065779071148'}`,
         advertiserIDCollectionEnabled: false,
         autoLogAppEventsEnabled: false,
         isAutoInitEnabled: true,

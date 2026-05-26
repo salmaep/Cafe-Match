@@ -4,11 +4,11 @@ import {
   View,
   Text,
   StyleSheet,
-  Image,
   TouchableOpacity,
   ActivityIndicator,
   useWindowDimensions,
 } from 'react-native';
+import { Image } from 'expo-image';
 import SwipeableCard from '../components/SwipeableCard';
 import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -243,7 +243,13 @@ export default function CardSwipeScreen() {
 
       return (
         <View style={[styles.card, { width: CARD_W, height: CARD_H }]}>
-          <Image source={{ uri: bgPhoto }} style={styles.cardImage} />
+          <Image
+            source={{ uri: bgPhoto }}
+            style={styles.cardImage}
+            cachePolicy="memory-disk"
+            transition={200}
+            contentFit="cover"
+          />
 
           <LinearGradient
             colors={['rgba(0,0,0,0.55)', 'transparent']}

@@ -1,8 +1,14 @@
 import { useEffect, useState } from "react";
+import { X } from "../../utils/lucideIcon";
 
 interface Props {
   q: string;
   onQChange: (next: string) => void;
+  /** Optional: fires on every keystroke (drives live autocomplete). */
+  onTyping?: (next: string) => void;
+  /** Optional focus/blur callbacks for dropdown visibility. */
+  onFocus?: () => void;
+  onBlur?: () => void;
   // Omit to hide the filter button (e.g. when an inline sidebar already exposes filters)
   onOpenFilters?: () => void;
   activeFilterCount?: number;
@@ -11,6 +17,9 @@ interface Props {
 export default function SearchBar({
   q,
   onQChange,
+  onTyping,
+  onFocus,
+  onBlur,
   onOpenFilters,
   activeFilterCount = 0,
 }: Props) {
@@ -32,9 +41,15 @@ export default function SearchBar({
         <input
           type="text"
           value={local}
-          onChange={(e) => setLocal(e.target.value)}
+          onChange={(e) => {
+            const v = e.target.value;
+            setLocal(v);
+            onTyping?.(v);
+          }}
+          onFocus={onFocus}
+          onBlur={onBlur}
           placeholder="Cari kafe, alamat, fasilitas, atau menu…"
-          className="w-full px-4 py-2 pl-9 border border-[#F0EDE8] rounded-lg text-sm focus:border-[#D48B3A] focus:ring-2 focus:ring-inset focus:ring-[#D48B3A]/30 outline-none transition-colors"
+          className="w-full px-4 py-2 pl-9 pr-9 border border-[#F0EDE8] rounded-lg text-sm focus:border-[#D48B3A] focus:ring-2 focus:ring-inset focus:ring-[#D48B3A]/30 outline-none transition-colors"
         />
         <svg
           className="absolute left-3 top-2.5 h-4 w-4 text-[#8A8880]"
@@ -49,6 +64,21 @@ export default function SearchBar({
             d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
           />
         </svg>
+        {local && (
+          <button
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => {
+              setLocal("");
+              onTyping?.("");
+              onQChange("");
+            }}
+            aria-label="Bersihkan pencarian"
+            className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-[#D6CFC2] text-white flex items-center justify-center hover:bg-[#8A8880] transition-colors"
+          >
+            <X size={12} strokeWidth={2.5} />
+          </button>
+        )}
       </div>
       <button
         type="submit"

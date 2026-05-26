@@ -16,6 +16,7 @@ import {
 import { CafesService } from './cafes.service';
 import { SearchCafesDto } from './dto/search-cafes.dto';
 import { DiscoverCafesDto } from './dto/discover-cafes.dto';
+import { AutocompleteCafesDto } from './dto/autocomplete-cafes.dto';
 import { CreateCafeDto } from './dto/create-cafe.dto';
 import { Public } from '../common/decorators/public.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -67,6 +68,15 @@ export class CafesController {
       );
       return this.semanticSearch.fallbackSearch(dto);
     }
+  }
+
+  // Lightweight autocomplete for the SearchBar dropdown — projects only
+  // identity + locality so the typeahead payload stays tiny. Must be declared
+  // BEFORE @Get(':id').
+  @Public()
+  @Get('autocomplete')
+  autocomplete(@Query() dto: AutocompleteCafesDto) {
+    return this.cafesService.autocomplete(dto);
   }
 
   // Returns the facility catalog grouped by category with per-option counts.

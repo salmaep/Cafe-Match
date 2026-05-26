@@ -1,6 +1,15 @@
 import { useRef, useState, type FormEvent } from "react";
 import { usersApi } from "../../api/users.api";
 import { useAuth } from "../../context/AuthContext";
+import {
+  Camera,
+  Check,
+  Eye,
+  EyeOff,
+  Lock,
+  User,
+  X,
+} from "../../utils/lucideIcon";
 
 interface Props {
   open: boolean;
@@ -33,7 +42,7 @@ export default function EditProfileModal({ open, onClose }: Props) {
             aria-label="Tutup"
             className="w-8 h-8 rounded-full hover:bg-[#F0EDE8] text-[#8A8880] flex items-center justify-center"
           >
-            ✕
+            <X size={18} strokeWidth={2} />
           </button>
         </div>
 
@@ -43,13 +52,13 @@ export default function EditProfileModal({ open, onClose }: Props) {
             active={tab === "profile"}
             onClick={() => setTab("profile")}
           >
-            👤 Profil
+            <User size={14} strokeWidth={2} /> Profil
           </TabButton>
           <TabButton
             active={tab === "password"}
             onClick={() => setTab("password")}
           >
-            🔒 Password
+            <Lock size={14} strokeWidth={2} /> Password
           </TabButton>
         </div>
 
@@ -78,7 +87,7 @@ function TabButton({
     <button
       type="button"
       onClick={onClick}
-      className={`px-3 py-2 text-sm font-bold transition-colors border-b-2 -mb-px ${
+      className={`inline-flex items-center gap-1.5 px-3 py-2 text-sm font-bold transition-colors border-b-2 -mb-px ${
         active
           ? "text-[#D48B3A] border-[#D48B3A]"
           : "text-[#8A8880] border-transparent hover:text-[#1C1C1A]"
@@ -178,10 +187,10 @@ function ProfileTab({
           <button
             type="button"
             onClick={() => fileRef.current?.click()}
-            className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-[#1C1C1A] text-white text-sm flex items-center justify-center shadow-lg hover:bg-black transition-colors"
+            className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-[#1C1C1A] text-white flex items-center justify-center shadow-lg hover:bg-black transition-colors"
             title="Ganti foto"
           >
-            📷
+            <Camera size={14} strokeWidth={2} />
           </button>
         </div>
         <input
@@ -303,8 +312,8 @@ function PasswordTab({ onClose }: { onClose: () => void }) {
   return (
     <form onSubmit={submit} className="p-5 space-y-4">
       {success && (
-        <div className="p-3 bg-emerald-50 text-emerald-700 rounded-xl text-sm border border-emerald-100">
-          ✓ Password berhasil diubah!
+        <div className="p-3 bg-emerald-50 text-emerald-700 rounded-xl text-sm border border-emerald-100 inline-flex items-center gap-2">
+          <Check size={16} strokeWidth={2.5} /> Password berhasil diubah!
         </div>
       )}
       {error && (
@@ -378,10 +387,14 @@ function PasswordField({
         <button
           type="button"
           onClick={() => setShow((s) => !s)}
-          className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full text-[#8A8880] hover:bg-[#E8E4DD] flex items-center justify-center text-base"
+          className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full text-[#8A8880] hover:bg-[#E8E4DD] flex items-center justify-center"
           aria-label={show ? "Sembunyikan password" : "Tampilkan password"}
         >
-          {show ? "🙈" : "👁️"}
+          {show ? (
+            <EyeOff size={18} strokeWidth={2} />
+          ) : (
+            <Eye size={18} strokeWidth={2} />
+          )}
         </button>
       </div>
     </div>

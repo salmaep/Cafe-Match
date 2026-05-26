@@ -1,5 +1,16 @@
+import type { LucideIcon as LucideIconType } from "lucide-react";
 import { WIZARD_PURPOSES } from "../../constants/purposes";
 import type { Facility } from "../../types/wizard";
+import {
+  Armchair,
+  Baby,
+  Building2,
+  Leaf,
+  Plug,
+  SquareParking,
+  VolumeX,
+  Wifi,
+} from "../../utils/lucideIcon";
 
 // Re-export from single source of truth (constants/purposes.ts).
 // Kept as alias so wizard code keeps importing from wizardData for convenience.
@@ -32,15 +43,15 @@ export const DESTINATION_SUGGESTIONS: {
   },
 ];
 
-export const AMENITIES: { label: Facility; icon: string }[] = [
-  { label: "WiFi", icon: "📶" },
-  { label: "Power Outlet", icon: "🔌" },
-  { label: "Mushola", icon: "🕌" },
-  { label: "Parking", icon: "🅿️" },
-  { label: "Kid-Friendly", icon: "👶" },
-  { label: "Quiet Atmosphere", icon: "🤫" },
-  { label: "Large Tables", icon: "🪑" },
-  { label: "Outdoor Area", icon: "🌿" },
+export const AMENITIES: { label: Facility; icon: LucideIconType }[] = [
+  { label: "WiFi", icon: Wifi },
+  { label: "Power Outlet", icon: Plug },
+  { label: "Mushola", icon: Building2 },
+  { label: "Parking", icon: SquareParking },
+  { label: "Kid-Friendly", icon: Baby },
+  { label: "Quiet Atmosphere", icon: VolumeX },
+  { label: "Large Tables", icon: Armchair },
+  { label: "Outdoor Area", icon: Leaf },
 ];
 
 export const RADIUS_OPTIONS = [0.5, 1, 2];

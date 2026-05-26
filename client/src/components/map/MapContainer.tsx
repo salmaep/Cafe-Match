@@ -10,6 +10,7 @@ import { formatDistance } from "../../utils/haversine";
 import { cafeUrl } from "../../utils/cafeUrl";
 import { getCafeImage, placeholderImage } from "../../utils/cafeImage";
 import CafeClusterMarkers from "./CafeClusterMarkers";
+import { Star } from "../../utils/lucideIcon";
 
 const MAP_ID = import.meta.env.VITE_GOOGLE_MAPS_MAP_ID || undefined;
 
@@ -200,8 +201,9 @@ export default function MapView({ center, cafes, radius, onMapClick }: Props) {
                 <div className="flex items-center gap-1.5 mt-0.5 text-[12px] text-[#8A8880]">
                   {activeCafe.googleRating != null && (
                     <>
-                      <span className="text-[#D48B3A] font-semibold">
-                        ★ {activeCafe.googleRating}
+                      <span className="text-[#D48B3A] font-semibold inline-flex items-center gap-1">
+                        <Star size={11} strokeWidth={2} fill="currentColor" />
+                        {activeCafe.googleRating}
                       </span>
                       {activeCafe.totalGoogleReviews != null && (
                         <span>({activeCafe.totalGoogleReviews})</span>

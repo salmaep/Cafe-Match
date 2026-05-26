@@ -523,13 +523,16 @@ export default function MapScreen() {
         </View>
       )}
 
-      <PinTogglesOverlay
-        topOffset={insets.top + 80 + (activeCheckin ? 60 : 0)}
-        showCafePins={showCafePins}
-        showFriendPins={showFriendPins}
-        onToggleCafePins={() => setShowCafePins((v) => !v)}
-        onToggleFriendPins={() => setShowFriendPins((v) => !v)}
-      />
+      {/* Hidden — pin toggles removed to mirror web b5acbe27. Pins always visible. */}
+      {false && (
+        <PinTogglesOverlay
+          topOffset={insets.top + 80 + (activeCheckin ? 60 : 0)}
+          showCafePins={showCafePins}
+          showFriendPins={showFriendPins}
+          onToggleCafePins={() => setShowCafePins((v) => !v)}
+          onToggleFriendPins={() => setShowFriendPins((v) => !v)}
+        />
+      )}
 
       {showToast && (
         <View style={styles.toast}>
@@ -556,7 +559,8 @@ export default function MapScreen() {
         onPickEmoji={handleThrowEmoji}
       />
 
-      {activeCheckin && (
+      {/* Hidden — check-in feature disabled. Mirrors web b5acbe27. */}
+      {false && activeCheckin && (
         <ActiveCheckinCard
           topInset={insets.top}
           cafeName={

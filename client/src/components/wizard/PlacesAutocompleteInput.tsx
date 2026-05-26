@@ -2,6 +2,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useMapsLibrary } from "@vis.gl/react-google-maps";
+import { Check, MapPin } from "../../utils/lucideIcon";
 
 interface Props {
   onSelect: (lat: number, lng: number, label: string) => void;
@@ -181,9 +182,10 @@ export default function PlacesAutocompleteInput({
                   type="button"
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => handlePick(p)}
-                  className="w-full text-left px-4 py-3 text-sm text-[#1C1C1A] hover:bg-[#FDF6EC] border-b border-[#F0EDE8] last:border-b-0"
+                  className="w-full text-left px-4 py-3 text-sm text-[#1C1C1A] hover:bg-[#FDF6EC] border-b border-[#F0EDE8] last:border-b-0 inline-flex items-center gap-2"
                 >
-                  📍 {p.description}
+                  <MapPin size={14} strokeWidth={2} className="text-[#D48B3A]" />{" "}
+                  {p.description}
                 </button>
               </li>
             ))}
@@ -191,8 +193,8 @@ export default function PlacesAutocompleteInput({
           document.body,
         )}
       {selectedLabel && (
-        <p className="text-xs font-semibold text-[#2F8F4E] mt-2">
-          ✓ {selectedLabel}
+        <p className="text-xs font-semibold text-[#2F8F4E] mt-2 inline-flex items-center gap-1.5">
+          <Check size={12} strokeWidth={2.5} /> {selectedLabel}
         </p>
       )}
       {!placesLib && (

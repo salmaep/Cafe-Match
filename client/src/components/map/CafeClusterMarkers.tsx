@@ -12,11 +12,20 @@ interface Props {
   onCafeClick: (id: number) => void;
 }
 
+// Coffee glyph paths sourced from lucide-react Coffee icon (viewBox 0 0 24 24),
+// rendered inline so the marker stays a pure SVG without React runtime dependency.
+const COFFEE_PATHS = `
+  <path d="M17 8h1a4 4 0 1 1 0 8h-1"/>
+  <path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/>
+  <line x1="6" x2="6" y1="2" y2="4"/>
+  <line x1="10" x2="10" y1="2" y2="4"/>
+  <line x1="14" x2="14" y1="2" y2="4"/>`;
+
 const CAFE_PIN_SVG = `
 <svg width="28" height="38" viewBox="0 0 28 38" xmlns="http://www.w3.org/2000/svg">
   <path d="M14 0C6.27 0 0 6.27 0 14c0 10.5 14 24 14 24s14-13.5 14-24C28 6.27 21.73 0 14 0z" fill="#d97706"/>
   <circle cx="14" cy="13" r="7" fill="#fff"/>
-  <text x="14" y="17" text-anchor="middle" font-size="13" fill="#d97706">☕</text>
+  <g transform="translate(8 7) scale(0.5)" stroke="#d97706" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none">${COFFEE_PATHS}</g>
 </svg>`;
 
 const PROMOTED_PIN_HTML = `
@@ -31,7 +40,7 @@ const PROMOTED_PIN_HTML = `
     </defs>
     <path d="M14 0C6.27 0 0 6.27 0 14c0 10.5 14 24 14 24s14-13.5 14-24C28 6.27 21.73 0 14 0z" fill="url(#cm-newGrad-cluster)"/>
     <circle cx="14" cy="13" r="7" fill="#fff"/>
-    <text x="14" y="17" text-anchor="middle" font-size="13" font-weight="bold" fill="#dc2626">☕</text>
+    <g transform="translate(8 7) scale(0.5)" stroke="#dc2626" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none">${COFFEE_PATHS}</g>
   </svg>
 </div>`;
 

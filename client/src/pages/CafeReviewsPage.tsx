@@ -5,7 +5,7 @@ import {
   useNavigate,
   useSearchParams,
 } from "react-router-dom";
-import { ChevronLeft, Plus } from "../utils/lucideIcon";
+import { ChevronLeft, PencilLine, Plus } from "../utils/lucideIcon";
 import { extractCafeIdFromSlug, cafeUrl } from "../utils/cafeUrl";
 import { cafesApi, type GoogleReview } from "../api/cafes.api";
 import { reviewsApi, type Review, type ReviewSort } from "../api/reviews.api";
@@ -394,7 +394,11 @@ export default function CafeReviewsPage() {
                   </div>
                 ) : reviews.length === 0 ? (
                   <div className="text-center py-10 bg-white rounded-2xl border border-[#F0EDE8]">
-                    <p className="text-2xl mb-2">✍️</p>
+                    <PencilLine
+                      size={24}
+                      strokeWidth={2}
+                      className="mx-auto mb-2 text-[#D48B3A]"
+                    />
                     <p className="text-sm font-semibold text-[#1C1C1A]">
                       Belum ada ulasan
                     </p>
@@ -503,7 +507,11 @@ export default function CafeReviewsPage() {
             {/* Empty state for "Semua" when both are empty */}
             {sourceTab === "all" && appTotal === 0 && googleTotal === 0 && (
               <div className="text-center py-16">
-                <p className="text-2xl mb-2">✍️</p>
+                <PencilLine
+                  size={24}
+                  strokeWidth={2}
+                  className="mx-auto mb-2 text-[#D48B3A]"
+                />
                 <p className="text-[#8A8880] mb-4">Belum ada review</p>
                 <button
                   type="button"

@@ -121,6 +121,7 @@ export interface User {
   role?: 'user' | 'owner' | 'admin';
   friendCode?: string;
   avatarUrl?: string;
+  provider?: string;
 }
 
 export interface AuthResponse {

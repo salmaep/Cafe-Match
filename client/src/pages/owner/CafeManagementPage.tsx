@@ -1,6 +1,8 @@
 import { useState, useEffect, type FormEvent } from "react";
 import { ownerApi } from "../../api/owner.api";
 import type { Cafe } from "../../types";
+import type { LucideIcon } from "lucide-react";
+import { Check, DollarSign, MapPin, Pencil, Phone } from "../../utils/lucideIcon";
 
 type Mode = "view" | "edit" | "create";
 
@@ -212,9 +214,9 @@ export default function CafeManagementPage() {
           <button
             type="button"
             onClick={startEdit}
-            className="self-start sm:self-auto px-4 py-2 bg-[#1C1C1A] text-white rounded-xl font-bold text-sm hover:bg-black transition-colors"
+            className="inline-flex items-center gap-1.5 self-start sm:self-auto px-4 py-2 bg-[#1C1C1A] text-white rounded-xl font-bold text-sm hover:bg-black transition-colors"
           >
-            ✏️ Edit Info
+            <Pencil size={14} strokeWidth={2} /> Edit Info
           </button>
         )}
       </div>
@@ -352,9 +354,10 @@ export default function CafeManagementPage() {
               <button
                 type="button"
                 onClick={startMenuEdit}
-                className="px-3 py-1.5 bg-[#1C1C1A] text-white rounded-lg text-xs font-bold hover:bg-black transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#1C1C1A] text-white rounded-lg text-xs font-bold hover:bg-black transition-colors"
               >
-                ✏️ {menus.length === 0 ? "Add Menu" : "Edit Menu"}
+                <Pencil size={12} strokeWidth={2} />
+                {menus.length === 0 ? "Add Menu" : "Edit Menu"}
               </button>
             ) : (
               <button
@@ -469,8 +472,8 @@ export default function CafeManagementPage() {
 // ── Read-only summary card ──────────────────────────────────
 
 function CafeSummary({ cafe, onEdit }: { cafe: Cafe; onEdit: () => void }) {
-  const chips: string[] = [];
-  if (cafe.priceRange) chips.push(`💰 ${cafe.priceRange}`);
+  const chips: { icon: LucideIcon; label: string }[] = [];
+  if (cafe.priceRange) chips.push({ icon: DollarSign, label: cafe.priceRange });
   const featureNames: string[] = Array.isArray(cafe.features)
     ? cafe.features.slice(0, 4).map((f) => f.name)
     : Array.isArray(cafe.facilities)
@@ -479,11 +482,12 @@ function CafeSummary({ cafe, onEdit }: { cafe: Cafe; onEdit: () => void }) {
           .map((f: any) => (typeof f === "string" ? f : f?.name))
           .filter(Boolean)
       : [];
-  for (const name of featureNames) chips.push(`✓ ${name}`);
+  for (const name of featureNames) chips.push({ icon: Check, label: name });
   if (cafe.latitude != null && cafe.longitude != null) {
-    chips.push(
-      `📍 ${Number(cafe.latitude).toFixed(4)}, ${Number(cafe.longitude).toFixed(4)}`,
-    );
+    chips.push({
+      icon: MapPin,
+      label: `${Number(cafe.latitude).toFixed(4)}, ${Number(cafe.longitude).toFixed(4)}`,
+    });
   }
 
   return (
@@ -495,12 +499,12 @@ function CafeSummary({ cafe, onEdit }: { cafe: Cafe; onEdit: () => void }) {
           </h2>
           <p className="text-sm text-[#8A8880] mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5">
             <span className="inline-flex items-center gap-1 min-w-0">
-              <span>📍</span>
+              <MapPin size={12} strokeWidth={2} />
               <span className="truncate">{cafe.address || "—"}</span>
             </span>
             {cafe.phone && (
               <span className="inline-flex items-center gap-1">
-                <span>📞</span>
+                <Phone size={12} strokeWidth={2} />
                 <span>{cafe.phone}</span>
               </span>
             )}
@@ -509,9 +513,9 @@ function CafeSummary({ cafe, onEdit }: { cafe: Cafe; onEdit: () => void }) {
         <button
           type="button"
           onClick={onEdit}
-          className="shrink-0 px-3 py-1.5 bg-[#1C1C1A] text-white rounded-lg text-xs font-bold hover:bg-black transition-colors"
+          className="inline-flex items-center gap-1.5 shrink-0 px-3 py-1.5 bg-[#1C1C1A] text-white rounded-lg text-xs font-bold hover:bg-black transition-colors"
         >
-          ✏️ Edit
+          <Pencil size={12} strokeWidth={2} /> Edit
         </button>
       </div>
 
@@ -525,10 +529,11 @@ function CafeSummary({ cafe, onEdit }: { cafe: Cafe; onEdit: () => void }) {
         <div className="flex flex-wrap gap-1.5 mt-3">
           {chips.map((chip) => (
             <span
-              key={chip}
-              className="bg-[#FDF6EC] text-[#1C1C1A] text-[11px] font-semibold rounded-full px-2.5 py-1 border border-[#D48B3A]/20"
+              key={chip.label}
+              className="inline-flex items-center gap-1 bg-[#FDF6EC] text-[#1C1C1A] text-[11px] font-semibold rounded-full px-2.5 py-1 border border-[#D48B3A]/20"
             >
-              {chip}
+              <chip.icon size={11} strokeWidth={2} />
+              {chip.label}
             </span>
           ))}
         </div>

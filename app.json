@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "1232b1e2-bb41-477e-a218-b32fc6cad1f1"
+      }
+    },
+    "android": {
+      "package": "com.rondi999.cafematch"
+    }
+  }
+}

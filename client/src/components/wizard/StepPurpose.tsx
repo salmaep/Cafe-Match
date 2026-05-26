@@ -1,8 +1,8 @@
 import { useTranslation } from "react-i18next";
 import type { PurposeSlug } from "../../constants/purposes";
-import { getPurposeBySlug } from "@shared/constants/purposes";
 import { usePreferences } from "../../context/PreferencesContext";
 import { wizardText } from "@shared/i18n";
+import { PurposeIcon } from "../../utils/purposeIcons";
 
 interface Props {
   value: PurposeSlug | undefined;
@@ -37,7 +37,6 @@ export default function StepPurpose({ value, onChange }: Props) {
           {serverPurposes.map((p) => {
             const active = value === p.slug;
             const reqCount = p.requirements?.length ?? 0;
-            const emoji = getPurposeBySlug(p.slug)?.emoji ?? "✨";
             return (
               <button
                 key={p.slug}
@@ -49,7 +48,12 @@ export default function StepPurpose({ value, onChange }: Props) {
                     : "border-transparent bg-[#F0EDE8] hover:bg-[#E8E4DD] hover:border-[#E0DCD3]"
                 }`}
               >
-                <span className="mb-1.5 text-2xl leading-none">{emoji}</span>
+                <PurposeIcon
+                  slug={p.slug}
+                  icon={p.icon}
+                  size={22}
+                  className={`mb-1.5 ${active ? "text-[#D48B3A]" : "text-[#8A8880]"}`}
+                />
                 <span
                   className={`text-sm font-bold leading-tight ${
                     active ? "text-[#D48B3A]" : "text-[#1C1C1A]"

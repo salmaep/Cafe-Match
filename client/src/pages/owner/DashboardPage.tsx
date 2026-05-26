@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ownerApi } from "../../api/owner.api";
 import type { OwnerDashboard } from "../../types/owner";
+import { Coffee } from "../../utils/lucideIcon";
 
 export default function DashboardPage() {
   const [dashboard, setDashboard] = useState<OwnerDashboard | null>(null);
@@ -29,7 +30,7 @@ export default function DashboardPage() {
           Dashboard
         </h1>
         <div className="bg-[#FDF6EC] border border-[#D48B3A]/30 rounded-2xl p-6 text-center">
-          <span className="block text-4xl mb-3">☕</span>
+          <Coffee size={40} strokeWidth={1.5} className="mx-auto mb-3 text-[#D48B3A]" />
           <p className="text-[#1C1C1A] font-semibold mb-1">
             Belum ada cafe terdaftar
           </p>
@@ -135,7 +136,7 @@ export default function DashboardPage() {
           className="bg-white rounded-2xl shadow-sm border border-[#F0EDE8] p-5 hover:shadow-md hover:border-[#D48B3A]/40 transition-all"
         >
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-base">☕</span>
+            <Coffee size={16} strokeWidth={2} className="text-[#D48B3A]" />
             <h3 className="font-semibold text-[#1C1C1A]">Edit Cafe Profile</h3>
           </div>
           <p className="text-xs text-[#8A8880]">Update info, menus, photos</p>

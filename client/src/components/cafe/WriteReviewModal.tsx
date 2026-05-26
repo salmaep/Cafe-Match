@@ -2,7 +2,19 @@ import { useState, useEffect, useMemo } from "react";
 import { reviewsApi } from "../../api/reviews.api";
 import { cafesApi, type FilterGroup } from "../../api/cafes.api";
 import { usePreferences } from "../../context/PreferencesContext";
-import { X, ChevronLeft, Camera, Video, Star } from "../../utils/lucideIcon";
+import {
+  Camera,
+  ChevronLeft,
+  Flame,
+  Frown,
+  Meh,
+  Smile,
+  Sparkles,
+  Star,
+  ThumbsUp,
+  Video,
+  X,
+} from "../../utils/lucideIcon";
 import { getPurposeBySlug } from "@shared/constants/purposes";
 import { chipFromFacilityKey } from "@shared/constants/facilities";
 
@@ -249,7 +261,7 @@ export default function WriteReviewModal({
               <div className="grid grid-cols-2 gap-3">
                 {moodOptions.map((m) => {
                   const active = mood === m.key;
-                  const emoji = getPurposeBySlug(m.key)?.emoji ?? "✨";
+                  const emoji = getPurposeBySlug(m.key)?.emoji;
                   return (
                     <button
                       key={m.key}
@@ -261,7 +273,15 @@ export default function WriteReviewModal({
                           : "border-transparent bg-white hover:border-[#E8E4DD]"
                       }`}
                     >
-                      <span className="text-3xl leading-none">{emoji}</span>
+                      {emoji ? (
+                        <span className="text-3xl leading-none">{emoji}</span>
+                      ) : (
+                        <Sparkles
+                          size={28}
+                          strokeWidth={2}
+                          className={active ? "text-[#D48B3A]" : "text-[#8A8880]"}
+                        />
+                      )}
                       <span
                         className={`text-sm font-bold ${
                           active ? "text-[#D48B3A]" : "text-[#1C1C1A]"
@@ -433,18 +453,35 @@ export default function WriteReviewModal({
                   );
                 })}
               </div>
-              <div className="text-center text-base font-bold text-[#1C1C1A] mt-6">
-                {rating === 0
-                  ? "Pilih bintang"
-                  : rating === 5
-                    ? "🔥 Mantap jiwa!"
-                    : rating === 4
-                      ? "😊 Bagus banget"
-                      : rating === 3
-                        ? "👍 Oke lah"
-                        : rating === 2
-                          ? "😐 Biasa aja"
-                          : "😕 Kurang"}
+              <div className="text-center text-base font-bold text-[#1C1C1A] mt-6 inline-flex items-center justify-center gap-1.5 w-full">
+                {rating === 0 ? (
+                  "Pilih bintang"
+                ) : rating === 5 ? (
+                  <>
+                    <Flame size={18} strokeWidth={2} className="text-red-500" />
+                    Mantap jiwa!
+                  </>
+                ) : rating === 4 ? (
+                  <>
+                    <Smile size={18} strokeWidth={2} className="text-emerald-500" />
+                    Bagus banget
+                  </>
+                ) : rating === 3 ? (
+                  <>
+                    <ThumbsUp size={18} strokeWidth={2} className="text-amber-500" />
+                    Oke lah
+                  </>
+                ) : rating === 2 ? (
+                  <>
+                    <Meh size={18} strokeWidth={2} className="text-[#8A8880]" />
+                    Biasa aja
+                  </>
+                ) : (
+                  <>
+                    <Frown size={18} strokeWidth={2} className="text-[#8A8880]" />
+                    Kurang
+                  </>
+                )}
               </div>
             </Step>
           )}

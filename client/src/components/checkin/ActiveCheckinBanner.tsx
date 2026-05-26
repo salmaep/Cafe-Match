@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useActiveCheckin } from "../../context/ActiveCheckinContext";
 import { cafeUrl } from "../../utils/cafeUrl";
+import { X } from "../../utils/lucideIcon";
 
 function pad2(n: number): string {
   return n < 10 ? `0${n}` : `${n}`;
@@ -100,7 +101,13 @@ export default function ActiveCheckinBanner() {
           disabled={submitting}
           className="shrink-0 inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full bg-white text-emerald-700 text-xs font-extrabold hover:bg-emerald-50 transition-colors disabled:opacity-50 shadow-sm"
         >
-          {submitting ? "Checking out…" : "✕ Check Out"}
+          {submitting ? (
+            "Checking out…"
+          ) : (
+            <>
+              <X size={12} strokeWidth={2.5} /> Check Out
+            </>
+          )}
         </button>
       </div>
     </div>

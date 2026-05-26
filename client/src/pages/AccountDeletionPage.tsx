@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import Seo from "../components/seo/Seo";
 import { useAuth } from "../context/AuthContext";
 import { usersApi } from "../api/users.api";
+import { CheckCircle2, X, Zap } from "../utils/lucideIcon";
 
 const CONTACT_EMAIL = "support@cafematch.id";
 
@@ -51,10 +52,7 @@ export default function AccountDeletionPage() {
 
       <div className="max-w-2xl mx-auto px-4 pt-8 pb-4">
         {/* Title */}
-        <h1
-          className="text-4xl font-normal text-[#1C1C1A] leading-tight tracking-tight mb-2"
-          style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}
-        >
+        <h1 className="text-3xl font-extrabold text-[#1C1C1A] leading-tight tracking-tight mb-2">
           Hapus Akun
         </h1>
         <p className="text-sm text-[#8A8880] mb-8">
@@ -66,7 +64,12 @@ export default function AccountDeletionPage() {
           {/* Self-service shortcut */}
           <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5">
             <div className="flex items-start gap-3">
-              <span className="text-2xl leading-none mt-0.5">⚡</span>
+              <Zap
+                size={22}
+                strokeWidth={2}
+                className="text-amber-600 shrink-0 mt-0.5"
+                fill="currentColor"
+              />
               <div className="flex-1">
                 <p className="text-sm font-bold text-[#1C1C1A] mb-1">
                   Cara tercepat — Hapus langsung dari aplikasi
@@ -107,7 +110,11 @@ export default function AccountDeletionPage() {
                     "Ulasan yang pernah dibuat",
                   ].map((item) => (
                     <li key={item} className="flex items-start gap-1.5">
-                      <span className="text-red-400 mt-0.5 shrink-0">✕</span>
+                      <X
+                        size={12}
+                        strokeWidth={2.5}
+                        className="text-red-400 mt-0.5 shrink-0"
+                      />
                       {item}
                     </li>
                   ))}
@@ -136,7 +143,11 @@ export default function AccountDeletionPage() {
           {/* Form or success state */}
           {submitted ? (
             <div className="bg-green-50 border border-green-200 rounded-2xl p-6 text-center">
-              <div className="text-4xl mb-3">✅</div>
+              <CheckCircle2
+                size={40}
+                strokeWidth={2}
+                className="mx-auto mb-3 text-green-600"
+              />
               <h2 className="text-base font-bold text-green-800 mb-2">
                 Permintaan diterima
               </h2>

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import PlacesAutocompleteInput from "./PlacesAutocompleteInput";
+import { MapPin, Search } from "../../utils/lucideIcon";
 
 interface Props {
   lat: number | null;
@@ -46,24 +47,24 @@ export default function StepLocation({
         <button
           type="button"
           onClick={selectCurrent}
-          className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
+          className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
             mode === "current"
               ? "bg-white text-[#D48B3A] shadow-sm"
               : "text-[#8A8880] hover:text-[#1C1C1A]"
           }`}
         >
-          📍 Lokasi sekarang
+          <MapPin size={14} strokeWidth={2} /> Lokasi sekarang
         </button>
         <button
           type="button"
           onClick={selectCustom}
-          className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
+          className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
             mode === "custom"
               ? "bg-white text-[#D48B3A] shadow-sm"
               : "text-[#8A8880] hover:text-[#1C1C1A]"
           }`}
         >
-          🔍 Cari alamat
+          <Search size={14} strokeWidth={2} /> Cari alamat
         </button>
       </div>
       {mode === "custom" && (

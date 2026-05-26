@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { usersApi } from "../../api/users.api";
 import { useAuth } from "../../context/AuthContext";
+import { AlertTriangle, X } from "../../utils/lucideIcon";
 
 interface Props {
   open: boolean;
@@ -73,7 +74,7 @@ export default function DeleteAccountModal({ open, onClose }: Props) {
             aria-label="Tutup"
             className="w-8 h-8 rounded-full hover:bg-[#F0EDE8] text-[#8A8880] flex items-center justify-center"
           >
-            ✕
+            <X size={18} strokeWidth={2} />
           </button>
         </div>
 
@@ -84,7 +85,11 @@ export default function DeleteAccountModal({ open, onClose }: Props) {
           {/* Warning banner */}
           <div className="bg-red-50 border border-red-200 rounded-xl p-4 space-y-2">
             <div className="flex items-start gap-2">
-              <span className="text-xl leading-none mt-0.5">⚠️</span>
+              <AlertTriangle
+                size={20}
+                strokeWidth={2}
+                className="text-red-600 shrink-0 mt-0.5"
+              />
               <div>
                 <p className="text-sm font-bold text-red-700">
                   Akun akan dinonaktifkan sekarang

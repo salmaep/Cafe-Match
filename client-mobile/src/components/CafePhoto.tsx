@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Image, View, Text, ImageStyle, ViewStyle } from 'react-native';
+import { View, Text, ImageStyle, ViewStyle } from 'react-native';
+import { Image } from 'expo-image';
 
 const PLACEHOLDER_COLORS = [
   '#B08850', '#6B8E7A', '#7B6E9E', '#8B7355', '#5E8A8A',
@@ -41,6 +42,9 @@ export default function CafePhoto({ photos, name, style, initialsSize }: Props) 
         source={{ uri }}
         style={style as ImageStyle}
         onError={() => setFailed(true)}
+        cachePolicy="memory-disk"
+        transition={200}
+        contentFit="cover"
       />
     );
   }

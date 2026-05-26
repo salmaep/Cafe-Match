@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  Image,
   TouchableOpacity,
   Dimensions,
   FlatList,
@@ -14,6 +13,7 @@ import {
   StatusBar,
   // Alert,
 } from "react-native";
+import { Image } from "expo-image";
 import { useRoute, useNavigation, RouteProp } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -89,6 +89,8 @@ function PhotoHeroMosaic({
         source={{ uri }}
         style={heroStyles.tileImg}
         accessibilityLabel={cafeName}
+        cachePolicy="memory-disk"
+        transition={200}
       />
     </TouchableOpacity>
   );
@@ -267,7 +269,13 @@ export default function CafeDetailScreen() {
   const [isFavorited, setIsFavorited] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [currentPhoto, setCurrentPhoto] = useState(0);
+  const [gridReady, setGridReady] = useState(false);
   const inShortlist = isInShortlist(cafe.id);
+
+  useEffect(() => {
+    const id = setTimeout(() => setGridReady(true), 0);
+    return () => clearTimeout(id);
+  }, []);
 
   // const [checkingIn, setCheckingIn] = useState(false);
 
@@ -506,7 +514,12 @@ export default function CafeDetailScreen() {
                 activeOpacity={0.95}
                 onPress={() => openZoom(index)}
               >
-                <Image source={{ uri: item }} style={styles.photo} />
+                <Image
+                  source={{ uri: item }}
+                  style={styles.photo}
+                  cachePolicy="memory-disk"
+                  transition={200}
+                />
               </TouchableOpacity>
             )}
           />
@@ -782,6 +795,8 @@ export default function CafeDetailScreen() {
                           <Image
                             source={{ uri: firstPhoto.url }}
                             style={styles.reviewPreviewPhoto}
+                            cachePolicy="memory-disk"
+                            transition={200}
                           />
                         )}
                       </TouchableOpacity>
@@ -955,6 +970,7 @@ export default function CafeDetailScreen() {
                 {(cafe.photos ?? []).slice(0, 9).map((photoUri, i) => {
                   const isLastVisible = i === 8;
                   const overflow = (cafe.photos?.length ?? 0) - 9;
+                  const showImage = i < 3 || gridReady;
                   return (
                     <TouchableOpacity
                       key={`${photoUri}-${i}`}
@@ -962,10 +978,16 @@ export default function CafeDetailScreen() {
                       activeOpacity={0.85}
                       onPress={() => openZoom(i)}
                     >
-                      <Image
-                        source={{ uri: photoUri }}
-                        style={styles.photoGridImage}
-                      />
+                      {showImage ? (
+                        <Image
+                          source={{ uri: photoUri }}
+                          style={styles.photoGridImage}
+                          cachePolicy="memory-disk"
+                          transition={200}
+                        />
+                      ) : (
+                        <View style={[styles.photoGridImage, styles.photoGridPlaceholder]} />
+                      )}
                       {isLastVisible && overflow > 0 && (
                         <View style={styles.photoGridOverflow}>
                           <Text style={styles.photoGridOverflowText}>
@@ -1089,7 +1111,9 @@ export default function CafeDetailScreen() {
                 <Image
                   source={{ uri: item }}
                   style={styles.zoomImage}
-                  resizeMode="contain"
+                  contentFit="contain"
+                  cachePolicy="memory-disk"
+                  transition={200}
                 />
               </ScrollView>
             )}
@@ -1378,6 +1402,9 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
     resizeMode: "cover",
+  },
+  photoGridPlaceholder: {
+    backgroundColor: "#F0EDE8",
   },
   photoGridOverflow: {
     ...StyleSheet.absoluteFillObject,

@@ -18,6 +18,7 @@ import { useTranslation } from 'react-i18next';
 import { profileText } from '@shared/i18n/keys';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { updateProfileApi, changePasswordApi } from '../services/api';
 import { colors, spacing, radius } from '../theme';
@@ -28,6 +29,7 @@ export default function EditProfileModal() {
   const navigation = useNavigation<StackNavigationProp<any>>();
   const { t } = useTranslation();
   const [tab, setTab] = useState<Tab>('profile');
+  const insets = useSafeAreaInsets();
 
   return (
     <KeyboardAvoidingView
@@ -39,7 +41,7 @@ export default function EditProfileModal() {
         activeOpacity={1}
         onPress={() => navigation.goBack()}
       />
-      <View style={styles.sheet}>
+      <View style={[styles.sheet, { paddingBottom: 40 + insets.bottom }]}>
         <View style={styles.handleBar} />
 
         <View style={styles.header}>

@@ -15,6 +15,8 @@ import { commonText, wizardText } from '@shared/i18n/keys';
 import MapView, { Circle } from 'react-native-maps';
 import RadiusPickerModal from '../components/cafe/RadiusPickerModal';
 import PlacesAutocompleteInput from '../components/wizard/PlacesAutocompleteInput';
+import ScreenSafeBottom from '../components/ScreenSafeBottom';
+import { LucideIcon } from '../utils/lucideIcon';
 import { usePreferences } from '../context/PreferencesContext';
 import { colors, spacing, radius } from '../theme';
 import { Purpose, WizardPreferences } from '../types';
@@ -60,11 +62,15 @@ export default function WizardScreen({ onComplete, onSkip }: WizardScreenProps =
     return {
       slug: p.slug,
       label: p.name,
+      icon: p.icon ?? undefined,
       emoji: local?.emoji ?? '⭐',
       tagline: p.description ?? local?.tagline ?? '',
     };
   });
-  const purposeOptions = wizardPurposes.length > 0 ? wizardPurposes : WIZARD_PURPOSES;
+  const purposeOptions: { slug: string; label: string; icon?: string; emoji: string; tagline: string }[] =
+    wizardPurposes.length > 0
+      ? wizardPurposes
+      : WIZARD_PURPOSES.map((p) => ({ ...p, icon: undefined }));
   const [step, setStep] = useState(0);
 
   const [purposeId, setPurposeId] = useState<number | null>(null);
@@ -180,7 +186,7 @@ export default function WizardScreen({ onComplete, onSkip }: WizardScreenProps =
   );
 
   return (
-    <View style={styles.container}>
+    <ScreenSafeBottom style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         {step > 0 ? (
@@ -216,7 +222,18 @@ export default function WizardScreen({ onComplete, onSkip }: WizardScreenProps =
                   style={[styles.optionCard, active && styles.optionCardActive]}
                   onPress={() => handleSelectPurpose(p.slug)}
                 >
-                  <Text style={styles.optionEmoji}>{p.emoji}</Text>
+                  {p.icon ? (
+                    <View style={styles.optionIcon}>
+                      <LucideIcon
+                        name={p.icon}
+                        size={26}
+                        color={active ? colors.accent : colors.primary}
+                        strokeWidth={2}
+                      />
+                    </View>
+                  ) : (
+                    <Text style={styles.optionEmoji}>{p.emoji}</Text>
+                  )}
                   <Text style={[styles.optionLabel, active && styles.optionLabelActive]}>
                     {p.label}
                   </Text>
@@ -547,7 +564,7 @@ export default function WizardScreen({ onComplete, onSkip }: WizardScreenProps =
           </Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </ScreenSafeBottom>
   );
 }
 
@@ -613,6 +630,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FDF6EC',
   },
   optionEmoji: { fontSize: 26, marginBottom: 4 },
+  optionIcon: { marginBottom: 4, height: 30, alignItems: 'center', justifyContent: 'center' },
   optionLabel: {
     fontSize: 13,
     fontWeight: '700',

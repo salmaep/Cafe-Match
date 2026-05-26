@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import CafeMatchLogo from '../components/CafeMatchLogo';
 import { colors } from '../theme';
 import { APP_VERSION } from '../constant/version';
@@ -9,6 +10,7 @@ import { APP_VERSION } from '../constant/version';
 export default function SplashScreen() {
   const navigation = useNavigation<StackNavigationProp<any>>();
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -29,7 +31,9 @@ export default function SplashScreen() {
       <Animated.View style={{ opacity: fadeAnim, alignItems: 'center' }}>
         <CafeMatchLogo size={64} />
       </Animated.View>
-      <Animated.Text style={[styles.version, { opacity: fadeAnim }]}>
+      <Animated.Text
+        style={[styles.version, { opacity: fadeAnim, bottom: 40 + insets.bottom }]}
+      >
         v{APP_VERSION}
       </Animated.Text>
     </View>
@@ -45,7 +49,6 @@ const styles = StyleSheet.create({
   },
   version: {
     position: 'absolute',
-    bottom: 40,
     fontSize: 12,
     color: colors.textSecondary,
     fontWeight: '600',

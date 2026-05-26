@@ -7,6 +7,7 @@ import { useShortlist } from "../context/ShortlistContext";
 import SwipeCard from "../components/discover/SwipeCard";
 import { cafeUrl } from "../utils/cafeUrl";
 import Seo from "../components/seo/Seo";
+import { Map } from "../utils/lucideIcon";
 
 const SWIPE_THRESHOLD = 120;
 
@@ -137,7 +138,7 @@ export default function DiscoverSwipePage() {
   if (allDone) {
     return (
       <div className="min-h-[80vh] flex flex-col items-center justify-center bg-[#FAF9F6] p-8 text-center">
-        <span className="text-6xl mb-4">🗺️</span>
+        <Map size={56} strokeWidth={1.5} className="mb-4 text-[#D48B3A]" />
         <h2 className="text-2xl font-bold text-[#1C1C1A] mb-1">
           Semua sudah dilihat!
         </h2>
@@ -147,9 +148,10 @@ export default function DiscoverSwipePage() {
         <button
           type="button"
           onClick={() => navigate("/", { replace: true })}
-          className="px-6 py-3 bg-[#D48B3A] text-white font-bold rounded-xl hover:bg-[#b87528] transition-colors"
+          className="inline-flex items-center gap-2 px-6 py-3 bg-[#D48B3A] text-white font-bold rounded-xl hover:bg-[#b87528] transition-colors"
         >
-          Buka Explore 🗺️
+          Buka Explore
+          <Map size={16} strokeWidth={2} />
         </button>
       </div>
     );
@@ -186,16 +188,14 @@ export default function DiscoverSwipePage() {
 
       {/* Page header */}
       <header className="md:absolute md:left-20 shrink-0 w-full max-w-130 md:max-w-275 mx-auto px-4 md:px-8 pt-4 md:pt-8">
-        <h1
-          className="m-0 font-normal text-[#1a1410] leading-[1.05] tracking-tight"
-          style={{
-            fontFamily: "'Instrument Serif', Georgia, serif",
-            fontSize: "clamp(26px, 3.5vw, 40px)",
-          }}
-        >
-          Temukan kafe <em className="italic text-[#b85d04]">favoritmu</em>.
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#1C1C1A] tracking-tight leading-tight">
+          Temukan kafe <br/>
+          <span className="bg-linear-to-r from-[#F97316] to-[#EA580C] bg-clip-text text-transparent">
+            favoritmu
+          </span>
+          .
         </h1>
-        <p className="text-[#8a7a66] text-[13px] md:text-sm mt-1.5">
+        <p className="text-[#8A8880] text-[13px] md:text-sm mt-1.5">
           Geser kartu — kanan untuk simpan, kiri untuk lewati.
         </p>
       </header>

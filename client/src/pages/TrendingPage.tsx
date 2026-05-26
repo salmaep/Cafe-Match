@@ -18,6 +18,20 @@ import { getOpenStatus } from "../utils/openingHours";
 import { buildFacilityChips } from "../utils/facilities";
 import { formatRating } from "../utils/rating";
 import { getPurposeBySlug } from "../constants/purposes";
+import {
+  Bookmark,
+  Circle,
+  Crown,
+  Flame,
+  Heart,
+  MapPin,
+  MessageCircle,
+  Settings,
+  Star,
+  X,
+} from "../utils/lucideIcon";
+import { LucideIcon, lucideForFacility } from "../utils/lucideIcon";
+import { PurposeIcon } from "../utils/purposeIcons";
 
 const PAGE_SIZE = 24;
 const AD_INTERVAL = 10;
@@ -129,7 +143,7 @@ export default function TrendingPage() {
             <div className="flex items-end justify-between gap-4">
               <div className="min-w-0">
                 <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/70 backdrop-blur-sm ring-1 ring-amber-200 text-[10px] font-extrabold tracking-[0.15em] uppercase text-[#B45309] mb-2.5 shadow-sm">
-                  <span>🔥</span> Trending Now
+                  <Flame size={12} strokeWidth={2.5} /> Trending Now
                 </div>
                 <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#1C1C1A] tracking-tight leading-tight">
                   Cafe paling{" "}
@@ -145,7 +159,7 @@ export default function TrendingPage() {
               </div>
               <div className="shrink-0 flex flex-col sm:flex-row items-end sm:items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-br from-[#FBBF24] via-[#F97316] to-[#EA580C] text-white text-xs font-extrabold shadow-md shadow-orange-500/20">
-                  <span className="text-sm leading-none">🔥</span>
+                  <Flame size={14} strokeWidth={2.5} fill="currentColor" />
                   <span className="tabular-nums">{total.toLocaleString()}</span>
                   <span className="text-[10px] opacity-80 font-bold tracking-wider">
                     CAFES
@@ -156,7 +170,7 @@ export default function TrendingPage() {
                   onClick={() => setFilterModalOpen(true)}
                   className="lg:hidden inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white text-[#1C1C1A] ring-1 ring-[#E8E4DD] text-xs font-bold hover:ring-[#D48B3A] transition-colors shadow-sm"
                 >
-                  <span>⚙️</span> Filter
+                  <Settings size={12} strokeWidth={2.5} /> Filter
                   {(facilities.length > 0 ||
                     priceRange ||
                     activePurposeId != null) && (
@@ -197,9 +211,12 @@ export default function TrendingPage() {
             <SkeletonGrid />
           ) : cafes.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-24 text-center">
-              <span className="text-5xl mb-3 inline-block animate-bounce">
-                🔥
-              </span>
+              <Flame
+                size={44}
+                strokeWidth={1.5}
+                className="mb-3 text-[#D48B3A] animate-bounce"
+                fill="currentColor"
+              />
               <h2 className="text-lg font-bold text-[#1C1C1A] mb-1">
                 Belum ada cafe trending
               </h2>
@@ -437,8 +454,8 @@ function WinnerCard({ cafe, onClick }: { cafe: Cafe; onClick: () => void }) {
           {/* Top-left: champion badge */}
           <div className="absolute top-4 left-4 flex items-center gap-2 flex-wrap">
             <div className="inline-flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-full bg-white shadow-lg">
-              <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-br from-[#FBBF24] to-[#F59E0B] text-white text-sm font-extrabold shadow-inner">
-                👑
+              <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-br from-[#FBBF24] to-[#F59E0B] text-white shadow-inner">
+                <Crown size={14} strokeWidth={2.5} />
               </span>
               <span className="text-[11px] font-extrabold tracking-[0.18em] text-[#1C1C1A]">
                 #1 TRENDING
@@ -446,7 +463,7 @@ function WinnerCard({ cafe, onClick }: { cafe: Cafe; onClick: () => void }) {
             </div>
             {isHot && (
               <div className="hot-pulse inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-gradient-to-r from-[#EF4444] to-[#EA580C] text-white text-[10px] font-extrabold tracking-wider shadow-md">
-                🔥 HOT
+                <Flame size={11} strokeWidth={2.5} fill="currentColor" /> HOT
               </div>
             )}
           </div>
@@ -455,7 +472,12 @@ function WinnerCard({ cafe, onClick }: { cafe: Cafe; onClick: () => void }) {
           <div className="absolute top-4 right-4 flex items-center gap-2">
             {formatRating(rating) && (
               <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/95 backdrop-blur-sm shadow-md text-[#1C1C1A] text-[12px] font-extrabold tabular-nums">
-                <span className="text-amber-500">★</span>
+                <Star
+                  size={12}
+                  strokeWidth={2}
+                  className="text-amber-500"
+                  fill="currentColor"
+                />
                 {formatRating(rating)}
                 {reviews != null && (
                   <span className="text-[#8A8880] font-medium ml-0.5">
@@ -478,10 +500,10 @@ function WinnerCard({ cafe, onClick }: { cafe: Cafe; onClick: () => void }) {
             )}
             <div className="mt-3 flex flex-wrap items-center gap-1.5">
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/15 backdrop-blur-sm text-white text-[11px] font-extrabold tabular-nums ring-1 ring-white/20">
-                ❤️ {(cafe.favoritesCount ?? 0).toLocaleString()}
+                <Heart size={11} strokeWidth={2} /> {(cafe.favoritesCount ?? 0).toLocaleString()}
               </span>
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/15 backdrop-blur-sm text-white text-[11px] font-extrabold tabular-nums ring-1 ring-white/20">
-                🔖 {(cafe.bookmarksCount ?? 0).toLocaleString()}
+                <Bookmark size={11} strokeWidth={2} /> {(cafe.bookmarksCount ?? 0).toLocaleString()}
               </span>
               {cafe.priceRange && (
                 <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-white/15 backdrop-blur-sm text-white text-[11px] font-extrabold ring-1 ring-white/20">
@@ -496,7 +518,7 @@ function WinnerCard({ cafe, onClick }: { cafe: Cafe; onClick: () => void }) {
                       : "bg-black/60 text-white ring-white/20"
                   }`}
                 >
-                  ●{" "}
+                  <Circle size={6} fill="currentColor" />
                   {open.isOpen
                     ? `Buka${open.closesAt ? ` · ${open.closesAt}` : ""}`
                     : "Tutup"}
@@ -513,9 +535,10 @@ function WinnerCard({ cafe, onClick }: { cafe: Cafe; onClick: () => void }) {
               {visibleChips.map((c) => (
                 <span
                   key={c.key}
-                  className="bg-white text-[#5C5A52] text-[11px] font-semibold rounded-full px-2.5 py-1 ring-1 ring-amber-200/60 shadow-sm"
+                  className="inline-flex items-center gap-1 bg-white text-[#5C5A52] text-[11px] font-semibold rounded-full px-2.5 py-1 ring-1 ring-amber-200/60 shadow-sm"
                 >
-                  {c.icon} {c.label}
+                  <LucideIcon name={lucideForFacility(c.key)} size={11} strokeWidth={2} />
+                  {c.label}
                 </span>
               ))}
               {overflow > 0 && (
@@ -598,7 +621,7 @@ function RunnerUpCard({
 
           {km && (
             <span className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full bg-black/55 backdrop-blur-sm text-white text-[10px] font-bold">
-              📍 {km} km
+              <MapPin size={10} strokeWidth={2} /> {km} km
             </span>
           )}
 
@@ -620,11 +643,11 @@ function RunnerUpCard({
           {/* Stats row */}
           <div className="flex items-center gap-3 text-[12px]">
             <span className="inline-flex items-center gap-1 font-extrabold text-[#EA580C] tabular-nums">
-              ❤️ {(cafe.favoritesCount ?? 0).toLocaleString()}
+              <Heart size={11} strokeWidth={2} /> {(cafe.favoritesCount ?? 0).toLocaleString()}
             </span>
             {formatRating(rating) && (
               <span className="inline-flex items-center gap-0.5 font-bold text-[#1C1C1A] tabular-nums">
-                ⭐ {formatRating(rating)}
+                <Star size={11} strokeWidth={2.5} fill="currentColor" className="text-amber-500" /> {formatRating(rating)}
                 {reviews != null && (
                   <span className="font-medium text-[#8A8880] ml-0.5">
                     ({reviews.toLocaleString()})
@@ -746,7 +769,12 @@ function ListRow({
         <div className="flex items-center gap-1.5 mt-0.5 text-[12px] text-[#8A8880]">
           {formatRating(rating) && (
             <>
-              <span className="text-amber-500">★</span>
+              <Star
+                size={12}
+                strokeWidth={2}
+                className="text-amber-500"
+                fill="currentColor"
+              />
               <span className="font-semibold text-[#1C1C1A]">
                 {formatRating(rating)}
               </span>
@@ -806,8 +834,12 @@ function ListRow({
 
         {cafe.topReviewText && (
           <p className="text-[11px] text-[#5C5A52] leading-snug mt-1.5 line-clamp-1 italic">
-            <span className="text-[#8A8880] not-italic">💬</span> "
-            {cafe.topReviewText}"
+            <MessageCircle
+              size={10}
+              strokeWidth={2}
+              className="inline text-[#8A8880] not-italic mr-1 -mt-0.5"
+            />
+            "{cafe.topReviewText}"
           </p>
         )}
 
@@ -820,7 +852,7 @@ function ListRow({
         </div>
       </div>
       <div className="shrink-0 flex flex-col items-center justify-center min-w-[56px] px-2 border-l border-[#F0EDE8]">
-        <span className="text-base leading-none">❤️</span>
+        <Heart size={16} strokeWidth={2} className="text-[#EA580C]" fill="currentColor" />
         <span className="text-sm font-extrabold text-[#EA580C] mt-1 leading-none">
           {cafe.favoritesCount ?? 0}
         </span>
@@ -863,21 +895,20 @@ function PurposeSidebar({
         </button>
         {purposes.map((p) => {
           const active = activeId === p.id;
-          const wizard = getPurposeBySlug(p.slug);
-          const label = wizard?.label ?? p.name;
-          const emoji = wizard?.emoji ?? "";
+          const label = getPurposeBySlug(p.slug)?.label ?? p.name;
           return (
             <button
               key={p.id}
               type="button"
               onClick={() => onSelect(active ? null : p.id)}
-              className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
+              className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
                 active
                   ? "bg-[#D48B3A] text-white border-[#D48B3A] shadow-sm"
                   : "bg-white text-[#1C1C1A] border-[#E8E4DD] hover:border-[#D48B3A] hover:text-[#D48B3A]"
               }`}
             >
-              {emoji} {label}
+              <PurposeIcon slug={p.slug} size={12} />
+              {label}
             </button>
           );
         })}
@@ -921,7 +952,7 @@ function MobileFilterModal({
             aria-label="Tutup"
             className="w-8 h-8 rounded-full hover:bg-[#F0EDE8] text-[#8A8880] flex items-center justify-center"
           >
-            ✕
+            <X size={18} strokeWidth={2} />
           </button>
         </div>
 
@@ -944,21 +975,20 @@ function MobileFilterModal({
               </button>
               {purposes.map((p) => {
                 const active = activePurposeId === p.id;
-                const wizard = getPurposeBySlug(p.slug);
-                const label = wizard?.label ?? p.name;
-                const emoji = wizard?.emoji ?? "";
+                const label = getPurposeBySlug(p.slug)?.label ?? p.name;
                 return (
                   <button
                     key={p.id}
                     type="button"
                     onClick={() => onPurposeSelect(active ? null : p.id)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
+                    className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
                       active
                         ? "bg-[#D48B3A] text-white border-[#D48B3A]"
                         : "bg-white text-[#1C1C1A] border-[#E8E4DD]"
                     }`}
                   >
-                    {emoji} {label}
+                    <PurposeIcon slug={p.slug} size={12} />
+                    {label}
                   </button>
                 );
               })}

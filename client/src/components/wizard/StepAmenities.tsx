@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { wizardText } from "@shared/i18n";
 import FilterPanel from "../search/FilterPanel";
+import { Star } from "../../utils/lucideIcon";
 
 interface Props {
   facilities: string[];
@@ -36,7 +37,7 @@ export default function StepAmenities({
       </p>
       {hasAutoPick && (
         <div className="mb-4 inline-flex items-center gap-1.5 text-[11px] text-[#B97726] bg-[#FDF6EC] border border-[#F2DAB6] rounded-full px-2.5 py-1 font-semibold">
-          <span>⭐</span>
+          <Star size={12} strokeWidth={2.5} fill="currentColor" className="text-[#D48B3A]" />
           <span>{t(wizardText.amenitiesAutoPickBadge)}</span>
         </div>
       )}

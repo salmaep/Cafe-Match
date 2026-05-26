@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
 import { cafesApi, type GoogleReview } from "../api/cafes.api";
-import { bookmarksApi } from "../api/bookmarks.api";
 import { favoritesApi } from "../api/favorites.api";
 import type { Cafe } from "../types";
 import { useAuth } from "../context/AuthContext";
@@ -26,21 +25,28 @@ import { buildFacilityChips } from "../utils/facilities";
 import { formatRating } from "../utils/rating";
 import { cleanAddress } from "../utils/address";
 import {
-  Bookmark,
+  Check,
+  Circle,
+  Grid3x3,
   Heart,
   MapPin,
-  Phone,
   Navigation,
+  PartyPopper,
+  PencilLine,
+  Phone,
+  Sparkles,
+  Star,
 } from "../utils/lucideIcon";
+import { LucideIcon, lucideForFacility } from "../utils/lucideIcon";
 
 const REVIEW_CATEGORY_LABELS: Record<string, string> = {
-  overall: "⭐ Rating",
-  ambiance: "🎨 Ambiance",
-  wfc: "💻 WFC",
-  food_quality: "🍽️ Food",
-  service: "🛎️ Service",
-  value_for_money: "💰 Value",
-  kid_friendly: "👶 Kid-friendly",
+  overall: "Rating",
+  ambiance: "Ambiance",
+  wfc: "WFC",
+  food_quality: "Food",
+  service: "Service",
+  value_for_money: "Value",
+  kid_friendly: "Kid-friendly",
 };
 function prettyReviewCategory(k: string) {
   if (REVIEW_CATEGORY_LABELS[k]) return REVIEW_CATEGORY_LABELS[k];
@@ -61,7 +67,6 @@ export default function CafeDetailPage() {
 
   const [cafe, setCafe] = useState<Cafe | null>(null);
   const [loading, setLoading] = useState(true);
-  const [bookmarked, setBookmarked] = useState(false);
   const [favorited, setFavorited] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [reviewSummary, setReviewSummary] = useState<ReviewSummary[]>([]);
@@ -179,24 +184,6 @@ export default function CafeDetailPage() {
         )
       : null;
 
-  const handleBookmark = async () => {
-    if (!cafe) return;
-    if (!user) {
-      navigate("/login");
-      return;
-    }
-    const res = await bookmarksApi.toggle(cafe.id);
-    setBookmarked(res.data.bookmarked);
-    setCafe((prev) =>
-      prev
-        ? {
-            ...prev,
-            bookmarksCount:
-              prev.bookmarksCount + (res.data.bookmarked ? 1 : -1),
-          }
-        : prev,
-    );
-  };
 
   const handleFavorite = async () => {
     if (!cafe) return;
@@ -287,11 +274,11 @@ export default function CafeDetailPage() {
   //  3. reviewSummary mood_* votes → real vote count
   const moodChips: { label: string; count: number }[] = (() => {
     const slugToLabel: Record<string, string> = {
-      "me-time": "🧘 Me Time",
-      date: "💑 Date",
-      family: "👨‍👩‍👧 Family",
-      "group-work": "📚 Group Study",
-      wfc: "💻 WFC",
+      "me-time": "Me Time",
+      date: "Date",
+      family: "Family",
+      "group-work": "Group Study",
+      wfc: "WFC",
     };
     const nameToSlug: Record<string, string> = {
       "Me Time": "me-time",
@@ -339,11 +326,11 @@ export default function CafeDetailPage() {
     // DUMMY PREVIEW — remove when real data flows through
     if (result.length === 0) {
       return [
-        { label: "💻 WFC", count: 24 },
-        { label: "🧘 Me Time", count: 18 },
-        { label: "💑 Date", count: 12 },
-        { label: "📚 Group Study", count: 7 },
-        { label: "👨‍👩‍👧 Family", count: 3 },
+        { label: "WFC", count: 24 },
+        { label: "Me Time", count: 18 },
+        { label: "Date", count: 12 },
+        { label: "Group Study", count: 7 },
+        { label: "Family", count: 3 },
       ];
     }
     return result;
@@ -474,7 +461,12 @@ export default function CafeDetailPage() {
               <div className="flex items-center gap-2 mt-2 text-sm flex-wrap">
                 {appRating != null && (
                   <span className="inline-flex items-center gap-1">
-                    <span className="text-amber-500">★</span>
+                    <Star
+                      size={14}
+                      strokeWidth={2}
+                      className="text-amber-500"
+                      fill="currentColor"
+                    />
                     <span className="font-bold text-[#1C1C1A]">
                       {appRating.toFixed(1)}
                     </span>
@@ -489,7 +481,10 @@ export default function CafeDetailPage() {
                   )}
                 {formatRating(cafe.googleRating) && (
                   <span className="inline-flex items-center gap-1 text-[#8A8880]">
-                    <span className="text-amber-400 text-xs">G★</span>
+                    <span className="text-amber-400 text-xs font-bold inline-flex items-center gap-0.5">
+                      G
+                      <Star size={10} strokeWidth={2} fill="currentColor" />
+                    </span>
                     <span className="text-xs">
                       {formatRating(cafe.googleRating)}
                     </span>
@@ -517,13 +512,14 @@ export default function CafeDetailPage() {
                 if (!open) return null;
                 return (
                   <span
-                    className={`font-semibold ${
+                    className={`inline-flex items-center gap-1 font-semibold ${
                       open.isOpen ? "text-emerald-600" : "text-red-500"
                     }`}
                   >
+                    <Circle size={6} fill="currentColor" />
                     {open.isOpen
-                      ? `● Buka${open.closesAt ? ` · tutup ${open.closesAt}` : ""}`
-                      : `● Tutup${
+                      ? `Buka${open.closesAt ? ` · tutup ${open.closesAt}` : ""}`
+                      : `Tutup${
                           open.opensAt
                             ? ` · buka ${
                                 open.nextOpenDay === "today"
@@ -565,7 +561,7 @@ export default function CafeDetailPage() {
 
             {cafe.hasActivePromotion && (
               <div className="mt-4 flex items-center gap-3 bg-[#FDF6EC] border border-[#D48B3A] rounded-2xl p-3 lg:p-4">
-                <span className="text-2xl">🎉</span>
+                <PartyPopper size={22} strokeWidth={2} className="text-[#D48B3A]" />
                 <div className="flex-1 min-w-0">
                   <div className="text-xs font-semibold text-[#D48B3A] uppercase tracking-wider">
                     {cafe.activePromotionType === "new_cafe"
@@ -588,48 +584,54 @@ export default function CafeDetailPage() {
             )}
           </header>
 
-          {/* Address */}
+          {/* Address — compact, address tetap full */}
           <a
             href={mapsUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex flex-wrap items-center gap-3 mt-6 bg-white border border-[#F0EDE8] rounded-2xl p-4 lg:p-5 hover:border-[#D48B3A] hover:bg-[#FDF6EC] transition-all group"
+            className="block mt-6 bg-white border border-[#F0EDE8] rounded-2xl p-4 lg:p-5 hover:border-[#D48B3A] hover:bg-[#FDF6EC] transition-all group"
           >
-            <span className="w-10 h-10 lg:w-11 lg:h-11 rounded-full bg-[#F0EDE8] group-hover:bg-white flex items-center justify-center text-[#D48B3A] shrink-0">
-              <MapPin size={20} strokeWidth={2} />
-            </span>
-            <div className="flex-1 min-w-0">
-              <div className="text-xs font-semibold text-[#8A8880] uppercase tracking-wider">
-                Location
-              </div>
-              <div className="text-sm lg:text-[15px] text-[#1C1C1A] mt-0.5 break-words">
-                {cleanAddress(cafe.address)}
+            <div className="flex items-start gap-3">
+              <span className="w-9 h-9 lg:w-10 lg:h-10 rounded-full bg-[#F0EDE8] group-hover:bg-white flex items-center justify-center text-[#D48B3A] shrink-0 mt-0.5">
+                <MapPin size={18} strokeWidth={2} />
+              </span>
+              <div className="flex-1 min-w-0">
+                <div className="text-[11px] font-semibold text-[#8A8880] uppercase tracking-wider">
+                  Location
+                </div>
+                <div className="text-sm lg:text-[15px] text-[#1C1C1A] mt-0.5 leading-snug break-words">
+                  {cleanAddress(cafe.address)}
+                </div>
+                <div className="text-xs font-semibold text-[#D48B3A] mt-2 inline-flex items-center gap-1">
+                  Open in Maps
+                  <Navigation size={12} strokeWidth={2.5} />
+                </div>
               </div>
             </div>
-            <span className="text-sm text-[#D48B3A] font-semibold shrink-0">
-              Open in Maps →
-            </span>
           </a>
 
           {cafe.phone && (
             <a
               href={`tel:${cafe.phone}`}
-              className="flex flex-wrap items-center gap-3 mt-3 bg-white border border-[#F0EDE8] rounded-2xl p-4 lg:p-5 hover:border-[#D48B3A] hover:bg-[#FDF6EC] transition-all group"
+              className="block mt-3 bg-white border border-[#F0EDE8] rounded-2xl p-4 lg:p-5 hover:border-[#D48B3A] hover:bg-[#FDF6EC] transition-all group"
             >
-              <span className="w-10 h-10 lg:w-11 lg:h-11 rounded-full bg-[#F0EDE8] group-hover:bg-white flex items-center justify-center text-[#D48B3A] shrink-0">
-                <Phone size={20} strokeWidth={2} />
-              </span>
-              <div className="flex-1 min-w-0">
-                <div className="text-xs font-semibold text-[#8A8880] uppercase tracking-wider">
-                  Phone
-                </div>
-                <div className="text-sm lg:text-[15px] text-[#1C1C1A] mt-0.5 break-words">
-                  {cafe.phone}
+              <div className="flex items-start gap-3">
+                <span className="w-9 h-9 lg:w-10 lg:h-10 rounded-full bg-[#F0EDE8] group-hover:bg-white flex items-center justify-center text-[#D48B3A] shrink-0 mt-0.5">
+                  <Phone size={18} strokeWidth={2} />
+                </span>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[11px] font-semibold text-[#8A8880] uppercase tracking-wider">
+                    Phone
+                  </div>
+                  <div className="text-sm lg:text-[15px] text-[#1C1C1A] mt-0.5 leading-snug break-words">
+                    {cafe.phone}
+                  </div>
+                  <div className="text-xs font-semibold text-[#D48B3A] mt-2 inline-flex items-center gap-1">
+                    Telepon
+                    <Phone size={12} strokeWidth={2.5} />
+                  </div>
                 </div>
               </div>
-              <span className="text-sm text-[#D48B3A] font-semibold shrink-0">
-                Telepon →
-              </span>
             </a>
           )}
 
@@ -727,7 +729,7 @@ export default function CafeDetailPage() {
                 {facilityChips.map((f, i) => (
                   <FacilityChip
                     key={`${f.label}-${i}`}
-                    icon={f.icon}
+                    facilityKey={f.key}
                     label={f.label}
                   />
                 ))}
@@ -788,7 +790,11 @@ export default function CafeDetailPage() {
               </div>
             ) : (
               <div className="text-center py-8 bg-white rounded-2xl border border-[#F0EDE8]">
-                <p className="text-3xl mb-2">✍️</p>
+                <PencilLine
+                  size={28}
+                  strokeWidth={2}
+                  className="mx-auto mb-2 text-[#D48B3A]"
+                />
                 <p className="text-sm font-semibold text-[#1C1C1A]">
                   Belum ada ulasan
                 </p>
@@ -811,11 +817,12 @@ export default function CafeDetailPage() {
             <button
               type="button"
               onClick={handleWriteReview}
-              className="w-full mt-3 py-2.5 rounded-xl border-[1.5px] border-[#D48B3A] text-[#D48B3A] font-bold text-sm hover:bg-[#FDF6EC] transition-colors"
+              className="w-full mt-3 py-2.5 rounded-xl border-[1.5px] border-[#D48B3A] text-[#D48B3A] font-bold text-sm hover:bg-[#FDF6EC] transition-colors inline-flex items-center justify-center gap-1.5"
             >
+              <PencilLine size={14} strokeWidth={2} />
               {reviewPreviews.length === 0
-                ? "✍️ Tulis ulasan pertama"
-                : "+ Tulis Review"}
+                ? "Tulis ulasan pertama"
+                : "Tulis Review"}
             </button>
 
             {/* Google Maps Reviews */}
@@ -881,6 +888,7 @@ export default function CafeDetailPage() {
                     key={m.label}
                     className="inline-flex items-center gap-1.5 bg-[#FDF6EC] border border-[#D48B3A] text-[#D48B3A] text-sm font-bold px-3 py-1.5 rounded-full"
                   >
+                    <Sparkles size={12} strokeWidth={2.5} />
                     <span>{m.label}</span>
                     {m.count > 0 && (
                       <span className="text-xs font-semibold">· {m.count}</span>
@@ -993,15 +1001,21 @@ export default function CafeDetailPage() {
                     : "bg-[#1C1C1A] text-white hover:bg-black"
                 }`}
               >
-                {inShortlist ? "Added to Shortlist ✓" : "Add to Shortlist"}
+                {inShortlist ? (
+                  <span className="inline-flex items-center justify-center gap-1.5">
+                    <Check size={16} strokeWidth={2.5} /> Added to Shortlist
+                  </span>
+                ) : (
+                  "Add to Shortlist"
+                )}
               </button>
 
               {/* Secondary actions */}
-              <div className="grid grid-cols-2 gap-2 mt-3">
+              <div className="mt-3">
                 <button
                   type="button"
                   onClick={handleFavorite}
-                  className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-[#F0EDE8] hover:border-[#D48B3A] hover:bg-[#FDF6EC] transition-colors"
+                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-[#F0EDE8] hover:border-[#D48B3A] hover:bg-[#FDF6EC] transition-colors"
                 >
                   <Heart
                     size={18}
@@ -1010,20 +1024,6 @@ export default function CafeDetailPage() {
                   />
                   <span className="text-sm font-semibold text-[#1C1C1A]">
                     Favorite
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  onClick={handleBookmark}
-                  className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-[#F0EDE8] hover:border-[#D48B3A] hover:bg-[#FDF6EC] transition-colors"
-                >
-                  <Bookmark
-                    size={18}
-                    className={bookmarked ? "text-[#D48B3A]" : "text-[#5C5A52]"}
-                    fill={bookmarked ? "currentColor" : "none"}
-                  />
-                  <span className="text-sm font-semibold text-[#1C1C1A]">
-                    Bookmark
                   </span>
                 </button>
               </div>
@@ -1069,18 +1069,6 @@ export default function CafeDetailPage() {
           </button>
           <button
             type="button"
-            onClick={handleBookmark}
-            className="flex flex-col items-center px-3 hover:bg-[#FAF9F6] rounded-lg py-1 transition-colors"
-          >
-            <Bookmark
-              size={24}
-              className={bookmarked ? "text-[#D48B3A]" : "text-[#5C5A52]"}
-              fill={bookmarked ? "currentColor" : "none"}
-            />
-            <span className="text-[10px] text-[#8A8880] mt-0.5">Bookmark</span>
-          </button>
-          <button
-            type="button"
             onClick={handleShortlist}
             className={`flex-1 py-3 rounded-xl font-bold text-sm transition-colors ${
               inShortlist
@@ -1088,7 +1076,13 @@ export default function CafeDetailPage() {
                 : "bg-[#1C1C1A] text-white hover:bg-black"
             }`}
           >
-            {inShortlist ? "Added ✓" : "Add to Shortlist"}
+            {inShortlist ? (
+              <span className="inline-flex items-center justify-center gap-1.5">
+                <Check size={14} strokeWidth={2.5} /> Added
+              </span>
+            ) : (
+              "Add to Shortlist"
+            )}
           </button>
         </div>
       </div>
@@ -1220,10 +1214,10 @@ function Section({
   );
 }
 
-function FacilityChip({ icon, label }: { icon: string; label: string }) {
+function FacilityChip({ facilityKey, label }: { facilityKey: string; label: string }) {
   return (
     <span className="inline-flex items-center gap-1.5 bg-[#F0EDE8] text-[#1C1C1A] text-sm font-medium px-3 py-1.5 rounded-full">
-      <span className="text-sm">{icon}</span>
+      <LucideIcon name={lucideForFacility(facilityKey)} size={14} strokeWidth={2} className="text-[#5C5A52]" />
       {label}
     </span>
   );
@@ -1328,7 +1322,7 @@ function HeroMosaic({
       onClick={() => onOpen(0)}
       className="absolute bottom-4 right-4 bg-white/95 hover:bg-white text-[#1C1C1A] text-sm font-semibold px-4 py-2 rounded-full shadow-md flex items-center gap-2 transition-colors z-10"
     >
-      <span>▦</span>
+      <Grid3x3 size={16} strokeWidth={2} />
       <span>Show all {totalCount} photos</span>
     </button>
   );

@@ -26,6 +26,16 @@ import BottomSheet from "../components/layout/BottomSheet";
 import HybridAdSlot from "../components/HybridAdSlot";
 import InfiniteScrollSentinel from "../components/InfiniteScrollSentinel";
 import Seo from "../components/seo/Seo";
+import {
+  Coffee,
+  LayoutGrid,
+  Menu as MenuIcon,
+  Search,
+  Settings,
+  Sparkles,
+  X,
+} from "../utils/lucideIcon";
+import { PurposeIcon } from "../utils/purposeIcons";
 
 const AD_INTERVAL = 5;
 const MAX_ADS = 2;
@@ -378,9 +388,9 @@ export default function HomePage() {
             type="button"
             onClick={() => setWizardBannerVisible(false)}
             aria-label="Tutup"
-            className="w-5 h-5 rounded-full hover:bg-[#F2DAB6] text-[#B97726] flex items-center justify-center text-[10px]"
+            className="w-5 h-5 rounded-full hover:bg-[#F2DAB6] text-[#B97726] flex items-center justify-center"
           >
-            ✕
+            <X size={11} strokeWidth={2.5} />
           </button>
         </div>
       )}
@@ -416,17 +426,19 @@ export default function HomePage() {
                 placeholder="Cari kafe, alamat, atau fasilitas…"
                 className="w-full pl-10 pr-9 py-2.5 bg-[#F0EDE8] rounded-full text-sm text-[#1C1C1A] placeholder:text-[#8A8880] focus:bg-white focus:ring-2 focus:ring-[#D48B3A]/40 outline-none border-none transition-all"
               />
-              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8A8880] text-base pointer-events-none">
-                🔍
-              </span>
+              <Search
+                size={16}
+                strokeWidth={2}
+                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8A8880] pointer-events-none"
+              />
               {mobileQuery && (
                 <button
                   type="button"
                   onClick={() => setMobileQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-[#D6CFC2] text-white text-xs font-bold flex items-center justify-center hover:bg-[#8A8880] transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-[#D6CFC2] text-white flex items-center justify-center hover:bg-[#8A8880] transition-colors"
                   aria-label="Clear"
                 >
-                  ×
+                  <X size={12} strokeWidth={2.5} />
                 </button>
               )}
             </div>
@@ -440,7 +452,7 @@ export default function HomePage() {
               }`}
               aria-label="Buka filter"
             >
-              ⚙︎
+              <Settings size={18} strokeWidth={2} />
               {activeFilterCount > 0 && (
                 <span className="absolute -top-1 -right-1 bg-white text-[#D48B3A] text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center border border-[#D48B3A]">
                   {activeFilterCount}
@@ -453,8 +465,9 @@ export default function HomePage() {
             {/* Featured Cafes */}
             {featuredCafes.length > 0 && (
               <div>
-                <h3 className="text-sm font-bold text-[#1C1C1A] mb-2">
-                  Featured Today ✨
+                <h3 className="text-sm font-bold text-[#1C1C1A] mb-2 inline-flex items-center gap-1.5">
+                  Featured Today
+                  <Sparkles size={14} strokeWidth={2} className="text-[#D48B3A]" />
                 </h3>
                 <div className="flex items-stretch gap-3 overflow-x-auto pb-2">
                   {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
@@ -539,7 +552,11 @@ export default function HomePage() {
               )}
               {!loading && cafes.length === 0 && (
                 <div className="text-center py-10">
-                  <span className="text-4xl mb-2 inline-block">☕</span>
+                  <Coffee
+                    size={36}
+                    strokeWidth={1.5}
+                    className="mx-auto mb-2 text-[#D48B3A]"
+                  />
                   <p className="text-[#8A8880] text-sm">
                     Tidak ada kafe di radius ini.
                   </p>
@@ -598,7 +615,7 @@ export default function HomePage() {
                 className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/95 shadow border border-[#F0EDE8] flex items-center justify-center text-[#8A8880] hover:text-[#1C1C1A]"
                 aria-label="Tutup filter"
               >
-                ✕
+                <X size={16} strokeWidth={2} />
               </button>
             </div>
           </aside>
@@ -687,7 +704,7 @@ export default function HomePage() {
                   aria-pressed={viewMode === "grid"}
                   title="Grid view"
                 >
-                  ▦
+                  <LayoutGrid size={14} strokeWidth={2} />
                 </button>
                 <button
                   type="button"
@@ -700,7 +717,7 @@ export default function HomePage() {
                   aria-pressed={viewMode === "list"}
                   title="List view"
                 >
-                  ☰
+                  <MenuIcon size={14} strokeWidth={2} />
                 </button>
               </div>
               <div className="text-sm text-gray-500 min-w-0 truncate">
@@ -854,10 +871,10 @@ export default function HomePage() {
               <button
                 type="button"
                 onClick={() => setShowAllModal(false)}
-                className="w-9 h-9 rounded-full hover:bg-[#F0EDE8] text-[#8A8880] text-xl font-bold flex items-center justify-center transition-colors"
+                className="w-9 h-9 rounded-full hover:bg-[#F0EDE8] text-[#8A8880] flex items-center justify-center transition-colors"
                 aria-label="Close"
               >
-                ✕
+                <X size={20} strokeWidth={2} />
               </button>
             </div>
             <div className="flex-1 overflow-y-auto p-6">
@@ -928,7 +945,6 @@ function PurposeChips({
         </button>
         {purposes.map((p) => {
           const active = activeId === p.id;
-          const emoji = getPurposeBySlug(p.slug)?.emoji;
           return (
             <button
               key={p.id}
@@ -940,7 +956,7 @@ function PurposeChips({
                   : "bg-white text-[#1C1C1A] border-[#E8E4DD] hover:border-[#D48B3A] hover:text-[#D48B3A]"
               }`}
             >
-              {emoji && <span className="text-sm leading-none">{emoji}</span>}
+              <PurposeIcon slug={p.slug} size={12} />
               {p.name}
             </button>
           );
@@ -988,7 +1004,7 @@ function MobileFilterModal({
             aria-label="Tutup"
             className="w-8 h-8 rounded-full hover:bg-[#F0EDE8] text-[#8A8880] flex items-center justify-center"
           >
-            ✕
+            <X size={18} strokeWidth={2} />
           </button>
         </div>
 

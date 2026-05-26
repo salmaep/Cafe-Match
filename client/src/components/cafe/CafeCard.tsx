@@ -7,6 +7,8 @@ import { getOpenStatus } from "../../utils/openingHours";
 import { buildFacilityChips } from "../../utils/facilities";
 import { formatRating } from "../../utils/rating";
 import { cleanAddress } from "../../utils/address";
+import { Bookmark, Heart, MapPin, Star } from "../../utils/lucideIcon";
+import { LucideIcon, lucideForFacility } from "../../utils/lucideIcon";
 
 interface Props {
   cafe: Cafe;
@@ -74,7 +76,11 @@ export default function CafeCard({ cafe }: Props) {
             </p>
             <p className="text-[13px] text-gray-500 truncate mt-0.5 flex items-center gap-1 min-h-[18px]">
               {address && (
-                <span className="text-[#D48B3A] shrink-0 text-[11px]">📍</span>
+                <MapPin
+                  size={11}
+                  strokeWidth={2}
+                  className="text-[#D48B3A] shrink-0"
+                />
               )}
               <span className="truncate">{address || " "}</span>
             </p>
@@ -90,7 +96,12 @@ export default function CafeCard({ cafe }: Props) {
         <div className="flex items-center gap-1 mt-2 text-[12px] min-h-[18px]">
           {formatRating(cafe.googleRating) && (
             <>
-              <span className="text-amber-500">★</span>
+              <Star
+                size={12}
+                strokeWidth={2}
+                className="text-amber-500"
+                fill="currentColor"
+              />
               <span className="font-semibold text-gray-800">
                 {formatRating(cafe.googleRating)}
               </span>
@@ -114,9 +125,10 @@ export default function CafeCard({ cafe }: Props) {
           {visibleChips.map((c) => (
             <span
               key={c.key}
-              className="bg-[#F0EDE8] text-[#5C5A52] rounded-full px-2 py-px font-medium whitespace-nowrap"
+              className="inline-flex items-center gap-1 bg-[#F0EDE8] text-[#5C5A52] rounded-full px-2 py-px font-medium whitespace-nowrap"
             >
-              {c.icon} {c.label}
+              <LucideIcon name={lucideForFacility(c.key)} size={10} strokeWidth={2} />
+              {c.label}
             </span>
           ))}
           {overflow > 0 && (
@@ -129,8 +141,12 @@ export default function CafeCard({ cafe }: Props) {
         {/* Footer pinned to bottom */}
         <div className="mt-auto">
           <div className="flex items-center gap-3 mt-2.5 text-[11px] text-gray-400">
-            <span className="whitespace-nowrap">❤️ {cafe.favoritesCount}</span>
-            <span className="whitespace-nowrap">🔖 {cafe.bookmarksCount}</span>
+            <span className="inline-flex items-center gap-1 whitespace-nowrap">
+              <Heart size={11} strokeWidth={2} /> {cafe.favoritesCount}
+            </span>
+            <span className="inline-flex items-center gap-1 whitespace-nowrap">
+              <Bookmark size={11} strokeWidth={2} /> {cafe.bookmarksCount}
+            </span>
             {open && !open.isOpen && open.opensAt && (
               <span className="text-amber-600 font-medium whitespace-nowrap ml-auto">
                 Buka{" "}

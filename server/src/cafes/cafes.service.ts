@@ -8,7 +8,7 @@ import { CafeGoogleReview } from '../scraper-sync/entities/cafe-google-review.en
 import { SearchCafesDto } from './dto/search-cafes.dto';
 import { DiscoverCafesDto } from './dto/discover-cafes.dto';
 import { CreateCafeDto } from './dto/create-cafe.dto';
-import { MeiliCafesService } from '../meili/meili-cafes.service';
+import { MeiliCafesService, type CafeHit } from '../meili/meili-cafes.service';
 import { buildCafeSlug, cafeSlugOrFallback } from '../common/utils/slug.util';
 
 interface PurposeMatcher {
@@ -177,6 +177,15 @@ export class CafesService {
 
   async findDiscoverDeck(_userId: number | null, dto: DiscoverCafesDto) {
     const targetSize = dto.limit ?? 7;
+    const excludeSet = new Set(dto.excludeIds ?? []);
+    // Over-fetch a wider candidate pool so:
+    //  1) excludeIds filtering still leaves enough rows to fill `targetSize`
+    //  2) match-count re-ranking actually has options to reorder
+    // Bump the pool when the caller passes many excludeIds.
+    const candidatePool = Math.min(
+      100,
+      Math.max(targetSize * 3 + excludeSet.size, 10),
+    );
 
     const searchResult = await this.meiliCafes.searchCafes({
       lat: dto.lat,
@@ -186,11 +195,28 @@ export class CafesService {
       priceRange: dto.priceRange,
       purposeId: dto.purposeId,
       page: 1,
-      limit: targetSize,
+      limit: candidatePool,
       sort: 'distance',
     });
 
-    const regular = searchResult.data;
+    // Re-rank: cafes matching MORE of the user's amenities rank first;
+    // tie-break by distance ascending. Falls back to distance-only when
+    // user didn't specify facilities. excludeIds applied here (not Meili)
+    // because `id` is not in the index's filterableAttributes.
+    const wanted = new Set(dto.facilities ?? []);
+    const matchScore = (cafe: CafeHit): number =>
+      wanted.size === 0
+        ? 0
+        : (cafe.facilities ?? []).filter((f: string) => wanted.has(f)).length;
+
+    const regular = searchResult.data
+      .filter((c) => !excludeSet.has(c.id))
+      .sort((a, b) => {
+        const diff = matchScore(b) - matchScore(a);
+        if (diff !== 0) return diff;
+        return (a.distanceMeters ?? 0) - (b.distanceMeters ?? 0);
+      })
+      .slice(0, targetSize);
 
     if (regular.length === 0) {
       return {

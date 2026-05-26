@@ -10,6 +10,7 @@ import {
 import { cafesApi, type SearchParams } from "../api/cafes.api";
 import { promotionsApi } from "../api/promotions.api";
 import { usePreferences } from "../context/PreferencesContext";
+import type { PurposeSlug } from "../constants/purposes";
 import type { Cafe } from "../types";
 import MapView from "../components/map/MapContainer";
 import MapErrorBoundary from "../components/map/MapErrorBoundary";
@@ -66,7 +67,8 @@ export default function HomePage() {
   const {
     preferences,
     wizardCompleted,
-    setPreferences: setWizardPreferences,
+    updatePreference,
+    clearPreferences,
     getPurposeId,
   } = usePreferences();
   const [purposes, setPurposes] = useState<Purpose[]>([]);
@@ -159,12 +161,16 @@ export default function HomePage() {
   }, [wizardCompleted, preferences, getPurposeId]);
 
   const resetWizardFilters = () => {
-    setWizardPreferences(null);
+    clearPreferences();
     setWizardBannerVisible(false);
     setPurposeId(null);
     setFilters({ q: "", facilities: [], priceRange: "" });
     setRadius(2000);
   };
+
+  // Slug ↔ id helper for handlers below (purposes loaded via purposesApi above).
+  const slugFromId = (id: number | null): string | undefined =>
+    id == null ? undefined : purposes.find((p) => p.id === id)?.slug;
 
   useEffect(() => {
     if (centerSource !== "gps") return;
@@ -280,16 +286,28 @@ export default function HomePage() {
   const handleMapClick = (lat: number, lng: number) => {
     setCenter([lat, lng]);
     setCenterSource("manual");
+    updatePreference({
+      location: { type: "custom", latitude: lat, longitude: lng },
+    });
+  };
+
+  const handleRadiusChange = (meters: number) => {
+    setRadius(meters);
+    updatePreference({ radius: meters / 1000 });
   };
 
   const setQ = (q: string) => {
     setForceListMode(false);
     setFilters((prev) => ({ ...prev, q }));
   };
-  const setFacilities = (facilities: string[]) =>
+  const setFacilities = (facilities: string[]) => {
     setFilters((prev) => ({ ...prev, facilities }));
-  const setPriceRange = (priceRange: string) =>
+    updatePreference({ amenities: facilities });
+  };
+  const setPriceRange = (priceRange: string) => {
     setFilters((prev) => ({ ...prev, priceRange }));
+    updatePreference({ priceRange });
+  };
   const activeFilterCount =
     filters.facilities.length + (filters.priceRange ? 1 : 0);
 
@@ -298,14 +316,22 @@ export default function HomePage() {
   // is a no-op for facilities — user can still keep their picks.
   const handlePurposeSelect = (newId: number | null) => {
     setPurposeId(newId);
-    if (newId == null) return;
+    const slug = slugFromId(newId);
+    if (newId == null) {
+      updatePreference({ purpose: undefined });
+      return;
+    }
     const p = purposes.find((x) => x.id === newId);
-    if (!p?.requirements) return;
-    const features = p.requirements
+    const features = (p?.requirements ?? [])
       .map((r) => r.feature?.name)
       .filter((n): n is string => typeof n === "string" && n.length > 0);
-    if (features.length === 0) return;
-    setFilters((prev) => ({ ...prev, facilities: features }));
+    if (features.length > 0) {
+      setFilters((prev) => ({ ...prev, facilities: features }));
+    }
+    updatePreference({
+      purpose: slug as PurposeSlug,
+      ...(features.length > 0 ? { amenities: features } : {}),
+    });
   };
 
   // Derived from current inputs (not post-fetch state) so the loading label
@@ -498,7 +524,7 @@ export default function HomePage() {
                     <button
                       key={r}
                       type="button"
-                      onClick={() => setRadius(r)}
+                      onClick={() => handleRadiusChange(r)}
                       className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-colors ${
                         active
                           ? "bg-[#1C1C1A] text-white"
@@ -562,7 +588,7 @@ export default function HomePage() {
                   </p>
                   <button
                     type="button"
-                    onClick={() => setRadius(5000)}
+                    onClick={() => handleRadiusChange(5000)}
                     className="mt-3 text-sm font-bold text-[#D48B3A] hover:underline"
                   >
                     Perluas radius →
@@ -657,7 +683,7 @@ export default function HomePage() {
 
         <div className="md:flex-1 lg:flex-[2] 2xl:flex-none 2xl:w-[580px] md:flex md:flex-col gap-3 md:overflow-hidden md:min-w-0">
           <SearchBar q={filters.q} onQChange={setQ} />
-          <RadiusSlider radius={radius} onChange={setRadius} />
+          <RadiusSlider radius={radius} onChange={handleRadiusChange} />
           <PurposeFilter
             selectedPurposeId={purposeId}
             onSelect={handlePurposeSelect}
@@ -758,7 +784,7 @@ export default function HomePage() {
                         totalIfExpanded: null,
                       });
                       setForceListMode(true);
-                      setRadius(next);
+                      handleRadiusChange(next);
                     }}
                     className="shrink-0 rounded-md bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-700"
                   >

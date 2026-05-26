@@ -301,9 +301,10 @@ export class MeiliCafesService {
       if (slug) filters.push(`purposes = "${slug}"`);
     }
 
-    if (excludeIds && excludeIds.length > 0) {
-      filters.push(`NOT id IN [${excludeIds.join(', ')}]`);
-    }
+    // NOTE: `id` is not in Meili's filterableAttributes, so excludeIds is
+    // applied by the caller (cafes.service findDiscoverDeck) after the
+    // candidate pool is returned. We accept the param here for API symmetry.
+    void excludeIds;
 
     const sort: string[] = [];
     if (sortMode === 'trending') {

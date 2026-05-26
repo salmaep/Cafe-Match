@@ -7,6 +7,13 @@ import { getOpenStatus } from "../../utils/openingHours";
 import { buildFacilityChips } from "../../utils/facilities";
 import { formatRating } from "../../utils/rating";
 import { cleanAddress } from "../../utils/address";
+import {
+  ChevronRight,
+  Heart,
+  MessageCircle,
+  Star,
+} from "../../utils/lucideIcon";
+import { LucideIcon, lucideForFacility } from "../../utils/lucideIcon";
 
 interface Props {
   cafe: Cafe;
@@ -57,7 +64,12 @@ export default function CafeListItem({ cafe }: Props) {
         <div className="flex items-center gap-1.5 mt-1 text-[12px] text-[#8A8880]">
           {formatRating(cafe.googleRating) && (
             <>
-              <span className="text-amber-500">★</span>
+              <Star
+                size={12}
+                strokeWidth={2}
+                className="text-amber-500"
+                fill="currentColor"
+              />
               <span className="font-semibold text-[#1C1C1A]">
                 {formatRating(cafe.googleRating)}
               </span>
@@ -103,9 +115,10 @@ export default function CafeListItem({ cafe }: Props) {
           {visibleChips.map((c) => (
             <span
               key={c.key}
-              className="bg-[#F0EDE8] text-[#5C5A52] text-[11px] font-medium rounded-full px-2 py-0.5"
+              className="inline-flex items-center gap-1 bg-[#F0EDE8] text-[#5C5A52] text-[11px] font-medium rounded-full px-2 py-0.5"
             >
-              {c.icon} {c.label}
+              <LucideIcon name={lucideForFacility(c.key)} size={10} strokeWidth={2} />
+              {c.label}
             </span>
           ))}
           {overflow > 0 && (
@@ -117,8 +130,12 @@ export default function CafeListItem({ cafe }: Props) {
 
         {cafe.topReviewText && (
           <p className="text-[12px] text-[#5C5A52] leading-snug mt-2 line-clamp-2 italic">
-            <span className="text-[#8A8880] not-italic">💬</span> "
-            {cafe.topReviewText}"
+            <MessageCircle
+              size={11}
+              strokeWidth={2}
+              className="inline text-[#8A8880] not-italic mr-1 -mt-0.5"
+            />
+            "{cafe.topReviewText}"
             {cafe.topReviewAuthor && (
               <span className="not-italic text-[#A8A59C]">
                 {" "}
@@ -130,10 +147,11 @@ export default function CafeListItem({ cafe }: Props) {
       </div>
 
       <div className="shrink-0 flex flex-col items-end justify-between py-0.5">
-        <span className="text-sm font-bold text-[#D48B3A]">
-          ❤️ {cafe.favoritesCount}
+        <span className="inline-flex items-center gap-1 text-sm font-bold text-[#D48B3A]">
+          <Heart size={13} strokeWidth={2} fill="currentColor" />
+          {cafe.favoritesCount}
         </span>
-        <span className="text-2xl text-[#8A8880] leading-none">›</span>
+        <ChevronRight size={20} strokeWidth={2} className="text-[#8A8880]" />
       </div>
     </Link>
   );

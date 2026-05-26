@@ -7,6 +7,7 @@ import {
   type AchievementTier,
   type UserAchievement,
 } from "../api/achievements.api";
+import { Check, Lock, Trophy } from "../utils/lucideIcon";
 
 // Tier visuals — matches server enum values 1:1.
 const TIER_STYLE: Record<AchievementTier, { grad: string; label: string }> = {
@@ -86,7 +87,7 @@ export default function AchievementsPage() {
       <div className="bg-gradient-to-br from-[#FBBF24] to-[#EA580C] pt-8 pb-12 px-4 text-white">
         <div className="max-w-3xl mx-auto">
           <h1 className="text-2xl font-extrabold flex items-center gap-2">
-            🏆 Achievements
+            <Trophy size={24} strokeWidth={2.25} /> Achievements
           </h1>
           <div className="mt-3 grid grid-cols-2 gap-3">
             <Stat value={unlockedCount} label="Unlocked" />
@@ -146,7 +147,7 @@ function AchievementCard({ achievement: a }: { achievement: UserAchievement }) {
     >
       <div className="flex items-start gap-3">
         <div
-          className={`w-14 h-14 rounded-xl flex items-center justify-center text-2xl shrink-0 ${
+          className={`w-14 h-14 rounded-xl flex items-center justify-center shrink-0 ${
             a.unlocked
               ? `bg-gradient-to-br ${tier.grad} text-white shadow`
               : "bg-[#E8E4DD] text-[#8A8880]"
@@ -156,10 +157,10 @@ function AchievementCard({ achievement: a }: { achievement: UserAchievement }) {
             a.iconUrl ? (
               <img src={a.iconUrl} alt="" className="w-8 h-8 object-contain" />
             ) : (
-              "🏆"
+              <Trophy size={26} strokeWidth={2} />
             )
           ) : (
-            "🔒"
+            <Lock size={22} strokeWidth={2} />
           )}
         </div>
         <div className="flex-1 min-w-0">
@@ -185,8 +186,9 @@ function AchievementCard({ achievement: a }: { achievement: UserAchievement }) {
           </p>
 
           {a.unlocked && a.unlockedAt ? (
-            <p className="text-[10px] text-green-600 font-bold mt-1">
-              ✓ {new Date(a.unlockedAt).toLocaleDateString("id-ID")}
+            <p className="text-[10px] text-green-600 font-bold mt-1 inline-flex items-center gap-1">
+              <Check size={11} strokeWidth={2.5} />
+              {new Date(a.unlockedAt).toLocaleDateString("id-ID")}
             </p>
           ) : (
             <div className="mt-2">

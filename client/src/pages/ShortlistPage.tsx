@@ -10,6 +10,7 @@ import {
 import { haversineDistance } from "../utils/haversine";
 import CafeCard from "../components/cafe/CafeCard";
 import Seo from "../components/seo/Seo";
+import { Sparkles, Star, Trash2, X } from "../utils/lucideIcon";
 
 type SortMode = "recent" | "distance" | "rating";
 
@@ -57,7 +58,7 @@ export default function ShortlistPage() {
       <div className="min-h-screen bg-[#FAF9F6]">
         <div className="max-w-2xl mx-auto p-4 pt-12">
           <div className="text-center py-16 bg-white border border-[#F0EDE8] rounded-2xl shadow-sm">
-            <span className="text-6xl mb-4 inline-block">⭐</span>
+            <Star size={64} strokeWidth={1.5} fill="currentColor" className="text-[#D48B3A] mx-auto mb-4 block" />
             <h1 className="text-xl font-extrabold text-[#1C1C1A]">
               Login dulu untuk lihat Shortlist
             </h1>
@@ -99,7 +100,7 @@ export default function ShortlistPage() {
             <div className="flex items-end justify-between gap-4">
               <div className="min-w-0">
                 <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/70 backdrop-blur-sm ring-1 ring-amber-200 text-[10px] font-extrabold tracking-[0.15em] uppercase text-[#B45309] mb-2.5 shadow-sm">
-                  <span>⭐</span> Shortlist
+                  <Star size={11} strokeWidth={2.5} fill="currentColor" /> Shortlist
                 </div>
                 <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#1C1C1A] tracking-tight leading-tight">
                   Cafe yang{" "}
@@ -115,7 +116,7 @@ export default function ShortlistPage() {
               </div>
               {shortlist.length > 0 && (
                 <span className="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-br from-[#FBBF24] via-[#F97316] to-[#EA580C] text-white text-xs font-extrabold shadow-md shadow-orange-500/20">
-                  <span className="text-sm leading-none">⭐</span>
+                  <Star size={12} strokeWidth={2.5} fill="currentColor" />
                   <span className="tabular-nums">{shortlist.length}</span>
                   <span className="text-[10px] opacity-80 font-bold tracking-wider">
                     CAFES
@@ -156,7 +157,7 @@ export default function ShortlistPage() {
                 onClick={handleClearAll}
                 className="inline-flex items-center gap-1.5 text-xs font-bold text-[#8A8880] hover:text-red-600 transition-colors px-3 py-1.5 rounded-full hover:bg-red-50"
               >
-                🗑️ Hapus semua
+                <Trash2 size={13} strokeWidth={2} /> Hapus semua
               </button>
             </div>
 
@@ -172,11 +173,11 @@ export default function ShortlistPage() {
                       e.stopPropagation();
                       removeFromShortlist(c.id);
                     }}
-                    className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/95 hover:bg-red-500 hover:text-white text-[#5C5A52] text-base font-bold shadow-md flex items-center justify-center transition-all z-10 backdrop-blur-sm opacity-90 hover:opacity-100"
+                    className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/95 hover:bg-red-500 hover:text-white text-[#5C5A52] shadow-md flex items-center justify-center transition-all z-10 backdrop-blur-sm opacity-90 hover:opacity-100"
                     title="Hapus dari shortlist"
                     aria-label="Hapus dari shortlist"
                   >
-                    ✕
+                    <X size={16} strokeWidth={2.5} />
                   </button>
                 </div>
               ))}
@@ -226,10 +227,12 @@ function EmptyState() {
   return (
     <div className="text-center py-12 sm:py-16 bg-white border border-dashed border-[#E0DCD3] rounded-2xl">
       <div className="relative inline-block mb-4">
-        <span className="text-6xl">⭐</span>
-        <span className="absolute -top-1 -right-2 text-2xl animate-bounce">
-          ✨
-        </span>
+        <Star size={56} strokeWidth={1.5} className="text-[#D48B3A]" />
+        <Sparkles
+          size={18}
+          strokeWidth={2}
+          className="absolute -top-1 -right-2 text-[#D48B3A] animate-bounce"
+        />
       </div>
       <h2 className="text-lg font-extrabold text-[#1C1C1A]">
         Shortlist kamu masih kosong
@@ -241,7 +244,7 @@ function EmptyState() {
         to="/discover"
         className="inline-flex items-center gap-2 bg-gradient-to-br from-[#D48B3A] to-[#B45309] text-white font-bold text-sm px-6 py-3 rounded-xl hover:shadow-lg transition-shadow shadow-md"
       >
-        🃏 Mulai Discover
+        <Sparkles size={16} strokeWidth={2} className="shrink-0" /> Mulai Discover
       </Link>
     </div>
   );

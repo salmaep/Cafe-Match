@@ -5,6 +5,16 @@ import {
   type LeaderboardPeriod,
 } from "../api/checkins.api";
 import Seo from "../components/seo/Seo";
+import type { LucideIcon } from "lucide-react";
+import {
+  Calendar,
+  Coffee,
+  Crown,
+  MapPin,
+  Medal,
+  Sparkle,
+  Trophy,
+} from "../utils/lucideIcon";
 
 export default function LeaderboardPage() {
   const [period, setPeriod] = useState<LeaderboardPeriod>("month");
@@ -44,7 +54,7 @@ export default function LeaderboardPage() {
 
           <div className="relative px-5 sm:px-7 lg:px-8 py-6 sm:py-8">
             <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/70 backdrop-blur-sm ring-1 ring-amber-200 text-[10px] font-extrabold tracking-[0.15em] uppercase text-[#B45309] mb-2.5 shadow-sm">
-              <span>🏆</span> Leaderboard
+              <Trophy size={12} strokeWidth={2.5} /> Leaderboard
             </div>
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#1C1C1A] tracking-tight leading-tight">
               Siapa{" "}
@@ -63,12 +73,14 @@ export default function LeaderboardPage() {
               <PeriodPill
                 active={period === "month"}
                 onClick={() => setPeriod("month")}
-                label="📅 30 Hari"
+                icon={Calendar}
+                label="30 Hari"
               />
               <PeriodPill
                 active={period === "all"}
                 onClick={() => setPeriod("all")}
-                label="🌟 All-time"
+                icon={Sparkle}
+                label="All-time"
               />
             </div>
           </div>
@@ -116,22 +128,25 @@ export default function LeaderboardPage() {
 function PeriodPill({
   active,
   onClick,
+  icon: Icon,
   label,
 }: {
   active: boolean;
   onClick: () => void;
+  icon: LucideIcon;
   label: string;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
+      className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
         active
           ? "bg-gradient-to-br from-[#F97316] to-[#EA580C] text-white shadow-sm"
           : "text-[#5C5A52] hover:text-[#1C1C1A] hover:bg-[#FFF8EC]"
       }`}
     >
+      <Icon size={12} strokeWidth={2.5} />
       {label}
     </button>
   );
@@ -149,10 +164,25 @@ function Podium({ entries }: { entries: GlobalLeaderboardEntry[] }) {
   );
 }
 
-const STEP_STYLES: Record<number, { gradient: string; emoji: string }> = {
-  1: { gradient: "from-[#FBBF24] via-[#F59E0B] to-[#EA580C]", emoji: "👑" },
-  2: { gradient: "from-[#E5E7EB] via-[#9CA3AF] to-[#6B7280]", emoji: "🥈" },
-  3: { gradient: "from-[#FCD34D] via-[#D97706] to-[#B45309]", emoji: "🥉" },
+const STEP_STYLES: Record<
+  number,
+  { gradient: string; icon: LucideIcon; iconColor: string }
+> = {
+  1: {
+    gradient: "from-[#FBBF24] via-[#F59E0B] to-[#EA580C]",
+    icon: Crown,
+    iconColor: "text-[#F59E0B]",
+  },
+  2: {
+    gradient: "from-[#E5E7EB] via-[#9CA3AF] to-[#6B7280]",
+    icon: Medal,
+    iconColor: "text-[#9CA3AF]",
+  },
+  3: {
+    gradient: "from-[#FCD34D] via-[#D97706] to-[#B45309]",
+    icon: Medal,
+    iconColor: "text-[#B45309]",
+  },
 };
 
 function PodiumStep({
@@ -189,8 +219,10 @@ function PodiumStep({
             initials
           )}
         </div>
-        <div className="absolute -top-2 -right-2 text-2xl sm:text-3xl">
-          {style.emoji}
+        <div
+          className={`absolute -top-2 -right-2 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white shadow-md flex items-center justify-center ${style.iconColor}`}
+        >
+          <style.icon size={18} strokeWidth={2.25} fill="currentColor" />
         </div>
       </div>
 
@@ -283,12 +315,12 @@ function ListRow({
           )}
         </div>
         <div className="flex items-center gap-2 mt-0.5 text-[11px] text-[#8A8880]">
-          <span className="font-semibold tabular-nums">
-            ☕ {entry.totalCheckins}
+          <span className="inline-flex items-center gap-1 font-semibold tabular-nums">
+            <Coffee size={10} strokeWidth={2} /> {entry.totalCheckins}
           </span>
           <span className="text-[#D9D6CE]">·</span>
-          <span className="font-semibold tabular-nums">
-            📍 {entry.uniqueCafes} cafe
+          <span className="inline-flex items-center gap-1 font-semibold tabular-nums">
+            <MapPin size={10} strokeWidth={2} /> {entry.uniqueCafes} cafe
           </span>
           <span className="text-[#D9D6CE]">·</span>
           <span className="tabular-nums">{entry.totalDuration}</span>
@@ -311,7 +343,7 @@ function ListRow({
 function EmptyState({ period }: { period: LeaderboardPeriod }) {
   return (
     <div className="text-center py-16 bg-white border border-dashed border-[#E0DCD3] rounded-2xl">
-      <span className="text-5xl mb-3 inline-block">🏆</span>
+      <Trophy size={48} strokeWidth={1.5} className="mx-auto mb-3 text-[#D48B3A]" />
       <h2 className="text-lg font-extrabold text-[#1C1C1A]">
         Belum ada yang masuk leaderboard
       </h2>

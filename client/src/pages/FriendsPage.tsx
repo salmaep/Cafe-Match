@@ -12,6 +12,16 @@ import {
   hideFriend,
   unhideFriend,
 } from "../utils/hiddenFriends";
+import type { LucideIcon } from "lucide-react";
+import {
+  Ban,
+  Check,
+  Copy,
+  Eye,
+  Inbox,
+  Ticket,
+  Users,
+} from "../utils/lucideIcon";
 
 type Tab = "friends" | "requests" | "add";
 
@@ -184,7 +194,17 @@ export default function FriendsPage() {
               disabled={myCode === "—"}
               className="ml-auto px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-sm text-white text-xs font-bold hover:bg-white/30 transition-colors disabled:opacity-40"
             >
-              {copied ? "✓ Disalin" : "📋 Salin"}
+              <span className="inline-flex items-center gap-1.5">
+                {copied ? (
+                  <>
+                    <Check size={12} strokeWidth={2.5} /> Disalin
+                  </>
+                ) : (
+                  <>
+                    <Copy size={12} strokeWidth={2} /> Salin
+                  </>
+                )}
+              </span>
             </button>
           </div>
           <p className="mt-2 text-xs text-white/90">
@@ -216,7 +236,7 @@ export default function FriendsPage() {
           <div className="space-y-2">
             {friends.length === 0 ? (
               <Empty
-                icon="👥"
+                icon={Users}
                 title="Belum ada teman"
                 subtitle="Tambahkan teman lewat kode pertemanan"
               />
@@ -250,8 +270,8 @@ export default function FriendsPage() {
                           </span>
                         )}
                       </p>
-                      <p className="text-xs text-[#8A8880] truncate">
-                        🎫 {f.friendCode}
+                      <p className="text-xs text-[#8A8880] truncate inline-flex items-center gap-1">
+                        <Ticket size={11} strokeWidth={2} /> {f.friendCode}
                       </p>
                     </div>
                     <button
@@ -264,7 +284,17 @@ export default function FriendsPage() {
                       }
                       className="px-3 py-1.5 rounded-full text-xs font-bold border border-[#E8E4DD] text-[#5C5A52] hover:border-[#D48B3A] hover:text-[#D48B3A] transition-colors"
                     >
-                      {isHidden ? "👁 Tampilkan" : "🚫 Sembunyikan"}
+                      <span className="inline-flex items-center gap-1.5">
+                        {isHidden ? (
+                          <>
+                            <Eye size={12} strokeWidth={2} /> Tampilkan
+                          </>
+                        ) : (
+                          <>
+                            <Ban size={12} strokeWidth={2} /> Sembunyikan
+                          </>
+                        )}
+                      </span>
                     </button>
                   </div>
                 );
@@ -275,7 +305,7 @@ export default function FriendsPage() {
           <div className="space-y-2">
             {requests.length === 0 ? (
               <Empty
-                icon="📭"
+                icon={Inbox}
                 title="Tidak ada permintaan masuk"
                 subtitle="—"
               />
@@ -292,8 +322,8 @@ export default function FriendsPage() {
                     <p className="font-bold text-[#1C1C1A] truncate">
                       {r.fromUser?.name}
                     </p>
-                    <p className="text-xs text-[#8A8880] truncate">
-                      🎫 {r.fromUser?.friendCode}
+                    <p className="text-xs text-[#8A8880] truncate inline-flex items-center gap-1">
+                      <Ticket size={11} strokeWidth={2} /> {r.fromUser?.friendCode}
                     </p>
                   </div>
                   <button
@@ -424,17 +454,17 @@ function TabBtn({
 }
 
 function Empty({
-  icon,
+  icon: Icon,
   title,
   subtitle,
 }: {
-  icon: string;
+  icon: LucideIcon;
   title: string;
   subtitle: string;
 }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
-      <span className="text-5xl mb-3">{icon}</span>
+      <Icon size={44} strokeWidth={1.5} className="mb-3 text-[#D48B3A]" />
       <p className="font-bold text-[#1C1C1A]">{title}</p>
       <p className="text-sm text-[#8A8880] mt-1">{subtitle}</p>
     </div>

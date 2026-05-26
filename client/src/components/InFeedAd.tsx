@@ -5,6 +5,7 @@ import {
   ADSENSE_INFEED_SLOT,
   ADSENSE_TEST_MODE,
 } from "../config/ads";
+import { Zap } from "../utils/lucideIcon";
 
 declare global {
   interface Window {
@@ -45,7 +46,7 @@ export default function InFeedAd({ variant = "card", size = "normal" }: Props) {
     return (
       <div className="relative w-full bg-gradient-to-br from-amber-50 to-white rounded-xl shadow-sm ring-1 ring-amber-400 overflow-hidden pt-5">
         <span className="absolute top-1.5 left-1.5 z-10 inline-flex items-center gap-0.5 text-[9px] font-extrabold tracking-wider uppercase bg-amber-400 text-stone-900 px-1.5 py-0.5 rounded shadow">
-          ⚡ Ad
+          <Zap size={10} strokeWidth={2.5} fill="currentColor" /> Ad
         </span>
         <ins
           className="adsbygoogle block"
@@ -63,7 +64,7 @@ export default function InFeedAd({ variant = "card", size = "normal" }: Props) {
   return (
     <div className="relative w-full bg-gradient-to-br from-amber-50 to-white rounded-2xl shadow-md ring-2 ring-amber-400 ring-offset-2 ring-offset-[#FAF9F6] overflow-hidden pt-7">
       <span className="absolute top-2.5 left-2.5 z-10 inline-flex items-center gap-1 text-[11px] font-extrabold tracking-wider uppercase bg-amber-400 text-stone-900 px-2.5 py-1 rounded-md shadow">
-        ⚡ Ad
+        <Zap size={11} strokeWidth={2.5} fill="currentColor" /> Ad
       </span>
       <ins
         className="adsbygoogle block"
@@ -83,7 +84,7 @@ function CardPlaceholder({ size }: { size: Size }) {
     return (
       <div className="relative block bg-gradient-to-br from-amber-50 to-white rounded-xl shadow-sm ring-1 ring-amber-400 overflow-hidden">
         <span className="absolute top-1.5 left-1.5 z-10 inline-flex items-center gap-0.5 text-[9px] font-extrabold tracking-wider uppercase bg-amber-400 text-stone-900 px-1.5 py-0.5 rounded shadow">
-          ⚡ Sponsored
+          <Zap size={10} strokeWidth={2.5} fill="currentColor" /> Sponsored
         </span>
         <div className="w-full h-24 bg-amber-100/40 flex items-center justify-center">
           <span className="text-[10px] text-amber-700 uppercase tracking-wider font-semibold">
@@ -104,7 +105,7 @@ function CardPlaceholder({ size }: { size: Size }) {
   return (
     <div className="relative block bg-gradient-to-br from-amber-50 to-white rounded-2xl shadow-md ring-2 ring-amber-400 ring-offset-2 ring-offset-[#FAF9F6] overflow-hidden">
       <span className="absolute top-2.5 left-2.5 z-10 inline-flex items-center gap-1 text-[11px] font-extrabold tracking-wider uppercase bg-amber-400 text-stone-900 px-2.5 py-1 rounded-md shadow">
-        ⚡ Sponsored
+        <Zap size={11} strokeWidth={2.5} fill="currentColor" /> Sponsored
       </span>
       <div className="w-full h-44 bg-amber-100/40 flex items-center justify-center">
         <span className="text-xs text-amber-700 uppercase tracking-wider font-semibold">
@@ -135,7 +136,7 @@ function ListPlaceholder({ size }: { size: Size }) {
     return (
       <div className="relative flex items-stretch gap-2.5 bg-gradient-to-br from-amber-50 to-white rounded-xl border border-amber-400 shadow-sm p-2 pt-5">
         <span className="absolute top-1 left-1 z-10 inline-flex items-center gap-0.5 text-[9px] font-extrabold tracking-wider uppercase bg-amber-400 text-stone-900 px-1.5 py-0.5 rounded shadow">
-          ⚡ Ad
+          <Zap size={10} strokeWidth={2.5} fill="currentColor" /> Ad
         </span>
         <div className="w-[64px] h-[64px] rounded-lg bg-amber-100/60 shrink-0 flex items-center justify-center text-[10px] text-amber-700 uppercase tracking-wider font-semibold">
           ad
@@ -154,7 +155,7 @@ function ListPlaceholder({ size }: { size: Size }) {
   return (
     <div className="relative flex items-stretch gap-4 bg-gradient-to-br from-amber-50 to-white rounded-2xl border-2 border-amber-400 shadow-md p-3.5 pt-7">
       <span className="absolute top-2 left-2 z-10 inline-flex items-center gap-1 text-[10px] font-extrabold tracking-wider uppercase bg-amber-400 text-stone-900 px-2 py-0.5 rounded-md shadow">
-        ⚡ Ad
+        <Zap size={11} strokeWidth={2.5} fill="currentColor" /> Ad
       </span>
       <div className="w-[110px] h-[110px] rounded-xl bg-amber-100/60 shrink-0 flex items-center justify-center text-[11px] text-amber-700 uppercase tracking-wider font-semibold">
         ad

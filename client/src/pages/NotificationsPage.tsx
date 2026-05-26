@@ -3,6 +3,17 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { notificationsApi, type Notification } from "../api/notifications.api";
 import Seo from "../components/seo/Seo";
+import type { LucideIcon } from "lucide-react";
+import {
+  Bell,
+  Check,
+  Gift,
+  Handshake,
+  Smile,
+  Trophy,
+  Users,
+  Zap,
+} from "../utils/lucideIcon";
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -32,14 +43,14 @@ function dateGroupKey(iso: string): string {
   return "Lebih lama";
 }
 
-const TYPE_META: Record<string, { icon: string; tone: string }> = {
-  friend_request: { icon: "👥", tone: "bg-blue-50 text-blue-600" },
-  friend_accepted: { icon: "🤝", tone: "bg-emerald-50 text-emerald-600" },
-  emoji_thrown: { icon: "😄", tone: "bg-violet-50 text-violet-600" },
-  achievement_unlocked: { icon: "🏆", tone: "bg-amber-50 text-amber-600" },
-  promotion: { icon: "🎁", tone: "bg-rose-50 text-rose-600" },
-  together_bomb: { icon: "💥", tone: "bg-orange-50 text-orange-600" },
-  default: { icon: "🔔", tone: "bg-[#F0EDE8] text-[#5C5A52]" },
+const TYPE_META: Record<string, { icon: LucideIcon; tone: string }> = {
+  friend_request: { icon: Users, tone: "bg-blue-50 text-blue-600" },
+  friend_accepted: { icon: Handshake, tone: "bg-emerald-50 text-emerald-600" },
+  emoji_thrown: { icon: Smile, tone: "bg-violet-50 text-violet-600" },
+  achievement_unlocked: { icon: Trophy, tone: "bg-amber-50 text-amber-600" },
+  promotion: { icon: Gift, tone: "bg-rose-50 text-rose-600" },
+  together_bomb: { icon: Zap, tone: "bg-orange-50 text-orange-600" },
+  default: { icon: Bell, tone: "bg-[#F0EDE8] text-[#5C5A52]" },
 };
 
 const PAGE_SIZE = 20;
@@ -114,7 +125,7 @@ export default function NotificationsPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#FAF9F6] px-4">
         <div className="bg-white rounded-2xl p-8 max-w-md w-full text-center border border-[#F0EDE8]">
-          <span className="text-5xl mb-4 inline-block">🔔</span>
+          <Bell size={44} strokeWidth={1.5} className="mx-auto mb-4 text-[#D48B3A]" />
           <p className="text-[#1C1C1A] font-bold">
             Login dulu untuk melihat notifikasi
           </p>
@@ -149,7 +160,7 @@ export default function NotificationsPage() {
           <div className="relative px-5 sm:px-7 lg:px-8 py-5 sm:py-6 flex items-center justify-between gap-3">
             <div className="min-w-0">
               <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/70 backdrop-blur-sm ring-1 ring-amber-200 text-[10px] font-extrabold tracking-[0.15em] uppercase text-[#B45309] mb-2 shadow-sm">
-                🔔 Notifikasi
+                <Bell size={11} strokeWidth={2.5} /> Notifikasi
               </div>
               <h1 className="text-xl sm:text-2xl font-extrabold text-[#1C1C1A] tracking-tight">
                 {unreadCount > 0
@@ -160,9 +171,9 @@ export default function NotificationsPage() {
             {unreadCount > 0 && (
               <button
                 onClick={markAll}
-                className="shrink-0 text-xs font-bold text-[#1C1C1A] bg-white hover:bg-[#FFF8EC] ring-1 ring-amber-200 px-3 py-1.5 rounded-full shadow-sm transition-colors"
+                className="inline-flex items-center gap-1.5 shrink-0 text-xs font-bold text-[#1C1C1A] bg-white hover:bg-[#FFF8EC] ring-1 ring-amber-200 px-3 py-1.5 rounded-full shadow-sm transition-colors"
               >
-                ✓ Tandai semua
+                <Check size={12} strokeWidth={2.5} /> Tandai semua
               </button>
             )}
           </div>
@@ -223,6 +234,7 @@ function NotifRow({
   onClick: () => void;
 }) {
   const meta = TYPE_META[n.type] || TYPE_META.default;
+  const Icon = meta.icon;
   return (
     <button
       type="button"
@@ -232,9 +244,9 @@ function NotifRow({
       } ${n.isRead ? "hover:bg-[#FAF9F6]" : "bg-amber-50/40 hover:bg-amber-50"}`}
     >
       <div
-        className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-lg ${meta.tone}`}
+        className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center ${meta.tone}`}
       >
-        {meta.icon}
+        <Icon size={20} strokeWidth={2} />
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-start gap-2">
@@ -265,7 +277,7 @@ function NotifRow({
 function EmptyState() {
   return (
     <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-[#E0DCD3]">
-      <span className="text-5xl mb-3 inline-block">🔔</span>
+      <Bell size={44} strokeWidth={1.5} className="mx-auto mb-3 text-[#D48B3A]" />
       <h2 className="text-lg font-bold text-[#1C1C1A]">Belum ada notifikasi</h2>
       <p className="text-sm text-[#8A8880] mt-2 max-w-sm mx-auto px-4">
         Kami bakal kabarin saat ada teman, achievement, promo, atau ada yang

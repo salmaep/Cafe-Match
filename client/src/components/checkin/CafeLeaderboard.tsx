@@ -1,26 +1,28 @@
 import { useEffect, useState } from "react";
+import type { LucideIcon } from "lucide-react";
 import { checkinsApi, type LeaderboardEntry } from "../../api/checkins.api";
+import { Crown, Medal, Trophy } from "../../utils/lucideIcon";
 
 interface Props {
   cafeId: number;
 }
 
-const RANK_STYLE: Record<number, { bg: string; text: string; emoji: string }> =
+const RANK_STYLE: Record<number, { bg: string; text: string; icon: LucideIcon }> =
   {
     1: {
       bg: "bg-gradient-to-br from-[#FBBF24] to-[#F59E0B]",
       text: "text-white",
-      emoji: "👑",
+      icon: Crown,
     },
     2: {
       bg: "bg-gradient-to-br from-[#E5E7EB] to-[#9CA3AF]",
       text: "text-white",
-      emoji: "🥈",
+      icon: Medal,
     },
     3: {
       bg: "bg-gradient-to-br from-[#FCD34D] to-[#B45309]",
       text: "text-white",
-      emoji: "🥉",
+      icon: Medal,
     },
   };
 
@@ -62,7 +64,7 @@ export default function CafeLeaderboard({ cafeId }: Props) {
   if (!entries || entries.length === 0) {
     return (
       <div className="bg-white border border-dashed border-[#E0DCD3] rounded-xl px-4 py-6 text-center">
-        <span className="text-3xl mb-2 inline-block">🏆</span>
+        <Trophy size={30} strokeWidth={1.5} className="mx-auto mb-2 text-[#D48B3A]" />
         <p className="text-sm text-[#5C5A52] font-semibold">
           Belum ada yang check-in
         </p>
@@ -89,9 +91,9 @@ export default function CafeLeaderboard({ cafeId }: Props) {
             <div className="shrink-0">
               {rankStyle ? (
                 <div
-                  className={`w-9 h-9 rounded-full flex items-center justify-center text-base font-extrabold shadow-sm ${rankStyle.bg} ${rankStyle.text}`}
+                  className={`w-9 h-9 rounded-full flex items-center justify-center shadow-sm ${rankStyle.bg} ${rankStyle.text}`}
                 >
-                  {rankStyle.emoji}
+                  <rankStyle.icon size={16} strokeWidth={2.25} fill="currentColor" />
                 </div>
               ) : (
                 <div className="w-9 h-9 rounded-full bg-[#F0EDE8] flex items-center justify-center text-sm font-bold text-[#8A8880] tabular-nums">

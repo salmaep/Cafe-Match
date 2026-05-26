@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import Seo from "../components/seo/Seo";
+import { Mail } from "../utils/lucideIcon";
 
 const LAST_UPDATED = "20 Mei 2025";
 const CONTACT_EMAIL = "support@cafematch.id";
@@ -235,7 +236,7 @@ export default function PrivacyPolicyPage() {
               permintaan terkait data pribadi Anda, silakan hubungi tim kami:
             </p>
             <div className="mt-3 inline-flex items-center gap-2 bg-white border border-[#F0EDE8] rounded-xl px-4 py-3 text-sm">
-              <span className="text-base">📧</span>
+              <Mail size={16} strokeWidth={2} className="text-[#D48B3A]" />
               <a
                 href={`mailto:${CONTACT_EMAIL}`}
                 className="text-[#D48B3A] font-semibold hover:underline"

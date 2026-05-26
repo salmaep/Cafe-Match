@@ -1,13 +1,15 @@
 import { NavLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import type { LucideIcon } from "lucide-react";
 import { useShortlist } from "../../context/ShortlistContext";
 import { useAuth } from "../../context/AuthContext";
 import { commonText } from "@shared/i18n";
+import { Flame, Map, Sparkles, Star, User } from "../../utils/lucideIcon";
 
 interface Tab {
   to: string;
   label: string;
-  icon: string;
+  icon: LucideIcon;
   badge?: number;
   exact?: boolean;
 }
@@ -18,16 +20,20 @@ export default function BottomTabBar() {
   const { user } = useAuth();
 
   const TABS: Tab[] = [
-    { to: "/", label: t(commonText.navExplore), icon: "🗺️", exact: true },
-    { to: "/discover", label: t(commonText.navDiscover), icon: "🃏" },
-    { to: "/trending", label: t(commonText.navTrending), icon: "🔥" },
+    { to: "/", label: t(commonText.navExplore), icon: Map, exact: true },
+    { to: "/discover", label: t(commonText.navDiscover), icon: Sparkles },
+    { to: "/trending", label: t(commonText.navTrending), icon: Flame },
     {
       to: "/shortlist",
       label: t(commonText.navShortlist),
-      icon: "★",
+      icon: Star,
       badge: shortlist.length || undefined,
     },
-    { to: user ? "/profile" : "/login", label: t(commonText.navProfile), icon: "👤" },
+    {
+      to: user ? "/profile" : "/login",
+      label: t(commonText.navProfile),
+      icon: User,
+    },
   ];
 
   return (
@@ -48,13 +54,13 @@ export default function BottomTabBar() {
           >
             {({ isActive }) => (
               <>
-                <span
-                  className={`text-[22px] leading-none transition-opacity ${
-                    isActive ? "opacity-100" : "opacity-50"
+                <tab.icon
+                  size={22}
+                  strokeWidth={isActive ? 2.25 : 2}
+                  className={`transition-opacity ${
+                    isActive ? "opacity-100" : "opacity-70"
                   }`}
-                >
-                  {tab.icon}
-                </span>
+                />
                 <span className="text-[11px] font-semibold">{tab.label}</span>
                 {tab.badge != null && tab.badge > 0 && (
                   <span className="absolute top-1 right-1/2 translate-x-[18px] bg-[#D48B3A] text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 shadow">

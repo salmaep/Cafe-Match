@@ -6,6 +6,8 @@ import { getOpenStatus } from "../../utils/openingHours";
 import { buildFacilityChips } from "../../utils/facilities";
 import { formatRating } from "../../utils/rating";
 import { cleanAddress } from "../../utils/address";
+import { Clock, MapPin, Star } from "../../utils/lucideIcon";
+import { LucideIcon, lucideForFacility } from "../../utils/lucideIcon";
 
 interface Props {
   cafe: Cafe;
@@ -108,7 +110,12 @@ export default function SwipeCard({
         <div className="flex items-center gap-2 w-full">
           {formatRating(cafe.googleRating) && (
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/95 text-[#1a1410] font-bold text-[13px] backdrop-blur-sm shadow-[0_4px_12px_rgba(0,0,0,.15)]">
-              <span className="text-[#f5b820]">★</span>
+              <Star
+                size={13}
+                strokeWidth={2}
+                className="text-[#f5b820]"
+                fill="currentColor"
+              />
               {formatRating(cafe.googleRating)}
               {cafe.totalGoogleReviews != null && (
                 <span className="font-semibold text-[#8a7a66]">
@@ -132,13 +139,14 @@ export default function SwipeCard({
           <span className="flex-1" />
           {distanceKm && (
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[rgba(20,14,10,.55)] text-white font-bold text-[13px] border border-white/[.18] backdrop-blur-sm whitespace-nowrap">
-              📍 {distanceKm} km
+              <MapPin size={12} strokeWidth={2} /> {distanceKm} km
             </span>
           )}
         </div>
         {shortlisted && (
           <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#d97706] text-white font-bold text-[12px] shadow-[0_4px_12px_rgba(217,119,6,.45)]">
-            ★ Sudah di shortlist
+            <Star size={12} strokeWidth={2} fill="currentColor" />
+            Sudah di shortlist
           </span>
         )}
       </div>
@@ -206,9 +214,8 @@ export default function SwipeCard({
       <div className="absolute left-0 right-0 bottom-0 z-[4] flex flex-col gap-3 p-4 md:p-5 text-white">
         <div>
           <h2
-            className="m-0 mb-1.5 leading-[1.02] tracking-tight font-normal line-clamp-2"
+            className="m-0 mb-1.5 leading-[1.02] tracking-tight font-extrabold line-clamp-2"
             style={{
-              fontFamily: "'Instrument Serif', Georgia, serif",
               fontSize: "clamp(24px, 4.5vw, 34px)",
               textShadow: "0 2px 12px rgba(0,0,0,.5)",
             }}
@@ -218,7 +225,9 @@ export default function SwipeCard({
           <div className="flex items-center gap-2 flex-wrap text-[13px] md:text-[14px] text-white/[.86] mb-2.5 gap-y-1">
             {locality && (
               <>
-                <span>📍 {locality}</span>
+                <span className="inline-flex items-center gap-1">
+                  <MapPin size={12} strokeWidth={2} /> {locality}
+                </span>
                 {((open?.closesAt && open.isOpen) || cafe.priceRange) && (
                   <span className="opacity-55">·</span>
                 )}
@@ -226,7 +235,9 @@ export default function SwipeCard({
             )}
             {open?.closesAt && open.isOpen && (
               <>
-                <span>🕐 sampai {open.closesAt}</span>
+                <span className="inline-flex items-center gap-1">
+                  <Clock size={12} strokeWidth={2} /> sampai {open.closesAt}
+                </span>
                 {cafe.priceRange && <span className="opacity-55">·</span>}
               </>
             )}
@@ -238,7 +249,7 @@ export default function SwipeCard({
                 key={t.key}
                 className="inline-flex items-center gap-1.5 px-[11px] py-1 rounded-full bg-[rgba(20,14,10,.55)] border border-white/[.16] text-white font-semibold text-[12px] backdrop-blur-sm"
               >
-                {t.icon && <span>{t.icon}</span>}
+                <LucideIcon name={lucideForFacility(t.key)} size={11} strokeWidth={2} />
                 {t.label}
               </span>
             ))}

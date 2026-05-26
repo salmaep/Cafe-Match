@@ -4,6 +4,18 @@ import { useAuth } from "../context/AuthContext";
 import { recapsApi, type RecapData } from "../api/recaps.api";
 import { placeholderImage } from "../utils/cafeImage";
 import Seo from "../components/seo/Seo";
+import type { LucideIcon } from "lucide-react";
+import {
+  BarChart3,
+  Calendar,
+  Clock,
+  Coffee,
+  Crown,
+  Flame,
+  MapPin,
+  Share2,
+  Target,
+} from "../utils/lucideIcon";
 
 const DAY_TRANSLATE: Record<string, string> = {
   Monday: "Senin",
@@ -79,7 +91,7 @@ export default function RecapPage() {
     return (
       <div className="min-h-screen bg-[#FAF9F6] flex items-center justify-center px-4">
         <div className="bg-white rounded-2xl border border-[#F0EDE8] p-8 max-w-md text-center">
-          <span className="text-5xl mb-3 inline-block">📊</span>
+          <BarChart3 size={48} strokeWidth={1.5} className="mx-auto mb-3 text-[#D48B3A]" />
           <p className="text-[#1C1C1A] font-bold">
             Login dulu untuk lihat Recap kamu
           </p>
@@ -99,7 +111,7 @@ export default function RecapPage() {
     return (
       <div className="min-h-screen bg-[#FAF9F6] flex items-center justify-center px-4">
         <div className="bg-white rounded-2xl border border-[#F0EDE8] p-8 max-w-md w-full text-center">
-          <span className="text-5xl mb-3 inline-block">📊</span>
+          <BarChart3 size={48} strokeWidth={1.5} className="mx-auto mb-3 text-[#D48B3A]" />
           <h1 className="text-xl font-extrabold text-[#1C1C1A] mb-1">
             Recap {year} belum dibuat
           </h1>
@@ -172,22 +184,22 @@ export default function RecapPage() {
         {/* Big numbers — 2×2 mobile, 4-col desktop */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <BigStat
-            icon="☕"
+            icon={Coffee}
             value={recap.totalCheckins.toLocaleString()}
             label="Check-in"
           />
           <BigStat
-            icon="📍"
+            icon={MapPin}
             value={recap.totalCafesVisited.toLocaleString()}
             label="Cafe unik"
           />
           <BigStat
-            icon="⏱️"
+            icon={Clock}
             value={`${recap.totalDurationHours}j`}
             label="Total nongkrong"
           />
           <BigStat
-            icon="🔥"
+            icon={Flame}
             value={recap.longestStreak.toLocaleString()}
             label="Hari beruntun"
           />
@@ -223,7 +235,14 @@ export default function RecapPage() {
                       {c.visits}× check-in
                     </div>
                   </div>
-                  {i === 0 && <span className="text-base">👑</span>}
+                  {i === 0 && (
+                    <Crown
+                      size={16}
+                      strokeWidth={2.25}
+                      className="text-[#F59E0B]"
+                      fill="currentColor"
+                    />
+                  )}
                 </div>
               ))}
             </div>
@@ -232,14 +251,14 @@ export default function RecapPage() {
 
         {/* Vibe + day + avg session — 3-col on desktop, all small info cards together */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          <InfoCard icon="🎯" label="Vibe favorit" value={recap.topPurpose} />
+          <InfoCard icon={Target} label="Vibe favorit" value={recap.topPurpose} />
           <InfoCard
-            icon="📅"
+            icon={Calendar}
             label="Hari favorit"
             value={DAY_TRANSLATE[recap.favoriteDay] || recap.favoriteDay}
           />
           <InfoCard
-            icon="⌛"
+            icon={Clock}
             label="Rata-rata sesi"
             value={
               recap.averageSessionMinutes >= 60
@@ -265,9 +284,9 @@ export default function RecapPage() {
         <button
           type="button"
           onClick={share}
-          className="w-full py-3 bg-[#1C1C1A] text-white rounded-xl font-bold hover:bg-black transition-colors"
+          className="w-full py-3 bg-[#1C1C1A] text-white rounded-xl font-bold hover:bg-black transition-colors inline-flex items-center justify-center gap-2"
         >
-          📤 Bagikan Recap Saya
+          <Share2 size={16} strokeWidth={2} /> Bagikan Recap Saya
         </button>
 
         {/* Regenerate */}
@@ -304,17 +323,17 @@ function Section({
 }
 
 function BigStat({
-  icon,
+  icon: Icon,
   value,
   label,
 }: {
-  icon: string;
+  icon: LucideIcon;
   value: string;
   label: string;
 }) {
   return (
     <div className="bg-white rounded-2xl border border-[#F0EDE8] p-4">
-      <div className="text-xl mb-1.5">{icon}</div>
+      <Icon size={20} strokeWidth={2} className="text-[#D48B3A] mb-1.5" />
       <div className="text-2xl sm:text-3xl font-extrabold text-[#1C1C1A] tabular-nums leading-none">
         {value}
       </div>
@@ -326,17 +345,17 @@ function BigStat({
 }
 
 function InfoCard({
-  icon,
+  icon: Icon,
   label,
   value,
 }: {
-  icon: string;
+  icon: LucideIcon;
   label: string;
   value: string;
 }) {
   return (
     <div className="bg-white rounded-2xl border border-[#F0EDE8] p-4 flex items-center gap-3">
-      <div className="shrink-0 text-2xl">{icon}</div>
+      <Icon size={22} strokeWidth={2} className="shrink-0 text-[#D48B3A]" />
       <div className="min-w-0 flex-1">
         <div className="text-[10px] font-bold text-[#8A8880] uppercase tracking-wider">
           {label}

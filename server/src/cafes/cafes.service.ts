@@ -7,6 +7,7 @@ import { PurposeRequirement } from '../purposes/entities/purpose-requirement.ent
 import { CafeGoogleReview } from '../scraper-sync/entities/cafe-google-review.entity';
 import { SearchCafesDto } from './dto/search-cafes.dto';
 import { DiscoverCafesDto } from './dto/discover-cafes.dto';
+import { AutocompleteCafesDto } from './dto/autocomplete-cafes.dto';
 import { CreateCafeDto } from './dto/create-cafe.dto';
 import { MeiliCafesService, type CafeHit } from '../meili/meili-cafes.service';
 import { buildCafeSlug, cafeSlugOrFallback } from '../common/utils/slug.util';
@@ -49,6 +50,18 @@ export class CafesService {
       limit: dto.limit,
       sort: dto.sort,
     });
+  }
+
+  // ── Autocomplete (typeahead for SearchBar dropdown) ────────────────────────
+
+  async autocomplete(dto: AutocompleteCafesDto) {
+    const data = await this.meiliCafes.searchCafeNames({
+      q: dto.q,
+      lat: dto.lat,
+      lng: dto.lng,
+      limit: dto.limit,
+    });
+    return { data };
   }
 
   // ── Filter catalog (cafe_features grouped by category) ─────────────────────

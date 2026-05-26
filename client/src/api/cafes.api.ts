@@ -109,6 +109,22 @@ export interface DiscoverResult {
   meta: { total: number };
 }
 
+export interface AutocompleteParams {
+  q: string;
+  lat?: number;
+  lng?: number;
+  limit?: number;
+}
+
+export interface AutocompleteHit {
+  id: number;
+  name: string;
+  slug: string;
+  city: string | null;
+  district: string | null;
+  distanceMeters?: number;
+}
+
 export interface GoogleReview {
   id: number;
   cafeId: number;
@@ -202,6 +218,16 @@ export const cafesApi = {
       data: cafes,
       meta: res.data?.meta ?? { total: cafes.length },
     };
+  },
+
+  autocomplete: async (
+    params: AutocompleteParams,
+  ): Promise<{ data: AutocompleteHit[] }> => {
+    const res = await apiClient.get<{ data: AutocompleteHit[] }>(
+      "/cafes/autocomplete",
+      { params },
+    );
+    return { data: res.data?.data ?? [] };
   },
 
   getById: (id: number) => apiClient.get<Cafe>(`/cafes/${id}`),

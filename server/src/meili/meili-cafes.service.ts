@@ -74,6 +74,22 @@ export type CafeHit = CafeDocument & {
   distance?: number;
 };
 
+export interface AutocompleteCafesQuery {
+  q: string;
+  lat?: number;
+  lng?: number;
+  limit?: number;
+}
+
+export interface AutocompleteHit {
+  id: number;
+  name: string;
+  slug: string;
+  city: string | null;
+  district: string | null;
+  distanceMeters?: number;
+}
+
 export interface CafeSearchResult {
   data: CafeHit[];
   meta: { page: number; limit: number; total: number };
@@ -360,6 +376,58 @@ export class MeiliCafesService {
         total: results.estimatedTotalHits ?? results.hits.length,
       },
     };
+  }
+
+  // ── Autocomplete (lightweight projection for typeahead dropdown) ───────────
+
+  async searchCafeNames(
+    dto: AutocompleteCafesQuery,
+  ): Promise<AutocompleteHit[]> {
+    const { q, lat, lng, limit = 8 } = dto;
+    const trimmed = (q ?? '').trim();
+    if (trimmed.length === 0) return [];
+
+    const filters: string[] = ['isActive = true'];
+    const sort: string[] = [];
+    if (lat != null && lng != null) {
+      // Bias by distance — useful when the same chain has many branches.
+      sort.push(`_geoPoint(${lat}, ${lng}):asc`);
+    }
+
+    let results: SearchResponse<CafeDocument>;
+    try {
+      results = await this.meili.getIndex().search<CafeDocument>(trimmed, {
+        filter: filters.join(' AND '),
+        limit,
+        attributesToRetrieve: [
+          'id',
+          'name',
+          'slug',
+          'city',
+          'district',
+          '_geo',
+        ],
+        ...(sort.length ? { sort } : {}),
+      });
+    } catch (err) {
+      this.logger.error('Meilisearch autocomplete failed', err);
+      throw new ServiceUnavailableException({ error: 'SEARCH_UNAVAILABLE' });
+    }
+
+    return results.hits.map((hit) => {
+      const distanceMeters =
+        lat != null && lng != null && hit._geo
+          ? Math.round(haversineMeters(lat, lng, hit._geo.lat, hit._geo.lng))
+          : undefined;
+      return {
+        id: hit.id,
+        name: hit.name,
+        slug: hit.slug,
+        city: hit.city,
+        district: hit.district,
+        distanceMeters,
+      };
+    });
   }
 
   // ── Facets ──────────────────────────────────────────────────────────────────

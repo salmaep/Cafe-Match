@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Map,
   AdvancedMarker,
@@ -116,6 +116,22 @@ export default function MapView({ center, cafes, radius, onMapClick }: Props) {
   const [activeCafeId, setActiveCafeId] = useState<number | null>(null);
   const [userPopupOpen, setUserPopupOpen] = useState(false);
 
+  // Stable callbacks — without these, unrelated parent re-renders (typing in
+  // SearchBar, focus toggles) hand new function identities to child effects
+  // and force CafeClusterMarkers to tear down + rebuild every marker.
+  // Must be declared BEFORE any early return to satisfy rules-of-hooks.
+  const handleCafeClick = useCallback((id: number) => {
+    setActiveCafeId(id);
+  }, []);
+
+  const handleMapClick = useCallback(
+    (ev: { detail: { latLng: { lat: number; lng: number } | null } }) => {
+      if (!ev.detail.latLng) return;
+      onMapClick?.(ev.detail.latLng.lat, ev.detail.latLng.lng);
+    },
+    [onMapClick],
+  );
+
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
   if (!apiKey) {
     return (
@@ -143,10 +159,7 @@ export default function MapView({ center, cafes, radius, onMapClick }: Props) {
         mapTypeControl={false}
         className="h-full w-full rounded-xl"
         style={{ minHeight: "400px" }}
-        onClick={(ev) => {
-          if (!ev.detail.latLng) return;
-          onMapClick?.(ev.detail.latLng.lat, ev.detail.latLng.lng);
-        }}
+        onClick={handleMapClick}
       >
         <RecenterMap center={center} />
         <RadiusCircle center={center} radius={radius} />
@@ -167,10 +180,7 @@ export default function MapView({ center, cafes, radius, onMapClick }: Props) {
           </InfoWindow>
         )}
 
-        <CafeClusterMarkers
-          cafes={cafes}
-          onCafeClick={(id) => setActiveCafeId(id)}
-        />
+        <CafeClusterMarkers cafes={cafes} onCafeClick={handleCafeClick} />
 
         {activeCafe && (
           <InfoWindow

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { mapText } from "@shared/i18n";
 import { getPurposeBySlug } from "@shared/constants/purposes";
@@ -9,7 +10,12 @@ import {
 } from "../hooks/useGeolocation";
 import { cafesApi, type SearchParams } from "../api/cafes.api";
 import { promotionsApi } from "../api/promotions.api";
+import { useAutocomplete } from "../hooks/useAutocomplete";
+import { useSearchHistory } from "../hooks/useSearchHistory";
+import SearchAutocomplete from "../components/search/SearchAutocomplete";
 import { usePreferences } from "../context/PreferencesContext";
+import { cafeUrl } from "../utils/cafeUrl";
+import type { AutocompleteHit } from "../api/cafes.api";
 import type { PurposeSlug } from "../constants/purposes";
 import type { Cafe } from "../types";
 import MapView from "../components/map/MapContainer";
@@ -63,6 +69,7 @@ function CafeCardSkeleton() {
 
 export default function HomePage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const geo = useGeolocation();
   const {
     preferences,
@@ -83,15 +90,25 @@ export default function HomePage() {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [radiusSuggestion, setRadiusSuggestion] = useState<{
-    suggested: number | null;
-    totalIfExpanded: number | null;
-  }>({ suggested: null, totalIfExpanded: null });
-  const [isSemanticMode, setIsSemanticMode] = useState(false);
-  // When user clicks "Perluas radius", we switch off AI rerank for the next
-  // fetch so they can browse the full result set via infinite scroll. Resets
-  // on next user search.
-  const [forceListMode, setForceListMode] = useState(false);
+
+  // Search history + autocomplete state (per input). Desktop SearchBar and
+  // mobile inline input each track their own focus + typing buffer.
+  const {
+    history,
+    push: pushHistory,
+    remove: removeHistory,
+    clear: clearHistory,
+  } = useSearchHistory();
+  const [desktopTyping, setDesktopTyping] = useState("");
+  const [desktopFocused, setDesktopFocused] = useState(false);
+  const [mobileFocused, setMobileFocused] = useState(false);
+  const [didYouMean, setDidYouMean] = useState<{ term: string } | null>(null);
+  // Out-of-radius prompt: holds the picked hit + the rounded-up radius (km)
+  // we'd switch to if the user accepts. Cleared after action or dismissal.
+  const [expandPrompt, setExpandPrompt] = useState<{
+    hit: AutocompleteHit;
+    newRadiusKm: number;
+  } | null>(null);
   const [center, setCenter] = useState<[number, number] | null>(null);
   // Track whether the current center came from GPS or a manual user action
   // (map click / fallback button). When `gps`, GPS updates may overwrite center;
@@ -190,7 +207,6 @@ export default function HomePage() {
     async (targetPage: number) => {
       if (!center) return;
       setLoading(true);
-      const hasTextQuery = filters.q.trim().length > 0 && !forceListMode;
       try {
         const params: SearchParams = {
           lat: center[0],
@@ -205,37 +221,21 @@ export default function HomePage() {
           params.facilities = filters.facilities;
         if (filters.priceRange) params.priceRange = filters.priceRange;
 
-        if (hasTextQuery) {
-          // Semantic path: AI-rewrite + rerank. Returns a single curated page
-          // (no infinite scroll), plus a radius suggestion when hits are sparse.
-          const res = await cafesApi.semanticSearch(params);
-          setCafes(res.data);
-          setTotal(res.meta?.total ?? res.data.length);
-          setRadiusSuggestion({
-            suggested: res.meta?.suggestedRadius ?? null,
-            totalIfExpanded: res.meta?.totalIfExpanded ?? null,
-          });
-          setIsSemanticMode(true);
-        } else {
-          const res = await cafesApi.search(params);
-          const incoming = res.data.data ?? [];
-          const totalCount = res.data.meta?.total ?? incoming.length;
-          setCafes((prev) =>
-            targetPage === 1 ? incoming : [...prev, ...incoming],
-          );
-          setTotal(totalCount);
-          setRadiusSuggestion({ suggested: null, totalIfExpanded: null });
-          setIsSemanticMode(false);
-        }
+        const res = await cafesApi.search(params);
+        const incoming = res.data.data ?? [];
+        const totalCount = res.data.meta?.total ?? incoming.length;
+        setCafes((prev) =>
+          targetPage === 1 ? incoming : [...prev, ...incoming],
+        );
+        setTotal(totalCount);
       } catch {
         if (targetPage === 1) setCafes([]);
         setTotal(0);
-        setRadiusSuggestion({ suggested: null, totalIfExpanded: null });
       } finally {
         setLoading(false);
       }
     },
-    [center, radius, purposeId, filters, forceListMode],
+    [center, radius, purposeId, filters],
   );
 
   // Reset to page 1 + refetch whenever search inputs change.
@@ -274,7 +274,7 @@ export default function HomePage() {
     };
   }, [center, radius, purposeId, filters]);
 
-  const hasMore = !isSemanticMode && cafes.length < total;
+  const hasMore = cafes.length < total;
 
   const loadMore = () => {
     if (loading || !hasMore) return;
@@ -283,22 +283,59 @@ export default function HomePage() {
     fetchCafes(next);
   };
 
-  const handleMapClick = (lat: number, lng: number) => {
-    setCenter([lat, lng]);
-    setCenterSource("manual");
-    updatePreference({
-      location: { type: "custom", latitude: lat, longitude: lng },
-    });
-  };
+  const handleMapClick = useCallback(
+    (lat: number, lng: number) => {
+      setCenter([lat, lng]);
+      setCenterSource("manual");
+      updatePreference({
+        location: { type: "custom", latitude: lat, longitude: lng },
+      });
+    },
+    [updatePreference],
+  );
 
   const handleRadiusChange = (meters: number) => {
     setRadius(meters);
     updatePreference({ radius: meters / 1000 });
   };
 
+  // Autocomplete pick: if the cafe is outside current radius, prompt to
+  // expand first; otherwise navigate straight. `distanceMeters` may be
+  // undefined when no GPS — in that case we just navigate.
+  const handlePickSuggestion = (hit: AutocompleteHit) => {
+    const dist = hit.distanceMeters;
+    if (dist != null && dist > radius) {
+      // Round up to the nearest km, +500m buffer, capped at 50km.
+      const newRadiusKm = Math.min(50, Math.ceil((dist + 500) / 1000));
+      setExpandPrompt({ hit, newRadiusKm });
+      return;
+    }
+    setDesktopFocused(false);
+    setMobileFocused(false);
+    navigate(cafeUrl(hit));
+  };
+
+  const confirmExpand = () => {
+    if (!expandPrompt) return;
+    handleRadiusChange(expandPrompt.newRadiusKm * 1000);
+    setDesktopFocused(false);
+    setMobileFocused(false);
+    navigate(cafeUrl(expandPrompt.hit));
+    setExpandPrompt(null);
+  };
+
+  const declineExpand = () => {
+    if (!expandPrompt) return;
+    setDesktopFocused(false);
+    setMobileFocused(false);
+    navigate(cafeUrl(expandPrompt.hit));
+    setExpandPrompt(null);
+  };
+
   const setQ = (q: string) => {
-    setForceListMode(false);
     setFilters((prev) => ({ ...prev, q }));
+    const trimmed = q.trim();
+    if (trimmed) pushHistory(trimmed);
   };
   const setFacilities = (facilities: string[]) => {
     setFilters((prev) => ({ ...prev, facilities }));
@@ -334,9 +371,46 @@ export default function HomePage() {
     });
   };
 
-  // Derived from current inputs (not post-fetch state) so the loading label
-  // reflects what the NEXT request will use, not the previous one.
-  const willUseSemantic = filters.q.trim().length > 0 && !forceListMode;
+  // Live autocomplete (separate hook instance per input). Hooks read `q`
+  // directly so debounce inside them debounces typing properly.
+  const desktopAuto = useAutocomplete(desktopTyping, {
+    lat: center?.[0],
+    lng: center?.[1],
+  });
+  const mobileAuto = useAutocomplete(mobileQuery, {
+    lat: center?.[0],
+    lng: center?.[1],
+  });
+
+  // Did-you-mean: when committed query returns 0 results, try autocomplete to
+  // surface the closest cafe name as a suggestion banner. Skipped while the
+  // search is still loading.
+  useEffect(() => {
+    if (loading) return;
+    const trimmed = filters.q.trim();
+    if (!trimmed || total > 0) {
+      setDidYouMean(null);
+      return;
+    }
+    let cancelled = false;
+    cafesApi
+      .autocomplete({ q: trimmed, limit: 1 })
+      .then((res) => {
+        if (cancelled) return;
+        const hit = res.data[0];
+        if (hit && hit.name.toLowerCase() !== trimmed.toLowerCase()) {
+          setDidYouMean({ term: hit.name });
+        } else {
+          setDidYouMean(null);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setDidYouMean(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [filters.q, total, loading]);
 
   // Feature names linked to the currently active purpose — drive the ⭐
   // marker on FilterPanel chips so users see why those are pre-toggled.
@@ -348,13 +422,16 @@ export default function HomePage() {
       .filter((n): n is string => typeof n === "string" && n.length > 0);
   })();
 
-  // Debounce mobile search input
+  // Debounce mobile search input → commit to filters (triggers fetch) +
+  // record to history. Autocomplete fetches separately off `mobileQuery`.
   useEffect(() => {
     const t = setTimeout(() => {
-      setForceListMode(false);
       setFilters((prev) => ({ ...prev, q: mobileQuery }));
+      const trimmed = mobileQuery.trim();
+      if (trimmed) pushHistory(trimmed);
     }, 350);
     return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mobileQuery]);
 
   if (geo.loading) {
@@ -449,6 +526,8 @@ export default function HomePage() {
                 type="text"
                 value={mobileQuery}
                 onChange={(e) => setMobileQuery(e.target.value)}
+                onFocus={() => setMobileFocused(true)}
+                onBlur={() => setTimeout(() => setMobileFocused(false), 120)}
                 placeholder="Cari kafe, alamat, atau fasilitas…"
                 className="w-full pl-10 pr-9 py-2.5 bg-[#F0EDE8] rounded-full text-sm text-[#1C1C1A] placeholder:text-[#8A8880] focus:bg-white focus:ring-2 focus:ring-[#D48B3A]/40 outline-none border-none transition-all"
               />
@@ -467,6 +546,20 @@ export default function HomePage() {
                   <X size={12} strokeWidth={2.5} />
                 </button>
               )}
+              <SearchAutocomplete
+                q={mobileQuery}
+                open={mobileFocused}
+                suggestions={mobileAuto.suggestions}
+                loading={mobileAuto.loading}
+                history={history}
+                onPickRecent={(term) => {
+                  setMobileQuery(term);
+                  setMobileFocused(false);
+                }}
+                onRemoveRecent={removeHistory}
+                onClearRecent={clearHistory}
+                onPickSuggestion={handlePickSuggestion}
+              />
             </div>
             <button
               type="button"
@@ -682,7 +775,30 @@ export default function HomePage() {
         </div>
 
         <div className="md:flex-1 lg:flex-[2] 2xl:flex-none 2xl:w-[580px] md:flex md:flex-col gap-3 md:overflow-hidden md:min-w-0">
-          <SearchBar q={filters.q} onQChange={setQ} />
+          <div className="relative">
+            <SearchBar
+              q={filters.q}
+              onQChange={setQ}
+              onTyping={setDesktopTyping}
+              onFocus={() => setDesktopFocused(true)}
+              onBlur={() => setTimeout(() => setDesktopFocused(false), 120)}
+            />
+            <SearchAutocomplete
+              q={desktopTyping}
+              open={desktopFocused}
+              suggestions={desktopAuto.suggestions}
+              loading={desktopAuto.loading}
+              history={history}
+              onPickRecent={(term) => {
+                setDesktopTyping(term);
+                setQ(term);
+                setDesktopFocused(false);
+              }}
+              onRemoveRecent={removeHistory}
+              onClearRecent={clearHistory}
+              onPickSuggestion={handlePickSuggestion}
+            />
+          </div>
           <RadiusSlider radius={radius} onChange={handleRadiusChange} />
           <PurposeFilter
             selectedPurposeId={purposeId}
@@ -747,11 +863,7 @@ export default function HomePage() {
                 </button>
               </div>
               <div className="text-sm text-gray-500 min-w-0 truncate">
-                {loading
-                  ? willUseSemantic
-                    ? "Mencari dengan AI…"
-                    : "Mencari…"
-                  : t(mapText.cafesFound, { count: total })}
+                {loading ? "Mencari…" : t(mapText.cafesFound, { count: total })}
               </div>
             </div>
             {!loading && cafes.length > 0 && (
@@ -766,32 +878,23 @@ export default function HomePage() {
           </div>
 
           <div className="flex-1 overflow-y-auto pb-4">
-            {radiusSuggestion.suggested != null &&
-              radiusSuggestion.suggested > radius &&
-              cafes.length < 3 && (
-                <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm flex items-center justify-between gap-3">
-                  <span className="text-amber-900">
-                    Hasil terbatas dalam {(radius / 1000).toFixed(1)} km.
-                    Perluas radius untuk melihat lebih banyak cafe — scroll
-                    untuk memuat hasil tambahan.
-                  </span>
+            {didYouMean && (
+              <div className="mb-3 rounded-lg border border-[#F2DAB6] bg-[#FDF6EC] p-3 text-sm flex items-center justify-between gap-3">
+                <span className="text-[#1C1C1A]">
+                  Tidak ada hasil untuk{" "}
+                  <span className="font-semibold">"{filters.q}"</span>. Mungkin
+                  yang kamu maksud:{" "}
                   <button
                     type="button"
-                    onClick={() => {
-                      const next = radiusSuggestion.suggested!;
-                      setRadiusSuggestion({
-                        suggested: null,
-                        totalIfExpanded: null,
-                      });
-                      setForceListMode(true);
-                      handleRadiusChange(next);
-                    }}
-                    className="shrink-0 rounded-md bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-700"
+                    onClick={() => setQ(didYouMean.term)}
+                    className="font-bold text-[#D48B3A] hover:underline"
                   >
-                    Perluas radius
+                    {didYouMean.term}
                   </button>
-                </div>
-              )}
+                  ?
+                </span>
+              </div>
+            )}
             {loading && cafes.length === 0 ? (
               <div
                 className={
@@ -931,6 +1034,47 @@ export default function HomePage() {
                   loading={loading}
                 />
               )}
+            </div>
+          </div>
+        </div>
+      )}
+      {expandPrompt && (
+        <div className="fixed inset-0 z-[1200] flex items-end sm:items-center justify-center bg-black/40 px-4 pb-6 sm:pb-0">
+          <div className="w-full max-w-sm bg-white rounded-2xl shadow-2xl p-5">
+            <h3 className="text-base font-bold text-[#1C1C1A] mb-1">
+              Di luar radius kamu
+            </h3>
+            <p className="text-sm text-[#5C5A52] mb-4">
+              <span className="font-semibold">{expandPrompt.hit.name}</span>{" "}
+              berada{" "}
+              {expandPrompt.hit.distanceMeters != null
+                ? `${(expandPrompt.hit.distanceMeters / 1000).toFixed(1)} km`
+                : "agak jauh"}{" "}
+              dari lokasi kamu, di luar radius{" "}
+              <span className="font-semibold">
+                {(radius / 1000).toFixed(1)} km
+              </span>{" "}
+              yang aktif. Perluas ke{" "}
+              <span className="font-semibold">
+                {expandPrompt.newRadiusKm} km
+              </span>
+              ?
+            </p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={declineExpand}
+                className="flex-1 py-2.5 rounded-lg border border-[#E8E4DD] text-[#1C1C1A] text-sm font-semibold hover:bg-[#FAF8F3]"
+              >
+                Tetap kunjungi
+              </button>
+              <button
+                type="button"
+                onClick={confirmExpand}
+                className="flex-1 py-2.5 rounded-lg bg-[#D48B3A] text-white text-sm font-bold hover:bg-[#B5762E]"
+              >
+                Perluas & buka
+              </button>
             </div>
           </div>
         </div>

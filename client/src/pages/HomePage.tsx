@@ -956,7 +956,7 @@ function PurposeChips({
                   : "bg-white text-[#1C1C1A] border-[#E8E4DD] hover:border-[#D48B3A] hover:text-[#D48B3A]"
               }`}
             >
-              <PurposeIcon slug={p.slug} size={12} />
+              <PurposeIcon slug={p.slug} icon={p.icon} size={12} />
               {p.name}
             </button>
           );

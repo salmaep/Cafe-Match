@@ -17,6 +17,7 @@ import {
   Sun,
   TreePine,
   Users,
+  LucideIcon as LucideIconRenderer,
 } from "./lucideIcon";
 
 // Each purpose slug maps to a unique lucide icon.
@@ -45,15 +46,29 @@ export function getPurposeIcon(slug: string | undefined | null): LucideIcon {
   return (slug && PURPOSE_ICONS[slug]) || Sparkles;
 }
 
+// Accepts server-provided `icon` (lucide name string) with slug as fallback.
+// Pass both so this component is the single source of truth for purpose icons.
 export function PurposeIcon({
   slug,
+  icon,
   size = 14,
   className,
 }: {
-  slug: string | undefined | null;
+  slug?: string | null;
+  icon?: string | null;
   size?: number;
   className?: string;
 }) {
+  if (icon) {
+    return (
+      <LucideIconRenderer
+        name={icon}
+        size={size}
+        strokeWidth={2}
+        className={className}
+      />
+    );
+  }
   const Icon = getPurposeIcon(slug);
   return <Icon size={size} strokeWidth={2} className={className} />;
 }

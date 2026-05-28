@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-nati
 import { useTranslation } from 'react-i18next';
 import { filtersText, trendingText } from '@shared/i18n/keys';
 import { BackendPurpose } from '../../types';
-import { getPurposeBySlug } from '@shared/constants/purposes';
+import { LucideIcon } from '../../utils/lucideIcon';
 
 interface Props {
   purposes: BackendPurpose[];
@@ -27,21 +27,32 @@ export default function PurposeChips({
   const allLabel = t(trendingText.allFilter);
   const Pill = ({
     label,
-    icon,
+    iconName,
     active,
     onPress,
   }: {
     label: string;
-    icon?: string | null;
+    iconName?: string | null;
     active: boolean;
     onPress: () => void;
   }) => (
     <TouchableOpacity
       onPress={onPress}
-      style={[styles.pill, active && (label === allLabel ? styles.pillActiveDark : styles.pillActive)]}
+      style={[
+        styles.pill,
+        active && (label === allLabel ? styles.pillActiveDark : styles.pillActive),
+      ]}
     >
+      {iconName ? (
+        <LucideIcon
+          name={iconName}
+          size={12}
+          color={active ? '#FFFFFF' : '#1C1C1A'}
+          strokeWidth={2}
+        />
+      ) : null}
       <Text style={[styles.pillText, active && styles.pillTextActive]}>
-        {icon ? `${icon} ` : ''}{label}
+        {label}
       </Text>
     </TouchableOpacity>
   );
@@ -64,7 +75,7 @@ export default function PurposeChips({
             <Pill
               key={p.id}
               label={p.name}
-              icon={getPurposeBySlug(p.slug)?.emoji ?? p.icon}
+              iconName={p.icon}
               active={activeId === p.id}
               onPress={() => onSelect(activeId === p.id ? null : p.id)}
             />
@@ -87,7 +98,7 @@ export default function PurposeChips({
           <Pill
             key={p.id}
             label={p.name}
-            icon={getPurposeBySlug(p.slug)?.emoji ?? p.icon}
+            iconName={p.icon}
             active={activeId === p.id}
             onPress={() => onSelect(activeId === p.id ? null : p.id)}
           />
@@ -118,6 +129,9 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
   },
   pill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 999,

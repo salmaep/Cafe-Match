@@ -18,6 +18,7 @@ import {
   type LeaderboardPeriod,
 } from '../services/api';
 import { colors, spacing, radius } from '../theme';
+import { ChevronLeft, Trophy, Coffee, MapPin } from 'lucide-react-native';
 
 type Entry = Awaited<ReturnType<typeof fetchGlobalLeaderboard>>[number];
 
@@ -53,7 +54,7 @@ export default function GlobalLeaderboardScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerBtn}>
-          <Text style={styles.headerBtnText}>←</Text>
+          <ChevronLeft size={22} color={colors.primary} strokeWidth={2.2} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t(socialText.globalLbTitle)}</Text>
         <View style={styles.headerBtn} />
@@ -99,7 +100,7 @@ export default function GlobalLeaderboardScreen() {
             />
           ) : entries && entries.length === 0 ? (
             <View style={styles.empty}>
-              <Text style={styles.emptyEmoji}>🏆</Text>
+              <Trophy size={56} color={colors.textSecondary} strokeWidth={1.5} style={styles.emptyIconLead} />
               <Text style={styles.emptyTitle}>
                 {t(socialText.globalLbEmpty)}
               </Text>
@@ -259,9 +260,15 @@ function ListRow({ entry, isLast }: { entry: Entry; isLast: boolean }) {
           )}
         </View>
         <View style={styles.listStats}>
-          <Text style={styles.listStat}>☕ {entry.totalCheckins}</Text>
+          <View style={styles.listStatRow}>
+            <Coffee size={11} color={colors.textSecondary} strokeWidth={2} />
+            <Text style={styles.listStat}>{entry.totalCheckins}</Text>
+          </View>
           <Text style={styles.listStatDot}>·</Text>
-          <Text style={styles.listStat}>📍 {entry.uniqueCafes} cafe</Text>
+          <View style={styles.listStatRow}>
+            <MapPin size={11} color={colors.textSecondary} strokeWidth={2} />
+            <Text style={styles.listStat}>{entry.uniqueCafes} cafe</Text>
+          </View>
           <Text style={styles.listStatDot}>·</Text>
           <Text style={styles.listStat}>{entry.totalDuration}</Text>
         </View>
@@ -289,7 +296,6 @@ const styles = StyleSheet.create({
     borderBottomColor: CARD_BORDER,
   },
   headerBtn: { width: 40, height: 36, alignItems: 'center', justifyContent: 'center' },
-  headerBtnText: { fontSize: 22, color: colors.primary, fontWeight: '600' },
   headerTitle: {
     flex: 1, textAlign: 'center',
     fontSize: 16, fontWeight: '700', color: colors.primary,
@@ -353,7 +359,7 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
     alignItems: 'center',
   },
-  emptyEmoji: { fontSize: 48, marginBottom: spacing.sm },
+  emptyIconLead: { marginBottom: spacing.sm },
   emptyTitle: { fontSize: 16, fontWeight: '800', color: colors.primary },
   emptySubtitle: {
     fontSize: 13, color: colors.textSecondary,
@@ -465,8 +471,9 @@ const styles = StyleSheet.create({
   listBadgeText: { fontSize: 9, fontWeight: '800', color: '#B45309' },
   listStats: {
     flexDirection: 'row', alignItems: 'center',
-    marginTop: 2, flexWrap: 'wrap',
+    marginTop: 2, flexWrap: 'wrap', gap: 4,
   },
+  listStatRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   listStat: { fontSize: 11, color: colors.textSecondary, fontWeight: '600' },
   listStatDot: { fontSize: 11, color: '#D9D6CE', marginHorizontal: 4 },
   listScoreBox: { alignItems: 'flex-end' },

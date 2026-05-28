@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated, AppState, Platform } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { Bell } from 'lucide-react-native';
 import { commonText, notificationsText } from '@shared/i18n/keys';
 import { useAuth } from '../context/AuthContext';
 import { fetchUnreadCount } from '../services/api';
@@ -71,7 +72,7 @@ export default function InAppNotificationBanner({ onTap }: { onTap?: () => void 
           onTap?.();
         }}
       >
-        <Text style={styles.bellIcon}>🔔</Text>
+        <Bell size={18} color={colors.white} strokeWidth={2.2} style={styles.bellIconLead} />
         <Text style={styles.bannerText} numberOfLines={1}>{message}</Text>
         <Text style={styles.tapHint}>{t(commonText.tapToOpen)}</Text>
       </TouchableOpacity>
@@ -101,8 +102,7 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 20,
   },
-  bellIcon: {
-    fontSize: 18,
+  bellIconLead: {
     marginRight: spacing.sm,
   },
   bannerText: {

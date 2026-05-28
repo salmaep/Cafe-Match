@@ -11,6 +11,7 @@ import {
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ChevronLeft } from 'lucide-react-native';
 import api from '../../services/api';
 import { colors, spacing, radius } from '../../theme';
 
@@ -125,8 +126,9 @@ export default function PromotionDetailScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Nav bar */}
       <View style={styles.navbar}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Text style={styles.backText}>‹ Kembali</Text>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backBtn, styles.backBtnRow]}>
+          <ChevronLeft size={18} color={colors.accent} strokeWidth={2.2} />
+          <Text style={styles.backText}>Kembali</Text>
         </TouchableOpacity>
         <Text style={styles.navTitle}>Detail Promosi</Text>
         <View style={{ width: 64 }} />
@@ -324,6 +326,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
   },
   backBtn: { paddingHorizontal: 4 },
+  backBtnRow: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   backText: { fontSize: 16, color: colors.accent, fontWeight: '600' },
   navTitle: { fontSize: 16, fontWeight: '700', color: colors.primary },
 

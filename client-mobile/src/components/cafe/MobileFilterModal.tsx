@@ -16,6 +16,9 @@ import {
 import { BackendPurpose } from '../../types';
 import PurposeChips from './PurposeChips';
 import { facilityIconFor } from '../../utils/facilities';
+import { LucideIcon } from '../../utils/lucideIcon';
+import { Check, Star as StarIcon, ChevronDown, X } from 'lucide-react-native';
+import { colors } from '../../theme';
 
 interface Props {
   visible: boolean;
@@ -144,7 +147,7 @@ export default function MobileFilterModal({
               </TouchableOpacity>
             )}
             <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-              <Text style={styles.closeBtnText}>✕</Text>
+              <X size={18} color={colors.textSecondary} strokeWidth={2.5} />
             </TouchableOpacity>
           </View>
 
@@ -212,9 +215,9 @@ export default function MobileFilterModal({
                         </View>
                       )}
                     </View>
-                    <Text style={[styles.chevron, isOpen && styles.chevronOpen]}>
-                      ▼
-                    </Text>
+                    <View style={isOpen ? styles.chevronOpen : undefined}>
+                      <ChevronDown size={14} color={colors.textSecondary} strokeWidth={2.5} />
+                    </View>
                   </TouchableOpacity>
                   {isOpen && (
                     <View style={[styles.chipWrap, styles.groupChipWrap]}>
@@ -277,12 +280,12 @@ function FilterChip({
     >
       {active ? (
         <View style={styles.chipCheck}>
-          <Text style={styles.chipCheckText}>✓</Text>
+          <Check size={10} color={colors.accent} strokeWidth={3} />
         </View>
       ) : autoSelected ? (
-        <Text style={styles.chipIcon}>⭐</Text>
+        <StarIcon size={13} color={colors.accent} strokeWidth={2} />
       ) : icon ? (
-        <Text style={styles.chipIcon}>{icon}</Text>
+        <LucideIcon name={icon} size={13} color={colors.primary} strokeWidth={2} />
       ) : null}
       <Text style={[styles.chipLabel, active && styles.chipLabelActive]}>
         {label}
@@ -384,10 +387,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 10,
     fontWeight: '800',
-  },
-  chevron: {
-    fontSize: 12,
-    color: '#8A8880',
   },
   chevronOpen: {
     transform: [{ rotate: '180deg' }],

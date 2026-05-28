@@ -4,7 +4,9 @@ import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useTranslation } from 'react-i18next';
 import { commonText, mapText } from '@shared/i18n/keys';
+import { Star, ChevronRight, Heart, MessageSquare } from 'lucide-react-native';
 import CafePhoto from '../CafePhoto';
+import { LucideIcon } from '../../utils/lucideIcon';
 import { Cafe } from '../../types';
 import { cleanAddress } from '../../utils/address';
 import { formatRating } from '../../utils/rating';
@@ -76,7 +78,7 @@ export default function CafeListItem({ cafe, onPress, rightAccessory }: Props) {
         <View style={styles.metaRow}>
           {ratingText && (
             <>
-              <Text style={styles.metaStar}>★</Text>
+              <Star size={11} color={C.star} fill={C.star} strokeWidth={0} style={styles.metaStarIcon} />
               <Text style={styles.metaRating}>{ratingText}</Text>
               {cafe.totalGoogleReviews != null && (
                 <Text style={styles.metaMuted}>
@@ -130,8 +132,16 @@ export default function CafeListItem({ cafe, onPress, rightAccessory }: Props) {
           )}
           {visibleChips.map((c) => (
             <View key={c.key} style={styles.chip}>
+              {c.lucideName && (
+                <LucideIcon
+                  name={c.lucideName}
+                  size={10}
+                  color={C.mutedDeep}
+                  strokeWidth={2}
+                />
+              )}
               <Text style={styles.chipText} numberOfLines={1}>
-                {c.icon} {c.label}
+                {c.label}
               </Text>
             </View>
           ))}
@@ -143,20 +153,26 @@ export default function CafeListItem({ cafe, onPress, rightAccessory }: Props) {
         </View>
 
         {!!cafe.topReviewText && (
-          <Text style={styles.review} numberOfLines={2}>
-            <Text style={styles.reviewIcon}>💬 </Text>"{cafe.topReviewText}"
-            {!!cafe.topReviewAuthor && (
-              <Text style={styles.reviewAuthor}> — {cafe.topReviewAuthor}</Text>
-            )}
-          </Text>
+          <View style={styles.reviewRow}>
+            <MessageSquare size={11} color={C.muted} strokeWidth={2} style={styles.reviewIconLead} />
+            <Text style={styles.review} numberOfLines={2}>
+              "{cafe.topReviewText}"
+              {!!cafe.topReviewAuthor && (
+                <Text style={styles.reviewAuthor}> — {cafe.topReviewAuthor}</Text>
+              )}
+            </Text>
+          </View>
         )}
       </View>
 
       <View style={styles.right}>
         {rightAccessory ?? (
           <>
-            <Text style={styles.favCount}>❤️ {cafe.favoritesCount}</Text>
-            <Text style={styles.chev}>›</Text>
+            <View style={styles.favRow}>
+              <Heart size={12} color={C.amber} fill={C.amber} strokeWidth={0} />
+              <Text style={styles.favCount}>{cafe.favoritesCount}</Text>
+            </View>
+            <ChevronRight size={22} color={C.muted} strokeWidth={2} />
           </>
         )}
       </View>
@@ -219,7 +235,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     marginTop: 3,
   },
-  metaStar: { color: C.star, fontSize: 12, marginRight: 2 },
+  metaStarIcon: { marginRight: 3 },
   metaRating: { fontSize: 12, fontWeight: '700', color: C.ink, marginRight: 2 },
   metaMuted: { fontSize: 12, color: C.muted },
   metaDot: { fontSize: 12, color: C.divider, marginHorizontal: 4 },
@@ -248,6 +264,9 @@ const styles = StyleSheet.create({
   openChipTextOff: { color: C.closedText },
 
   chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
     backgroundColor: C.border,
     borderRadius: 999,
     paddingHorizontal: 7,
@@ -265,14 +284,20 @@ const styles = StyleSheet.create({
   },
   chipOverflowText: { fontSize: 10, fontWeight: '600', color: C.muted },
 
+  reviewRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 4,
+    marginTop: 6,
+  },
+  reviewIconLead: { marginTop: 1 },
   review: {
+    flex: 1,
     fontSize: 11,
     color: C.mutedDeep,
-    marginTop: 6,
     fontStyle: 'italic',
     lineHeight: 14,
   },
-  reviewIcon: { fontStyle: 'normal', color: C.muted },
   reviewAuthor: { fontStyle: 'normal', color: C.veryMuted },
 
   right: {
@@ -281,6 +306,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 2,
   },
+  favRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   favCount: { fontSize: 13, fontWeight: '700', color: C.amber },
-  chev: { fontSize: 22, color: C.muted, lineHeight: 22 },
 });

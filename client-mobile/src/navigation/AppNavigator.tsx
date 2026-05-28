@@ -1,9 +1,10 @@
 import React, { useCallback } from 'react';
 import { createStackNavigator, TransitionPresets } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { View, Text, StyleSheet, Alert, BackHandler } from 'react-native';
+import { View, StyleSheet, Alert, BackHandler } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Flame, Map, Sparkles, Star, User } from 'lucide-react-native';
 import { useShortlist } from '../context/ShortlistContext';
 import { colors } from '../theme';
 
@@ -31,22 +32,23 @@ import EditProfileModal from '../screens/EditProfileModal';
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
-function TabIcon({ label, focused }: { label: string; focused: boolean }) {
-  // Match web BottomTabBar — 5 tabs: Explore (map), Discover (swipe),
-  // Trending (rank), Shortlist (★), Profile (avatar).
-  const icons: Record<string, string> = {
-    Explore: '🗺️',
-    Discover: '🃏',
-    Trending: '🔥',
-    Shortlist: '★',
-    Profile: '👤',
-  };
+const TAB_ICONS: Record<string, typeof Map> = {
+  Explore: Map,
+  Discover: Sparkles,
+  Trending: Flame,
+  Shortlist: Star,
+  Profile: User,
+};
 
+function TabIcon({ label, focused }: { label: string; focused: boolean }) {
+  const Icon = TAB_ICONS[label] ?? Star;
   return (
     <View style={styles.tabIcon}>
-      <Text style={[styles.tabEmoji, focused && styles.tabEmojiActive]}>
-        {icons[label] || '•'}
-      </Text>
+      <Icon
+        size={22}
+        strokeWidth={focused ? 2.25 : 2}
+        color={focused ? colors.accent : colors.textSecondary}
+      />
     </View>
   );
 }
@@ -180,8 +182,6 @@ const styles = StyleSheet.create({
   },
   tabLabel: { fontSize: 11, fontWeight: '600' },
   tabIcon: { alignItems: 'center' },
-  tabEmoji: { fontSize: 22, opacity: 0.5 },
-  tabEmojiActive: { opacity: 1 },
   badge: {
     backgroundColor: colors.accent,
     fontSize: 11,

@@ -44,10 +44,13 @@ import { formatRating } from "../utils/rating";
 import { formatHoursTable } from "../utils/openingHours";
 import {
   prettyReviewCategory,
+  reviewCategoryIcon,
   isMoodCategory,
   isFacilityCategory,
   isStarCategory,
 } from "../constant/ui/review-categories";
+import { LucideIcon } from "../utils/lucideIcon";
+import { Star, MapPin, Heart, Bookmark, BookmarkCheck, ChevronLeft, Phone } from "lucide-react-native";
 
 const { width, height } = Dimensions.get("window");
 
@@ -540,7 +543,7 @@ export default function CafeDetailScreen() {
             hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
             activeOpacity={0.8}
           >
-            <Text style={styles.backIcon}>‹</Text>
+            <ChevronLeft size={24} color={colors.primary} strokeWidth={2.5} />
           </TouchableOpacity>
           <View style={[styles.photoCounter, { top: insets.top + 18 }]}>
             <Text style={styles.photoCounterText}>
@@ -556,7 +559,7 @@ export default function CafeDetailScreen() {
           <View style={styles.ratingRow}>
             {formatRating(cafe.googleRating) && (
               <>
-                <Text style={styles.ratingStar}>★</Text>
+                <Star size={14} color="#F59E0B" fill="#F59E0B" strokeWidth={0} style={styles.ratingStarIcon} />
                 <Text style={styles.ratingNum}>
                   {formatRating(cafe.googleRating)}
                 </Text>
@@ -584,7 +587,7 @@ export default function CafeDetailScreen() {
           ) : null}
 
           <TouchableOpacity style={styles.addressRow} onPress={openMaps}>
-            <Text style={styles.addressIcon}>📍</Text>
+            <MapPin size={14} color={colors.textSecondary} strokeWidth={2} style={styles.addressIconLead} />
             <Text style={styles.addressText}>{cafe.address}</Text>
             <Text style={styles.openMaps}>{t(cafeText.openInMaps)}</Text>
           </TouchableOpacity>
@@ -595,7 +598,7 @@ export default function CafeDetailScreen() {
               style={styles.phoneRow}
               onPress={() => Linking.openURL(`tel:${cafe.phone}`)}
             >
-              <Text style={styles.phoneIcon}>📞</Text>
+              <Phone size={14} color={colors.textSecondary} strokeWidth={2} style={styles.phoneIconLead} />
               <Text style={styles.phoneText}>{cafe.phone}</Text>
               <Text style={styles.phoneCta}>{t(cafeText.call)}</Text>
             </TouchableOpacity>
@@ -657,7 +660,14 @@ export default function CafeDetailScreen() {
             <View style={styles.facilitiesRow}>
               {facilityChips.map((f) => (
                 <View key={f.key} style={styles.facilityChip}>
-                  <Text style={styles.facilityIcon}>{f.icon}</Text>
+                  {f.lucideName && (
+                    <LucideIcon
+                      name={f.lucideName}
+                      size={12}
+                      color={colors.primary}
+                      strokeWidth={2}
+                    />
+                  )}
                   <Text style={styles.facilityLabel}>{f.label}</Text>
                 </View>
               ))}
@@ -707,9 +717,17 @@ export default function CafeDetailScreen() {
               </View>
               {starSummary.slice(0, 4).map((s) => (
                 <View key={s.category} style={styles.reviewBarRow}>
-                  <Text style={styles.reviewBarLabel} numberOfLines={1}>
-                    {prettyReviewCategory(s.category)}
-                  </Text>
+                  <View style={styles.reviewBarLabelWrap}>
+                    <LucideIcon
+                      name={reviewCategoryIcon(s.category)}
+                      size={13}
+                      color={colors.textSecondary}
+                      strokeWidth={2}
+                    />
+                    <Text style={styles.reviewBarLabel} numberOfLines={1}>
+                      {prettyReviewCategory(s.category)}
+                    </Text>
+                  </View>
                   <View style={styles.reviewBarBg}>
                     <View
                       style={[
@@ -775,12 +793,17 @@ export default function CafeDetailScreen() {
                             </Text>
                           </View>
                           {stars > 0 && (
-                            <Text style={styles.reviewPreviewStars}>
-                              {'★'.repeat(stars)}
-                              <Text style={styles.reviewPreviewStarsDim}>
-                                {'★'.repeat(5 - stars)}
-                              </Text>
-                            </Text>
+                            <View style={styles.reviewPreviewStarsRow}>
+                              {Array.from({ length: 5 }).map((_, i) => (
+                                <Star
+                                  key={i}
+                                  size={11}
+                                  color="#F59E0B"
+                                  fill={i < stars ? "#F59E0B" : "transparent"}
+                                  strokeWidth={i < stars ? 0 : 1.5}
+                                />
+                              ))}
+                            </View>
                           )}
                         </View>
                         {!!r.text && (
@@ -1129,7 +1152,7 @@ export default function CafeDetailScreen() {
             hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
             activeOpacity={0.8}
           >
-            <Text style={styles.zoomCloseText}>‹</Text>
+            <ChevronLeft size={20} color="#FFFFFF" strokeWidth={2.5} />
           </TouchableOpacity>
 
           <View style={[styles.zoomCounter, { top: insets.top + 18 }]}>
@@ -1145,11 +1168,20 @@ export default function CafeDetailScreen() {
 
       <View style={styles.bottomBar}>
         <TouchableOpacity style={styles.actionBtn} onPress={handleFavorite}>
-          <Text style={styles.actionIcon}>{isFavorited ? "❤️" : "🤍"}</Text>
+          <Heart
+            size={22}
+            color={isFavorited ? "#E94B4B" : colors.textSecondary}
+            fill={isFavorited ? "#E94B4B" : "transparent"}
+            strokeWidth={2}
+          />
           <Text style={styles.actionLabel}>{t(cafeText.favorites)}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.actionBtn} onPress={handleBookmark}>
-          <Text style={styles.actionIcon}>{isBookmarked ? "🔖" : "📑"}</Text>
+          {isBookmarked ? (
+            <BookmarkCheck size={22} color={colors.accent} strokeWidth={2} />
+          ) : (
+            <Bookmark size={22} color={colors.textSecondary} strokeWidth={2} />
+          )}
           <Text style={styles.actionLabel}>{t(cafeText.bookmarks)}</Text>
         </TouchableOpacity>
         {/* <TouchableOpacity
@@ -1321,7 +1353,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
     gap: 4,
   },
-  ratingStar: { fontSize: 14, color: "#F59E0B" },
+  ratingStarIcon: { marginRight: 3 },
   ratingNum: { fontSize: 14, fontWeight: "800", color: colors.primary },
   ratingMeta: { fontSize: 13, color: colors.textSecondary },
   ratingDot: { fontSize: 13, color: "#D9D6CE", marginHorizontal: 4 },
@@ -1337,7 +1369,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm + 2,
     gap: 8,
   },
-  phoneIcon: { fontSize: 16 },
+  phoneIconLead: { marginRight: 4 },
   phoneText: { flex: 1, fontSize: 14, color: colors.primary, fontWeight: "600" },
   phoneCta: { fontSize: 13, color: colors.accent, fontWeight: "700" },
 
@@ -1434,7 +1466,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     flexWrap: "wrap",
   },
-  addressIcon: { fontSize: 16, marginRight: spacing.xs },
+  addressIconLead: { marginRight: spacing.xs },
   addressText: { fontSize: 14, color: colors.primary, flex: 1 },
   openMaps: {
     fontSize: 13,
@@ -1472,12 +1504,12 @@ const styles = StyleSheet.create({
   facilityChip: {
     flexDirection: "row",
     alignItems: "center",
+    gap: 4,
     backgroundColor: colors.surface,
     borderRadius: radius.full,
     paddingHorizontal: spacing.sm + 4,
     paddingVertical: spacing.xs + 2,
   },
-  facilityIcon: { fontSize: 14, marginRight: spacing.xs },
   facilityLabel: { fontSize: 13, color: colors.primary, fontWeight: "500" },
   noFacilities: {
     fontSize: 13,
@@ -1624,8 +1656,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: spacing.xs + 2,
   },
-  reviewBarLabel: {
+  reviewBarLabelWrap: {
     width: 120,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  reviewBarLabel: {
+    flex: 1,
     fontSize: 12,
     color: colors.textSecondary,
     fontWeight: "600",
@@ -1700,13 +1738,9 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: colors.textSecondary,
   },
-  reviewPreviewStars: {
-    fontSize: 12,
-    color: colors.accent,
-    letterSpacing: 1,
-  },
-  reviewPreviewStarsDim: {
-    color: "#E0DCD3",
+  reviewPreviewStarsRow: {
+    flexDirection: "row",
+    gap: 1,
   },
   reviewPreviewText: {
     fontSize: 13,

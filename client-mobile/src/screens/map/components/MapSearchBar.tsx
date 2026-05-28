@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
 import { useTranslation } from "react-i18next";
+import { Search, X, SlidersHorizontal } from "lucide-react-native";
 import { mapText } from "@shared/i18n/keys";
 import { colors, spacing, radius } from "../../../theme";
 
@@ -32,7 +33,7 @@ function MapSearchBar({
     <View style={[styles.container, { top: topInset + 8 }]}>
       <View style={styles.row}>
         <View style={styles.searchBar}>
-          <Text style={styles.searchIcon}>🔍</Text>
+          <Search size={16} color={colors.textSecondary} strokeWidth={2.2} style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
             placeholder={t(mapText.searchPlaceholder)}
@@ -48,7 +49,7 @@ function MapSearchBar({
               style={styles.clearBtn}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-              <Text style={styles.clearIcon}>×</Text>
+              <X size={18} color={colors.textSecondary} strokeWidth={2.5} />
             </TouchableOpacity>
           )}
         </View>
@@ -59,14 +60,11 @@ function MapSearchBar({
             activeFilterCount > 0 && styles.filterFabActive,
           ]}
         >
-          <Text
-            style={[
-              styles.filterFabIcon,
-              activeFilterCount > 0 && styles.filterFabIconActive,
-            ]}
-          >
-            ⚙︎
-          </Text>
+          <SlidersHorizontal
+            size={20}
+            color={activeFilterCount > 0 ? colors.white : colors.primary}
+            strokeWidth={2.2}
+          />
           {activeFilterCount > 0 && (
             <View style={styles.filterFabBadge}>
               <Text style={styles.filterFabBadgeText}>{activeFilterCount}</Text>
@@ -110,7 +108,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.12,
     shadowRadius: 8,
   },
-  searchIcon: { fontSize: 16, marginRight: spacing.sm },
+  searchIcon: { marginRight: spacing.sm },
   searchInput: {
     flex: 1,
     fontSize: 14,
@@ -118,7 +116,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm + 4,
   },
   clearBtn: { padding: spacing.xs },
-  clearIcon: { fontSize: 22, color: colors.textSecondary },
   filterFab: {
     width: 44,
     height: 44,
@@ -134,8 +131,6 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   filterFabActive: { backgroundColor: colors.accent },
-  filterFabIcon: { fontSize: 18, color: colors.primary, fontWeight: "700" },
-  filterFabIconActive: { color: colors.white },
   filterFabBadge: {
     position: "absolute",
     top: -3,

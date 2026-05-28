@@ -16,6 +16,7 @@ import MapView, { Circle } from 'react-native-maps';
 import RadiusPickerModal from '../components/cafe/RadiusPickerModal';
 import PlacesAutocompleteInput from '../components/wizard/PlacesAutocompleteInput';
 import ScreenSafeBottom from '../components/ScreenSafeBottom';
+import { Check, Star as StarIcon, MapPin, Search } from 'lucide-react-native';
 import { LucideIcon } from '../utils/lucideIcon';
 import { usePreferences } from '../context/PreferencesContext';
 import { colors, spacing, radius } from '../theme';
@@ -261,7 +262,12 @@ export default function WizardScreen({ onComplete, onSkip }: WizardScreenProps =
               style={[styles.locationCard, locationType === 'current' && styles.optionCardActive]}
               onPress={() => setLocationType('current')}
             >
-              <Text style={styles.locationIcon}>📍</Text>
+              <MapPin
+                size={22}
+                color={locationType === 'current' ? colors.accent : colors.primary}
+                strokeWidth={2}
+                style={styles.locationIconLead}
+              />
               <Text style={[styles.locationLabel, locationType === 'current' && styles.optionLabelActive]}>
                 {t(wizardText.useCurrentLocation)}
               </Text>
@@ -270,7 +276,12 @@ export default function WizardScreen({ onComplete, onSkip }: WizardScreenProps =
               style={[styles.locationCard, locationType === 'custom' && styles.optionCardActive]}
               onPress={() => setLocationType('custom')}
             >
-              <Text style={styles.locationIcon}>🔍</Text>
+              <Search
+                size={22}
+                color={locationType === 'custom' ? colors.accent : colors.primary}
+                strokeWidth={2}
+                style={styles.locationIconLead}
+              />
               <Text style={[styles.locationLabel, locationType === 'custom' && styles.optionLabelActive]}>
                 {t(wizardText.useCustomLocation)}
               </Text>
@@ -443,7 +454,7 @@ export default function WizardScreen({ onComplete, onSkip }: WizardScreenProps =
                       >
                         {active && (
                           <View style={styles.filterChipCheck}>
-                            <Text style={styles.filterChipCheckText}>✓</Text>
+                            <Check size={10} color={colors.accent} strokeWidth={3} />
                           </View>
                         )}
                         <Text
@@ -510,14 +521,17 @@ export default function WizardScreen({ onComplete, onSkip }: WizardScreenProps =
                             >
                               {active ? (
                                 <View style={styles.filterChipCheck}>
-                                  <Text style={styles.filterChipCheckText}>
-                                    ✓
-                                  </Text>
+                                  <Check size={10} color={colors.accent} strokeWidth={3} />
                                 </View>
                               ) : autoSelected ? (
-                                <Text style={styles.filterChipIcon}>⭐</Text>
+                                <StarIcon size={13} color={colors.accent} strokeWidth={2} />
                               ) : icon ? (
-                                <Text style={styles.filterChipIcon}>{icon}</Text>
+                                <LucideIcon
+                                  name={icon}
+                                  size={13}
+                                  color={colors.primary}
+                                  strokeWidth={2}
+                                />
                               ) : null}
                               <Text
                                 style={[
@@ -657,7 +671,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'transparent',
   },
-  locationIcon: { fontSize: 24, marginRight: spacing.md },
+  locationIconLead: { marginRight: spacing.md },
   locationLabel: { fontSize: 15, fontWeight: '600', color: colors.primary },
   // Radius pill row + manual input
   radiusRow: {

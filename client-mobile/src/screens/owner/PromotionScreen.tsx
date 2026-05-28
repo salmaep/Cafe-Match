@@ -13,6 +13,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { fetchOwnerPromotions, fetchOwnerCafe } from '../../services/api';
 import api from '../../services/api';
 import { colors, spacing, radius } from '../../theme';
+import { Megaphone } from 'lucide-react-native';
 import CreatePromotionScreen from './CreatePromotionScreen';
 
 const MOCK_PROMOTIONS = [
@@ -169,7 +170,7 @@ export default function PromotionScreen() {
 
         {promotions.length === 0 ? (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyIcon}>📢</Text>
+            <Megaphone size={40} color={colors.textSecondary} strokeWidth={1.5} style={styles.emptyIconLead} />
             <Text style={styles.emptyTitle}>Belum ada promosi</Text>
             <Text style={styles.emptyHint}>
               Bikin promosi biar cafe kamu makin keliatan di CafeMatch
@@ -403,7 +404,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.04,
     shadowRadius: 4,
   },
-  emptyIcon: { fontSize: 40, marginBottom: spacing.md },
+  emptyIconLead: { marginBottom: spacing.md },
   emptyTitle: { fontSize: 17, fontWeight: '700', color: colors.primary },
   emptyHint: {
     fontSize: 14,

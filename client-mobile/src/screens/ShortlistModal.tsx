@@ -12,6 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useTranslation } from 'react-i18next';
 import { commonText, shortlistText } from '@shared/i18n/keys';
+import { Star, X } from 'lucide-react-native';
 import CafeListItem from '../components/cafe/CafeListItem';
 import { useShortlist } from '../context/ShortlistContext';
 import { useLocation } from '../context/LocationContext';
@@ -86,7 +87,7 @@ export default function ShortlistModal() {
 
       {shortlist.length === 0 ? (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyEmoji}>⭐</Text>
+          <Star size={56} color={colors.textSecondary} strokeWidth={1.5} style={styles.emptyIconLead} />
           <Text style={styles.emptyTitle}>{t(shortlistText.emptyTitle)}</Text>
           <Text style={styles.emptySubtitle}>
             {t(shortlistText.emptySubtitle)}
@@ -146,7 +147,7 @@ export default function ShortlistModal() {
                     onPress={() => removeFromShortlist(String(item.id))}
                     hitSlop={8}
                   >
-                    <Text style={styles.removeIcon}>✕</Text>
+                    <X size={16} color={colors.textSecondary} strokeWidth={2.5} />
                   </TouchableOpacity>
                 }
               />
@@ -277,12 +278,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  removeIcon: {
-    color: colors.textSecondary,
-    fontSize: 14,
-    fontWeight: '700',
-    lineHeight: 16,
-  },
 
   // Empty state
   emptyState: {
@@ -291,7 +286,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: spacing.xl,
   },
-  emptyEmoji: { fontSize: 56, marginBottom: spacing.md },
+  emptyIconLead: { marginBottom: spacing.md },
   emptyTitle: { fontSize: 18, fontWeight: '800', color: colors.primary },
   emptySubtitle: {
     fontSize: 13,

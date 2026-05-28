@@ -4,6 +4,7 @@ import {
   FACILITY_LABELS as SHARED_FACILITY_LABELS,
   chipFromFacilityKey,
 } from '@shared/constants/facilities';
+import { lucideForFacility } from './lucideIcon';
 
 export const FACILITY_ICONS = SHARED_FACILITY_ICONS;
 export const FACILITY_LABELS = SHARED_FACILITY_LABELS;
@@ -13,12 +14,13 @@ function normalizeFacilityKey(key: string | null | undefined): string {
 }
 
 export function facilityIconFor(key: string | null | undefined): string | undefined {
-  return FACILITY_ICONS[normalizeFacilityKey(key)];
+  return lucideForFacility(key);
 }
 
 export interface FacilityChip {
   key: string;
   icon: string;
+  lucideName?: string;
   label: string;
 }
 
@@ -31,7 +33,7 @@ export function buildFacilityChips(cafe: Cafe): FacilityChip[] {
     if (!n || seen.has(n)) return;
     seen.add(n);
     const chip = chipFromFacilityKey(key);
-    out.push({ ...chip, ...override });
+    out.push({ ...chip, lucideName: lucideForFacility(key), ...override });
   };
 
   if (cafe.wifiAvailable) {

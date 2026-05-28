@@ -13,6 +13,18 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
+import {
+  ArrowLeft,
+  ArrowRight,
+  Sparkles,
+  Star,
+  Check,
+  CheckCircle,
+  X,
+  Camera,
+  Trash2,
+} from 'lucide-react-native';
+import { LucideIcon } from '../../utils/lucideIcon';
 import api from '../../services/api';
 import { colors, spacing, radius } from '../../theme';
 
@@ -80,15 +92,15 @@ const PACKAGES: PackageOption[] = [
   },
 ];
 
-const FACILITY_OPTIONS: { key: string; label: string; icon: string }[] = [
-  { key: 'wifi', label: 'WiFi', icon: '📶' },
-  { key: 'power_outlet', label: 'Stop Kontak', icon: '🔌' },
-  { key: 'parking', label: 'Parkir', icon: '🅿️' },
-  { key: 'mushola', label: 'Mushola', icon: '🕌' },
-  { key: 'quiet_atmosphere', label: 'Tenang', icon: '🤫' },
-  { key: 'large_tables', label: 'Meja Besar', icon: '🪑' },
-  { key: 'outdoor_area', label: 'Outdoor', icon: '🌿' },
-  { key: 'kid_friendly', label: 'Ramah Anak', icon: '👶' },
+const FACILITY_OPTIONS: { key: string; label: string; lucideName: string }[] = [
+  { key: 'wifi', label: 'WiFi', lucideName: 'wifi' },
+  { key: 'power_outlet', label: 'Stop Kontak', lucideName: 'zap' },
+  { key: 'parking', label: 'Parkir', lucideName: 'squareparking' },
+  { key: 'mushola', label: 'Mushola', lucideName: 'building2' },
+  { key: 'quiet_atmosphere', label: 'Tenang', lucideName: 'volumex' },
+  { key: 'large_tables', label: 'Meja Besar', lucideName: 'table2' },
+  { key: 'outdoor_area', label: 'Outdoor', lucideName: 'trees' },
+  { key: 'kid_friendly', label: 'Ramah Anak', lucideName: 'baby' },
 ];
 
 const formatRupiah = (n: number) => `Rp ${n.toLocaleString('id-ID')}`;
@@ -216,7 +228,9 @@ export default function CreatePromotionScreen({ visible, onClose, ownerCafe }: P
         onPress={() => setSelectedType('new_cafe')}
         activeOpacity={0.8}
       >
-        <Text style={styles.typeCardIcon}>🆕</Text>
+        <View style={styles.typeCardIconWrap}>
+          <Sparkles size={28} color={colors.accent} strokeWidth={2} />
+        </View>
         <View style={styles.typeCardBody}>
           <Text style={styles.typeCardName}>Sorotan Cafe Baru</Text>
           <Text style={styles.typeCardDesc}>
@@ -236,7 +250,9 @@ export default function CreatePromotionScreen({ visible, onClose, ownerCafe }: P
         onPress={() => setSelectedType('featured_promo')}
         activeOpacity={0.8}
       >
-        <Text style={styles.typeCardIcon}>⭐</Text>
+        <View style={styles.typeCardIconWrap}>
+          <Star size={28} color="#F59E0B" fill="#F59E0B" strokeWidth={0} />
+        </View>
         <View style={styles.typeCardBody}>
           <Text style={styles.typeCardName}>Promo Unggulan</Text>
           <Text style={styles.typeCardDesc}>
@@ -255,9 +271,12 @@ export default function CreatePromotionScreen({ visible, onClose, ownerCafe }: P
           onPress={goNext}
           disabled={!selectedType}
         >
-          <Text style={[styles.nextBtnText, !selectedType && styles.nextBtnTextDisabled]}>
-            Lanjut →
-          </Text>
+          <View style={styles.navBtnRow}>
+            <Text style={[styles.nextBtnText, !selectedType && styles.nextBtnTextDisabled]}>
+              Lanjut
+            </Text>
+            <ArrowRight size={14} color={!selectedType ? colors.textSecondary : colors.white} strokeWidth={2.2} />
+          </View>
         </TouchableOpacity>
       </View>
     </View>
@@ -303,7 +322,8 @@ export default function CreatePromotionScreen({ visible, onClose, ownerCafe }: P
           >
             {pkg.recommended && (
               <View style={styles.recommendedBadge}>
-                <Text style={styles.recommendedBadgeText}>⭐ Rekomendasi</Text>
+                <Star size={11} color="#F59E0B" fill="#F59E0B" strokeWidth={0} />
+                <Text style={styles.recommendedBadgeText}>Rekomendasi</Text>
               </View>
             )}
             <View style={styles.packageCardHeader}>
@@ -319,7 +339,7 @@ export default function CreatePromotionScreen({ visible, onClose, ownerCafe }: P
             </View>
             {pkg.benefits.map((b, i) => (
               <View key={i} style={styles.benefitRow}>
-                <Text style={styles.benefitCheck}>✓</Text>
+                <Check size={12} color={colors.accent} strokeWidth={2.5} />
                 <Text style={styles.benefitText}>{b}</Text>
               </View>
             ))}
@@ -328,17 +348,21 @@ export default function CreatePromotionScreen({ visible, onClose, ownerCafe }: P
       })}
 
       <View style={styles.navRow}>
-        <TouchableOpacity style={styles.backBtn} onPress={goBack}>
-          <Text style={styles.backBtnText}>← Kembali</Text>
+        <TouchableOpacity style={[styles.backBtn, styles.navBtnRow]} onPress={goBack}>
+          <ArrowLeft size={14} color={colors.primary} strokeWidth={2.2} />
+          <Text style={styles.backBtnText}>Kembali</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.nextBtn, !selectedPackage && styles.nextBtnDisabled]}
           onPress={goNext}
           disabled={!selectedPackage}
         >
-          <Text style={[styles.nextBtnText, !selectedPackage && styles.nextBtnTextDisabled]}>
-            Lanjut →
-          </Text>
+          <View style={styles.navBtnRow}>
+            <Text style={[styles.nextBtnText, !selectedPackage && styles.nextBtnTextDisabled]}>
+              Lanjut
+            </Text>
+            <ArrowRight size={14} color={!selectedPackage ? colors.textSecondary : colors.white} strokeWidth={2.2} />
+          </View>
         </TouchableOpacity>
       </View>
     </View>
@@ -409,7 +433,12 @@ export default function CreatePromotionScreen({ visible, onClose, ownerCafe }: P
                       style={[styles.chip, active && styles.chipActive]}
                       onPress={() => toggleFacility(f.key)}
                     >
-                      <Text style={styles.chipIcon}>{f.icon}</Text>
+                      <LucideIcon
+                        name={f.lucideName}
+                        size={13}
+                        color={active ? colors.white : colors.primary}
+                        strokeWidth={2}
+                      />
                       <Text style={[styles.chipText, active && styles.chipTextActive]}>
                         {f.label}
                       </Text>
@@ -426,15 +455,16 @@ export default function CreatePromotionScreen({ visible, onClose, ownerCafe }: P
             <View style={styles.photoPreviewContainer}>
               <Image source={{ uri: promoPhotoUri }} style={styles.photoPreview} />
               <TouchableOpacity
-                style={styles.removePhotoBtn}
+                style={[styles.removePhotoBtn, styles.removePhotoBtnRow]}
                 onPress={() => setPromoPhotoUri(null)}
               >
-                <Text style={styles.removePhotoBtnText}>✕ Hapus</Text>
+                <Trash2 size={12} color="#FFFFFF" strokeWidth={2.2} />
+                <Text style={styles.removePhotoBtnText}>Hapus</Text>
               </TouchableOpacity>
             </View>
           ) : (
-            <TouchableOpacity style={styles.uploadBtn} onPress={pickImage}>
-              <Text style={styles.uploadBtnIcon}>📷</Text>
+            <TouchableOpacity style={[styles.uploadBtn, styles.uploadBtnRow]} onPress={pickImage}>
+              <Camera size={18} color={colors.accent} strokeWidth={2.2} />
               <Text style={styles.uploadBtnText}>Upload Foto</Text>
             </TouchableOpacity>
           )}
@@ -442,11 +472,15 @@ export default function CreatePromotionScreen({ visible, onClose, ownerCafe }: P
       )}
 
       <View style={styles.navRow}>
-        <TouchableOpacity style={styles.backBtn} onPress={goBack}>
-          <Text style={styles.backBtnText}>← Kembali</Text>
+        <TouchableOpacity style={[styles.backBtn, styles.navBtnRow]} onPress={goBack}>
+          <ArrowLeft size={14} color={colors.primary} strokeWidth={2.2} />
+          <Text style={styles.backBtnText}>Kembali</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.nextBtn} onPress={goNext}>
-          <Text style={styles.nextBtnText}>Lanjut →</Text>
+          <View style={styles.navBtnRow}>
+            <Text style={styles.nextBtnText}>Lanjut</Text>
+            <ArrowRight size={14} color={colors.white} strokeWidth={2.2} />
+          </View>
         </TouchableOpacity>
       </View>
     </View>
@@ -456,7 +490,7 @@ export default function CreatePromotionScreen({ visible, onClose, ownerCafe }: P
     if (submitted) {
       return (
         <View style={[styles.stepContainer, styles.successContainer]}>
-          <Text style={styles.successIcon}>✅</Text>
+          <CheckCircle size={64} color="#10B981" strokeWidth={2} style={styles.successIconLead} />
           <Text style={styles.successTitle}>Terkirim!</Text>
           <Text style={styles.successMsg}>
             Promosi kamu lagi nunggu direview admin. Nanti dikabarin kalau udah disetujui ya.
@@ -478,9 +512,11 @@ export default function CreatePromotionScreen({ visible, onClose, ownerCafe }: P
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Tipe Promosi</Text>
             <View style={styles.summaryValueRow}>
-              <Text style={styles.summaryValueIcon}>
-                {selectedType === 'new_cafe' ? '🆕' : '⭐'}
-              </Text>
+              {selectedType === 'new_cafe' ? (
+                <Sparkles size={14} color={colors.accent} strokeWidth={2} />
+              ) : (
+                <Star size={14} color="#F59E0B" fill="#F59E0B" strokeWidth={0} />
+              )}
               <Text style={styles.summaryValue}>
                 {selectedType === 'new_cafe' ? 'Sorotan Cafe Baru' : 'Promo Unggulan'}
               </Text>
@@ -541,13 +577,14 @@ export default function CreatePromotionScreen({ visible, onClose, ownerCafe }: P
 
         <View style={styles.approvalNote}>
           <Text style={styles.approvalNoteText}>
-            ⚡ Pembayaran ditarik SETELAH disetujui admin (biasanya 1-2 hari kerja)
+            Pembayaran ditarik SETELAH disetujui admin (biasanya 1-2 hari kerja)
           </Text>
         </View>
 
         <View style={styles.navRow}>
-          <TouchableOpacity style={styles.backBtn} onPress={goBack} disabled={submitting}>
-            <Text style={styles.backBtnText}>← Kembali</Text>
+          <TouchableOpacity style={[styles.backBtn, styles.navBtnRow]} onPress={goBack} disabled={submitting}>
+            <ArrowLeft size={14} color={colors.primary} strokeWidth={2.2} />
+            <Text style={styles.backBtnText}>Kembali</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.submitBtn, submitting && styles.submitBtnDisabled]}
@@ -586,7 +623,7 @@ export default function CreatePromotionScreen({ visible, onClose, ownerCafe }: P
           {renderStepDots()}
           {!submitted && (
             <TouchableOpacity style={styles.closeBtn} onPress={handleClose}>
-              <Text style={styles.closeBtnText}>✕</Text>
+              <X size={18} color={colors.textSecondary} strokeWidth={2.5} />
             </TouchableOpacity>
           )}
         </View>
@@ -635,11 +672,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  closeBtnText: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    fontWeight: '700',
   },
 
   // Step dots
@@ -705,7 +737,7 @@ const styles = StyleSheet.create({
     borderColor: colors.accent,
     backgroundColor: colors.accent + '08',
   },
-  typeCardIcon: { fontSize: 28, marginRight: spacing.md, marginTop: 2 },
+  typeCardIconWrap: { marginRight: spacing.md, marginTop: 2 },
   typeCardBody: { flex: 1, marginRight: spacing.sm },
   typeCardName: { fontSize: 16, fontWeight: '700', color: colors.primary, marginBottom: 4 },
   typeCardDesc: { fontSize: 13, color: colors.textSecondary, lineHeight: 18 },
@@ -774,6 +806,9 @@ const styles = StyleSheet.create({
   packageCardSelected: { borderColor: colors.accent },
   recommendedBadge: {
     position: 'absolute',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
     top: 0,
     right: 0,
     backgroundColor: colors.accent,
@@ -791,8 +826,7 @@ const styles = StyleSheet.create({
   packageName: { fontSize: 17, fontWeight: '800', color: colors.primary },
   packagePrice: { fontSize: 16, fontWeight: '700', color: colors.accent },
   packagePricePer: { fontSize: 12, fontWeight: '400', color: colors.textSecondary },
-  benefitRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
-  benefitCheck: { fontSize: 13, color: colors.success, marginRight: spacing.xs, fontWeight: '700' },
+  benefitRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 },
   benefitText: { fontSize: 13, color: colors.textSecondary },
 
   // Step 3 — New cafe preview
@@ -863,19 +897,18 @@ const styles = StyleSheet.create({
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 4,
     backgroundColor: colors.white,
     borderRadius: radius.full,
     borderWidth: 1.5,
     borderColor: colors.surface,
     paddingHorizontal: spacing.sm,
     paddingVertical: 6,
-    gap: 4,
   },
   chipActive: {
     borderColor: colors.accent,
     backgroundColor: colors.accent + '10',
   },
-  chipIcon: { fontSize: 14 },
   chipText: { fontSize: 13, color: colors.textSecondary, fontWeight: '500' },
   chipTextActive: { color: colors.accent, fontWeight: '700' },
 
@@ -893,7 +926,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     marginBottom: spacing.md,
   },
-  uploadBtnIcon: { fontSize: 20 },
+  uploadBtnRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   uploadBtnText: { fontSize: 14, fontWeight: '600', color: colors.accent },
   photoPreviewContainer: { marginBottom: spacing.md },
   photoPreview: {
@@ -910,7 +943,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: 5,
   },
-  removePhotoBtnText: { fontSize: 13, fontWeight: '600', color: colors.error },
+  removePhotoBtnRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  removePhotoBtnText: { fontSize: 13, fontWeight: '600', color: colors.white },
 
   // Step 4 — Summary card
   summaryCard: {
@@ -935,7 +969,6 @@ const styles = StyleSheet.create({
   },
   summaryLabel: { fontSize: 13, color: colors.textSecondary },
   summaryValueRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  summaryValueIcon: { fontSize: 14 },
   summaryValue: { fontSize: 14, fontWeight: '600', color: colors.primary },
   summaryDescText: { fontSize: 13, color: colors.textSecondary, marginTop: 2, lineHeight: 18 },
   summarySeparator: {
@@ -965,6 +998,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.lg,
     gap: spacing.sm,
   },
+  navBtnRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   backBtn: {
     paddingVertical: spacing.sm + 2,
     paddingHorizontal: spacing.md,
@@ -1001,7 +1035,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingTop: spacing.xxl,
   },
-  successIcon: { fontSize: 64, marginBottom: spacing.lg },
+  successIconLead: { marginBottom: spacing.lg },
   successTitle: {
     fontSize: 26,
     fontWeight: '800',

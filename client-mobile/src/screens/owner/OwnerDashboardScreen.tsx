@@ -14,6 +14,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { fetchOwnerDashboard } from '../../services/api';
 import { OwnerDashboard } from '../../types';
 import { colors, spacing, radius } from '../../theme';
+import {
+  ArrowLeft,
+  ArrowRight,
+  BarChart3,
+  TrendingUp,
+  Megaphone,
+  Coffee,
+  Hand,
+} from 'lucide-react-native';
 import MyCafeScreen from './MyCafeScreen';
 import PromotionScreen from './PromotionScreen';
 
@@ -54,10 +63,10 @@ export default function OwnerDashboardScreen() {
     }
   };
 
-  const TABS: { key: TabKey; label: string; icon: string }[] = [
-    { key: 'dashboard', label: 'Dashboard', icon: '📊' },
-    { key: 'mycafe', label: 'Cafe Aku', icon: '☕' },
-    { key: 'promotions', label: 'Promosi', icon: '📢' },
+  const TABS: { key: TabKey; label: string; Icon: typeof BarChart3 }[] = [
+    { key: 'dashboard', label: 'Dashboard', Icon: BarChart3 },
+    { key: 'mycafe', label: 'Cafe Aku', Icon: Coffee },
+    { key: 'promotions', label: 'Promosi', Icon: Megaphone },
   ];
 
   const headerH = insets.top + 56;
@@ -78,7 +87,10 @@ export default function OwnerDashboardScreen() {
           style={styles.backToAppBtn}
           onPress={() => navigation.navigate('MainTabs')}
         >
-          <Text style={styles.backToAppText}>← Aplikasi</Text>
+          <View style={styles.backToAppRow}>
+            <ArrowLeft size={14} color={colors.accent} strokeWidth={2.2} />
+            <Text style={styles.backToAppText}>Aplikasi</Text>
+          </View>
         </TouchableOpacity>
       </View>
 
@@ -90,7 +102,7 @@ export default function OwnerDashboardScreen() {
             style={[styles.tab, activeTab === tab.key && styles.tabActive]}
             onPress={() => setActiveTab(tab.key)}
           >
-            <Text style={styles.tabIcon}>{tab.icon}</Text>
+            <tab.Icon size={18} color={activeTab === tab.key ? colors.accent : colors.textSecondary} strokeWidth={2} />
             <Text style={[styles.tabLabel, activeTab === tab.key && styles.tabLabelActive]}>
               {tab.label}
             </Text>
@@ -106,7 +118,7 @@ export default function OwnerDashboardScreen() {
         </View>
       ) : activeTab === 'dashboard' && (errored || !dashboard) ? (
         <View style={styles.loadingContainer}>
-          <Text style={{ fontSize: 36, marginBottom: 12 }}>📊</Text>
+          <BarChart3 size={48} color={colors.textSecondary} strokeWidth={1.5} style={{ marginBottom: 12 }} />
           <Text style={{ fontSize: 16, fontWeight: '700', color: colors.primary }}>
             Dashboard tidak tersedia
           </Text>
@@ -168,7 +180,10 @@ function DashboardTab({
     <ScrollView style={styles.tabContent} contentContainerStyle={styles.tabContentInner}>
       {/* Greeting */}
       <View style={styles.greeting}>
-        <Text style={styles.greetingTitle}>Selamat datang lagi! 👋</Text>
+        <View style={styles.greetingRow}>
+          <Text style={styles.greetingTitle}>Selamat datang lagi!</Text>
+          <Hand size={20} color="#F59E0B" strokeWidth={1.5} />
+        </View>
         <Text style={styles.greetingSubtitle}>Ini performa cafe kamu</Text>
       </View>
 
@@ -187,7 +202,7 @@ function DashboardTab({
 
       {/* CTR insight */}
       <View style={styles.insightCard}>
-        <Text style={styles.insightIcon}>📈</Text>
+        <TrendingUp size={20} color={colors.accent} strokeWidth={2.2} style={styles.insightIconLead} />
         <View style={styles.insightText}>
           <Text style={styles.insightTitle}>Click-Through Rate</Text>
           <Text style={styles.insightValue}>{ctr}%</Text>
@@ -225,7 +240,10 @@ function DashboardTab({
                 ? `Sisa ${activePromotion.daysRemaining} hari`
                 : 'Sudah berakhir'}
             </Text>
-            <Text style={styles.promoManageLink}>Kelola →</Text>
+            <View style={styles.promoManageRow}>
+              <Text style={styles.promoManageLink}>Kelola</Text>
+              <ArrowRight size={12} color={colors.accent} strokeWidth={2.2} />
+            </View>
           </View>
         </TouchableOpacity>
       ) : (
@@ -234,11 +252,14 @@ function DashboardTab({
           onPress={() => onTabChange('promotions')}
           activeOpacity={0.8}
         >
-          <Text style={styles.noPromoIcon}>📢</Text>
+          <Megaphone size={32} color={colors.textSecondary} strokeWidth={1.8} style={styles.noPromoIconLead} />
           <Text style={styles.noPromoTitle}>Belum ada promosi aktif</Text>
           <Text style={styles.noPromoHint}>Bikin promosi biar cafe kamu makin keliatan</Text>
           <View style={styles.noPromoBtn}>
-            <Text style={styles.noPromoBtnText}>Liat Paket →</Text>
+            <View style={styles.noPromoBtnRow}>
+              <Text style={styles.noPromoBtnText}>Liat Paket</Text>
+              <ArrowRight size={12} color={colors.white} strokeWidth={2.5} />
+            </View>
           </View>
         </TouchableOpacity>
       )}
@@ -247,23 +268,23 @@ function DashboardTab({
       <Text style={styles.sectionTitle}>Kelola</Text>
       <TouchableOpacity style={styles.quickCard} onPress={() => onTabChange('mycafe')} activeOpacity={0.8}>
         <View style={[styles.quickIconBg, { backgroundColor: '#D48B3A18' }]}>
-          <Text style={styles.quickIcon}>☕</Text>
+          <Coffee size={20} color={colors.accent} strokeWidth={2} />
         </View>
         <View style={styles.quickText}>
           <Text style={styles.quickTitle}>Cafe Aku</Text>
           <Text style={styles.quickSubtitle}>Liat foto, fasilitas & menu</Text>
         </View>
-        <Text style={styles.quickArrow}>→</Text>
+        <ArrowRight size={18} color={colors.textSecondary} strokeWidth={2.2} />
       </TouchableOpacity>
       <TouchableOpacity style={styles.quickCard} onPress={() => onTabChange('promotions')} activeOpacity={0.8}>
         <View style={[styles.quickIconBg, { backgroundColor: '#5B9BD518' }]}>
-          <Text style={styles.quickIcon}>📢</Text>
+          <Megaphone size={20} color="#5B9BD5" strokeWidth={2} />
         </View>
         <View style={styles.quickText}>
           <Text style={styles.quickTitle}>Promosi</Text>
           <Text style={styles.quickSubtitle}>Liat & kelola kampanye aktif</Text>
         </View>
-        <Text style={styles.quickArrow}>→</Text>
+        <ArrowRight size={18} color={colors.textSecondary} strokeWidth={2.2} />
       </TouchableOpacity>
 
       <View style={{ height: 40 }} />
@@ -301,6 +322,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs + 2,
   },
+  backToAppRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   backToAppText: { fontSize: 13, fontWeight: '600', color: colors.primary },
 
   // Tab bar
@@ -321,7 +343,6 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   tabActive: {},
-  tabIcon: { fontSize: 14 },
   tabLabel: { fontSize: 12, fontWeight: '600', color: colors.textSecondary },
   tabLabelActive: { color: colors.accent },
   tabIndicator: {
@@ -345,6 +366,7 @@ const styles = StyleSheet.create({
 
   // Dashboard content
   greeting: { marginBottom: spacing.lg },
+  greetingRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   greetingTitle: { fontSize: 22, fontWeight: '700', color: colors.primary },
   greetingSubtitle: { fontSize: 14, color: colors.textSecondary, marginTop: 2 },
 
@@ -390,7 +412,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.04,
     shadowRadius: 2,
   },
-  insightIcon: { fontSize: 24, marginRight: spacing.md },
+  insightIconLead: { marginRight: spacing.md },
   insightText: { flex: 1 },
   insightTitle: { fontSize: 13, color: colors.textSecondary },
   insightValue: { fontSize: 22, fontWeight: '800', color: colors.primary },
@@ -439,6 +461,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   promoExpiryLabel: { fontSize: 13, color: colors.textSecondary },
+  promoManageRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   promoManageLink: { fontSize: 13, color: colors.accent, fontWeight: '600' },
 
   noPromoCard: {
@@ -451,7 +474,7 @@ const styles = StyleSheet.create({
     borderColor: colors.surface,
     borderStyle: 'dashed',
   },
-  noPromoIcon: { fontSize: 32, marginBottom: spacing.sm },
+  noPromoIconLead: { marginBottom: spacing.sm },
   noPromoTitle: { fontSize: 15, fontWeight: '600', color: colors.primary },
   noPromoHint: { fontSize: 13, color: colors.textSecondary, marginTop: 4, textAlign: 'center' },
   noPromoBtn: {
@@ -462,7 +485,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
   },
-  noPromoBtnText: { fontSize: 14, color: colors.accent, fontWeight: '600' },
+  noPromoBtnRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  noPromoBtnText: { fontSize: 14, color: colors.white, fontWeight: '600' },
 
   quickCard: {
     flexDirection: 'row',
@@ -485,9 +509,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: spacing.md,
   },
-  quickIcon: { fontSize: 22 },
   quickText: { flex: 1 },
   quickTitle: { fontSize: 15, fontWeight: '600', color: colors.primary },
   quickSubtitle: { fontSize: 13, color: colors.textSecondary, marginTop: 1 },
-  quickArrow: { fontSize: 18, color: colors.textSecondary },
 });

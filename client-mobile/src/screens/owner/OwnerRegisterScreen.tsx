@@ -14,6 +14,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ArrowLeft } from 'lucide-react-native';
 import { colors, spacing, radius } from '../../theme';
 import api from '../../services/api';
 
@@ -76,7 +77,7 @@ export default function OwnerRegisterScreen() {
       >
         {/* Header */}
         <TouchableOpacity style={styles.backRow} onPress={() => navigation.goBack()}>
-          <Text style={styles.backArrow}>←</Text>
+          <ArrowLeft size={16} color={colors.primary} strokeWidth={2.2} />
           <Text style={styles.backLabel}>Kembali</Text>
         </TouchableOpacity>
 
@@ -184,7 +185,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: spacing.xl,
   },
-  backArrow: { fontSize: 20, color: colors.primary, marginRight: spacing.xs },
   backLabel: { fontSize: 15, color: colors.primary, fontWeight: '500' },
   badge: {
     backgroundColor: colors.accent + '20',

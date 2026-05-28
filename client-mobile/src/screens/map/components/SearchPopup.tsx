@@ -9,6 +9,7 @@ import {
   Dimensions,
 } from "react-native";
 import { useTranslation } from "react-i18next";
+import { X } from "lucide-react-native";
 import { mapText } from "@shared/i18n/keys";
 import CafePhoto from "../../../components/CafePhoto";
 import SwipeableCard from "../../../components/SwipeableCard";
@@ -95,7 +96,7 @@ function SearchPopup({
         hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
         activeOpacity={0.7}
       >
-        <Text style={styles.closeText}>✕</Text>
+        <X size={18} color={colors.primary} strokeWidth={2.5} />
       </TouchableOpacity>
 
       <View style={styles.header}>
@@ -199,11 +200,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     zIndex: 999,
     elevation: 10,
-  },
-  closeText: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: colors.primary,
   },
   header: {
     flexDirection: "row",

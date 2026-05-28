@@ -14,6 +14,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ArrowLeft, ArrowRight } from 'lucide-react-native';
 import { useAuth } from '../../context/AuthContext';
 import { colors, spacing, radius } from '../../theme';
 
@@ -53,7 +54,7 @@ export default function OwnerLoginScreen() {
       >
         {/* Header */}
         <TouchableOpacity style={styles.backRow} onPress={() => navigation.goBack()}>
-          <Text style={styles.backArrow}>←</Text>
+          <ArrowLeft size={16} color={colors.primary} strokeWidth={2.2} />
           <Text style={styles.backLabel}>Kembali</Text>
         </TouchableOpacity>
 
@@ -106,8 +107,9 @@ export default function OwnerLoginScreen() {
 
         {/* Divider back to user app */}
         <View style={styles.divider} />
-        <TouchableOpacity onPress={() => navigation.navigate('AuthModal')}>
-          <Text style={styles.userLink}>Customer? Login di sini →</Text>
+        <TouchableOpacity style={styles.userLinkRow} onPress={() => navigation.navigate('AuthModal')}>
+          <Text style={styles.userLink}>Customer? Login di sini</Text>
+          <ArrowRight size={14} color={colors.accent} strokeWidth={2.2} />
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -122,7 +124,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: spacing.xl,
   },
-  backArrow: { fontSize: 20, color: colors.primary, marginRight: spacing.xs },
   backLabel: { fontSize: 15, color: colors.primary, fontWeight: '500' },
   badge: {
     backgroundColor: colors.accent + '20',
@@ -184,8 +185,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     marginVertical: spacing.lg,
   },
+  userLinkRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4 },
   userLink: {
-    textAlign: 'center',
     fontSize: 14,
     color: colors.textSecondary,
   },

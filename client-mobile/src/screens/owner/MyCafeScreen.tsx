@@ -19,6 +19,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fetchOwnerCafe } from '../../services/api';
 import api from '../../services/api';
 import { colors, spacing, radius } from '../../theme';
+import { Pencil, Star, MapPin, Trash2, X } from 'lucide-react-native';
 import Toast from '../../components/Toast';
 
 const { width } = Dimensions.get('window');
@@ -432,8 +433,9 @@ export default function MyCafeScreen() {
               </TouchableOpacity>
             </View>
           ) : (
-            <TouchableOpacity onPress={() => setEditMode(true)} style={styles.editBtn}>
-              <Text style={styles.editBtnText}>✏️  Edit</Text>
+            <TouchableOpacity onPress={() => setEditMode(true)} style={[styles.editBtn, styles.editBtnRow]}>
+              <Pencil size={14} color={colors.primary} strokeWidth={2.2} />
+              <Text style={styles.editBtnText}>Edit</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -462,8 +464,9 @@ export default function MyCafeScreen() {
               >
                 <Image source={{ uri: photo.url }} style={styles.photo} />
                 {photo.isPrimary && (
-                  <View style={styles.primaryBadge}>
-                    <Text style={styles.primaryBadgeText}>★ Utama</Text>
+                  <View style={[styles.primaryBadge, styles.primaryBadgeRow]}>
+                    <Star size={10} color={colors.white} fill={colors.white} strokeWidth={0} />
+                    <Text style={styles.primaryBadgeText}>Utama</Text>
                   </View>
                 )}
                 {editMode && (
@@ -590,7 +593,10 @@ export default function MyCafeScreen() {
                 }
               }}
             >
-              <Text style={styles.useLocationBtnText}>📍 Pakai lokasi sekarang</Text>
+              <View style={styles.useLocationBtnRow}>
+                <MapPin size={13} color="#FFFFFF" strokeWidth={2.2} />
+                <Text style={styles.useLocationBtnText}>Pakai lokasi sekarang</Text>
+              </View>
             </TouchableOpacity>
           )}
         </View>
@@ -683,13 +689,13 @@ export default function MyCafeScreen() {
                           onPress={() => openEditMenu(item)}
                           style={styles.menuActionBtn}
                         >
-                          <Text style={styles.menuActionEdit}>✏️</Text>
+                          <Pencil size={14} color={colors.primary} strokeWidth={2} />
                         </TouchableOpacity>
                         <TouchableOpacity
                           onPress={() => handleDeleteMenu(item.id)}
                           style={styles.menuActionBtn}
                         >
-                          <Text style={styles.menuActionDelete}>🗑️</Text>
+                          <Trash2 size={14} color="#E94B4B" strokeWidth={2} />
                         </TouchableOpacity>
                       </View>
                     )}
@@ -734,7 +740,7 @@ export default function MyCafeScreen() {
               {editingMenuId ? 'Edit Menu' : 'Tambah Menu'}
             </Text>
             <TouchableOpacity onPress={() => setMenuModalVisible(false)} style={styles.modalClose}>
-              <Text style={styles.modalCloseText}>✕</Text>
+              <X size={18} color={colors.textSecondary} strokeWidth={2.5} />
             </TouchableOpacity>
           </View>
 
@@ -838,6 +844,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs + 2,
   },
+  editBtnRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   editBtnText: { fontSize: 14, fontWeight: '600', color: colors.primary },
   editActions: { flexDirection: 'row', gap: spacing.sm },
   cancelBtn: {
@@ -907,6 +914,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
+  primaryBadgeRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   primaryBadgeText: { fontSize: 10, fontWeight: '700', color: colors.white },
   photoEditHint: {
     position: 'absolute',
@@ -975,6 +983,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     alignItems: 'center',
   },
+  useLocationBtnRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   useLocationBtnText: {
     color: '#fff',
     fontSize: 13,
@@ -1055,8 +1064,6 @@ const styles = StyleSheet.create({
   unavailablePrice: { color: colors.textSecondary + '80' },
   menuActions: { flexDirection: 'row', gap: spacing.xs, marginLeft: spacing.sm },
   menuActionBtn: { padding: 4 },
-  menuActionEdit: { fontSize: 16 },
-  menuActionDelete: { fontSize: 16 },
 
   // Stats row
   statsRow: {
@@ -1084,7 +1091,6 @@ const styles = StyleSheet.create({
   },
   modalTitle: { fontSize: 17, fontWeight: '700', color: colors.primary },
   modalClose: { padding: spacing.xs },
-  modalCloseText: { fontSize: 18, color: colors.textSecondary },
   modalBody: { padding: spacing.lg },
   modalLabel: {
     fontSize: 13,

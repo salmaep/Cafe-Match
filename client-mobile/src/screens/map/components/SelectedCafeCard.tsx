@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useTranslation } from "react-i18next";
+import { ChevronRight } from "lucide-react-native";
 import { cafeText, mapText } from "@shared/i18n/keys";
 import CafePhoto from "../../../components/CafePhoto";
 import { Cafe } from "../../../types";
@@ -31,7 +32,7 @@ function SelectedCafeCard({ cafe, onPress, onDismiss }: Props) {
             ))}
           </View>
         </View>
-        <Text style={styles.arrow}>›</Text>
+        <ChevronRight size={22} color={colors.textSecondary} strokeWidth={2} />
       </TouchableOpacity>
       <TouchableOpacity onPress={onDismiss} style={styles.dismiss}>
         <Text style={styles.dismissText}>{t(mapText.selectedClose)}</Text>
@@ -73,7 +74,6 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   tagText: { fontSize: 11, fontWeight: "600", color: colors.accent },
-  arrow: { fontSize: 22, color: colors.accent, marginLeft: spacing.sm },
   dismiss: { alignSelf: "flex-end", marginTop: 6 },
   dismissText: { fontSize: 12, color: colors.textSecondary },
 });

@@ -23,7 +23,9 @@ import { useLocation } from '../context/LocationContext';
 import { fetchDiscoverDeck } from '../queries/cafes/api';
 import { usePurposeId } from '../queries/purposes/use-purpose-id';
 import { Cafe } from '../types';
-import { spacing } from '../theme';
+import { spacing, colors } from '../theme';
+import { Star, MapPin, Map as MapIcon } from 'lucide-react-native';
+import { LucideIcon } from '../utils/lucideIcon';
 import Toast from '../components/Toast';
 import { buildFacilityChips } from '../utils/facilities';
 import { getOpenStatus } from '../utils/openingHours';
@@ -288,7 +290,7 @@ export default function CardSwipeScreen() {
             <View style={styles.topChipsRow}>
               {rating && (
                 <View style={styles.ratingPill}>
-                  <Text style={styles.ratingStar}>★</Text>
+                  <Star size={11} color="#F59E0B" fill="#F59E0B" strokeWidth={0} style={styles.ratingStarIcon} />
                   <Text style={styles.ratingNum}>{rating}</Text>
                   {cafe.totalGoogleReviews != null && (
                     <Text style={styles.ratingCount}>
@@ -314,7 +316,8 @@ export default function CardSwipeScreen() {
               <View style={{ flex: 1 }} />
               {distanceKm && (
                 <View style={styles.distancePill}>
-                  <Text style={styles.distanceText}>📍 {distanceKm} km</Text>
+                  <MapPin size={11} color="#FFFFFF" strokeWidth={2.2} />
+                  <Text style={styles.distanceText}>{distanceKm} km</Text>
                 </View>
               )}
             </View>
@@ -351,10 +354,18 @@ export default function CardSwipeScreen() {
             <View style={styles.chipsRow}>
               {visibleTags.map((tag) => (
                 <View key={tag.key} style={styles.tagChip}>
+                  {tag.lucideName && (
+                    <LucideIcon
+                      name={tag.lucideName}
+                      size={chipTextSize - 1}
+                      color="#FFFFFF"
+                      strokeWidth={2}
+                    />
+                  )}
                   <Text
                     style={[styles.tagChipText, { fontSize: chipTextSize }]}
                   >
-                    {tag.icon ? `${tag.icon} ${tag.label}` : tag.label}
+                    {tag.label}
                   </Text>
                 </View>
               ))}
@@ -406,7 +417,7 @@ export default function CardSwipeScreen() {
     return (
       <View style={styles.bgWrap}>
         <View style={styles.fullCentered}>
-          <Text style={styles.emptyEmoji}>🗺️</Text>
+          <MapIcon size={64} color={colors.textSecondary} strokeWidth={1.5} style={styles.emptyIconLead} />
           <Text style={styles.fullCenteredTitle}>{t(discoverText.allSeenTitle)}</Text>
           <Text style={styles.fullCenteredSubtitle}>
             {t(discoverText.allSeenSubtitle)}
@@ -492,9 +503,7 @@ export default function CardSwipeScreen() {
         onPress={openShortlist}
         activeOpacity={0.85}
       >
-        <Text style={[styles.shortlistFabIcon, { fontSize: fabSize * 0.5 }]}>
-          ★
-        </Text>
+        <Star size={Math.round(fabSize * 0.5)} color="#F59E0B" fill="#F59E0B" strokeWidth={0} />
         {shortlist.length > 0 && (
           <View style={styles.shortlistFabBadge}>
             <Text style={styles.shortlistFabBadgeText}>{shortlist.length}</Text>
@@ -536,7 +545,7 @@ const styles = StyleSheet.create({
     maxWidth: 320,
     lineHeight: 21,
   },
-  emptyEmoji: { fontSize: 56, marginBottom: spacing.md },
+  emptyIconLead: { marginBottom: spacing.md },
   emptyBtn: {
     marginTop: spacing.xl,
     backgroundColor: '#d97706',
@@ -671,7 +680,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
   },
-  ratingStar: { color: '#f5b820', fontSize: 12, marginRight: 4 },
+  ratingStarIcon: { marginRight: 4 },
   ratingNum: { color: '#1a1410', fontSize: 12, fontWeight: '800' },
   ratingCount: { color: '#8a7a66', fontSize: 12, fontWeight: '600' },
   openPill: {
@@ -688,6 +697,9 @@ const styles = StyleSheet.create({
   openDot: { width: 7, height: 7, borderRadius: 4 },
   openText: { color: '#ffffff', fontSize: 12, fontWeight: '800' },
   distancePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     backgroundColor: 'rgba(20,14,10,0.65)',
     borderRadius: 999,
     paddingHorizontal: 10,
@@ -734,6 +746,7 @@ const styles = StyleSheet.create({
   tagChip: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 4,
     backgroundColor: 'rgba(20,14,10,0.55)',
     borderColor: 'rgba(255,255,255,0.16)',
     borderWidth: 1,

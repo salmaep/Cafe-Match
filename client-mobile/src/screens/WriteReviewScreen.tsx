@@ -14,9 +14,10 @@ import { colors, spacing, radius } from '../theme';
 import { usePurposes } from '../queries/purposes/use-purposes';
 import { useCafeFilters } from '../queries/cafes/use-cafe-filters';
 import { useAuth } from '../context/AuthContext';
-import { Camera, Video as VideoIcon, Star } from '../utils/lucideIcon';
-import { getPurposeBySlug } from '@shared/constants/purposes';
+import { Camera, Video as VideoIcon, Star, LucideIcon } from '../utils/lucideIcon';
+import { X } from 'lucide-react-native';
 import { chipFromFacilityKey } from '@shared/constants/facilities';
+import { lucideForFacility } from '../utils/lucideIcon';
 
 const { width } = Dimensions.get('window');
 
@@ -48,7 +49,7 @@ export default function WriteReviewScreen() {
         g.options.map((o) => ({
           key: o.key,
           label: o.label,
-          icon: chipFromFacilityKey(o.key).icon,
+          icon: lucideForFacility(o.key) ?? chipFromFacilityKey(o.key).icon,
         })),
       ),
     [filterGroups],
@@ -225,14 +226,20 @@ export default function WriteReviewScreen() {
             >
               {moodOptions.map((m) => {
                 const active = mood === m.slug;
-                const emoji = getPurposeBySlug(m.slug)?.emoji ?? '✨';
                 return (
                   <TouchableOpacity
                     key={m.slug}
                     style={[styles.optionCard, active && styles.optionCardActive]}
                     onPress={() => setMood(m.slug)}
                   >
-                    <Text style={styles.optionEmoji}>{emoji}</Text>
+                    <View style={styles.optionIconWrap}>
+                      <LucideIcon
+                        name={m.icon}
+                        size={26}
+                        color={active ? colors.accent : colors.primary}
+                        strokeWidth={2}
+                      />
+                    </View>
                     <Text style={[styles.optionLabel, active && styles.optionLabelActive]}>
                       {m.name}
                     </Text>
@@ -271,7 +278,12 @@ export default function WriteReviewScreen() {
                         onPress={() => toggleFacility(f.key)}
                         style={[styles.facilityChip, active && styles.facilityChipActive]}
                       >
-                        <Text style={styles.facilityChipIcon}>{f.icon}</Text>
+                        <LucideIcon
+                          name={f.icon}
+                          size={14}
+                          color={active ? colors.white : colors.primary}
+                          strokeWidth={2}
+                        />
                         <Text
                           style={[
                             styles.facilityChipLabel,
@@ -337,7 +349,7 @@ export default function WriteReviewScreen() {
                         </View>
                       )}
                       <TouchableOpacity style={styles.removeBtn} onPress={() => removeMedia(i)}>
-                        <Text style={styles.removeBtnText}>×</Text>
+                        <X size={14} color="#FFFFFF" strokeWidth={2.5} />
                       </TouchableOpacity>
                     </View>
                   ))}
@@ -454,7 +466,7 @@ const styles = StyleSheet.create({
     borderColor: colors.accent,
     backgroundColor: '#FDF6EC',
   },
-  optionEmoji: { fontSize: 36, lineHeight: 40, marginBottom: 8 },
+  optionIconWrap: { marginBottom: 8, height: 32, alignItems: 'center', justifyContent: 'center' },
   optionLabel: {
     fontSize: 14,
     fontWeight: '700',

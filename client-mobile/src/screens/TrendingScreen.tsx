@@ -28,6 +28,7 @@ import { usePurposes } from '../queries/purposes/use-purposes';
 import { getPurposeBySlug } from '@shared/constants/purposes';
 import { Cafe } from '../types';
 import { colors, spacing, radius } from '../theme';
+import { Flame, Crown, Star, MapPin } from 'lucide-react-native';
 import NativeAdCard from '../components/NativeAdCard';
 import { interleaveAds, WithAd } from '../utils/adInterleave';
 
@@ -164,7 +165,7 @@ export default function TrendingScreen() {
 
   const renderEmpty = () => (
     <View style={styles.emptyContainer}>
-      <Text style={styles.emptyEmoji}>🔥</Text>
+      <Flame size={56} color={colors.textSecondary} strokeWidth={1.5} style={styles.emptyIconLead} />
       <Text style={styles.emptyTitle}>{t(trendingText.emptyTitle)}</Text>
       <Text style={styles.emptySubtitle}>{t(trendingText.emptySubtitle)}</Text>
     </View>
@@ -196,7 +197,7 @@ export default function TrendingScreen() {
           </View>
           <View style={styles.heroBadgeRow}>
             <View style={styles.heroCountBadge}>
-              <Text style={styles.heroCountIcon}>🔥</Text>
+              <Flame size={14} color="#B45309" fill="#B45309" strokeWidth={0} />
               <Text style={styles.heroCountNum}>
                 {totalCount.toLocaleString()}
               </Text>
@@ -358,7 +359,7 @@ function WinnerCard({ cafe, onPress }: { cafe: Cafe; onPress: () => void }) {
           {/* Top-left: champion + HOT */}
           <View style={cardStyles.winnerTopLeft}>
             <View style={cardStyles.winnerCrown}>
-              <Text style={cardStyles.winnerCrownEmoji}>👑</Text>
+              <Crown size={14} color="#F59E0B" fill="#F59E0B" strokeWidth={0} />
               <Text style={cardStyles.winnerCrownText}>{t(trendingText.winnerCrown)}</Text>
             </View>
             {isHot && (
@@ -371,7 +372,7 @@ function WinnerCard({ cafe, onPress }: { cafe: Cafe; onPress: () => void }) {
           {/* Top-right: rating pill */}
           {rating && (
             <View style={cardStyles.winnerRating}>
-              <Text style={cardStyles.winnerRatingStar}>★</Text>
+              <Star size={11} color="#F59E0B" fill="#F59E0B" strokeWidth={0} />
               <Text style={cardStyles.winnerRatingNum}>{rating}</Text>
               {reviews != null && (
                 <Text style={cardStyles.winnerRatingCount}>
@@ -495,7 +496,8 @@ function RunnerUpCard({
         {/* Distance pill */}
         {km && (
           <View style={cardStyles.runnerDistPill}>
-            <Text style={cardStyles.runnerDistText}>📍 {km}</Text>
+            <MapPin size={10} color="#FFFFFF" strokeWidth={2.2} />
+            <Text style={cardStyles.runnerDistText}>{km}</Text>
           </View>
         )}
 
@@ -613,12 +615,6 @@ const cardStyles = StyleSheet.create({
     paddingLeft: 4, paddingRight: 10,
     paddingVertical: 4, gap: 6,
   },
-  winnerCrownEmoji: {
-    width: 22, height: 22, borderRadius: 11,
-    backgroundColor: '#F59E0B',
-    textAlign: 'center', lineHeight: 22,
-    fontSize: 12, color: '#FFFFFF',
-  },
   winnerCrownText: {
     fontSize: 10, fontWeight: '900',
     color: '#1C1C1A', letterSpacing: 1.5,
@@ -641,7 +637,6 @@ const cardStyles = StyleSheet.create({
     paddingHorizontal: 10, paddingVertical: 4,
     borderRadius: 999, gap: 3,
   },
-  winnerRatingStar: { color: '#F59E0B', fontSize: 12 },
   winnerRatingNum: { color: '#1C1C1A', fontSize: 12, fontWeight: '900' },
   winnerRatingCount: { color: '#8A8880', fontSize: 11, fontWeight: '500' },
   winnerBottom: {
@@ -750,6 +745,9 @@ const cardStyles = StyleSheet.create({
   },
   runnerDistPill: {
     position: 'absolute',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
     top: 6, right: 6,
     backgroundColor: 'rgba(0,0,0,0.55)',
     paddingHorizontal: 7, paddingVertical: 2,
@@ -888,7 +886,6 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 3,
   },
-  heroCountIcon: { fontSize: 13 },
   heroCountNum: { color: '#FFFFFF', fontSize: 12, fontWeight: '900' },
   heroCountLabel: {
     color: 'rgba(255,255,255,0.85)',
@@ -1122,8 +1119,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing.xxl,
   },
-  emptyEmoji: {
-    fontSize: 52,
+  emptyIconLead: {
     marginBottom: spacing.md,
   },
   emptyTitle: {

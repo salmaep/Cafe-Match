@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import Constants from 'expo-constants';
 import { useTranslation } from 'react-i18next';
+import { MapPin, AlertTriangle, Check } from 'lucide-react-native';
 import { errorsText, wizardText } from '@shared/i18n/keys';
 import { colors, radius, spacing } from '../../theme';
 
@@ -193,7 +194,7 @@ export default function PlacesAutocompleteInput({
                   index < predictions.length - 1 && styles.predictionItemBorder,
                 ]}
               >
-                <Text style={styles.predictionIcon}>📍</Text>
+                <MapPin size={14} color={colors.textSecondary} strokeWidth={2} style={styles.predictionIconLead} />
                 <Text style={styles.predictionText} numberOfLines={2}>
                   {item.description}
                 </Text>
@@ -203,10 +204,18 @@ export default function PlacesAutocompleteInput({
         </View>
       )}
 
-      {!!error && <Text style={styles.errorText}>⚠️ {error}</Text>}
+      {!!error && (
+        <View style={styles.errorRow}>
+          <AlertTriangle size={12} color="#B91C1C" strokeWidth={2.2} />
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      )}
 
       {selectedLabel && (
-        <Text style={styles.selectedText}>✓ {selectedLabel}</Text>
+        <View style={styles.selectedRow}>
+          <Check size={12} color="#065F46" strokeWidth={2.5} />
+          <Text style={styles.selectedText}>{selectedLabel}</Text>
+        </View>
       )}
     </View>
   );
@@ -254,21 +263,29 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#F0EDE8',
   },
-  predictionIcon: {
-    fontSize: 14,
-  },
+  predictionIconLead: { marginRight: spacing.xs },
   predictionText: {
     flex: 1,
     fontSize: 14,
     color: colors.primary,
   },
-  errorText: {
+  errorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     marginTop: spacing.sm,
+  },
+  errorText: {
     fontSize: 12,
     color: colors.accent,
   },
-  selectedText: {
+  selectedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     marginTop: spacing.sm,
+  },
+  selectedText: {
     fontSize: 12,
     color: colors.success,
     fontWeight: '600',

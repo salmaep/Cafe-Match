@@ -19,6 +19,10 @@ interface PreferencesContextType {
   wizardCompleted: boolean;
   setPreferences: (p: WizardPreferences | null) => void;
   setWizardCompleted: (v: boolean) => void;
+  // Partial merge update — persists to localStorage. Pass {} to no-op.
+  updatePreference: (patch: Partial<WizardPreferences>) => void;
+  // Wipe preferences + wizardCompleted flag (forces wizard to show again).
+  clearPreferences: () => void;
   // Server purposes catalog — loaded once on mount, cached
   serverPurposes: Purpose[];
   // Resolve wizard slug → server purposeId. Returns null if slug not found.
@@ -80,6 +84,15 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
   const setPreferences = (p: WizardPreferences | null) => setPrefsState(p);
   const setWizardCompleted = (v: boolean) => setCompletedState(v);
 
+  const updatePreference = useCallback((patch: Partial<WizardPreferences>) => {
+    setPrefsState((prev) => ({ ...(prev ?? {}), ...patch }));
+  }, []);
+
+  const clearPreferences = useCallback(() => {
+    setPrefsState(null);
+    setCompletedState(false);
+  }, []);
+
   return (
     <PreferencesContext.Provider
       value={{
@@ -87,6 +100,8 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
         wizardCompleted,
         setPreferences,
         setWizardCompleted,
+        updatePreference,
+        clearPreferences,
         serverPurposes,
         getPurposeId,
       }}

@@ -4,14 +4,16 @@ import { useTranslation } from "react-i18next";
 import type { LucideIcon } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useShortlist } from "../../context/ShortlistContext";
+import { usePreferences } from "../../context/PreferencesContext";
 import { commonText } from "@shared/i18n";
-import { Coffee, LogOut, User } from "../../utils/lucideIcon";
+import { Coffee, LogOut, Trash2, User } from "../../utils/lucideIcon";
 import { ChevronDown } from "lucide-react";
 
 export default function Navbar() {
   const { t } = useTranslation();
   const { user, logout } = useAuth();
   const { shortlist } = useShortlist();
+  const { clearPreferences, preferences, wizardCompleted } = usePreferences();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -39,6 +41,14 @@ export default function Navbar() {
     logout();
     navigate("/");
   };
+
+  const handleClearPreferences = () => {
+    setMenuOpen(false);
+    clearPreferences();
+    navigate("/discover", { replace: true });
+  };
+
+  const hasPreferences = wizardCompleted && !!preferences;
 
   const initials = (user?.name || user?.email || "?")
     .split(/\s+/)
@@ -126,6 +136,17 @@ export default function Navbar() {
                     label={t(commonText.navProfile)}
                     onClick={() => setMenuOpen(false)}
                   />
+                  {hasPreferences && (
+                    <button
+                      type="button"
+                      onClick={handleClearPreferences}
+                      role="menuitem"
+                      className="w-full flex items-center gap-3 px-4 py-2 text-sm text-[#1C1C1A] hover:bg-[#F5F3EE] transition-colors"
+                    >
+                      <Trash2 size={16} strokeWidth={2} className="text-[#8A8880]" />
+                      <span className="font-semibold">Clear my preferences</span>
+                    </button>
+                  )}
                   <div className="h-px bg-[#F0EDE8] my-1" />
                   <button
                     type="button"

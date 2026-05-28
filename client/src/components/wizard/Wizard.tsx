@@ -21,10 +21,9 @@ import StepAmenities from "./StepAmenities";
 
 interface Props {
   onComplete?: () => void;
-  onSkip?: () => void;
 }
 
-export default function Wizard({ onComplete, onSkip }: Props = {}) {
+export default function Wizard({ onComplete }: Props = {}) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { setPreferences, setWizardCompleted, serverPurposes } =
@@ -68,13 +67,6 @@ export default function Wizard({ onComplete, onSkip }: Props = {}) {
   };
   const handleBack = () => {
     if (step > 0) setParams({ step: step - 1 });
-  };
-
-  const handleSkip = () => {
-    setPreferences(null);
-    setWizardCompleted(true);
-    if (onSkip) onSkip();
-    else navigate("/", { replace: true });
   };
 
   const handleFinish = () => {
@@ -136,13 +128,7 @@ export default function Wizard({ onComplete, onSkip }: Props = {}) {
             />
           ))}
         </div>
-        <button
-          type="button"
-          onClick={handleSkip}
-          className="text-sm text-gray-500 w-12 text-right hover:text-gray-700 transition-colors"
-        >
-          {t(commonText.skip)}
-        </button>
+        <span className="w-12" />
       </header>
 
       <main className="flex-1 overflow-y-auto">

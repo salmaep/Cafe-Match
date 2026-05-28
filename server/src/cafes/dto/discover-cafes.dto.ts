@@ -60,4 +60,22 @@ export class DiscoverCafesDto {
   @IsPositive()
   @Max(20)
   limit?: number = 7;
+
+  @IsOptional()
+  @Transform(({ value }) => {
+    const toIds = (arr: unknown[]): number[] =>
+      arr.map((v) => Number(v)).filter((n) => Number.isFinite(n) && n > 0);
+    if (Array.isArray(value)) return toIds(value);
+    if (typeof value === 'string')
+      return toIds(
+        value
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean),
+      );
+    return undefined;
+  })
+  @IsArray()
+  @IsNumber({}, { each: true })
+  excludeIds?: number[];
 }

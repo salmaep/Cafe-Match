@@ -101,11 +101,28 @@ export interface DiscoverParams {
   priceRange?: string;
   facilities?: string[];
   limit?: number;
+  excludeIds?: number[];
 }
 
 export interface DiscoverResult {
   data: Cafe[];
   meta: { total: number };
+}
+
+export interface AutocompleteParams {
+  q: string;
+  lat?: number;
+  lng?: number;
+  limit?: number;
+}
+
+export interface AutocompleteHit {
+  id: number;
+  name: string;
+  slug: string;
+  city: string | null;
+  district: string | null;
+  distanceMeters?: number;
 }
 
 export interface GoogleReview {
@@ -182,10 +199,13 @@ export const cafesApi = {
   },
 
   discover: async (params: DiscoverParams): Promise<DiscoverResult> => {
-    const { facilities, ...rest } = params;
+    const { facilities, excludeIds, ...rest } = params;
     const queryParams: Record<string, unknown> = { ...rest };
     if (facilities && facilities.length > 0) {
       queryParams.facilities = facilities.join(",");
+    }
+    if (excludeIds && excludeIds.length > 0) {
+      queryParams.excludeIds = excludeIds.join(",");
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const res = await apiClient.get<any>("/cafes/discover", {
@@ -198,6 +218,16 @@ export const cafesApi = {
       data: cafes,
       meta: res.data?.meta ?? { total: cafes.length },
     };
+  },
+
+  autocomplete: async (
+    params: AutocompleteParams,
+  ): Promise<{ data: AutocompleteHit[] }> => {
+    const res = await apiClient.get<{ data: AutocompleteHit[] }>(
+      "/cafes/autocomplete",
+      { params },
+    );
+    return { data: res.data?.data ?? [] };
   },
 
   getById: (id: number) => apiClient.get<Cafe>(`/cafes/${id}`),

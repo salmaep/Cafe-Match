@@ -40,5 +40,13 @@
   "outOfRadiusTitle": "Di luar radius",
   "outOfRadiusBody": "Kafe ini di luar radius kamu. Perluas ke {{radius}} km?",
   "outOfRadiusKeep": "Tetap buka",
-  "outOfRadiusExpand": "Perluas & buka"
+  "outOfRadiusExpand": "Perluas & buka",
+  "searchScreenPlaceholder": "Cari kafe…",
+  "resultsFor": "Hasil untuk \"{{q}}\"",
+  "sortBy": "Urutkan",
+  "sortDistance": "Jarak",
+  "sortRating": "Rating",
+  "sortTrending": "Populer",
+  "sortNewest": "Terbaru",
+  "filterBtn": "Filter"
 }

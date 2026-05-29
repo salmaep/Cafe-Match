@@ -42,4 +42,13 @@ export const mapText = {
   outOfRadiusBody: 'map:outOfRadiusBody',
   outOfRadiusKeep: 'map:outOfRadiusKeep',
   outOfRadiusExpand: 'map:outOfRadiusExpand',
+  // Dedicated search flow (Tokopedia/Shopee-style)
+  searchScreenPlaceholder: 'map:searchScreenPlaceholder',
+  resultsFor: 'map:resultsFor',
+  sortBy: 'map:sortBy',
+  sortDistance: 'map:sortDistance',
+  sortRating: 'map:sortRating',
+  sortTrending: 'map:sortTrending',
+  sortNewest: 'map:sortNewest',
+  filterBtn: 'map:filterBtn',
 } as const;

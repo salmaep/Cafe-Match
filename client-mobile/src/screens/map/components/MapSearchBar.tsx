@@ -7,33 +7,51 @@ import { colors, spacing, radius } from "../../../theme";
 
 type Props = {
   topInset: number;
-  searchQuery: string;
-  searchActive: boolean;
-  onSearchQueryChange: (s: string) => void;
-  onSubmit: () => void;
-  onClear: () => void;
-  onFocus?: () => void;
   onOpenFilters: () => void;
   activeFilterCount: number;
-  showNoResultsBanner: boolean;
+  // When provided, the search field renders as a tappable button (read-only
+  // placeholder) that calls onPress instead of being an editable TextInput.
+  // Used on Explore to navigate to the dedicated Search screen (Tokopedia-style).
+  onPress?: () => void;
+  // Editable-mode props — only used when onPress is omitted.
+  searchQuery?: string;
+  searchActive?: boolean;
+  onSearchQueryChange?: (s: string) => void;
+  onSubmit?: () => void;
+  onClear?: () => void;
+  onFocus?: () => void;
+  showNoResultsBanner?: boolean;
 };
 
 function MapSearchBar({
   topInset,
-  searchQuery,
-  searchActive,
+  searchQuery = "",
+  searchActive = false,
   onSearchQueryChange,
   onSubmit,
   onClear,
   onFocus,
   onOpenFilters,
   activeFilterCount,
-  showNoResultsBanner,
+  showNoResultsBanner = false,
+  onPress,
 }: Props) {
   const { t } = useTranslation();
   return (
     <View style={[styles.container, { top: topInset + 8 }]}>
       <View style={styles.row}>
+        {onPress ? (
+          <TouchableOpacity
+            style={styles.searchBar}
+            activeOpacity={0.8}
+            onPress={onPress}
+          >
+            <Search size={16} color={colors.textSecondary} strokeWidth={2.2} style={styles.searchIcon} />
+            <Text style={styles.searchPlaceholder} numberOfLines={1}>
+              {t(mapText.searchPlaceholder)}
+            </Text>
+          </TouchableOpacity>
+        ) : (
         <View style={styles.searchBar}>
           <Search size={16} color={colors.textSecondary} strokeWidth={2.2} style={styles.searchIcon} />
           <TextInput
@@ -56,6 +74,7 @@ function MapSearchBar({
             </TouchableOpacity>
           )}
         </View>
+        )}
         <TouchableOpacity
           onPress={onOpenFilters}
           style={[
@@ -116,6 +135,12 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     color: colors.primary,
+    paddingVertical: spacing.sm + 4,
+  },
+  searchPlaceholder: {
+    flex: 1,
+    fontSize: 14,
+    color: colors.textSecondary,
     paddingVertical: spacing.sm + 4,
   },
   clearBtn: { padding: spacing.xs },

@@ -10,11 +10,8 @@ import {
   Text,
   StyleSheet,
   Animated,
-  Dimensions,
-  Keyboard,
   ActivityIndicator,
   InteractionManager,
-  Alert,
 } from "react-native";
 import MapView from "react-native-map-clustering";
 import { Circle } from "react-native-maps";
@@ -22,30 +19,17 @@ import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
-import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { mapText } from "@shared/i18n/keys";
 
 import { usePreferences } from "../../context/PreferencesContext";
 import { useLocation } from "../../context/LocationContext";
-import { useShortlist } from "../../context/ShortlistContext";
 import { usePurposes } from "../../queries/purposes/use-purposes";
 import { useSearchCafes } from "../../queries/cafes/use-search-cafes";
-import { useAutocomplete } from "../../queries/cafes/use-autocomplete";
 import { usePromotedCafes } from "../../queries/cafes/use-promoted-cafes";
-import { useSearchHistory } from "../../lib/use-search-history";
-import type { AutocompleteHit } from "../../queries/cafes/types";
-import {
-  useActiveCheckin,
-  checkinKeys,
-} from "../../queries/checkins/use-active-checkin";
 import { useFriendsMap } from "../../queries/friends/use-friends-map";
-import {
-  hitsToCafes,
-  fetchAutocomplete,
-  fetchCafeDetail,
-} from "../../queries/cafes/api";
-import { checkOutApi, throwEmojiApi } from "../../services/api";
+import { hitsToCafes } from "../../queries/cafes/api";
+import { throwEmojiApi } from "../../services/api";
 import MobileFilterModal from "../../components/cafe/MobileFilterModal";
 import RadiusPickerModal from "../../components/cafe/RadiusPickerModal";
 import StatusBarScrim from "../../components/StatusBarScrim";
@@ -59,32 +43,24 @@ import CafeMarker from "./components/CafeMarker";
 import FriendMarker from "./components/FriendMarker";
 import SearchCenterMarker from "./components/SearchCenterMarker";
 import MapSearchBar from "./components/MapSearchBar";
-import ActiveCheckinCard from "./components/ActiveCheckinCard";
-import PinTogglesOverlay from "./components/PinTogglesOverlay";
-import SearchPopup from "./components/SearchPopup";
 import EmojiPickerModal from "./components/EmojiPickerModal";
 import SelectedCafeCard from "./components/SelectedCafeCard";
 import FeaturedSection from "./components/FeaturedSection";
 import RadiusControls, { ActiveFilter } from "./components/RadiusControls";
 import CafeList from "./components/CafeList";
 
-const { height } = Dimensions.get("window");
-
 export default function MapScreen() {
   const navigation = useNavigation<StackNavigationProp<any>>();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const { preferences, updatePreference } = usePreferences();
-  const { latitude: userLat, longitude: userLng, isLoading: locationLoading } = useLocation();
-  const { addToShortlist, isInShortlist } = useShortlist();
+  const { preferences } = usePreferences();
+  const { latitude: userLat, longitude: userLng, isLoading: locationLoading } =
+    useLocation();
   const mapRef = useRef<any>(null);
   const sheetRef = useRef<BottomSheet>(null);
-  const qc = useQueryClient();
 
   const [selectedCafe, setSelectedCafe] = useState<Cafe | null>(null);
   const [radiusKm, setRadiusKm] = useState(preferences?.radius || 2);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchActive, setSearchActive] = useState(false);
   const [radiusModalOpen, setRadiusModalOpen] = useState(false);
   const [filterModalOpen, setFilterModalOpen] = useState(false);
   const [showCafePins, setShowCafePins] = useState(true);
@@ -95,14 +71,6 @@ export default function MapScreen() {
   } | null>(null);
   const [pinsReady, setPinsReady] = useState(false);
   const [emojiTargetFriend, setEmojiTargetFriend] = useState<any | null>(null);
-  const [checkoutLoading, setCheckoutLoading] = useState(false);
-  const [checkinDurationSec, setCheckinDurationSec] = useState(0);
-  const [searchPopupVisible, setSearchPopupVisible] = useState(false);
-  const [searchResults, setSearchResults] = useState<Cafe[]>([]);
-  const [popupCardIndex, setPopupCardIndex] = useState(0);
-  const [popupCardSize, setPopupCardSize] = useState({ w: 0, h: 0 });
-  const [toastMsg, setToastMsg] = useState("");
-  const [showToast, setShowToast] = useState(false);
   // Suggested correction shown in the popup when a submitted search returns 0.
   const [didYouMean, setDidYouMean] = useState<string | null>(null);
 
@@ -153,9 +121,6 @@ export default function MapScreen() {
     (filterPriceRange ? 1 : 0) +
     (filterPurposeId != null ? 1 : 0);
 
-  const activeCheckinQuery = useActiveCheckin();
-  const activeCheckin = activeCheckinQuery.data ?? null;
-
   const friendsMapQuery = useFriendsMap();
   const friendsOnMap = friendsMapQuery.data ?? [];
 
@@ -198,7 +163,6 @@ export default function MapScreen() {
     return map;
   }, [friendsOnMap]);
 
-  const popupSlide = useRef(new Animated.Value(height)).current;
   const bounceAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -221,23 +185,31 @@ export default function MapScreen() {
   }, [bounceAnim]);
 
   const useLiveGps = preferences?.location?.type !== 'custom';
-  const center = manualCenter ?? {
-    latitude: useLiveGps ? userLat : (preferences?.location?.latitude ?? userLat),
-    longitude: useLiveGps ? userLng : (preferences?.location?.longitude ?? userLng),
-  };
+  const prefLat = preferences?.location?.latitude;
+  const prefLng = preferences?.location?.longitude;
+  // Memoized so `center` keeps a stable identity across re-renders that don't
+  // touch location — otherwise the Circle, map region, search queries and
+  // distance calcs all see a "new" center every render and redo work.
+  const center = useMemo(
+    () =>
+      manualCenter ?? {
+        latitude: useLiveGps ? userLat : (prefLat ?? userLat),
+        longitude: useLiveGps ? userLng : (prefLng ?? userLng),
+      },
+    [manualCenter, useLiveGps, userLat, userLng, prefLat, prefLng],
+  );
 
   const snapPoints = useMemo(() => ["12%", "50%", "92%"], []);
   const radiusMeters = Math.min(radiusKm * 1000, 50_000_000);
   const purposeId = filterPurposeId ?? undefined;
   const facilities = filterFacilityKeys;
-  const activeQ =
-    searchActive && searchQuery.trim() ? searchQuery.trim() : undefined;
 
+  // Text search lives in the dedicated Search flow now — the map browses by
+  // location + filters only (no `q`).
   const mapPinsQuery = useSearchCafes({
     lat: center.latitude,
     lng: center.longitude,
     radius: radiusMeters,
-    q: activeQ,
     limit: 2000,
   });
 
@@ -245,7 +217,6 @@ export default function MapScreen() {
     lat: center.latitude,
     lng: center.longitude,
     radius: radiusMeters,
-    q: activeQ,
     purposeId,
     ...(facilities.length > 0 ? { facilities } : {}),
     priceRange: (filterPriceRange as any) || undefined,
@@ -253,18 +224,6 @@ export default function MapScreen() {
   });
 
   const promotedQuery = usePromotedCafes("featured_promo");
-
-  // Live cafe-name typeahead + persisted recent searches for the search popup.
-  const autocomplete = useAutocomplete(searchQuery, {
-    lat: center.latitude,
-    lng: center.longitude,
-  });
-  const {
-    history,
-    push: pushHistory,
-    remove: removeHistory,
-    clear: clearHistory,
-  } = useSearchHistory();
 
   const displayCafes: Cafe[] = useMemo(
     () => mapPinsQuery.data?.pages.flatMap((p) => hitsToCafes(p)) ?? [],
@@ -315,180 +274,6 @@ export default function MapScreen() {
     }
   };
 
-  useEffect(() => {
-    if (!activeCheckin?.checkInAt) {
-      setCheckinDurationSec(0);
-      return;
-    }
-    const update = () => {
-      const ms = Date.now() - new Date(activeCheckin.checkInAt).getTime();
-      setCheckinDurationSec(Math.max(0, Math.floor(ms / 1000)));
-    };
-    update();
-    const interval = setInterval(update, 1000);
-    return () => clearInterval(interval);
-  }, [activeCheckin?.checkInAt]);
-
-  const handleCheckOut = async () => {
-    if (!activeCheckin) return;
-    setCheckoutLoading(true);
-    try {
-      await checkOutApi(activeCheckin.id);
-      qc.setQueryData(checkinKeys.active, null);
-      setCheckinDurationSec(0);
-    } catch {
-      // noop
-    } finally {
-      setCheckoutLoading(false);
-    }
-  };
-
-  const showSearchPopup = (results: Cafe[]) => {
-    setSearchResults(results);
-    setPopupCardIndex(0);
-    setSearchPopupVisible(true);
-    Animated.spring(popupSlide, {
-      toValue: 0,
-      useNativeDriver: true,
-      tension: 65,
-      friction: 12,
-    }).start();
-  };
-
-  const clearSearch = useCallback(() => {
-    setSearchQuery("");
-    setSearchActive(false);
-    setDidYouMean(null);
-  }, []);
-
-  const dismissSearchPopup = (applyToMap: boolean) => {
-    Animated.timing(popupSlide, {
-      toValue: height,
-      duration: 280,
-      useNativeDriver: true,
-    }).start(() => setSearchPopupVisible(false));
-    if (!applyToMap) clearSearch();
-  };
-
-  const triggerToast = (msg: string) => {
-    setToastMsg(msg);
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 2000);
-  };
-
-  // Submit (keyboard "search" / recent / did-you-mean) → commit the query,
-  // record history, and show the Meili results carousel.
-  const runSearch = useCallback(
-    (raw: string) => {
-      const q = raw.trim();
-      if (!q) {
-        clearSearch();
-        return;
-      }
-      Keyboard.dismiss();
-      setSearchQuery(q);
-      setSearchActive(true);
-      setDidYouMean(null);
-      pushHistory(q);
-      showSearchPopup([]);
-    },
-    // showSearchPopup/clearSearch are stable enough for this screen's lifetime.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [pushHistory],
-  );
-
-  const handleSearch = () => runSearch(searchQuery);
-
-  // Editing the query (typing or focusing) drops out of results mode so the
-  // popup shows live suggestions / recents again.
-  const handleQueryChange = (text: string) => {
-    setSearchQuery(text);
-    if (searchActive) setSearchActive(false);
-    if (didYouMean) setDidYouMean(null);
-  };
-
-  const handleSearchFocus = () => {
-    setSearchActive(false);
-    if (!searchPopupVisible) showSearchPopup([]);
-  };
-
-  // CafeDetail expects a full Cafe object (reads cafe.id with no fallback), but
-  // an autocomplete hit is a thin projection — fetch the detail first, then nav.
-  const openCafe = useCallback(
-    async (hit: AutocompleteHit) => {
-      dismissSearchPopup(false);
-      try {
-        const cafe = await fetchCafeDetail(String(hit.id));
-        if (cafe) navigation.navigate("CafeDetail", { cafe });
-      } catch {
-        // ignore — user can tap again to retry
-      }
-    },
-    // dismissSearchPopup/navigation stable for the screen lifetime.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [navigation],
-  );
-
-  // Tapping a suggestion outside the active radius offers to widen it first.
-  const handlePickSuggestion = (hit: AutocompleteHit) => {
-    const dist = hit.distanceMeters;
-    if (dist != null && dist > radiusMeters) {
-      const newRadiusKm = Math.min(50, Math.ceil((dist + 500) / 1000));
-      Alert.alert(
-        t(mapText.outOfRadiusTitle),
-        t(mapText.outOfRadiusBody, { radius: newRadiusKm }),
-        [
-          { text: t(mapText.outOfRadiusKeep), onPress: () => openCafe(hit) },
-          {
-            text: t(mapText.outOfRadiusExpand),
-            onPress: () => {
-              setRadiusKm(newRadiusKm);
-              updatePreference({ radius: newRadiusKm });
-              openCafe(hit);
-            },
-          },
-        ],
-      );
-      return;
-    }
-    openCafe(hit);
-  };
-
-  // Feed the results carousel from the Meili list query while a search is active.
-  useEffect(() => {
-    if (!searchPopupVisible || !searchActive) return;
-    setSearchResults(listCafes.slice(0, 8));
-  }, [listCafes, searchPopupVisible, searchActive]);
-
-  // Did-you-mean: when a committed search yields 0 results, fetch the closest
-  // cafe name as a suggestion (synonym/typo tolerance lives server-side).
-  useEffect(() => {
-    if (!searchActive) {
-      setDidYouMean(null);
-      return;
-    }
-    const q = searchQuery.trim();
-    if (!q || listQuery.isFetching || listCafes.length > 0) {
-      if (listCafes.length > 0) setDidYouMean(null);
-      return;
-    }
-    let cancelled = false;
-    fetchAutocomplete({ q, limit: 1, lat: center.latitude, lng: center.longitude })
-      .then((res) => {
-        if (cancelled) return;
-        const hit = res.data[0];
-        setDidYouMean(
-          hit && hit.name.toLowerCase() !== q.toLowerCase() ? hit.name : null,
-        );
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-    // center.lat/lng intentionally omitted — only re-run on query/result change.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchActive, searchQuery, listCafes, listQuery.isFetching]);
-
   const activeFilters: ActiveFilter[] = [];
   if (filterPurposeId != null) {
     const p = purposeList.find((x) => x.id === filterPurposeId);
@@ -518,47 +303,59 @@ export default function MapScreen() {
     setFilterPurposeId(null);
     setFilterFacilityKeys([]);
     setFilterPriceRange("");
-    clearSearch();
     setRadiusKm(2);
   };
 
-  const hasAnyFilter =
-    activeFilters.length > 0 || searchActive || radiusKm !== 2;
+  const hasAnyFilter = activeFilters.length > 0 || radiusKm !== 2;
 
   const onMarkerPress = useCallback((cafe: Cafe) => {
     setSelectedCafe(cafe);
     sheetRef.current?.snapToIndex(1);
   }, []);
 
-  const handleSearchSwipe = (dir: "left" | "right") => {
-    const cafe = searchResults[popupCardIndex];
-    if (dir === "right" && cafe && !isInShortlist(cafe.id)) {
-      addToShortlist(cafe);
-      triggerToast(`${cafe.name} ditambahin ke shortlist ✓`);
-    }
-    if (popupCardIndex + 1 >= searchResults.length) {
-      dismissSearchPopup(true);
-    } else {
-      setPopupCardIndex(popupCardIndex + 1);
-    }
-  };
+  // Memoize the marker element arrays so unrelated re-renders (filter modal,
+  // sheet scroll, selected-cafe changes, the friends 30s refetch, …) don't
+  // recreate up to ~2000 <CafeMarker> elements and force the clustering engine
+  // to re-index every render. Rebuilt only when the underlying data actually
+  // changes. The `coordinate` object is created here too, so CafeMarker's
+  // React.memo isn't busted by a fresh literal each parent render.
+  const cafeMarkers = useMemo(() => {
+    if (!pinsReady || !showCafePins) return null;
+    return displayCafes.map((cafe) => {
+      const friendCount = friendsByCafe.get(Number(cafe.id))?.length || 0;
+      return (
+        <CafeMarker
+          key={cafe.id}
+          coordinate={{ latitude: cafe.latitude, longitude: cafe.longitude }}
+          cafe={cafe}
+          friendCount={friendCount}
+          isPromoted={isNewCafePromo(cafe)}
+          bounceAnim={bounceAnim}
+          onPress={onMarkerPress}
+        />
+      );
+    });
+  }, [pinsReady, showCafePins, displayCafes, friendsByCafe, bounceAnim, onMarkerPress]);
+
+  const friendMarkers = useMemo(() => {
+    if (!showFriendPins) return null;
+    return friendsOnMap.map((f) => (
+      <FriendMarker
+        key={`friend-${f.id}`}
+        friend={f}
+        onPress={() => setEmojiTargetFriend(f)}
+      />
+    ));
+  }, [showFriendPins, friendsOnMap]);
 
   return (
     <View style={styles.container}>
       <StatusBarScrim />
       <MapSearchBar
         topInset={insets.top}
-        searchQuery={searchQuery}
-        searchActive={searchActive}
-        onSearchQueryChange={handleQueryChange}
-        onSubmit={handleSearch}
-        onClear={clearSearch}
-        onFocus={handleSearchFocus}
+        onPress={() => navigation.navigate("Search")}
         onOpenFilters={() => setFilterModalOpen(true)}
         activeFilterCount={activeFilterCount}
-        showNoResultsBanner={
-          searchActive && displayCafes.length === 0 && !loading
-        }
       />
 
       <MapView
@@ -605,33 +402,8 @@ export default function MapScreen() {
           latitude={center.latitude}
           longitude={center.longitude}
         />
-        {pinsReady &&
-          showCafePins &&
-          displayCafes.map((cafe) => {
-            const friendCount = friendsByCafe.get(Number(cafe.id))?.length || 0;
-            return (
-              <CafeMarker
-                key={cafe.id}
-                coordinate={{
-                  latitude: cafe.latitude,
-                  longitude: cafe.longitude,
-                }}
-                cafe={cafe}
-                friendCount={friendCount}
-                isPromoted={isNewCafePromo(cafe)}
-                bounceAnim={bounceAnim}
-                onPress={onMarkerPress}
-              />
-            );
-          })}
-        {showFriendPins &&
-          friendsOnMap.map((f) => (
-            <FriendMarker
-              key={`friend-${f.id}`}
-              friend={f}
-              onPress={() => setEmojiTargetFriend(f)}
-            />
-          ))}
+        {cafeMarkers}
+        {friendMarkers}
       </MapView>
 
       {mapPinsQuery.isFetching && (
@@ -643,67 +415,11 @@ export default function MapScreen() {
         </View>
       )}
 
-      {/* Hidden — pin toggles removed to mirror web b5acbe27. Pins always visible. */}
-      {false && (
-        <PinTogglesOverlay
-          topOffset={insets.top + 80 + (activeCheckin ? 60 : 0)}
-          showCafePins={showCafePins}
-          showFriendPins={showFriendPins}
-          onToggleCafePins={() => setShowCafePins((v) => !v)}
-          onToggleFriendPins={() => setShowFriendPins((v) => !v)}
-        />
-      )}
-
-      {showToast && (
-        <View style={styles.toast}>
-          <Text style={styles.toastText}>{toastMsg}</Text>
-        </View>
-      )}
-
-      <SearchPopup
-        visible={searchPopupVisible}
-        slideAnim={popupSlide}
-        results={searchResults}
-        isFetching={listQuery.isFetching}
-        cardIndex={popupCardIndex}
-        cardSize={popupCardSize}
-        onCardSizeChange={setPopupCardSize}
-        onDismiss={dismissSearchPopup}
-        onSwipeComplete={handleSearchSwipe}
-        onTapCard={(cafe) => navigation.navigate("CafeDetail", { cafe })}
-        query={searchQuery}
-        searchActive={searchActive}
-        suggestions={autocomplete.suggestions}
-        suggestionsLoading={autocomplete.loading}
-        history={history}
-        didYouMean={didYouMean}
-        onPickSuggestion={handlePickSuggestion}
-        onPickRecent={runSearch}
-        onRemoveRecent={removeHistory}
-        onClearRecent={clearHistory}
-        onPickDidYouMean={runSearch}
-      />
-
       <EmojiPickerModal
         friend={emojiTargetFriend}
         onDismiss={() => setEmojiTargetFriend(null)}
         onPickEmoji={handleThrowEmoji}
       />
-
-      {/* Hidden — check-in feature disabled. Mirrors web b5acbe27. */}
-      {false && activeCheckin && (
-        <ActiveCheckinCard
-          topInset={insets.top}
-          cafeName={
-            activeCheckin.cafe?.name ||
-            activeCheckin.cafeName ||
-            "Cafe aktif"
-          }
-          durationSec={checkinDurationSec}
-          checkoutLoading={checkoutLoading}
-          onCheckOut={handleCheckOut}
-        />
-      )}
 
       <BottomSheet
         ref={sheetRef}
@@ -733,12 +449,10 @@ export default function MapScreen() {
             />
           )}
 
-          {!searchActive && (
-            <FeaturedSection
-              cafes={featuredCafes}
-              onCafePress={(cafe) => navigation.navigate("CafeDetail", { cafe })}
-            />
-          )}
+          <FeaturedSection
+            cafes={featuredCafes}
+            onCafePress={(cafe) => navigation.navigate("CafeDetail", { cafe })}
+          />
 
           <RadiusControls
             radiusKm={radiusKm}
@@ -753,9 +467,9 @@ export default function MapScreen() {
             loading={loading}
             listTotal={listTotal}
             radiusKm={radiusKm}
-            searchActive={searchActive}
+            searchActive={false}
             preferencePurpose={
-              !searchActive && preferences?.purpose ? preferences.purpose : null
+              preferences?.purpose ? preferences.purpose : null
             }
             cafes={listCafes}
             items={sheetListItems}

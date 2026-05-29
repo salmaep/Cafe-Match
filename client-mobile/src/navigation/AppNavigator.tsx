@@ -13,6 +13,8 @@ import WizardScreen from '../screens/WizardScreen';
 import CardSwipeScreen from '../screens/CardSwipeScreen';
 import MapScreen from '../screens/map/MapScreen';
 import CafeDetailScreen from '../screens/CafeDetailScreen';
+import SearchScreen from '../screens/SearchScreen';
+import SearchResultsScreen from '../screens/SearchResultsScreen';
 import ShortlistModal from '../screens/ShortlistModal';
 import AuthModal from '../screens/AuthModal';
 import ProfileScreen from '../screens/ProfileScreen';
@@ -119,6 +121,8 @@ export default function AppNavigator() {
       <Stack.Screen name="CardSwipe" component={CardSwipeScreen} />
       <Stack.Screen name="MainTabs" component={MainTabs} />
       <Stack.Screen name="CafeDetail" component={CafeDetailScreen} />
+      <Stack.Screen name="Search" component={SearchScreen} />
+      <Stack.Screen name="SearchResults" component={SearchResultsScreen} />
       <Stack.Screen name="Favorites" component={FavoritesScreen} />
       <Stack.Screen name="Bookmarks" component={BookmarksScreen} />
       <Stack.Screen

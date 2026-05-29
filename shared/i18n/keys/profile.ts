@@ -52,6 +52,8 @@ export const profileText = {
   menuLogoutSub: 'profile:menuLogoutSub',
   menuDeleteAccount: 'profile:menuDeleteAccount',
   menuDeleteAccountSub: 'profile:menuDeleteAccountSub',
+  menuClearPrefs: 'profile:menuClearPrefs',
+  menuClearPrefsSub: 'profile:menuClearPrefsSub',
   deleteAccountTitle: 'profile:deleteAccountTitle',
   deleteAccountWarningTitle: 'profile:deleteAccountWarningTitle',
   deleteAccountWarning1: 'profile:deleteAccountWarning1',

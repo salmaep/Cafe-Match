@@ -20,6 +20,7 @@ import { useShortlist } from '../context/ShortlistContext';
 import { usePreferences } from '../context/PreferencesContext';
 import CafeMatchLogo from '../components/CafeMatchLogo';
 import DeleteAccountModal from '../components/DeleteAccountModal';
+import StatusBarScrim from '../components/StatusBarScrim';
 import { fetchUnreadCount } from '../services/api';
 import { colors, spacing, radius } from '../theme';
 import { APP_VERSION } from '../constant/version';
@@ -39,6 +40,7 @@ import {
   Pencil,
   Ticket,
   ChevronRight,
+  RotateCcw,
 } from 'lucide-react-native';
 import type { LucideIcon } from 'lucide-react-native';
 
@@ -48,7 +50,8 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const { user, logout } = useAuth();
   const { clearShortlist } = useShortlist();
-  const { setPreferences, setWizardCompleted } = usePreferences();
+  const { setPreferences, setWizardCompleted, clearPreferences, wizardCompleted, preferences } =
+    usePreferences();
   const [unread, setUnread] = useState(0);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
@@ -71,6 +74,13 @@ export default function ProfileScreen() {
         routes: [{ name: 'Splash' }],
       }),
     );
+  };
+
+  const handleClearPreferences = () => {
+    clearPreferences();
+    // Re-onboard from the wizard (mirrors web navigating to /discover, which
+    // reshows the wizard once preferences are cleared).
+    navigation.navigate('Wizard');
   };
 
   const handleLogout = () => {
@@ -160,7 +170,9 @@ export default function ProfileScreen() {
   };
 
   return (
-    <ScrollView
+    <View style={styles.screen}>
+      <StatusBarScrim />
+      <ScrollView
       style={styles.container}
       contentContainerStyle={{
         paddingTop: insets.top + spacing.md,
@@ -199,7 +211,8 @@ export default function ProfileScreen() {
           <Text style={styles.userEmail} numberOfLines={1}>
             {user.email}
           </Text>
-          {!!friendCode && (
+          {/* Friend code hidden — social/friends feature disabled for now. */}
+          {false && !!friendCode && (
             <View style={styles.friendCodeBadge}>
               <Ticket size={11} color={colors.accent} strokeWidth={2.2} />
               <Text style={styles.friendCodeText}>{friendCode}</Text>
@@ -208,8 +221,8 @@ export default function ProfileScreen() {
         </View>
       </View>
 
-      {/* Invite card */}
-      {!!friendCode && (
+      {/* Invite card hidden — social/friends feature disabled for now. */}
+      {false && !!friendCode && (
         <View style={styles.inviteCard}>
           <View>
             <Text style={styles.cardTitle}>{t(profileText.inviteTitle)}</Text>
@@ -256,13 +269,15 @@ export default function ProfileScreen() {
         </View>
       )}
 
-      {/* Quick actions — Leaderboard & Recap hidden to mirror web b5acbe27 */}
+      {/* Quick actions — Friends, Leaderboard & Recap hidden */}
       <View style={styles.quickGrid}>
-        <QuickAction
-          Icon={Users}
-          label={t(profileText.quickFriends)}
-          onPress={() => navigation.navigate('Friends')}
-        />
+        {false && (
+          <QuickAction
+            Icon={Users}
+            label={t(profileText.quickFriends)}
+            onPress={() => navigation.navigate('Friends')}
+          />
+        )}
         {false && (
           <QuickAction
             Icon={Trophy}
@@ -300,12 +315,15 @@ export default function ProfileScreen() {
           subtitle={t(profileText.menuFavoritesSub)}
           onPress={() => navigation.navigate('Favorites')}
         />
-        <MenuItem
-          Icon={Bookmark}
-          label={t(profileText.menuBookmarks)}
-          subtitle={t(profileText.menuBookmarksSub)}
-          onPress={() => navigation.navigate('Bookmarks')}
-        />
+        {/* Bookmark menu hidden — mirrors web removing bookmarks. */}
+        {false && (
+          <MenuItem
+            Icon={Bookmark}
+            label={t(profileText.menuBookmarks)}
+            subtitle={t(profileText.menuBookmarksSub)}
+            onPress={() => navigation.navigate('Bookmarks')}
+          />
+        )}
         <MenuItem
           Icon={Star}
           label={t(profileText.menuShortlist)}
@@ -323,6 +341,14 @@ export default function ProfileScreen() {
           subtitle={t(profileText.menuEditProfileSub)}
           onPress={() => navigation.navigate('EditProfileModal')}
         />
+        {wizardCompleted && !!preferences && (
+          <MenuItem
+            Icon={RotateCcw}
+            label={t(profileText.menuClearPrefs)}
+            subtitle={t(profileText.menuClearPrefsSub)}
+            onPress={handleClearPreferences}
+          />
+        )}
         <MenuItem
           Icon={LogOut}
           label={t(profileText.menuLogout)}
@@ -347,7 +373,8 @@ export default function ProfileScreen() {
         onClose={() => setDeleteOpen(false)}
         onDeleted={handleAccountDeleted}
       />
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
@@ -427,6 +454,7 @@ function MenuItem({
 const CARD_BORDER = '#F0EDE8';
 
 const styles = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: colors.background },
   container: { flex: 1, backgroundColor: colors.background },
   centered: {
     flex: 1,

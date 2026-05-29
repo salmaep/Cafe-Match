@@ -16,6 +16,7 @@ import MapView, { Circle } from 'react-native-maps';
 import RadiusPickerModal from '../components/cafe/RadiusPickerModal';
 import PlacesAutocompleteInput from '../components/wizard/PlacesAutocompleteInput';
 import ScreenSafeBottom from '../components/ScreenSafeBottom';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Check, Star as StarIcon, MapPin, Search } from 'lucide-react-native';
 import { LucideIcon } from '../utils/lucideIcon';
 import { usePreferences } from '../context/PreferencesContext';
@@ -47,6 +48,7 @@ interface WizardScreenProps {
 
 export default function WizardScreen({ onComplete, onSkip }: WizardScreenProps = {}) {
   const navigation = useNavigation<StackNavigationProp<any>>();
+  const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const { setPreferences, setWizardCompleted } = usePreferences();
   const { latitude: userLat, longitude: userLng } = useLocation();
@@ -160,7 +162,12 @@ export default function WizardScreen({ onComplete, onSkip }: WizardScreenProps =
       onComplete();
       return;
     }
-    navigation.replace('CardSwipe');
+    // Land on the Discover tab INSIDE MainTabs so the bottom tab bar is visible
+    // (not the standalone full-screen deck). reset clears the wizard from the stack.
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'MainTabs', params: { screen: 'Discover' } }],
+    });
   };
 
   const toggleAmenity = (a: string) => {
@@ -189,7 +196,7 @@ export default function WizardScreen({ onComplete, onSkip }: WizardScreenProps =
   return (
     <ScreenSafeBottom style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
         {step > 0 ? (
           <TouchableOpacity onPress={handleBack}>
             <Text style={styles.backText}>{t(commonText.back)}</Text>
@@ -590,7 +597,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: spacing.lg,
-    paddingTop: 56,
     paddingBottom: spacing.md,
   },
   backText: { fontSize: 15, color: colors.primary, fontWeight: '500' },

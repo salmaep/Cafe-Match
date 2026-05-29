@@ -422,7 +422,7 @@ export default function AuthModal() {
         style={styles.fullPage}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <View style={styles.fullPageHeader}>
+        <View style={[styles.fullPageHeader, { paddingTop: insets.top + spacing.sm }]}>
           <TouchableOpacity
             style={styles.fullPageBackBtn}
             onPress={() => {
@@ -489,7 +489,7 @@ export default function AuthModal() {
         style={styles.fullPage}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <View style={styles.fullPageHeader}>
+        <View style={[styles.fullPageHeader, { paddingTop: insets.top + spacing.sm }]}>
           <TouchableOpacity
             style={styles.fullPageBackBtn}
             onPress={() => {
@@ -816,7 +816,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   fullPageHeader: {
-    paddingTop: Platform.OS === 'ios' ? 50 : 24,
+    // Top inset applied inline via useSafeAreaInsets (this is a transparentModal,
+    // so there's no navigator header to provide the status-bar offset).
     paddingHorizontal: spacing.md,
     paddingBottom: spacing.sm,
   },

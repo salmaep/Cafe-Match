@@ -20,7 +20,7 @@ import { useAuth } from '../context/AuthContext';
 import { useShortlist } from '../context/ShortlistContext';
 import { usePreferences } from '../context/PreferencesContext';
 import { useLocation } from '../context/LocationContext';
-import { fetchDiscoverDeck } from '../queries/cafes/api';
+import { fetchDiscoverDeck, DiscoverDeckParams } from '../queries/cafes/api';
 import { usePurposeId } from '../queries/purposes/use-purpose-id';
 import { Cafe } from '../types';
 import { spacing, colors } from '../theme';
@@ -37,60 +37,89 @@ const MAX_CARD_W = 480;
 const clamp = (val: number, min: number, max: number) =>
   Math.max(min, Math.min(max, val));
 
+// Infinite-swipe tuning.
+const BATCH_SIZE = 10;
+const PREFETCH_THRESHOLD = 3; // fetch more when this many (or fewer) cards remain
+
+interface Tier {
+  radiusMultiplier: number;
+  dropFacilities?: boolean;
+  dropPurpose?: boolean;
+  dropPrice?: boolean;
+  maxRadiusKm?: number;
+}
+
+// Fallback tiers — when the current filter set is exhausted, progressively
+// widen. Each tier is tried in order; advance only when the current one yields
+// no new cafes. Mirrors web DiscoverSwipePage TIERS.
+const TIERS: Tier[] = [
+  { radiusMultiplier: 1 },
+  { radiusMultiplier: 2, maxRadiusKm: 50 },
+  { radiusMultiplier: 2, dropFacilities: true, maxRadiusKm: 50 },
+  { radiusMultiplier: 3, dropFacilities: true, dropPurpose: true, maxRadiusKm: 75 },
+  {
+    radiusMultiplier: 4,
+    dropFacilities: true,
+    dropPurpose: true,
+    dropPrice: true,
+    maxRadiusKm: 100,
+  },
+];
+
 export default function CardSwipeScreen() {
   const navigation = useNavigation<StackNavigationProp<any>>();
   const route = useRoute();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const { width, height } = useWindowDimensions();
+  const { width } = useWindowDimensions();
   const isCompact = width < 360;
   const headingSize = clamp(width * 0.075, 22, 32);
   const subheadingSize = clamp(width * 0.034, 11, 14);
   const cafeNameSize = clamp(width * 0.07, 22, 30);
   const cafeMetaSize = clamp(width * 0.034, 12, 14);
   const chipTextSize = clamp(width * 0.032, 11, 13);
-  const fabSize = clamp(width * 0.12, 40, 52);
   const { user } = useAuth();
-  const { addToShortlist, isInShortlist, shortlist } = useShortlist();
-  const { preferences } = usePreferences();
+  const { addToShortlist, isInShortlist } = useShortlist();
+  const { preferences, wizardCompleted } = usePreferences();
   const { latitude, longitude } = useLocation();
   const purposeId = usePurposeId(preferences?.purpose);
   const isStandalone = route.name === 'CardSwipe';
 
   const [cafes, setCafes] = useState<Cafe[]>([]);
-  const [loading, setLoading] = useState(true);
   const [index, setIndex] = useState(0);
-  const [allSwiped, setAllSwiped] = useState(false);
+  const [exhausted, setExhausted] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
   const [showToast, setShowToast] = useState(false);
 
-  const [showWizard, setShowWizard] = useState(!isStandalone);
+  // Show the wizard only when onboarding isn't done (no saved prefs). Returning
+  // users on the Discover tab go straight to the deck. Mirrors web DiscoverPage.
+  const hasPrefs = wizardCompleted && !!preferences;
+  const [showWizard, setShowWizard] = useState(!isStandalone && !hasPrefs);
   useFocusEffect(
     useCallback(() => {
-      if (!isStandalone) setShowWizard(true);
-    }, [isStandalone]),
+      if (!isStandalone && !hasPrefs) setShowWizard(true);
+    }, [isStandalone, hasPrefs]),
   );
 
   const dismissWizard = useCallback(() => {
+    // Just close the wizard; the reset effect below re-fetches the deck once
+    // showWizard flips false.
     setShowWizard(false);
-    setAllSwiped(false);
-    setIndex(0);
   }, []);
 
   const [cardAreaH, setCardAreaH] = useState(0);
   const [cardAreaW, setCardAreaW] = useState(0);
   const CARD_SIDE_GAP = clamp(width * 0.025, 8, 16);
-  const CARD_FAB_GAP = spacing.lg;
-  const BOTTOM_RESERVE = fabSize + insets.bottom + spacing.md + CARD_FAB_GAP;
+  // Small breathing room so the card doesn't visually merge with the tab bar.
+  const CARD_BOTTOM_GAP = spacing.md;
   const CARD_W = Math.min(cardAreaW - CARD_SIDE_GAP * 2, MAX_CARD_W);
-  const CARD_H = Math.max(0, cardAreaH - BOTTOM_RESERVE);
+  const CARD_H = Math.max(0, cardAreaH - CARD_BOTTOM_GAP);
   const cardTop = 0;
   const cardLeft = Math.max(CARD_SIDE_GAP, (cardAreaW - CARD_W) / 2);
 
   const lat = preferences?.location?.latitude ?? latitude;
   const lng = preferences?.location?.longitude ?? longitude;
-  const radiusMeters =
-    preferences?.radius != null ? preferences.radius * 1000 : 9999 * 1000;
+  const baseRadiusKm = preferences?.radius ?? 5;
 
   const priceRange =
     (preferences?.priceRange as '$' | '$$' | '$$$' | undefined) || undefined;
@@ -102,70 +131,7 @@ export default function CardSwipeScreen() {
 
   const purposeReady = preferences?.purpose == null || purposeId != null;
 
-  useEffect(() => {
-    if (showWizard) return;
-    if (!purposeReady) return;
-    if (lat == null || lng == null) return;
-
-    let cancelled = false;
-    setLoading(true);
-    setCafes([]);
-    setIndex(0);
-    setAllSwiped(false);
-
-    const base = {
-      lat,
-      lng,
-      radius: radiusMeters,
-      limit: 10,
-      purposeId,
-      priceRange,
-    };
-    const facilities = facilitiesKey ? facilitiesKey.split(',') : undefined;
-
-    (async () => {
-      try {
-        let res = await fetchDiscoverDeck({ ...base, facilities });
-        if (res.data.length === 0) {
-          res = await fetchDiscoverDeck(base);
-        }
-        if (res.data.length === 0) {
-          res = await fetchDiscoverDeck({
-            lat,
-            lng,
-            radius: radiusMeters,
-            limit: 10,
-          });
-        }
-        if (!cancelled) setCafes(res.data ?? []);
-      } catch {
-        if (!cancelled) setCafes([]);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    showWizard,
-    purposeReady,
-    lat,
-    lng,
-    radiusMeters,
-    purposeId,
-    priceRange,
-    facilitiesKey,
-  ]);
-
-  useEffect(() => {
-    const upcoming = cafes.slice(index, index + 3);
-    upcoming.forEach((cafe) => {
-      const url = cafe.photos?.[0];
-      if (url) Image.prefetch(url);
-    });
-  }, [cafes, index]);
-
+  // ── Refs read inside stable callbacks (avoid stale closures) ──
   const isInShortlistRef = useRef(isInShortlist);
   isInShortlistRef.current = isInShortlist;
   const addToShortlistRef = useRef(addToShortlist);
@@ -177,11 +143,134 @@ export default function CardSwipeScreen() {
   const indexRef = useRef(0);
   indexRef.current = index;
 
-  useFocusEffect(
-    useCallback(() => {
-      setAllSwiped(false);
-    }, []),
-  );
+  // Infinite-deck bookkeeping.
+  const seenIdsRef = useRef<Set<number>>(new Set());
+  const tierRef = useRef(0);
+  const exhaustedRef = useRef(false);
+  const fetchingRef = useRef(false);
+  // Latest query inputs — read inside the stable fetchMore (no stale closure).
+  const paramsRef = useRef({
+    lat,
+    lng,
+    baseRadiusKm,
+    purposeId,
+    priceRange,
+    facilitiesArr,
+  });
+  paramsRef.current = {
+    lat,
+    lng,
+    baseRadiusKm,
+    purposeId,
+    priceRange,
+    facilitiesArr,
+  };
+
+  // Fetch the next batch, walking the fallback tiers until one yields new cafes
+  // (or every tier is dry → exhausted). Accumulates into the deck; the server
+  // ranks each batch by feature-match + distance, so no client re-rank needed.
+  const fetchMore = useCallback(async () => {
+    if (fetchingRef.current || exhaustedRef.current) return;
+    const p = paramsRef.current;
+    if (p.lat == null || p.lng == null) return;
+    fetchingRef.current = true;
+
+    let appended = 0;
+    while (tierRef.current < TIERS.length && appended === 0) {
+      const tier = TIERS[tierRef.current];
+      const effectiveRadiusKm = Math.min(
+        p.baseRadiusKm * tier.radiusMultiplier,
+        tier.maxRadiusKm ?? p.baseRadiusKm * tier.radiusMultiplier,
+      );
+      const params: DiscoverDeckParams = {
+        lat: p.lat,
+        lng: p.lng,
+        radius: effectiveRadiusKm * 1000,
+        limit: BATCH_SIZE,
+        excludeIds: Array.from(seenIdsRef.current),
+      };
+      if (!tier.dropPurpose && p.purposeId != null)
+        params.purposeId = p.purposeId;
+      if (!tier.dropFacilities && p.facilitiesArr && p.facilitiesArr.length > 0)
+        params.facilities = p.facilitiesArr;
+      if (!tier.dropPrice && p.priceRange) params.priceRange = p.priceRange;
+
+      try {
+        const res = await fetchDiscoverDeck(params);
+        const fresh = res.data.filter(
+          (c) => !seenIdsRef.current.has(Number(c.id)),
+        );
+        if (fresh.length > 0) {
+          fresh.forEach((c) => seenIdsRef.current.add(Number(c.id)));
+          setCafes((prev) => [...prev, ...fresh]);
+          appended += fresh.length;
+        } else {
+          tierRef.current += 1;
+        }
+      } catch {
+        tierRef.current += 1;
+      }
+    }
+
+    if (appended === 0 && tierRef.current >= TIERS.length) {
+      exhaustedRef.current = true;
+      setExhausted(true);
+    }
+    fetchingRef.current = false;
+  }, []);
+
+  // Reset + initial fetch whenever the query signature changes (or the wizard
+  // closes). Refs are reset so a fresh deck is built from tier 0.
+  useEffect(() => {
+    if (showWizard) return;
+    if (!purposeReady) return;
+    if (lat == null || lng == null) return;
+    seenIdsRef.current = new Set();
+    tierRef.current = 0;
+    exhaustedRef.current = false;
+    setExhausted(false);
+    setCafes([]);
+    setIndex(0);
+    fetchMore();
+  }, [
+    showWizard,
+    purposeReady,
+    lat,
+    lng,
+    baseRadiusKm,
+    purposeId,
+    priceRange,
+    facilitiesKey,
+    fetchMore,
+  ]);
+
+  // Prefetch upcoming card images + fetch more when the deck runs low.
+  useEffect(() => {
+    if (showWizard) return;
+    const upcoming = cafes.slice(index, index + 3);
+    upcoming.forEach((cafe) => {
+      const url = cafe.photos?.[0];
+      if (url) Image.prefetch(url);
+    });
+    if (cafes.length > 0 && cafes.length - index <= PREFETCH_THRESHOLD) {
+      fetchMore();
+    }
+  }, [cafes, index, showWizard, fetchMore]);
+
+  // Truly exhausted and swiped past the last card → bounce to Explore (only
+  // when there were cards; zero-result decks show the manual empty state).
+  useEffect(() => {
+    if (showWizard) return;
+    if (exhausted && cafes.length > 0 && index >= cafes.length) {
+      const tmr = setTimeout(() => {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'MainTabs', params: { screen: 'Explore' } }],
+        });
+      }, 1200);
+      return () => clearTimeout(tmr);
+    }
+  }, [exhausted, cafes.length, index, showWizard, navigation]);
 
   const advanceIndex = useCallback(
     (dir: 'left' | 'right') => {
@@ -196,20 +285,9 @@ export default function CardSwipeScreen() {
           setShowToast(true);
         }
       }
-      const next = i + 1;
-      const total = cafesRef.current.length;
-      if (next >= total) {
-        setAllSwiped(true);
-        setTimeout(() => {
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'MainTabs', params: { screen: 'Explore' } }],
-          });
-        }, 1200);
-      }
-      setIndex(next);
+      setIndex(i + 1);
     },
-    [navigation],
+    [navigation, t],
   );
 
   const handleTapCard = useCallback(() => {
@@ -217,10 +295,8 @@ export default function CardSwipeScreen() {
     if (cafe) navigation.navigate('CafeDetail', { cafe });
   }, [navigation]);
 
-  const openShortlist = () => navigation.navigate('ShortlistModal');
-
   const renderCard = useCallback(
-    (cafe: Cafe, isCurrent: boolean) => {
+    (cafe: Cafe) => {
       if (!cafe) return <View />;
       const bgPhoto =
         cafe.photos?.[0] ||
@@ -263,28 +339,6 @@ export default function CardSwipeScreen() {
             locations={[0, 1]}
             style={styles.gradBottom}
           />
-
-          {isCurrent && cafesRef.current.length > 0 && (
-            <View style={styles.progressRow}>
-              {cafesRef.current.map((_, i) => {
-                const active = i < indexRef.current;
-                const isCur = indexRef.current === i;
-                return (
-                  <View key={i} style={styles.progressTrack}>
-                    <View
-                      style={[
-                        styles.progressFill,
-                        {
-                          width: active || isCur ? '100%' : '0%',
-                          opacity: isCur ? 0.95 : active ? 0.85 : 0,
-                        },
-                      ]}
-                    />
-                  </View>
-                );
-              })}
-            </View>
-          )}
 
           <View style={styles.topChipsCol}>
             <View style={styles.topChipsRow}>
@@ -398,7 +452,9 @@ export default function CardSwipeScreen() {
     );
   }
 
-  if (loading) {
+  // Spinner during initial load AND when the user has swiped past the loaded
+  // deck while the next batch is still in flight (not yet exhausted).
+  if (!exhausted && index >= cafes.length) {
     return (
       <View style={styles.bgWrap}>
         <View style={styles.fullCentered}>
@@ -413,7 +469,9 @@ export default function CardSwipeScreen() {
     );
   }
 
-  if (allSwiped || cafes.length === 0) {
+  // Exhausted and swiped past the last card (covers both zero-result decks and
+  // fully-swiped decks; the auto-navigate effect bounces to Explore shortly).
+  if (exhausted && index >= cafes.length) {
     return (
       <View style={styles.bgWrap}>
         <View style={styles.fullCentered}>
@@ -468,7 +526,7 @@ export default function CardSwipeScreen() {
             }}
             pointerEvents="none"
           >
-            {renderCard(cafes[index + 1], false)}
+            {renderCard(cafes[index + 1])}
           </View>
         )}
         {cafes[index] && CARD_H > 0 && (
@@ -483,33 +541,11 @@ export default function CardSwipeScreen() {
             leftLabel={t(discoverText.swipeLeft)}
             rightLabel={t(discoverText.swipeRight)}
           >
-            {renderCard(cafes[index], true)}
+            {renderCard(cafes[index])}
           </SwipeableCard>
         )}
 
       </View>
-
-      <TouchableOpacity
-        style={[
-          styles.shortlistFab,
-          {
-            width: fabSize,
-            height: fabSize,
-            borderRadius: fabSize / 2,
-            bottom: insets.bottom + spacing.md,
-            right: spacing.md,
-          },
-        ]}
-        onPress={openShortlist}
-        activeOpacity={0.85}
-      >
-        <Star size={Math.round(fabSize * 0.5)} color="#F59E0B" fill="#F59E0B" strokeWidth={0} />
-        {shortlist.length > 0 && (
-          <View style={styles.shortlistFabBadge}>
-            <Text style={styles.shortlistFabBadgeText}>{shortlist.length}</Text>
-          </View>
-        )}
-      </TouchableOpacity>
 
       <Toast
         message={toastMsg}
@@ -559,39 +595,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingBottom: spacing.sm,
   },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  shortlistFab: {
-    position: 'absolute',
-    backgroundColor: '#d97706',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    elevation: 6,
-    zIndex: 30,
-  },
-  shortlistFabIcon: { fontSize: 22, color: '#ffffff', fontWeight: '700' },
-  shortlistFabBadge: {
-    position: 'absolute',
-    top: -3,
-    right: -3,
-    minWidth: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: '#ffffff',
-    borderWidth: 1,
-    borderColor: '#d97706',
-    paddingHorizontal: 4,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  shortlistFabBadgeText: { color: '#d97706', fontSize: 11, fontWeight: '800' },
   heading: {
     fontSize: 28,
     fontWeight: '600',
@@ -635,28 +638,6 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     height: '55%',
-  },
-
-  progressRow: {
-    position: 'absolute',
-    top: 10,
-    left: 12,
-    right: 12,
-    flexDirection: 'row',
-    gap: 4,
-    zIndex: 5,
-  },
-  progressTrack: {
-    flex: 1,
-    height: 3,
-    borderRadius: 2,
-    backgroundColor: 'rgba(255,255,255,0.3)',
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: 2,
-    backgroundColor: '#ffffff',
   },
 
   topChipsCol: {

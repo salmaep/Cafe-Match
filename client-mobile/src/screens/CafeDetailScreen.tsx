@@ -50,6 +50,7 @@ import {
   isStarCategory,
 } from "../constant/ui/review-categories";
 import { LucideIcon } from "../utils/lucideIcon";
+import StatusBarScrim from "../components/StatusBarScrim";
 import { Star, MapPin, Heart, Bookmark, BookmarkCheck, ChevronLeft, Phone } from "lucide-react-native";
 
 const { width, height } = Dimensions.get("window");
@@ -484,6 +485,7 @@ export default function CafeDetailScreen() {
 
   return (
     <View style={styles.container}>
+      <StatusBarScrim />
       {detailLoading && (
         <View style={styles.detailLoadingBar}>
           <ActivityIndicator size="small" color={colors.accent} />
@@ -1176,14 +1178,17 @@ export default function CafeDetailScreen() {
           />
           <Text style={styles.actionLabel}>{t(cafeText.favorites)}</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.actionBtn} onPress={handleBookmark}>
-          {isBookmarked ? (
-            <BookmarkCheck size={22} color={colors.accent} strokeWidth={2} />
-          ) : (
-            <Bookmark size={22} color={colors.textSecondary} strokeWidth={2} />
-          )}
-          <Text style={styles.actionLabel}>{t(cafeText.bookmarks)}</Text>
-        </TouchableOpacity>
+        {/* Bookmark action hidden — mirrors web removing bookmark from cafe detail. */}
+        {false && (
+          <TouchableOpacity style={styles.actionBtn} onPress={handleBookmark}>
+            {isBookmarked ? (
+              <BookmarkCheck size={22} color={colors.accent} strokeWidth={2} />
+            ) : (
+              <Bookmark size={22} color={colors.textSecondary} strokeWidth={2} />
+            )}
+            <Text style={styles.actionLabel}>{t(cafeText.bookmarks)}</Text>
+          </TouchableOpacity>
+        )}
         {/* <TouchableOpacity
           style={styles.checkinBtn}
           onPress={handleCheckIn}

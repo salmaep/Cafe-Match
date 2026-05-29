@@ -30,4 +30,16 @@ export const mapText = {
   checkOut: 'map:checkOut',
   cafesFound: 'map:cafesFound',
   noCafesNearby: 'map:noCafesNearby',
+  // Pure-Meili search popup (autocomplete + recent + did-you-mean).
+  searchResultsTitle: 'map:searchResultsTitle',
+  suggestionsHeader: 'map:suggestionsHeader',
+  noSuggestions: 'map:noSuggestions',
+  recentHeader: 'map:recentHeader',
+  clearAll: 'map:clearAll',
+  searchPrompt: 'map:searchPrompt',
+  didYouMean: 'map:didYouMean',
+  outOfRadiusTitle: 'map:outOfRadiusTitle',
+  outOfRadiusBody: 'map:outOfRadiusBody',
+  outOfRadiusKeep: 'map:outOfRadiusKeep',
+  outOfRadiusExpand: 'map:outOfRadiusExpand',
 } as const;

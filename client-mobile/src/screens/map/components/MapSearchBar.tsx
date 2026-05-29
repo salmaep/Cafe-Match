@@ -12,6 +12,7 @@ type Props = {
   onSearchQueryChange: (s: string) => void;
   onSubmit: () => void;
   onClear: () => void;
+  onFocus?: () => void;
   onOpenFilters: () => void;
   activeFilterCount: number;
   showNoResultsBanner: boolean;
@@ -24,6 +25,7 @@ function MapSearchBar({
   onSearchQueryChange,
   onSubmit,
   onClear,
+  onFocus,
   onOpenFilters,
   activeFilterCount,
   showNoResultsBanner,
@@ -41,9 +43,10 @@ function MapSearchBar({
             value={searchQuery}
             onChangeText={onSearchQueryChange}
             onSubmitEditing={onSubmit}
+            onFocus={onFocus}
             returnKeyType="search"
           />
-          {searchActive && (
+          {(searchActive || searchQuery.length > 0) && (
             <TouchableOpacity
               onPress={onClear}
               style={styles.clearBtn}

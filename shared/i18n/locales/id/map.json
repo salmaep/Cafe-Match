@@ -29,5 +29,16 @@
   "checkinAgo": "⏱️ Udah check-in {{time}} yang lalu",
   "checkOut": "Check Out",
   "cafesFound": "{{count}} cafe ditemukan",
-  "noCafesNearby": "Gak ada cafe di sekitar kamu"
+  "noCafesNearby": "Gak ada cafe di sekitar kamu",
+  "searchResultsTitle": "Hasil pencarian",
+  "suggestionsHeader": "Saran",
+  "noSuggestions": "Gak ada saran",
+  "recentHeader": "Pencarian terakhir",
+  "clearAll": "Bersihkan",
+  "searchPrompt": "Ketik buat cari kafe…",
+  "didYouMean": "Mungkin maksudmu",
+  "outOfRadiusTitle": "Di luar radius",
+  "outOfRadiusBody": "Kafe ini di luar radius kamu. Perluas ke {{radius}} km?",
+  "outOfRadiusKeep": "Tetap buka",
+  "outOfRadiusExpand": "Perluas & buka"
 }

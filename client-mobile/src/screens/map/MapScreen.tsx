@@ -14,6 +14,7 @@ import {
   Keyboard,
   ActivityIndicator,
   InteractionManager,
+  Alert,
 } from "react-native";
 import MapView from "react-native-map-clustering";
 import { Circle } from "react-native-maps";
@@ -30,17 +31,24 @@ import { useLocation } from "../../context/LocationContext";
 import { useShortlist } from "../../context/ShortlistContext";
 import { usePurposes } from "../../queries/purposes/use-purposes";
 import { useSearchCafes } from "../../queries/cafes/use-search-cafes";
-import { useSemanticSearch } from "../../queries/cafes/use-semantic-search";
+import { useAutocomplete } from "../../queries/cafes/use-autocomplete";
 import { usePromotedCafes } from "../../queries/cafes/use-promoted-cafes";
+import { useSearchHistory } from "../../lib/use-search-history";
+import type { AutocompleteHit } from "../../queries/cafes/types";
 import {
   useActiveCheckin,
   checkinKeys,
 } from "../../queries/checkins/use-active-checkin";
 import { useFriendsMap } from "../../queries/friends/use-friends-map";
-import { hitsToCafes } from "../../queries/cafes/api";
+import {
+  hitsToCafes,
+  fetchAutocomplete,
+  fetchCafeDetail,
+} from "../../queries/cafes/api";
 import { checkOutApi, throwEmojiApi } from "../../services/api";
 import MobileFilterModal from "../../components/cafe/MobileFilterModal";
 import RadiusPickerModal from "../../components/cafe/RadiusPickerModal";
+import StatusBarScrim from "../../components/StatusBarScrim";
 import { Cafe } from "../../types";
 import { colors, spacing, radius } from "../../theme";
 import { interleaveAds } from "../../utils/adInterleave";
@@ -66,7 +74,7 @@ export default function MapScreen() {
   const navigation = useNavigation<StackNavigationProp<any>>();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const { preferences } = usePreferences();
+  const { preferences, updatePreference } = usePreferences();
   const { latitude: userLat, longitude: userLng, isLoading: locationLoading } = useLocation();
   const { addToShortlist, isInShortlist } = useShortlist();
   const mapRef = useRef<any>(null);
@@ -95,6 +103,8 @@ export default function MapScreen() {
   const [popupCardSize, setPopupCardSize] = useState({ w: 0, h: 0 });
   const [toastMsg, setToastMsg] = useState("");
   const [showToast, setShowToast] = useState(false);
+  // Suggested correction shown in the popup when a submitted search returns 0.
+  const [didYouMean, setDidYouMean] = useState<string | null>(null);
 
   const purposesQuery = usePurposes();
   const purposeList = purposesQuery.data ?? [];
@@ -244,6 +254,18 @@ export default function MapScreen() {
 
   const promotedQuery = usePromotedCafes("featured_promo");
 
+  // Live cafe-name typeahead + persisted recent searches for the search popup.
+  const autocomplete = useAutocomplete(searchQuery, {
+    lat: center.latitude,
+    lng: center.longitude,
+  });
+  const {
+    history,
+    push: pushHistory,
+    remove: removeHistory,
+    clear: clearHistory,
+  } = useSearchHistory();
+
   const displayCafes: Cafe[] = useMemo(
     () => mapPinsQuery.data?.pages.flatMap((p) => hitsToCafes(p)) ?? [],
     [mapPinsQuery.data],
@@ -321,20 +343,6 @@ export default function MapScreen() {
     }
   };
 
-  const semanticQuery = useSemanticSearch(
-    {
-      q: searchQuery.trim(),
-      lat: center.latitude,
-      lng: center.longitude,
-      radius: radiusMeters,
-      purposeId,
-      ...(facilities.length > 0 ? { facilities } : {}),
-      priceRange: (filterPriceRange as any) || undefined,
-      limit: 8,
-    },
-    searchActive,
-  );
-
   const showSearchPopup = (results: Cafe[]) => {
     setSearchResults(results);
     setPopupCardIndex(0);
@@ -350,6 +358,7 @@ export default function MapScreen() {
   const clearSearch = useCallback(() => {
     setSearchQuery("");
     setSearchActive(false);
+    setDidYouMean(null);
   }, []);
 
   const dismissSearchPopup = (applyToMap: boolean) => {
@@ -367,31 +376,118 @@ export default function MapScreen() {
     setTimeout(() => setShowToast(false), 2000);
   };
 
-  const handleSearch = () => {
-    Keyboard.dismiss();
-    if (!searchQuery.trim()) {
-      clearSearch();
-      return;
-    }
-    setSearchActive(true);
-    showSearchPopup([]);
+  // Submit (keyboard "search" / recent / did-you-mean) → commit the query,
+  // record history, and show the Meili results carousel.
+  const runSearch = useCallback(
+    (raw: string) => {
+      const q = raw.trim();
+      if (!q) {
+        clearSearch();
+        return;
+      }
+      Keyboard.dismiss();
+      setSearchQuery(q);
+      setSearchActive(true);
+      setDidYouMean(null);
+      pushHistory(q);
+      showSearchPopup([]);
+    },
+    // showSearchPopup/clearSearch are stable enough for this screen's lifetime.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [pushHistory],
+  );
+
+  const handleSearch = () => runSearch(searchQuery);
+
+  // Editing the query (typing or focusing) drops out of results mode so the
+  // popup shows live suggestions / recents again.
+  const handleQueryChange = (text: string) => {
+    setSearchQuery(text);
+    if (searchActive) setSearchActive(false);
+    if (didYouMean) setDidYouMean(null);
   };
 
+  const handleSearchFocus = () => {
+    setSearchActive(false);
+    if (!searchPopupVisible) showSearchPopup([]);
+  };
+
+  // CafeDetail expects a full Cafe object (reads cafe.id with no fallback), but
+  // an autocomplete hit is a thin projection — fetch the detail first, then nav.
+  const openCafe = useCallback(
+    async (hit: AutocompleteHit) => {
+      dismissSearchPopup(false);
+      try {
+        const cafe = await fetchCafeDetail(String(hit.id));
+        if (cafe) navigation.navigate("CafeDetail", { cafe });
+      } catch {
+        // ignore — user can tap again to retry
+      }
+    },
+    // dismissSearchPopup/navigation stable for the screen lifetime.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [navigation],
+  );
+
+  // Tapping a suggestion outside the active radius offers to widen it first.
+  const handlePickSuggestion = (hit: AutocompleteHit) => {
+    const dist = hit.distanceMeters;
+    if (dist != null && dist > radiusMeters) {
+      const newRadiusKm = Math.min(50, Math.ceil((dist + 500) / 1000));
+      Alert.alert(
+        t(mapText.outOfRadiusTitle),
+        t(mapText.outOfRadiusBody, { radius: newRadiusKm }),
+        [
+          { text: t(mapText.outOfRadiusKeep), onPress: () => openCafe(hit) },
+          {
+            text: t(mapText.outOfRadiusExpand),
+            onPress: () => {
+              setRadiusKm(newRadiusKm);
+              updatePreference({ radius: newRadiusKm });
+              openCafe(hit);
+            },
+          },
+        ],
+      );
+      return;
+    }
+    openCafe(hit);
+  };
+
+  // Feed the results carousel from the Meili list query while a search is active.
   useEffect(() => {
     if (!searchPopupVisible || !searchActive) return;
-    const semanticHits = semanticQuery.data?.data ?? [];
-    if (semanticHits.length > 0) {
-      setSearchResults(semanticHits);
-    } else if (!semanticQuery.isFetching) {
-      setSearchResults(listCafes.slice(0, 8));
+    setSearchResults(listCafes.slice(0, 8));
+  }, [listCafes, searchPopupVisible, searchActive]);
+
+  // Did-you-mean: when a committed search yields 0 results, fetch the closest
+  // cafe name as a suggestion (synonym/typo tolerance lives server-side).
+  useEffect(() => {
+    if (!searchActive) {
+      setDidYouMean(null);
+      return;
     }
-  }, [
-    semanticQuery.data,
-    semanticQuery.isFetching,
-    listCafes,
-    searchPopupVisible,
-    searchActive,
-  ]);
+    const q = searchQuery.trim();
+    if (!q || listQuery.isFetching || listCafes.length > 0) {
+      if (listCafes.length > 0) setDidYouMean(null);
+      return;
+    }
+    let cancelled = false;
+    fetchAutocomplete({ q, limit: 1, lat: center.latitude, lng: center.longitude })
+      .then((res) => {
+        if (cancelled) return;
+        const hit = res.data[0];
+        setDidYouMean(
+          hit && hit.name.toLowerCase() !== q.toLowerCase() ? hit.name : null,
+        );
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+    // center.lat/lng intentionally omitted — only re-run on query/result change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchActive, searchQuery, listCafes, listQuery.isFetching]);
 
   const activeFilters: ActiveFilter[] = [];
   if (filterPurposeId != null) {
@@ -449,13 +545,15 @@ export default function MapScreen() {
 
   return (
     <View style={styles.container}>
+      <StatusBarScrim />
       <MapSearchBar
         topInset={insets.top}
         searchQuery={searchQuery}
         searchActive={searchActive}
-        onSearchQueryChange={setSearchQuery}
+        onSearchQueryChange={handleQueryChange}
         onSubmit={handleSearch}
         onClear={clearSearch}
+        onFocus={handleSearchFocus}
         onOpenFilters={() => setFilterModalOpen(true)}
         activeFilterCount={activeFilterCount}
         showNoResultsBanner={
@@ -566,13 +664,24 @@ export default function MapScreen() {
         visible={searchPopupVisible}
         slideAnim={popupSlide}
         results={searchResults}
-        isFetching={semanticQuery.isFetching}
+        isFetching={listQuery.isFetching}
         cardIndex={popupCardIndex}
         cardSize={popupCardSize}
         onCardSizeChange={setPopupCardSize}
         onDismiss={dismissSearchPopup}
         onSwipeComplete={handleSearchSwipe}
         onTapCard={(cafe) => navigation.navigate("CafeDetail", { cafe })}
+        query={searchQuery}
+        searchActive={searchActive}
+        suggestions={autocomplete.suggestions}
+        suggestionsLoading={autocomplete.loading}
+        history={history}
+        didYouMean={didYouMean}
+        onPickSuggestion={handlePickSuggestion}
+        onPickRecent={runSearch}
+        onRemoveRecent={removeHistory}
+        onClearRecent={clearHistory}
+        onPickDidYouMean={runSearch}
       />
 
       <EmojiPickerModal
@@ -600,6 +709,10 @@ export default function MapScreen() {
         ref={sheetRef}
         index={0}
         snapPoints={snapPoints}
+        // Stop the expanded sheet just below the floating search bar so the
+        // list never rises over (and hides) the search input. The search bar
+        // sits at insets.top + 8 with ~44px height; reserve a little extra.
+        topInset={insets.top + 64}
         backgroundStyle={styles.sheetBg}
         handleIndicatorStyle={styles.sheetHandle}
         enablePanDownToClose={false}

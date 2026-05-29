@@ -163,7 +163,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     // Wipe auth + any user-specific cached data
     const allKeys = await AsyncStorage.getAllKeys();
-    const keysToRemove = ['user', 'jwt_token'];
+    const keysToRemove = [
+      'user',
+      'jwt_token',
+      // Onboarding prefs + search history are per-user; clear on logout so the
+      // next user starts fresh (wizard reshows). ProfileScreen also resets the
+      // in-memory PreferencesContext state alongside this.
+      'cm_preferences',
+      'cm_wizard_completed',
+      'cm_search_history',
+    ];
     // Also drop any owner-cafe override caches tied to the previous session
     for (const k of allKeys) {
       if (k.startsWith('owner_cafe_override_')) keysToRemove.push(k);

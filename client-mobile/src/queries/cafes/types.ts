@@ -75,3 +75,21 @@ export interface CafeSearchResult {
   data: CafeHit[];
   meta: CafeSearchMeta;
 }
+
+// Lightweight typeahead result (mirrors web AutocompleteHit). city/district are
+// nullable because the server projects them straight from the cafe document.
+export interface AutocompleteHit {
+  id: number;
+  name: string;
+  slug: string;
+  city: string | null;
+  district: string | null;
+  distanceMeters?: number;
+}
+
+export interface AutocompleteParams {
+  q: string;
+  lat?: number;
+  lng?: number;
+  limit?: number;
+}

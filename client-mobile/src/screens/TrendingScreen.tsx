@@ -102,7 +102,7 @@ export default function TrendingScreen() {
   const initialLoading = cafesQuery.isLoading;
 
   const renderItem = useCallback(({ item }: { item: ListItem }) => {
-    if (item.kind === 'ad') return <NativeAdCard />;
+    if (item.kind === 'ad') return <NativeAdCard cacheKey={item.key} />;
     const cafe = item.data.cafe;
     const rank = item.data.rank;
     const rankColor = RANK_COLORS[rank] || colors.surface;

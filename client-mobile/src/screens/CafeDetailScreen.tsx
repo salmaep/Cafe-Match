@@ -413,6 +413,17 @@ export default function CafeDetailScreen() {
     Linking.openURL(url);
   };
 
+  const handleWriteReview = () => {
+    if (!user) {
+      navigation.navigate("AuthModal");
+      return;
+    }
+    navigation.navigate("WriteReview", {
+      cafeId: cafe.id,
+      cafeName: cafe.name,
+    });
+  };
+
   const handleFavorite = async () => {
     if (!user) {
       navigation.navigate("AuthModal");
@@ -545,7 +556,7 @@ export default function CafeDetailScreen() {
             hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
             activeOpacity={0.8}
           >
-            <ChevronLeft size={24} color={colors.primary} strokeWidth={2.5} />
+            <ChevronLeft size={24} color="#FFFFFF" strokeWidth={2.5} />
           </TouchableOpacity>
           <View style={[styles.photoCounter, { top: insets.top + 18 }]}>
             <Text style={styles.photoCounterText}>
@@ -832,12 +843,7 @@ export default function CafeDetailScreen() {
 
               <TouchableOpacity
                 style={styles.writeReviewBtn}
-                onPress={() =>
-                  navigation.navigate("WriteReview", {
-                    cafeId: cafe.id,
-                    cafeName: cafe.name,
-                  })
-                }
+                onPress={handleWriteReview}
               >
                 <Text style={styles.writeReviewText}>{t(cafeText.writeReviewCTA)}</Text>
               </TouchableOpacity>
@@ -846,12 +852,7 @@ export default function CafeDetailScreen() {
           {starSummary.length === 0 && (
             <TouchableOpacity
               style={styles.writeReviewBtn}
-              onPress={() =>
-                navigation.navigate("WriteReview", {
-                  cafeId: cafe.id,
-                  cafeName: cafe.name,
-                })
-              }
+              onPress={handleWriteReview}
             >
               <Text style={styles.writeReviewText}>
                 {t(cafeText.beTheFirstReview)}

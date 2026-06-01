@@ -95,7 +95,9 @@ export default function ShortlistModal() {
           <TouchableOpacity
             style={styles.emptyCta}
             onPress={() => {
-              navigation.goBack();
+              if (isModal) {
+                navigation.goBack();
+              }
               navigation.navigate('MainTabs', { screen: 'Discover' });
             }}
           >

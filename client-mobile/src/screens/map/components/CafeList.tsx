@@ -73,7 +73,7 @@ function CafeList({
           {items.map((entry) =>
             entry.kind === "ad" ? (
               <React.Fragment key={entry.key}>
-                <NativeAdCard />
+                <NativeAdCard cacheKey={entry.key} />
                 <View style={styles.cardSep} />
               </React.Fragment>
             ) : (

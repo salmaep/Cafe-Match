@@ -1,38 +1,59 @@
 import React from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
 import { useTranslation } from "react-i18next";
+import { Search, X, SlidersHorizontal } from "lucide-react-native";
 import { mapText } from "@shared/i18n/keys";
 import { colors, spacing, radius } from "../../../theme";
 
 type Props = {
   topInset: number;
-  searchQuery: string;
-  searchActive: boolean;
-  onSearchQueryChange: (s: string) => void;
-  onSubmit: () => void;
-  onClear: () => void;
   onOpenFilters: () => void;
   activeFilterCount: number;
-  showNoResultsBanner: boolean;
+  // When provided, the search field renders as a tappable button (read-only
+  // placeholder) that calls onPress instead of being an editable TextInput.
+  // Used on Explore to navigate to the dedicated Search screen (Tokopedia-style).
+  onPress?: () => void;
+  // Editable-mode props — only used when onPress is omitted.
+  searchQuery?: string;
+  searchActive?: boolean;
+  onSearchQueryChange?: (s: string) => void;
+  onSubmit?: () => void;
+  onClear?: () => void;
+  onFocus?: () => void;
+  showNoResultsBanner?: boolean;
 };
 
 function MapSearchBar({
   topInset,
-  searchQuery,
-  searchActive,
+  searchQuery = "",
+  searchActive = false,
   onSearchQueryChange,
   onSubmit,
   onClear,
+  onFocus,
   onOpenFilters,
   activeFilterCount,
-  showNoResultsBanner,
+  showNoResultsBanner = false,
+  onPress,
 }: Props) {
   const { t } = useTranslation();
   return (
     <View style={[styles.container, { top: topInset + 8 }]}>
       <View style={styles.row}>
+        {onPress ? (
+          <TouchableOpacity
+            style={styles.searchBar}
+            activeOpacity={0.8}
+            onPress={onPress}
+          >
+            <Search size={16} color={colors.textSecondary} strokeWidth={2.2} style={styles.searchIcon} />
+            <Text style={styles.searchPlaceholder} numberOfLines={1}>
+              {t(mapText.searchPlaceholder)}
+            </Text>
+          </TouchableOpacity>
+        ) : (
         <View style={styles.searchBar}>
-          <Text style={styles.searchIcon}>🔍</Text>
+          <Search size={16} color={colors.textSecondary} strokeWidth={2.2} style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
             placeholder={t(mapText.searchPlaceholder)}
@@ -40,18 +61,20 @@ function MapSearchBar({
             value={searchQuery}
             onChangeText={onSearchQueryChange}
             onSubmitEditing={onSubmit}
+            onFocus={onFocus}
             returnKeyType="search"
           />
-          {searchActive && (
+          {(searchActive || searchQuery.length > 0) && (
             <TouchableOpacity
               onPress={onClear}
               style={styles.clearBtn}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-              <Text style={styles.clearIcon}>×</Text>
+              <X size={18} color={colors.textSecondary} strokeWidth={2.5} />
             </TouchableOpacity>
           )}
         </View>
+        )}
         <TouchableOpacity
           onPress={onOpenFilters}
           style={[
@@ -59,14 +82,11 @@ function MapSearchBar({
             activeFilterCount > 0 && styles.filterFabActive,
           ]}
         >
-          <Text
-            style={[
-              styles.filterFabIcon,
-              activeFilterCount > 0 && styles.filterFabIconActive,
-            ]}
-          >
-            ⚙︎
-          </Text>
+          <SlidersHorizontal
+            size={20}
+            color={activeFilterCount > 0 ? colors.white : colors.primary}
+            strokeWidth={2.2}
+          />
           {activeFilterCount > 0 && (
             <View style={styles.filterFabBadge}>
               <Text style={styles.filterFabBadgeText}>{activeFilterCount}</Text>
@@ -110,15 +130,20 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.12,
     shadowRadius: 8,
   },
-  searchIcon: { fontSize: 16, marginRight: spacing.sm },
+  searchIcon: { marginRight: spacing.sm },
   searchInput: {
     flex: 1,
     fontSize: 14,
     color: colors.primary,
     paddingVertical: spacing.sm + 4,
   },
+  searchPlaceholder: {
+    flex: 1,
+    fontSize: 14,
+    color: colors.textSecondary,
+    paddingVertical: spacing.sm + 4,
+  },
   clearBtn: { padding: spacing.xs },
-  clearIcon: { fontSize: 22, color: colors.textSecondary },
   filterFab: {
     width: 44,
     height: 44,
@@ -134,8 +159,6 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   filterFabActive: { backgroundColor: colors.accent },
-  filterFabIcon: { fontSize: 18, color: colors.primary, fontWeight: "700" },
-  filterFabIconActive: { color: colors.white },
   filterFabBadge: {
     position: "absolute",
     top: -3,

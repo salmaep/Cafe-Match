@@ -11,6 +11,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { X } from 'lucide-react-native';
 import { commonText, filtersText } from '@shared/i18n/keys';
 import { colors, spacing, radius } from '../../theme';
 
@@ -62,7 +63,7 @@ export default function RadiusPickerModal({
           <View style={styles.header}>
             <Text style={styles.title}>{t(filtersText.radiusTitle)}</Text>
             <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-              <Text style={styles.closeBtnText}>✕</Text>
+              <X size={18} color={colors.textSecondary} strokeWidth={2.5} />
             </TouchableOpacity>
           </View>
 
@@ -152,7 +153,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  closeBtnText: { fontSize: 18, color: colors.textSecondary },
 
   sectionTitle: {
     fontSize: 11,

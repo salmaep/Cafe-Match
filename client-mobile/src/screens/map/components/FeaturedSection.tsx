@@ -2,6 +2,7 @@ import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Image } from "expo-image";
 import { ScrollView as GHScrollView } from "react-native-gesture-handler";
+import { MapPin } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { mapText } from "@shared/i18n/keys";
 import { Cafe } from "../../../types";
@@ -81,9 +82,12 @@ function FeaturedSection({ cafes, onCafePress }: Props) {
                   </Text>
                 )}
                 {!!cafe.address && (
-                  <Text style={styles.address} numberOfLines={1}>
-                    📍 {cafe.address}
-                  </Text>
+                  <View style={styles.addressRow}>
+                    <MapPin size={11} color="#A8A59C" strokeWidth={2} />
+                    <Text style={styles.address} numberOfLines={1}>
+                      {cafe.address}
+                    </Text>
+                  </View>
                 )}
               </View>
             </TouchableOpacity>
@@ -147,7 +151,8 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     marginTop: 2,
   },
-  address: { fontSize: 11, color: "#A8A59C", marginTop: 4 },
+  addressRow: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4 },
+  address: { flex: 1, fontSize: 11, color: "#A8A59C" },
 });
 
 export default FeaturedSection;

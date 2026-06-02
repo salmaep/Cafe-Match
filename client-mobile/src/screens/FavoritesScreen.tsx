@@ -17,6 +17,7 @@ import { listsText } from '@shared/i18n/keys';
 import { useAuth } from '../context/AuthContext';
 import { fetchFavorites, toggleFavorite, FavoriteEntry } from '../services/api';
 import { colors, spacing, radius } from '../theme';
+import { ArrowLeft } from 'lucide-react-native';
 
 export default function FavoritesScreen() {
   const navigation = useNavigation<StackNavigationProp<any>>();
@@ -72,7 +73,7 @@ export default function FavoritesScreen() {
       <View style={[styles.container, { paddingTop: insets.top }]}>
         <View style={styles.header}>
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-            <Text style={styles.backIcon}>←</Text>
+            <ArrowLeft size={18} color={colors.primary} strokeWidth={2.2} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{t(listsText.favoritesTitle)}</Text>
           <View style={styles.headerRight} />
@@ -98,7 +99,7 @@ export default function FavoritesScreen() {
       <View style={[styles.container, { paddingTop: insets.top }]}>
         <View style={styles.header}>
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-            <Text style={styles.backIcon}>←</Text>
+            <ArrowLeft size={18} color={colors.primary} strokeWidth={2.2} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{t(listsText.favoritesTitle)}</Text>
           <View style={styles.headerRight} />
@@ -141,7 +142,7 @@ export default function FavoritesScreen() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Text style={styles.backIcon}>←</Text>
+          <ArrowLeft size={18} color={colors.primary} strokeWidth={2.2} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Favorit Kamu</Text>
         <View style={styles.headerRight}>
@@ -198,11 +199,6 @@ const styles = StyleSheet.create({
     height: 36,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  backIcon: {
-    fontSize: 22,
-    color: colors.primary,
-    fontWeight: '600',
   },
   headerTitle: {
     flex: 1,

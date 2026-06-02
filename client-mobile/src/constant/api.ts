@@ -3,6 +3,7 @@ export const API_PATHS = {
   cafeDetail: (id: string | number) => `/cafes/${id}`,
   cafesPromoted: '/cafes/promoted',
   cafesSemanticSearch: '/cafes/semantic-search',
+  cafesAutocomplete: '/cafes/autocomplete',
   purposes: '/purposes',
   authLogin: '/auth/login',
   authRegister: '/auth/register',

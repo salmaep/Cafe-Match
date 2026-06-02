@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from "react-native";
 import { useTranslation } from "react-i18next";
+import { MoreHorizontal, X } from "lucide-react-native";
 import { mapText } from "@shared/i18n/keys";
 import { colors, spacing, radius } from "../../../theme";
 
@@ -60,7 +61,7 @@ function RadiusControls({
             </View>
           )}
           <TouchableOpacity style={styles.moreBtn} onPress={onOpenRadiusModal}>
-            <Text style={styles.moreBtnText}>⋯</Text>
+            <MoreHorizontal size={16} color={colors.primary} strokeWidth={2.5} />
           </TouchableOpacity>
         </View>
       </View>
@@ -78,7 +79,7 @@ function RadiusControls({
               onPress={f.remove}
             >
               <Text style={styles.filterPillText}>{f.label}</Text>
-              <Text style={styles.filterPillX}> ×</Text>
+              <X size={12} color={colors.textSecondary} strokeWidth={2.5} />
             </TouchableOpacity>
           ))}
           <TouchableOpacity style={styles.resetBtn} onPress={onResetFilters}>

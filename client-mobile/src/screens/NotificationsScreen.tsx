@@ -5,19 +5,31 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
+import {
+  Bell,
+  Trophy,
+  UserPlus,
+  MapPin,
+  PartyPopper,
+  Award,
+  Bomb,
+  Sparkles,
+  Pin,
+} from 'lucide-react-native';
+import type { LucideIcon } from 'lucide-react-native';
 import { commonText, notificationsText } from '@shared/i18n/keys';
 import { fetchNotifications, markNotificationRead, markAllNotificationsRead } from '../services/api';
 import { AppNotification } from '../types';
 import { colors, spacing, radius } from '../theme';
 
-const TYPE_ICONS: Record<string, string> = {
-  rank_change: '🏆',
-  friend_request: '👋',
-  friend_nearby: '📍',
-  friend_same_cafe: '🎉',
-  achievement_unlocked: '⭐',
-  together_bomb: '💥',
-  emoji_spam: '😜',
+const TYPE_ICONS: Record<string, LucideIcon> = {
+  rank_change: Trophy,
+  friend_request: UserPlus,
+  friend_nearby: MapPin,
+  friend_same_cafe: PartyPopper,
+  achievement_unlocked: Award,
+  together_bomb: Bomb,
+  emoji_spam: Sparkles,
 };
 
 // A grouped notification item — either a single notif or a bundle of emoji_spam
@@ -141,7 +153,7 @@ export default function NotificationsScreen() {
         <ActivityIndicator size="large" color={colors.accent} style={{ marginTop: 60 }} />
       ) : notifications.length === 0 ? (
         <View style={styles.empty}>
-          <Text style={styles.emptyIcon}>🔔</Text>
+          <Bell size={48} color={colors.textSecondary} strokeWidth={1.5} style={styles.emptyIconLead} />
           <Text style={styles.emptyText}>{t(notificationsText.empty)}</Text>
         </View>
       ) : (
@@ -163,7 +175,9 @@ export default function NotificationsScreen() {
                   onPress={() => handleTap(item)}
                   activeOpacity={0.8}
                 >
-                  <Text style={styles.icon}>😜</Text>
+                  <View style={styles.iconWrap}>
+                    <Sparkles size={26} color={colors.accent} strokeWidth={2} />
+                  </View>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.rowTitle}>
                       {t(notificationsText.emojiGroupTitle, { senderName: item.senderName, totalCount: item.totalCount })}
@@ -187,7 +201,12 @@ export default function NotificationsScreen() {
                 onPress={() => handleTap(item)}
                 activeOpacity={0.8}
               >
-                <Text style={styles.icon}>{TYPE_ICONS[n.type] || '📌'}</Text>
+                <View style={styles.iconWrap}>
+                  {(() => {
+                    const Cmp = TYPE_ICONS[n.type] ?? Pin;
+                    return <Cmp size={26} color={colors.accent} strokeWidth={2} />;
+                  })()}
+                </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.rowTitle}>{n.title}</Text>
                   <Text style={styles.rowBody} numberOfLines={2}>{n.body}</Text>
@@ -261,8 +280,9 @@ const styles = StyleSheet.create({
   readAll: { fontSize: 13, color: colors.accent, fontWeight: '600' },
 
   empty: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  emptyIcon: { fontSize: 48, marginBottom: spacing.md },
+  emptyIconLead: { marginBottom: spacing.md },
   emptyText: { fontSize: 16, color: colors.textSecondary },
+  iconWrap: { marginRight: spacing.sm },
 
   row: {
     flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.md,
@@ -270,7 +290,6 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.surface,
   },
   rowUnread: { backgroundColor: colors.accent + '08' },
-  icon: { fontSize: 28, marginRight: spacing.sm },
   rowTitle: { fontSize: 14, fontWeight: '700', color: colors.primary },
   rowBody: { fontSize: 13, color: colors.textSecondary, marginTop: 2 },
   rowTime: { fontSize: 11, color: colors.textSecondary + '80', marginTop: 4 },

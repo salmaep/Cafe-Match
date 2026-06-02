@@ -6,6 +6,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
+import { Coffee, X } from 'lucide-react-native';
 import { commonText, recapText } from '@shared/i18n/keys';
 import { fetchRecap, generateRecap } from '../services/api';
 import { RecapData } from '../types';
@@ -127,7 +128,9 @@ export default function RecapScreen() {
 
     // Slide 5: Closing
     <View key="close" style={[styles.slide, { backgroundColor: '#2C1C10' }]}>
-      <Text style={styles.closingEmoji}>☕</Text>
+      <View style={styles.closingIconWrap}>
+        <Coffee size={64} color={colors.white} strokeWidth={1.5} />
+      </View>
       <Text style={styles.closingTitle}>{t(recapText.closingTitle, { yearTitle: recap.yearTitle })}</Text>
       <Text style={styles.closingText}>
         {t(recapText.closingBody, {
@@ -162,7 +165,7 @@ export default function RecapScreen() {
       </View>
       {/* Close X */}
       <TouchableOpacity style={[styles.closeX, { top: insets.top + 12 }]} onPress={() => navigation.goBack()}>
-        <Text style={styles.closeXText}>✕</Text>
+        <X size={20} color={colors.white} strokeWidth={2.5} />
       </TouchableOpacity>
     </View>
   );
@@ -200,7 +203,7 @@ const styles = StyleSheet.create({
   topCafeName: { fontSize: 15, fontWeight: '700', color: colors.white },
   topCafeVisits: { fontSize: 12, color: 'rgba(255,255,255,0.5)' },
 
-  closingEmoji: { fontSize: 64, marginBottom: spacing.md },
+  closingIconWrap: { marginBottom: spacing.md },
   closingTitle: { fontSize: 28, fontWeight: '900', color: colors.accent, textAlign: 'center', marginBottom: spacing.md },
   closingText: { fontSize: 15, color: 'rgba(255,255,255,0.8)', textAlign: 'center', lineHeight: 22 },
   closeBtn: { marginTop: spacing.xl, backgroundColor: colors.accent, borderRadius: radius.md, paddingHorizontal: spacing.xl, paddingVertical: spacing.md },
@@ -210,5 +213,4 @@ const styles = StyleSheet.create({
   dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.3)' },
   dotActive: { backgroundColor: colors.accent, width: 20 },
   closeX: { position: 'absolute', right: spacing.md, width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center' },
-  closeXText: { color: colors.white, fontSize: 18, fontWeight: '700' },
 });

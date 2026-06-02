@@ -21,6 +21,7 @@ import {
 } from '@react-native-google-signin/google-signin';
 import Svg, { Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ChevronLeft, Smartphone, MessageSquare, Eye, EyeOff } from 'lucide-react-native';
 import { useAuth } from '../context/AuthContext';
 import { colors, spacing, radius } from '../theme';
 import {
@@ -421,7 +422,7 @@ export default function AuthModal() {
         style={styles.fullPage}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <View style={styles.fullPageHeader}>
+        <View style={[styles.fullPageHeader, { paddingTop: insets.top + spacing.sm }]}>
           <TouchableOpacity
             style={styles.fullPageBackBtn}
             onPress={() => {
@@ -430,13 +431,13 @@ export default function AuthModal() {
               setEnrollError('');
             }}
           >
-            <Text style={styles.fullPageBackIcon}>‹</Text>
+            <ChevronLeft size={24} color={colors.primary} strokeWidth={2.2} />
           </TouchableOpacity>
         </View>
 
         <View style={styles.fullPageBody}>
           <View style={styles.otpIcon}>
-            <Text style={styles.otpIconText}>📱</Text>
+            <Smartphone size={40} color={colors.accent} strokeWidth={1.8} />
           </View>
           <Text style={styles.title}>{t(authText.phoneEnrollTitle)}</Text>
           <Text style={styles.subtitle}>
@@ -488,7 +489,7 @@ export default function AuthModal() {
         style={styles.fullPage}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <View style={styles.fullPageHeader}>
+        <View style={[styles.fullPageHeader, { paddingTop: insets.top + spacing.sm }]}>
           <TouchableOpacity
             style={styles.fullPageBackBtn}
             onPress={() => {
@@ -497,13 +498,13 @@ export default function AuthModal() {
               setOtpError('');
             }}
           >
-            <Text style={styles.fullPageBackIcon}>‹</Text>
+            <ChevronLeft size={24} color={colors.primary} strokeWidth={2.2} />
           </TouchableOpacity>
         </View>
 
         <View style={styles.fullPageBody}>
           <View style={styles.otpIcon}>
-            <Text style={styles.otpIconText}>💬</Text>
+            <MessageSquare size={40} color={colors.accent} strokeWidth={1.8} />
           </View>
           <Text style={styles.title}>{t(authText.otpTitle)}</Text>
           <Text style={styles.subtitle}>
@@ -651,7 +652,11 @@ export default function AuthModal() {
             onPress={() => setShowPassword((v) => !v)}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Text style={styles.eyeIcon}>{showPassword ? '🙈' : '👁️'}</Text>
+            {showPassword ? (
+              <EyeOff size={18} color={colors.textSecondary} strokeWidth={2} />
+            ) : (
+              <Eye size={18} color={colors.textSecondary} strokeWidth={2} />
+            )}
           </TouchableOpacity>
         </View>
 
@@ -676,9 +681,11 @@ export default function AuthModal() {
                 onPress={() => setShowConfirmPassword((v) => !v)}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
-                <Text style={styles.eyeIcon}>
-                  {showConfirmPassword ? '🙈' : '👁️'}
-                </Text>
+                {showConfirmPassword ? (
+                  <EyeOff size={18} color={colors.textSecondary} strokeWidth={2} />
+                ) : (
+                  <Eye size={18} color={colors.textSecondary} strokeWidth={2} />
+                )}
               </TouchableOpacity>
             </View>
             {passwordMismatch && (
@@ -799,6 +806,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'flex-end',
+    ...Platform.select({ android: { elevation: 100 } }),
   },
 
   // ─── Full-page (OTP + phone enrollment) ─────────────────────────────────
@@ -807,9 +815,11 @@ const styles = StyleSheet.create({
   fullPage: {
     flex: 1,
     backgroundColor: colors.background,
+    ...Platform.select({ android: { elevation: 100 } }),
   },
   fullPageHeader: {
-    paddingTop: Platform.OS === 'ios' ? 50 : 24,
+    // Top inset applied inline via useSafeAreaInsets (this is a transparentModal,
+    // so there's no navigator header to provide the status-bar offset).
     paddingHorizontal: spacing.md,
     paddingBottom: spacing.sm,
   },
@@ -820,12 +830,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  fullPageBackIcon: {
-    fontSize: 28,
-    color: colors.primary,
-    fontWeight: '600',
-    marginTop: -4,
   },
   fullPageBody: {
     flex: 1,
@@ -928,7 +932,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 4,
   },
-  eyeIcon: { fontSize: 18 },
   mismatchHint: {
     fontSize: 12,
     color: '#DC2626',
@@ -1003,7 +1006,6 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     marginBottom: spacing.sm,
   },
-  otpIconText: { fontSize: 24 },
   phoneHint: {
     fontWeight: '700',
     color: colors.primary,

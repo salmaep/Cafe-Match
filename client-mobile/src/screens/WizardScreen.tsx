@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,8 @@ import {
   ScrollView,
   Dimensions,
   ActivityIndicator,
+  Animated,
+  Easing,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -16,6 +18,8 @@ import MapView, { Circle } from 'react-native-maps';
 import RadiusPickerModal from '../components/cafe/RadiusPickerModal';
 import PlacesAutocompleteInput from '../components/wizard/PlacesAutocompleteInput';
 import ScreenSafeBottom from '../components/ScreenSafeBottom';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Check, Star as StarIcon, MapPin, Search } from 'lucide-react-native';
 import { LucideIcon } from '../utils/lucideIcon';
 import { usePreferences } from '../context/PreferencesContext';
 import { colors, spacing, radius } from '../theme';
@@ -28,6 +32,28 @@ import { usePurposes } from '../queries/purposes/use-purposes';
 
 const { width } = Dimensions.get('window');
 const TOTAL_STEPS = 4;
+
+function ShimmerCard() {
+  const opacity = useRef(new Animated.Value(0.4)).current;
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, { toValue: 1, duration: 700, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(opacity, { toValue: 0.4, duration: 700, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [opacity]);
+  return (
+    <View style={styles.optionCard}>
+      <Animated.View style={[styles.shimmerIcon, { opacity }]} />
+      <Animated.View style={[styles.shimmerLabel, { opacity }]} />
+      <Animated.View style={[styles.shimmerTagline, { opacity }]} />
+      <Animated.View style={[styles.shimmerTaglineShort, { opacity }]} />
+    </View>
+  );
+}
 
 const PRICE_OPTIONS = [
   { key: '$', label: '$' },
@@ -46,6 +72,7 @@ interface WizardScreenProps {
 
 export default function WizardScreen({ onComplete, onSkip }: WizardScreenProps = {}) {
   const navigation = useNavigation<StackNavigationProp<any>>();
+  const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const { setPreferences, setWizardCompleted } = usePreferences();
   const { latitude: userLat, longitude: userLng } = useLocation();
@@ -67,6 +94,7 @@ export default function WizardScreen({ onComplete, onSkip }: WizardScreenProps =
       tagline: p.description ?? local?.tagline ?? '',
     };
   });
+  const showShimmer = purposesQuery.isLoading && wizardPurposes.length === 0;
   const purposeOptions: { slug: string; label: string; icon?: string; emoji: string; tagline: string }[] =
     wizardPurposes.length > 0
       ? wizardPurposes
@@ -159,7 +187,12 @@ export default function WizardScreen({ onComplete, onSkip }: WizardScreenProps =
       onComplete();
       return;
     }
-    navigation.replace('CardSwipe');
+    // Land on the Discover tab INSIDE MainTabs so the bottom tab bar is visible
+    // (not the standalone full-screen deck). reset clears the wizard from the stack.
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'MainTabs', params: { screen: 'Discover' } }],
+    });
   };
 
   const toggleAmenity = (a: string) => {
@@ -188,7 +221,7 @@ export default function WizardScreen({ onComplete, onSkip }: WizardScreenProps =
   return (
     <ScreenSafeBottom style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
         {step > 0 ? (
           <TouchableOpacity onPress={handleBack}>
             <Text style={styles.backText}>{t(commonText.back)}</Text>
@@ -214,7 +247,9 @@ export default function WizardScreen({ onComplete, onSkip }: WizardScreenProps =
             showsVerticalScrollIndicator={false}
             style={{ flex: 1 }}
           >
-            {purposeOptions.map((p) => {
+            {showShimmer
+              ? Array.from({ length: 12 }).map((_, i) => <ShimmerCard key={`shimmer-${i}`} />)
+              : purposeOptions.map((p) => {
               const active = purpose === p.label;
               return (
                 <TouchableOpacity
@@ -261,7 +296,12 @@ export default function WizardScreen({ onComplete, onSkip }: WizardScreenProps =
               style={[styles.locationCard, locationType === 'current' && styles.optionCardActive]}
               onPress={() => setLocationType('current')}
             >
-              <Text style={styles.locationIcon}>📍</Text>
+              <MapPin
+                size={22}
+                color={locationType === 'current' ? colors.accent : colors.primary}
+                strokeWidth={2}
+                style={styles.locationIconLead}
+              />
               <Text style={[styles.locationLabel, locationType === 'current' && styles.optionLabelActive]}>
                 {t(wizardText.useCurrentLocation)}
               </Text>
@@ -270,7 +310,12 @@ export default function WizardScreen({ onComplete, onSkip }: WizardScreenProps =
               style={[styles.locationCard, locationType === 'custom' && styles.optionCardActive]}
               onPress={() => setLocationType('custom')}
             >
-              <Text style={styles.locationIcon}>🔍</Text>
+              <Search
+                size={22}
+                color={locationType === 'custom' ? colors.accent : colors.primary}
+                strokeWidth={2}
+                style={styles.locationIconLead}
+              />
               <Text style={[styles.locationLabel, locationType === 'custom' && styles.optionLabelActive]}>
                 {t(wizardText.useCustomLocation)}
               </Text>
@@ -443,7 +488,7 @@ export default function WizardScreen({ onComplete, onSkip }: WizardScreenProps =
                       >
                         {active && (
                           <View style={styles.filterChipCheck}>
-                            <Text style={styles.filterChipCheckText}>✓</Text>
+                            <Check size={10} color={colors.accent} strokeWidth={3} />
                           </View>
                         )}
                         <Text
@@ -510,14 +555,17 @@ export default function WizardScreen({ onComplete, onSkip }: WizardScreenProps =
                             >
                               {active ? (
                                 <View style={styles.filterChipCheck}>
-                                  <Text style={styles.filterChipCheckText}>
-                                    ✓
-                                  </Text>
+                                  <Check size={10} color={colors.accent} strokeWidth={3} />
                                 </View>
                               ) : autoSelected ? (
-                                <Text style={styles.filterChipIcon}>⭐</Text>
+                                <StarIcon size={13} color={colors.accent} strokeWidth={2} />
                               ) : icon ? (
-                                <Text style={styles.filterChipIcon}>{icon}</Text>
+                                <LucideIcon
+                                  name={icon}
+                                  size={13}
+                                  color={colors.primary}
+                                  strokeWidth={2}
+                                />
                               ) : null}
                               <Text
                                 style={[
@@ -576,7 +624,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: spacing.lg,
-    paddingTop: 56,
     paddingBottom: spacing.md,
   },
   backText: { fontSize: 15, color: colors.primary, fontWeight: '500' },
@@ -631,6 +678,33 @@ const styles = StyleSheet.create({
   },
   optionEmoji: { fontSize: 26, marginBottom: 4 },
   optionIcon: { marginBottom: 4, height: 30, alignItems: 'center', justifyContent: 'center' },
+  shimmerIcon: {
+    width: 30,
+    height: 30,
+    borderRadius: 8,
+    backgroundColor: '#E5E0D8',
+    marginBottom: 6,
+  },
+  shimmerLabel: {
+    width: '60%',
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#E5E0D8',
+    marginBottom: 6,
+  },
+  shimmerTagline: {
+    width: '85%',
+    height: 9,
+    borderRadius: 5,
+    backgroundColor: '#EDE8DF',
+    marginBottom: 4,
+  },
+  shimmerTaglineShort: {
+    width: '55%',
+    height: 9,
+    borderRadius: 5,
+    backgroundColor: '#EDE8DF',
+  },
   optionLabel: {
     fontSize: 13,
     fontWeight: '700',
@@ -657,7 +731,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'transparent',
   },
-  locationIcon: { fontSize: 24, marginRight: spacing.md },
+  locationIconLead: { marginRight: spacing.md },
   locationLabel: { fontSize: 15, fontWeight: '600', color: colors.primary },
   // Radius pill row + manual input
   radiusRow: {

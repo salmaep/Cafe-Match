@@ -19,6 +19,7 @@ import { profileText } from '@shared/i18n/keys';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Camera, X } from 'lucide-react-native';
 import { useAuth } from '../context/AuthContext';
 import { updateProfileApi, changePasswordApi } from '../services/api';
 import { colors, spacing, radius } from '../theme';
@@ -50,7 +51,7 @@ export default function EditProfileModal() {
             style={styles.closeBtn}
             onPress={() => navigation.goBack()}
           >
-            <Text style={styles.closeText}>✕</Text>
+            <X size={18} color={colors.textSecondary} strokeWidth={2.5} />
           </TouchableOpacity>
         </View>
 
@@ -202,7 +203,10 @@ function ProfileTab() {
             {picking ? (
               <ActivityIndicator color={colors.accent} size="small" />
             ) : (
-              <Text style={styles.avatarActionText}>📷 Upload foto</Text>
+              <View style={styles.avatarActionRow}>
+                <Camera size={14} color={colors.accent} strokeWidth={2.2} />
+                <Text style={styles.avatarActionText}>Upload foto</Text>
+              </View>
             )}
           </TouchableOpacity>
           {!!avatarUrl && (
@@ -391,7 +395,6 @@ const styles = StyleSheet.create({
     width: 32, height: 32, borderRadius: 16,
     alignItems: 'center', justifyContent: 'center',
   },
-  closeText: { fontSize: 18, color: colors.textSecondary },
 
   tabsRow: {
     flexDirection: 'row',
@@ -425,6 +428,7 @@ const styles = StyleSheet.create({
   avatarImg: { width: '100%', height: '100%' },
   avatarActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   avatarActionBtn: { paddingVertical: 4 },
+  avatarActionRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   avatarActionText: { fontSize: 13, fontWeight: '700', color: colors.accent },
   avatarActionDivider: { color: colors.textSecondary, marginHorizontal: 4 },
   avatarActionRemove: { fontSize: 13, fontWeight: '700', color: colors.error },

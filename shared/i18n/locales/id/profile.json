@@ -52,6 +52,8 @@
   "menuLogoutSub": "Keluar dari akun",
   "menuDeleteAccount": "Hapus Akun",
   "menuDeleteAccountSub": "Nonaktifkan akun & hapus data",
+  "menuClearPrefs": "Clear Data Discover",
+  "menuClearPrefsSub": "Atur ulang tujuan, lokasi & filter discover",
   "deleteAccountTitle": "Hapus Akun",
   "deleteAccountWarningTitle": "Akun akan dinonaktifkan sekarang",
   "deleteAccountWarning1": "Data (shortlist, bookmark, check-in, teman) akan hilang permanen setelah 30 hari.",

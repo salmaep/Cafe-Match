@@ -13,4 +13,6 @@ export const cafeKeys = {
   filters: () => [...cafeKeys.all, 'filters'] as const,
   discover: (params: Record<string, unknown>) =>
     [...cafeKeys.all, 'discover', params] as const,
+  autocomplete: (params: Record<string, unknown>) =>
+    [...cafeKeys.all, 'autocomplete', params] as const,
 };

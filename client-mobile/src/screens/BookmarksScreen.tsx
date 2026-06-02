@@ -18,6 +18,7 @@ import { useAuth } from '../context/AuthContext';
 import { fetchBookmarks, toggleBookmark } from '../services/api';
 import { Cafe } from '../types';
 import { colors, spacing, radius } from '../theme';
+import { ArrowLeft } from 'lucide-react-native';
 
 export default function BookmarksScreen() {
   const navigation = useNavigation<StackNavigationProp<any>>();
@@ -71,7 +72,7 @@ export default function BookmarksScreen() {
       <View style={[styles.container, { paddingTop: insets.top }]}>
         <View style={styles.header}>
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-            <Text style={styles.backIcon}>←</Text>
+            <ArrowLeft size={18} color={colors.primary} strokeWidth={2.2} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{t(listsText.bookmarksTitle)}</Text>
           <View style={styles.headerRight} />
@@ -97,7 +98,7 @@ export default function BookmarksScreen() {
       <View style={[styles.container, { paddingTop: insets.top }]}>
         <View style={styles.header}>
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-            <Text style={styles.backIcon}>←</Text>
+            <ArrowLeft size={18} color={colors.primary} strokeWidth={2.2} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{t(listsText.bookmarksTitle)}</Text>
           <View style={styles.headerRight} />
@@ -143,7 +144,7 @@ export default function BookmarksScreen() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Text style={styles.backIcon}>←</Text>
+          <ArrowLeft size={18} color={colors.primary} strokeWidth={2.2} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Bookmark Kamu</Text>
         <View style={styles.headerRight}>
@@ -196,11 +197,6 @@ const styles = StyleSheet.create({
     height: 36,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  backIcon: {
-    fontSize: 22,
-    color: colors.primary,
-    fontWeight: '600',
   },
   headerTitle: {
     flex: 1,

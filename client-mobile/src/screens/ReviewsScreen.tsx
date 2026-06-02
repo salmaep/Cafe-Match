@@ -9,54 +9,48 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { reviewsText } from '@shared/i18n/keys';
+import { Star, X, ChevronLeft, Plus, Play, Video } from 'lucide-react-native';
 import { useReviews } from '../queries/reviews/use-reviews';
 import { useReviewSummary } from '../queries/reviews/use-review-summary';
 import { useAuth } from '../context/AuthContext';
 import { colors, spacing, radius } from '../theme';
+import {
+  prettyReviewCategory,
+  reviewCategoryIcon,
+} from '../constant/ui/review-categories';
+import { LucideIcon } from '../utils/lucideIcon';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 
 type RouteParams = { Reviews: { cafeId: string; cafeName: string } };
 
-// Map raw category keys (as stored in review_ratings.category) to friendly labels.
-// Supports mood_<slug>, facility_<key>, overall, and legacy keys.
-const CATEGORY_LABELS: Record<string, string> = {
-  // Legacy / overall
-  overall: '⭐ Rating',
-  ambiance: '🎨 Suasana',
-  wfc: '💻 WFC',
-  food_quality: '🍽️ Makanan',
-  service: '🛎️ Pelayanan',
-  value_for_money: '💰 Harga',
-  kid_friendly: '👶 Ramah Anak',
+function StarRow({ score, size = 12 }: { score: number; size?: number }) {
+  const n = Math.round(score);
+  return (
+    <View style={styles.starsRow}>
+      {Array.from({ length: 5 }).map((_, i) => (
+        <Star
+          key={i}
+          size={size}
+          color={colors.accent}
+          fill={i < n ? colors.accent : 'transparent'}
+          strokeWidth={i < n ? 0 : 1.5}
+        />
+      ))}
+    </View>
+  );
+}
 
-  // Mood
-  mood_me_time: '🧘 Me Time',
-  'mood_me-time': '🧘 Me Time',
-  mood_date: '💑 Date',
-  mood_family: '👨‍👩‍👧 Family Time',
-  'mood_family_time': '👨‍👩‍👧 Family Time',
-  mood_group_study: '📚 Group Study',
-  'mood_group-work': '📚 Group Study',
-  mood_wfc: '💻 WFC',
-
-  // Facilities
-  facility_wifi: '📶 WiFi',
-  facility_power_outlet: '🔌 Power Outlet',
-  facility_mushola: '🕌 Mushola',
-  facility_parking: '🅿️ Parking',
-  facility_kid_friendly: '👶 Kid-Friendly',
-  facility_quiet_atmosphere: '🤫 Quiet',
-  facility_large_tables: '🪑 Large Tables',
-  facility_outdoor_area: '🌿 Outdoor',
-};
-
-/** Convert any raw category to a human label; fallback = prettify the key */
-function prettyCategory(key: string): string {
-  if (CATEGORY_LABELS[key]) return CATEGORY_LABELS[key];
-  // Fallback: strip mood_/facility_ prefix + title-case
-  const stripped = key.replace(/^(mood_|facility_)/, '').replace(/[_-]/g, ' ');
-  return stripped.replace(/\b\w/g, (c) => c.toUpperCase());
+function CategoryLabel({ category }: { category: string }) {
+  const icon = reviewCategoryIcon(category);
+  return (
+    <View style={styles.categoryLabelRow}>
+      {icon && (
+        <LucideIcon name={icon} size={12} color={colors.textSecondary} strokeWidth={2} />
+      )}
+      <Text style={styles.categoryLabelText}>{prettyReviewCategory(category)}</Text>
+    </View>
+  );
 }
 
 export default function ReviewsScreen() {
@@ -91,19 +85,17 @@ export default function ReviewsScreen() {
     (s) => !s.category.startsWith('mood_') && !s.category.startsWith('facility_'),
   );
 
-  const renderStars = (score: number) => {
-    return '★'.repeat(Math.round(score)) + '☆'.repeat(5 - Math.round(score));
-  };
-
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.back}>← Kembali</Text>
+        <TouchableOpacity style={styles.backRow} onPress={() => navigation.goBack()}>
+          <ChevronLeft size={18} color={colors.primary} strokeWidth={2.2} />
+          <Text style={styles.back}>Kembali</Text>
         </TouchableOpacity>
         <Text style={styles.title} numberOfLines={1}>Ulasan · {cafeName}</Text>
-        <TouchableOpacity onPress={goWriteReview}>
-          <Text style={styles.writeBtn}>+ Tulis</Text>
+        <TouchableOpacity style={styles.writeRow} onPress={goWriteReview}>
+          <Plus size={14} color={colors.accent} strokeWidth={2.5} />
+          <Text style={styles.writeBtn}>Tulis</Text>
         </TouchableOpacity>
       </View>
 
@@ -112,7 +104,7 @@ export default function ReviewsScreen() {
         <View style={styles.summaryBox}>
           {starSummary.map((s) => (
             <View key={s.category} style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>{prettyCategory(s.category)}</Text>
+              <CategoryLabel category={s.category} />
               <View style={styles.barBg}>
                 <View style={[styles.barFill, { width: `${(s.avgScore / 5) * 100}%` }]} />
               </View>
@@ -171,10 +163,7 @@ export default function ReviewsScreen() {
                 {/* 1. Star rating (overall shown prominently) */}
                 {overall ? (
                   <View style={styles.overallStarsRow}>
-                    <Text style={styles.overallStars}>
-                      {'★'.repeat(Math.round(overall.score))}
-                      {'☆'.repeat(5 - Math.round(overall.score))}
-                    </Text>
+                    <StarRow score={overall.score} size={14} />
                     <Text style={styles.overallScore}>{overall.score.toFixed(1)}</Text>
                   </View>
                 ) : null}
@@ -185,11 +174,8 @@ export default function ReviewsScreen() {
                       .filter((r) => r.category !== 'overall')
                       .map((r) => (
                         <View key={r.category} style={styles.ratingChip}>
-                          <Text style={styles.ratingChipLabel}>{prettyCategory(r.category)}</Text>
-                          <Text style={styles.ratingChipStars}>
-                            {'★'.repeat(Math.round(r.score))}
-                            {'☆'.repeat(5 - Math.round(r.score))}
-                          </Text>
+                          <CategoryLabel category={r.category} />
+                          <StarRow score={r.score} size={11} />
                         </View>
                       ))}
                   </View>
@@ -200,12 +186,12 @@ export default function ReviewsScreen() {
                   <View style={styles.attributesRow}>
                     {moodRatings.map((r) => (
                       <View key={r.category} style={styles.moodAttrChip}>
-                        <Text style={styles.moodAttrText}>{prettyCategory(r.category)}</Text>
+                        <CategoryLabel category={r.category} />
                       </View>
                     ))}
                     {facilityRatings.map((r) => (
                       <View key={r.category} style={styles.facilityAttrChip}>
-                        <Text style={styles.facilityAttrText}>{prettyCategory(r.category)}</Text>
+                        <CategoryLabel category={r.category} />
                       </View>
                     ))}
                   </View>
@@ -233,7 +219,7 @@ export default function ReviewsScreen() {
                           />
                         ) : (
                           <View style={[styles.mediaThumb, styles.videoThumb]}>
-                            <Text style={styles.videoPlay}>▶</Text>
+                            <Play size={24} color="#FFFFFF" fill="#FFFFFF" strokeWidth={0} />
                           </View>
                         )}
                       </TouchableOpacity>
@@ -290,7 +276,7 @@ export default function ReviewsScreen() {
                     />
                   ) : (
                     <View style={styles.zoomVideoBox}>
-                      <Text style={styles.zoomVideoIcon}>🎥</Text>
+                      <Video size={48} color={colors.textSecondary} strokeWidth={1.5} />
                       <Text style={styles.zoomVideoHint}>{t(reviewsText.videoPreview)}</Text>
                     </View>
                   )}
@@ -303,7 +289,7 @@ export default function ReviewsScreen() {
             onPress={() => setZoomMedia(null)}
             hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           >
-            <Text style={styles.zoomCloseText}>✕</Text>
+            <X size={22} color="#FFFFFF" strokeWidth={2.5} />
           </TouchableOpacity>
         </View>
       </Modal>
@@ -319,16 +305,20 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.surface,
     backgroundColor: colors.white,
   },
+  backRow: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   back: { fontSize: 15, color: colors.accent, fontWeight: '600' },
+  writeRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   title: { fontSize: 16, fontWeight: '700', color: colors.primary, flex: 1, textAlign: 'center', marginHorizontal: spacing.sm },
   writeBtn: { fontSize: 14, fontWeight: '700', color: colors.accent },
+  starsRow: { flexDirection: 'row', gap: 1 },
+  categoryLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 4, flexShrink: 1 },
+  categoryLabelText: { fontSize: 11, color: colors.textSecondary, fontWeight: '600' },
 
   summaryBox: {
     backgroundColor: colors.white, margin: spacing.md, borderRadius: radius.md,
     padding: spacing.md, elevation: 1,
   },
-  summaryRow: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.xs + 2 },
-  summaryLabel: { width: 120, fontSize: 12, color: colors.textSecondary, fontWeight: '600' },
+  summaryRow: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.xs + 2, gap: spacing.sm },
   barBg: { flex: 1, height: 8, backgroundColor: colors.surface, borderRadius: 4, marginHorizontal: spacing.sm, overflow: 'hidden' },
   barFill: { height: '100%', backgroundColor: colors.accent, borderRadius: 4 },
   summaryScore: { width: 28, fontSize: 13, fontWeight: '700', color: colors.primary, textAlign: 'right' },
@@ -348,9 +338,7 @@ const styles = StyleSheet.create({
   cardName: { fontSize: 14, fontWeight: '700', color: colors.primary },
   cardDate: { fontSize: 11, color: colors.textSecondary },
   ratingsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: spacing.sm },
-  ratingChip: { backgroundColor: colors.surface, borderRadius: radius.full, paddingHorizontal: 8, paddingVertical: 3 },
-  ratingChipLabel: { fontSize: 10, color: colors.textSecondary, fontWeight: '600' },
-  ratingChipStars: { fontSize: 10, color: colors.accent },
+  ratingChip: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.surface, borderRadius: radius.full, paddingHorizontal: 8, paddingVertical: 3 },
   reviewText: { fontSize: 14, color: colors.primary, lineHeight: 20, marginBottom: spacing.sm },
 
   // Overall star rating (prominent)
@@ -358,11 +346,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: spacing.sm,
-  },
-  overallStars: {
-    fontSize: 18,
-    color: colors.accent,
-    letterSpacing: 1,
   },
   overallScore: {
     fontSize: 14,
@@ -386,14 +369,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.accent,
   },
-  moodAttrText: { fontSize: 11, color: colors.accent, fontWeight: '700' },
   facilityAttrChip: {
     backgroundColor: colors.surface,
     borderRadius: radius.full,
     paddingHorizontal: 10,
     paddingVertical: 4,
   },
-  facilityAttrText: { fontSize: 11, color: colors.primary, fontWeight: '600' },
 
   // Media thumbnails + zoom
   mediaRow: {
@@ -413,12 +394,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.primary,
   },
-  videoPlay: {
-    color: colors.white,
-    fontSize: 24,
-    fontWeight: '900',
-  },
-
   // Zoom modal
   zoomRoot: { flex: 1, backgroundColor: '#000' },
   zoomScrollContent: {
@@ -437,8 +412,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  zoomVideoIcon: { fontSize: 80, marginBottom: 12 },
-  zoomVideoHint: { color: 'rgba(255,255,255,0.7)', fontSize: 14 },
+  zoomVideoHint: { color: 'rgba(255,255,255,0.7)', fontSize: 14, marginTop: 12 },
   zoomCloseBtn: {
     position: 'absolute',
     top: 48,
@@ -451,5 +425,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     zIndex: 10,
   },
-  zoomCloseText: { color: colors.white, fontSize: 22, fontWeight: '700' },
 });

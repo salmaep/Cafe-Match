@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { View, Text, StyleSheet, Animated } from "react-native";
 import { Marker } from "react-native-maps";
 import Svg, { Path } from "react-native-svg";
+import { User } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { mapText } from "@shared/i18n/keys";
 import { Cafe } from "../../../types";
@@ -60,7 +61,8 @@ const CafeMarker = React.memo(function CafeMarker({
         )}
         {friendCount > 0 && (
           <View style={styles.friendBadge}>
-            <Text style={styles.friendBadgeText}>{friendCount}👤</Text>
+            <Text style={styles.friendBadgeText}>{friendCount}</Text>
+            <User size={9} color="#FFFFFF" strokeWidth={2.5} />
           </View>
         )}
         <View
@@ -138,6 +140,9 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   friendBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
     backgroundColor: colors.accent,
     borderRadius: radius.full,
     paddingHorizontal: 5,

@@ -2,7 +2,12 @@ import { http } from '../../lib/http';
 import { API_PATHS } from '../../constant/api';
 import { Cafe } from '../../types';
 import { mapBackendCafe } from './mappers';
-import { CafeSearchResult, SearchCafesParams } from './types';
+import {
+  AutocompleteHit,
+  AutocompleteParams,
+  CafeSearchResult,
+  SearchCafesParams,
+} from './types';
 
 const MAX_RADIUS_M = 50_000_000;
 
@@ -135,6 +140,20 @@ export async function searchSemanticApi(
   };
 }
 
+/**
+ * Lightweight cafe-name typeahead (`GET /cafes/autocomplete`). Returns a thin
+ * projection (no full cafe mapping) — used by the search dropdown.
+ */
+export async function fetchAutocomplete(
+  params: AutocompleteParams,
+): Promise<{ data: AutocompleteHit[] }> {
+  const { data } = await http.get<{ data: AutocompleteHit[] }>(
+    API_PATHS.cafesAutocomplete,
+    { params },
+  );
+  return { data: data?.data ?? [] };
+}
+
 export async function fetchPromotedCafes(type?: string): Promise<Cafe[]> {
   const params = type ? { type } : {};
   const { data } = await http.get(API_PATHS.cafesPromoted, { params });
@@ -149,6 +168,9 @@ export interface DiscoverDeckParams {
   priceRange?: '$' | '$$' | '$$$';
   facilities?: string[];
   limit?: number;
+  // Cafe ids already seen this session — excluded server-side so the infinite
+  // swipe deck never repeats a card.
+  excludeIds?: number[];
 }
 
 export interface DiscoverDeckResult {
@@ -169,6 +191,9 @@ export async function fetchDiscoverDeck(
   };
   if (params.facilities && params.facilities.length > 0) {
     query.facilities = params.facilities.join(',');
+  }
+  if (params.excludeIds && params.excludeIds.length > 0) {
+    query.excludeIds = params.excludeIds.join(',');
   }
   const { data } = await http.get('/cafes/discover', { params: query });
   const cafes = (data?.data ?? []).map((c: any) => {

@@ -20,9 +20,29 @@ import { useShortlist } from '../context/ShortlistContext';
 import { usePreferences } from '../context/PreferencesContext';
 import CafeMatchLogo from '../components/CafeMatchLogo';
 import DeleteAccountModal from '../components/DeleteAccountModal';
+import StatusBarScrim from '../components/StatusBarScrim';
 import { fetchUnreadCount } from '../services/api';
 import { colors, spacing, radius } from '../theme';
 import { APP_VERSION } from '../constant/version';
+import {
+  Heart,
+  Bookmark,
+  Star,
+  Settings,
+  LogOut,
+  Trash2,
+  Users,
+  Trophy,
+  Award,
+  Bell,
+  BarChart3,
+  Camera,
+  Pencil,
+  Ticket,
+  ChevronRight,
+  RotateCcw,
+} from 'lucide-react-native';
+import type { LucideIcon } from 'lucide-react-native';
 
 export default function ProfileScreen() {
   const navigation = useNavigation<StackNavigationProp<any>>();
@@ -30,7 +50,8 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const { user, logout } = useAuth();
   const { clearShortlist } = useShortlist();
-  const { setPreferences, setWizardCompleted } = usePreferences();
+  const { setPreferences, setWizardCompleted, clearPreferences, wizardCompleted, preferences } =
+    usePreferences();
   const [unread, setUnread] = useState(0);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
@@ -53,6 +74,13 @@ export default function ProfileScreen() {
         routes: [{ name: 'Splash' }],
       }),
     );
+  };
+
+  const handleClearPreferences = () => {
+    clearPreferences();
+    // Re-onboard from the wizard (mirrors web navigating to /discover, which
+    // reshows the wizard once preferences are cleared).
+    navigation.navigate('Wizard');
   };
 
   const handleLogout = () => {
@@ -142,7 +170,9 @@ export default function ProfileScreen() {
   };
 
   return (
-    <ScrollView
+    <View style={styles.screen}>
+      <StatusBarScrim />
+      <ScrollView
       style={styles.container}
       contentContainerStyle={{
         paddingTop: insets.top + spacing.md,
@@ -164,7 +194,7 @@ export default function ProfileScreen() {
             <Text style={styles.avatarText}>{initials}</Text>
           )}
           <View style={styles.avatarBadge}>
-            <Text style={styles.avatarBadgeText}>📷</Text>
+            <Camera size={12} color="#FFFFFF" strokeWidth={2.2} />
           </View>
         </TouchableOpacity>
         <View style={styles.profileInfo}>
@@ -175,22 +205,24 @@ export default function ProfileScreen() {
             <TouchableOpacity
               onPress={() => navigation.navigate('EditProfileModal')}
             >
-              <Text style={styles.editIcon}>✏️</Text>
+              <Pencil size={14} color={colors.textSecondary} strokeWidth={2} />
             </TouchableOpacity>
           </View>
           <Text style={styles.userEmail} numberOfLines={1}>
             {user.email}
           </Text>
-          {!!friendCode && (
+          {/* Friend code hidden — social/friends feature disabled for now. */}
+          {false && !!friendCode && (
             <View style={styles.friendCodeBadge}>
-              <Text style={styles.friendCodeText}>🎫 {friendCode}</Text>
+              <Ticket size={11} color={colors.accent} strokeWidth={2.2} />
+              <Text style={styles.friendCodeText}>{friendCode}</Text>
             </View>
           )}
         </View>
       </View>
 
-      {/* Invite card */}
-      {!!friendCode && (
+      {/* Invite card hidden — social/friends feature disabled for now. */}
+      {false && !!friendCode && (
         <View style={styles.inviteCard}>
           <View>
             <Text style={styles.cardTitle}>{t(profileText.inviteTitle)}</Text>
@@ -237,34 +269,36 @@ export default function ProfileScreen() {
         </View>
       )}
 
-      {/* Quick actions — Leaderboard & Recap hidden to mirror web b5acbe27 */}
+      {/* Quick actions — Friends, Leaderboard & Recap hidden */}
       <View style={styles.quickGrid}>
-        <QuickAction
-          icon="👥"
-          label={t(profileText.quickFriends)}
-          onPress={() => navigation.navigate('Friends')}
-        />
         {false && (
           <QuickAction
-            icon="🏆"
+            Icon={Users}
+            label={t(profileText.quickFriends)}
+            onPress={() => navigation.navigate('Friends')}
+          />
+        )}
+        {false && (
+          <QuickAction
+            Icon={Trophy}
             label={t(profileText.quickLeaderboard)}
             onPress={() => navigation.navigate('GlobalLeaderboard')}
           />
         )}
         <QuickAction
-          icon="🎖️"
+          Icon={Award}
           label={t(profileText.quickAchievement)}
           onPress={() => navigation.navigate('Achievements')}
         />
         <QuickAction
-          icon="🔔"
+          Icon={Bell}
           label={t(profileText.quickNotifications)}
           badge={unread > 0 ? unread : undefined}
           onPress={() => navigation.navigate('Notifications')}
         />
         {false && (
           <QuickAction
-            icon="📊"
+            Icon={BarChart3}
             label={t(profileText.quickRecap)}
             onPress={() =>
               navigation.navigate('Recap', { year: new Date().getFullYear() })
@@ -276,19 +310,22 @@ export default function ProfileScreen() {
       {/* Cafe Saya */}
       <Section title={t(profileText.sectionMyCafe)}>
         <MenuItem
-          icon="❤️"
+          Icon={Heart}
           label={t(profileText.menuFavorites)}
           subtitle={t(profileText.menuFavoritesSub)}
           onPress={() => navigation.navigate('Favorites')}
         />
+        {/* Bookmark menu hidden — mirrors web removing bookmarks. */}
+        {false && (
+          <MenuItem
+            Icon={Bookmark}
+            label={t(profileText.menuBookmarks)}
+            subtitle={t(profileText.menuBookmarksSub)}
+            onPress={() => navigation.navigate('Bookmarks')}
+          />
+        )}
         <MenuItem
-          icon="🔖"
-          label={t(profileText.menuBookmarks)}
-          subtitle={t(profileText.menuBookmarksSub)}
-          onPress={() => navigation.navigate('Bookmarks')}
-        />
-        <MenuItem
-          icon="⭐"
+          Icon={Star}
           label={t(profileText.menuShortlist)}
           subtitle={t(profileText.menuShortlistSub)}
           onPress={() => navigation.navigate('ShortlistModal')}
@@ -299,20 +336,28 @@ export default function ProfileScreen() {
       {/* Akun */}
       <Section title={t(profileText.sectionAccount)}>
         <MenuItem
-          icon="⚙️"
+          Icon={Settings}
           label={t(profileText.menuEditProfile)}
           subtitle={t(profileText.menuEditProfileSub)}
           onPress={() => navigation.navigate('EditProfileModal')}
         />
+        {wizardCompleted && !!preferences && (
+          <MenuItem
+            Icon={RotateCcw}
+            label={t(profileText.menuClearPrefs)}
+            subtitle={t(profileText.menuClearPrefsSub)}
+            onPress={handleClearPreferences}
+          />
+        )}
         <MenuItem
-          icon="🚪"
+          Icon={LogOut}
           label={t(profileText.menuLogout)}
           subtitle={t(profileText.menuLogoutSub)}
           onPress={handleLogout}
           danger
         />
         <MenuItem
-          icon="🗑️"
+          Icon={Trash2}
           label={t(profileText.menuDeleteAccount)}
           subtitle={t(profileText.menuDeleteAccountSub)}
           onPress={() => setDeleteOpen(true)}
@@ -328,24 +373,25 @@ export default function ProfileScreen() {
         onClose={() => setDeleteOpen(false)}
         onDeleted={handleAccountDeleted}
       />
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 function QuickAction({
-  icon,
+  Icon,
   label,
   badge,
   onPress,
 }: {
-  icon: string;
+  Icon: LucideIcon;
   label: string;
   badge?: number;
   onPress: () => void;
 }) {
   return (
     <TouchableOpacity style={styles.quickItem} onPress={onPress}>
-      <Text style={styles.quickIcon}>{icon}</Text>
+      <Icon size={22} color={colors.primary} strokeWidth={2} />
       <Text style={styles.quickLabel}>{label}</Text>
       {badge != null && (
         <View style={styles.quickBadge}>
@@ -372,14 +418,14 @@ function Section({
 }
 
 function MenuItem({
-  icon,
+  Icon,
   label,
   subtitle,
   onPress,
   isLast,
   danger,
 }: {
-  icon: string;
+  Icon: LucideIcon;
   label: string;
   subtitle?: string;
   onPress: () => void;
@@ -391,14 +437,16 @@ function MenuItem({
       style={[styles.menuRow, !isLast && styles.menuRowDivider]}
       onPress={onPress}
     >
-      <Text style={styles.menuIcon}>{icon}</Text>
+      <View style={styles.menuIconWrap}>
+        <Icon size={18} color={danger ? '#E94B4B' : colors.primary} strokeWidth={2} />
+      </View>
       <View style={styles.menuTexts}>
         <Text style={[styles.menuLabel, danger && styles.menuLabelDanger]}>
           {label}
         </Text>
         {!!subtitle && <Text style={styles.menuSubtitle}>{subtitle}</Text>}
       </View>
-      <Text style={styles.menuArrow}>›</Text>
+      <ChevronRight size={20} color={colors.textSecondary} strokeWidth={2} />
     </TouchableOpacity>
   );
 }
@@ -406,6 +454,7 @@ function MenuItem({
 const CARD_BORDER = '#F0EDE8';
 
 const styles = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: colors.background },
   container: { flex: 1, backgroundColor: colors.background },
   centered: {
     flex: 1,
@@ -456,13 +505,14 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
     borderWidth: 2, borderColor: colors.white,
   },
-  avatarBadgeText: { fontSize: 9 },
   profileInfo: { flex: 1, minWidth: 0 },
   profileNameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   userName: { fontSize: 18, fontWeight: '700', color: colors.primary, flexShrink: 1 },
-  editIcon: { fontSize: 14 },
   userEmail: { fontSize: 13, color: colors.textSecondary, marginTop: 1 },
   friendCodeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     alignSelf: 'flex-start',
     marginTop: 6,
     paddingHorizontal: 8, paddingVertical: 3,
@@ -547,7 +597,6 @@ const styles = StyleSheet.create({
     gap: 4,
     position: 'relative',
   },
-  quickIcon: { fontSize: 20 },
   quickLabel: {
     fontSize: 11, fontWeight: '700',
     color: '#5C5A52', textAlign: 'center',
@@ -581,12 +630,11 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   menuRowDivider: { borderBottomWidth: 1, borderBottomColor: CARD_BORDER },
-  menuIcon: { fontSize: 18, width: 24, textAlign: 'center' },
+  menuIconWrap: { width: 24, alignItems: 'center' },
   menuTexts: { flex: 1, minWidth: 0 },
   menuLabel: { fontSize: 14, fontWeight: '700', color: colors.primary },
   menuLabelDanger: { color: colors.error },
   menuSubtitle: { fontSize: 11, color: '#A8A59C', marginTop: 1 },
-  menuArrow: { fontSize: 18, color: colors.textSecondary },
 
   versionText: {
     textAlign: 'center',

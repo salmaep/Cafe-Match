@@ -806,6 +806,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'flex-end',
+    ...Platform.select({ android: { elevation: 100 } }),
   },
 
   // ─── Full-page (OTP + phone enrollment) ─────────────────────────────────
@@ -814,6 +815,7 @@ const styles = StyleSheet.create({
   fullPage: {
     flex: 1,
     backgroundColor: colors.background,
+    ...Platform.select({ android: { elevation: 100 } }),
   },
   fullPageHeader: {
     // Top inset applied inline via useSafeAreaInsets (this is a transparentModal,

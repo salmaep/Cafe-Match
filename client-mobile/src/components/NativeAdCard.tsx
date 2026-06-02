@@ -13,6 +13,10 @@ import {
 } from '../lib/ads';
 import { adUnitIds } from '../config/ads';
 
+const adCache = new Map<string, NativeAdType>();
+const MAX_CACHE = 20;
+const inflight = new Map<string, Promise<NativeAdType | null>>();
+
 // Color palette mirrors components/cafe/CafeListItem so the layout is a 1:1
 // match. The only divergences: amber border (highlight cue) + amber tint on
 // the photo edge + a small amber "AD" badge in the right column.
@@ -30,9 +34,13 @@ const C = {
   star: '#F59E0B',
 };
 
-export default function NativeAdCard() {
+interface NativeAdCardProps {
+  cacheKey?: string;
+}
+
+export default function NativeAdCard({ cacheKey = '__default__' }: NativeAdCardProps) {
   const { t } = useTranslation();
-  const [ad, setAd] = useState<NativeAdType | null>(null);
+  const [ad, setAd] = useState<NativeAdType | null>(() => adCache.get(cacheKey) ?? null);
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
@@ -43,53 +51,65 @@ export default function NativeAdCard() {
       }
       return;
     }
-    let cancelled = false;
-    let current: NativeAdType | null = null;
 
-    if (__DEV__) {
-      // eslint-disable-next-line no-console
-      console.log('[Ad] requesting unit:', adUnitIds.native);
+    const cached = adCache.get(cacheKey);
+    if (cached) {
+      setAd(cached);
+      return;
     }
 
-    // Hard timeout: if no response after 10s, give up rather than spin forever.
-    const timeoutId = setTimeout(() => {
-      if (cancelled) return;
+    if (adCache.size >= MAX_CACHE) {
       if (__DEV__) {
         // eslint-disable-next-line no-console
-        console.warn('[Ad] timeout — no ad after 10s, giving up.');
+        console.log('[Ad] cache full, skip key=', cacheKey);
       }
       setFailed(true);
-    }, 10_000);
+      return;
+    }
 
-    NativeAd.createForAdRequest(adUnitIds.native)
-      .then((loaded) => {
-        clearTimeout(timeoutId);
-        if (cancelled) {
-          loaded.destroy();
-          return;
-        }
+    let cancelled = false;
+
+    const existing = inflight.get(cacheKey);
+    const pending =
+      existing ??
+      (() => {
         if (__DEV__) {
           // eslint-disable-next-line no-console
-          console.log('[Ad] loaded:', loaded.headline);
+          console.log('[Ad] requesting unit:', adUnitIds.native, 'key=', cacheKey);
         }
-        current = loaded;
-        setAd(loaded);
-      })
-      .catch((err) => {
-        clearTimeout(timeoutId);
-        if (__DEV__) {
-          // eslint-disable-next-line no-console
-          console.warn('[Ad] failed:', err?.message ?? err);
-        }
-        if (!cancelled) setFailed(true);
-      });
+        const p = NativeAd.createForAdRequest(adUnitIds.native)
+          .then((loaded) => {
+            adCache.set(cacheKey, loaded);
+            if (__DEV__) {
+              // eslint-disable-next-line no-console
+              console.log('[Ad] loaded:', loaded.headline, 'key=', cacheKey);
+            }
+            return loaded;
+          })
+          .catch((err) => {
+            if (__DEV__) {
+              // eslint-disable-next-line no-console
+              console.warn('[Ad] failed:', err?.message ?? err, 'key=', cacheKey);
+            }
+            return null;
+          })
+          .finally(() => {
+            inflight.delete(cacheKey);
+          });
+        inflight.set(cacheKey, p);
+        return p;
+      })();
+
+    pending.then((loaded) => {
+      if (cancelled) return;
+      if (loaded) setAd(loaded);
+      else setFailed(true);
+    });
 
     return () => {
       cancelled = true;
-      clearTimeout(timeoutId);
-      current?.destroy();
     };
-  }, []);
+  }, [cacheKey]);
 
   if (!adsAvailable || !NativeAdView || !NativeAsset || !NativeAssetType || !NativeMediaView) {
     return null;

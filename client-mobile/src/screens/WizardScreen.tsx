@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,8 @@ import {
   ScrollView,
   Dimensions,
   ActivityIndicator,
+  Animated,
+  Easing,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -30,6 +32,28 @@ import { usePurposes } from '../queries/purposes/use-purposes';
 
 const { width } = Dimensions.get('window');
 const TOTAL_STEPS = 4;
+
+function ShimmerCard() {
+  const opacity = useRef(new Animated.Value(0.4)).current;
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, { toValue: 1, duration: 700, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(opacity, { toValue: 0.4, duration: 700, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [opacity]);
+  return (
+    <View style={styles.optionCard}>
+      <Animated.View style={[styles.shimmerIcon, { opacity }]} />
+      <Animated.View style={[styles.shimmerLabel, { opacity }]} />
+      <Animated.View style={[styles.shimmerTagline, { opacity }]} />
+      <Animated.View style={[styles.shimmerTaglineShort, { opacity }]} />
+    </View>
+  );
+}
 
 const PRICE_OPTIONS = [
   { key: '$', label: '$' },
@@ -70,6 +94,7 @@ export default function WizardScreen({ onComplete, onSkip }: WizardScreenProps =
       tagline: p.description ?? local?.tagline ?? '',
     };
   });
+  const showShimmer = purposesQuery.isLoading && wizardPurposes.length === 0;
   const purposeOptions: { slug: string; label: string; icon?: string; emoji: string; tagline: string }[] =
     wizardPurposes.length > 0
       ? wizardPurposes
@@ -222,7 +247,9 @@ export default function WizardScreen({ onComplete, onSkip }: WizardScreenProps =
             showsVerticalScrollIndicator={false}
             style={{ flex: 1 }}
           >
-            {purposeOptions.map((p) => {
+            {showShimmer
+              ? Array.from({ length: 12 }).map((_, i) => <ShimmerCard key={`shimmer-${i}`} />)
+              : purposeOptions.map((p) => {
               const active = purpose === p.label;
               return (
                 <TouchableOpacity
@@ -651,6 +678,33 @@ const styles = StyleSheet.create({
   },
   optionEmoji: { fontSize: 26, marginBottom: 4 },
   optionIcon: { marginBottom: 4, height: 30, alignItems: 'center', justifyContent: 'center' },
+  shimmerIcon: {
+    width: 30,
+    height: 30,
+    borderRadius: 8,
+    backgroundColor: '#E5E0D8',
+    marginBottom: 6,
+  },
+  shimmerLabel: {
+    width: '60%',
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#E5E0D8',
+    marginBottom: 6,
+  },
+  shimmerTagline: {
+    width: '85%',
+    height: 9,
+    borderRadius: 5,
+    backgroundColor: '#EDE8DF',
+    marginBottom: 4,
+  },
+  shimmerTaglineShort: {
+    width: '55%',
+    height: 9,
+    borderRadius: 5,
+    backgroundColor: '#EDE8DF',
+  },
   optionLabel: {
     fontSize: 13,
     fontWeight: '700',

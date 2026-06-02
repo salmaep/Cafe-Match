@@ -109,6 +109,10 @@ export default function HomePage() {
     hit: AutocompleteHit;
     newRadiusKm: number;
   } | null>(null);
+  const [expandSuggestion, setExpandSuggestion] = useState<{
+    count: number;
+    suggestedRadius: number;
+  } | null>(null);
   const [center, setCenter] = useState<[number, number] | null>(null);
   // Track whether the current center came from GPS or a manual user action
   // (map click / fallback button). When `gps`, GPS updates may overwrite center;
@@ -412,6 +416,30 @@ export default function HomePage() {
     };
   }, [filters.q, total, loading]);
 
+  // Expand suggestion: when committed search returns 0 results, check if
+  // matching cafes exist outside the current radius via autocomplete.
+  useEffect(() => {
+    if (loading || total > 0 || !filters.q.trim() || !center) {
+      setExpandSuggestion(null);
+      return;
+    }
+    let cancelled = false;
+    cafesApi
+      .autocomplete({ q: filters.q.trim(), lat: center[0], lng: center[1], limit: 5 })
+      .then((res) => {
+        if (cancelled) return;
+        const outside = res.data.filter(
+          (h) => h.distanceMeters != null && h.distanceMeters > radius,
+        );
+        if (outside.length === 0) { setExpandSuggestion(null); return; }
+        const maxDist = Math.max(...outside.map((h) => h.distanceMeters!));
+        const suggestedRadius = Math.ceil((maxDist + 500) / 1000) * 1000;
+        setExpandSuggestion({ count: outside.length, suggestedRadius });
+      })
+      .catch(() => { if (!cancelled) setExpandSuggestion(null); });
+    return () => { cancelled = true; };
+  }, [loading, total, filters.q, center, radius]);
+
   // Feature names linked to the currently active purpose — drive the ⭐
   // marker on FilterPanel chips so users see why those are pre-toggled.
   const autoSelectedFromPurpose: string[] = (() => {
@@ -641,6 +669,35 @@ export default function HomePage() {
                     : `${total} kafe dalam ${radius / 1000} km`}
               </p>
             </div>
+
+            {expandSuggestion && !didYouMean && (
+              <div className="mb-3 rounded-lg border border-[#F2DAB6] bg-[#FDF6EC] p-3 text-sm">
+                <p className="text-[#1C1C1A] mb-2">
+                  Ada <span className="font-semibold">{expandSuggestion.count}</span> kafe
+                  yang cocok di luar radius{" "}
+                  <span className="font-semibold">{radius / 1000} km</span> kamu.
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleRadiusChange(expandSuggestion.suggestedRadius);
+                      setExpandSuggestion(null);
+                    }}
+                    className="flex-1 py-1.5 rounded-lg bg-[#D48B3A] text-white text-xs font-bold"
+                  >
+                    Perluas ke {expandSuggestion.suggestedRadius / 1000} km
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setExpandSuggestion(null)}
+                    className="px-3 py-1.5 rounded-lg border border-[#E8E4DD] text-[#8A8880] text-xs font-semibold"
+                  >
+                    Tutup
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* List — compact horizontal rows (matches Android MapScreen list) */}
             <div className="space-y-2">
@@ -893,6 +950,35 @@ export default function HomePage() {
                   </button>
                   ?
                 </span>
+              </div>
+            )}
+            {expandSuggestion && !didYouMean && (
+              <div className="mb-3 rounded-lg border border-[#F2DAB6] bg-[#FDF6EC] p-3 text-sm flex items-center justify-between gap-3">
+                <span className="text-[#1C1C1A]">
+                  Ada <span className="font-semibold">{expandSuggestion.count}</span> kafe
+                  yang cocok di luar radius{" "}
+                  <span className="font-semibold">{radius / 1000} km</span> kamu.
+                </span>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleRadiusChange(expandSuggestion.suggestedRadius);
+                      setExpandSuggestion(null);
+                    }}
+                    className="text-xs font-bold text-[#D48B3A] hover:underline whitespace-nowrap"
+                  >
+                    Perluas ke {expandSuggestion.suggestedRadius / 1000} km
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setExpandSuggestion(null)}
+                    aria-label="Tutup"
+                    className="text-[#8A8880] hover:text-[#1C1C1A]"
+                  >
+                    <X size={14} strokeWidth={2} />
+                  </button>
+                </div>
               </div>
             )}
             {loading && cafes.length === 0 ? (

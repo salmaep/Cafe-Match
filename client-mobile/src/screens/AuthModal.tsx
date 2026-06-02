@@ -365,9 +365,16 @@ export default function AuthModal() {
       if (!idToken) {
         throw new Error('id_token tidak diterima dari Google.');
       }
+      if (__DEV__) console.log('[Google] idToken:', idToken);
       const r = await googleIdTokenLoginApi(idToken);
       await consumeSocialResult(r);
     } catch (err: any) {
+      console.log('[Google] err.code:', err?.code);
+      console.log('[Google] err.message:', err?.message);
+      console.log('[Google] err.response?.status:', err?.response?.status);
+      console.log('[Google] err.response?.data:', JSON.stringify(err?.response?.data));
+      console.log('[Google] err.config?.url:', err?.config?.url);
+      console.log('[Google] err.config?.baseURL:', err?.config?.baseURL);
       const code = err?.code;
       if (code === statusCodes.SIGN_IN_CANCELLED) {
         // User backed out — silent, no error banner

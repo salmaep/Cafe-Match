@@ -1,17 +1,17 @@
 {
   "emptyTitle": "Belum ada cafe yang lagi trending",
   "emptySubtitle": "Coba filter lain atau cek lagi nanti",
-  "heroPill": "🔥 LAGI TRENDING",
+  "heroPill": "LAGI TRENDING",
   "heroTitleBefore": "Cafe paling ",
   "heroTitleAccent": "hits",
   "heroTitleAfter": " minggu ini",
   "heroSubtitle": "Berdasar jumlah favorit & bookmark dari komunitas — update tiap hari.",
   "cafeCountLabel": "CAFE",
-  "leaderboardBtn": "🏆 Leaderboard",
-  "filterBtn": "⚙️ Filter",
+  "leaderboardBtn": "Leaderboard",
+  "filterBtn": "Filter",
   "allFilter": "Semua",
   "endHint": "Itu semua untuk filter ini ✓",
   "rankLabel": "TOP",
   "winnerCrown": "#1 TRENDING",
-  "hotBadge": "🔥 HOT"
+  "hotBadge": "HOT"
 }

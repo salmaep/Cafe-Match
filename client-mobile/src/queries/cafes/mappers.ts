@@ -1,5 +1,6 @@
 import { Cafe } from '../../types';
 import { FACILITY_KEY_MAP } from '../../constant/ui/facility-key-map';
+import { buildFacilityChips } from '../../utils/facilities';
 
 export function haversineKm(
   lat1: number,
@@ -139,7 +140,7 @@ export function mapBackendCafe(
     })
     .filter(Boolean);
 
-  return {
+  const baseCafe = {
     id: String(raw.id),
     name: raw.name,
     slug: raw.slug,
@@ -185,5 +186,8 @@ export function mapBackendCafe(
     topReviewAuthor: raw.topReviewAuthor ?? null,
     topReviewRating: raw.topReviewRating ?? null,
     topReviewAt: raw.topReviewAt ?? null,
-  } as any;
+  } as any as Cafe;
+
+  baseCafe.chips = buildFacilityChips(baseCafe);
+  return baseCafe;
 }

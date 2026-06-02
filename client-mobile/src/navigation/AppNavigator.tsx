@@ -84,8 +84,9 @@ function MainTabs() {
         tabBarStyle: [
           styles.tabBar,
           {
-            height: 60 + insets.bottom,
-            paddingBottom: insets.bottom,
+            height: 64 + insets.bottom + 10,
+            paddingBottom: insets.bottom + 10,
+            paddingTop: 6,
           },
         ],
         tabBarActiveTintColor: colors.accent,

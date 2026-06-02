@@ -30,16 +30,22 @@ import {
   // checkInApi,
 } from "../services/api";
 import { logEvent } from "../utils/analytics";
+import { placeholderImage } from "../utils/cafeImage";
 import { useCafeDetail } from "../queries/cafes/use-cafe-detail";
 import { useReviewSummary } from "../queries/reviews/use-review-summary";
 import { useReviews } from "../queries/reviews/use-reviews";
+import { useMyReviews } from "../queries/reviews/use-my-reviews";
+import { useGoogleReviews } from "../queries/cafes/google-reviews";
 import { useLeaderboard } from "../queries/checkins/use-leaderboard";
+import GoogleReviewCard from "../components/cafe/GoogleReviewCard";
+import GoogleGIcon from "../components/cafe/GoogleGIcon";
 import { useQueryClient } from "@tanstack/react-query";
 import { reviewKeys } from "../queries/reviews/keys";
 import { cafeKeys } from "../queries/cafes/keys";
 import { Cafe } from "../types";
 import { colors, spacing, radius } from "../theme";
 import { buildFacilityChips } from "../utils/facilities";
+import { cleanAddress } from "../utils/address";
 import { formatRating } from "../utils/rating";
 import { formatHoursTable } from "../utils/openingHours";
 import {
@@ -51,7 +57,16 @@ import {
 } from "../constant/ui/review-categories";
 import { LucideIcon } from "../utils/lucideIcon";
 import StatusBarScrim from "../components/StatusBarScrim";
-import { Star, MapPin, Heart, Bookmark, BookmarkCheck, ChevronLeft, Phone } from "lucide-react-native";
+import { Star, MapPin, Heart, Bookmark, BookmarkCheck, ChevronLeft, Phone, PencilLine, User, Users, BookOpen, Laptop } from "lucide-react-native";
+import type { LucideIcon as LucideIconType } from "lucide-react-native";
+
+const MOOD_SLUG_TO_ICON: Record<string, LucideIconType> = {
+  'me-time': User,
+  'date': Heart,
+  'family': Users,
+  'group-work': BookOpen,
+  'wfc': Laptop,
+};
 
 const { width, height } = Dimensions.get("window");
 
@@ -62,6 +77,31 @@ const HERO_SIDE_PAD = 0;
 const HERO_PEEK = 24;
 const HERO_GAP = 6;
 const HERO_CARD_W = width - HERO_SIDE_PAD - HERO_PEEK;
+
+function HeroPhoto({
+  uri,
+  style,
+  onFail,
+}: {
+  uri: string;
+  style: any;
+  onFail?: () => void;
+}) {
+  const [src, setSrc] = useState<string | null>(uri && uri.length > 0 ? uri : null);
+  if (src == null) return null;
+  return (
+    <Image
+      source={{ uri: src }}
+      style={style}
+      cachePolicy="memory-disk"
+      transition={200}
+      onError={() => {
+        setSrc(null);
+        onFail?.();
+      }}
+    />
+  );
+}
 
 // ─── Hero photo mosaic (Airbnb-style, mirrors web HeroMosaic) ──────────────
 // Layout:
@@ -246,6 +286,15 @@ export default function CafeDetailScreen() {
   // sort by newest when no helpful-votes feature exists yet.
   const reviewsListQuery = useReviews(initialCafe?.id);
   const previewReviews = (reviewsListQuery.data?.reviews ?? []).slice(0, 4);
+  const myReviewsQuery = useMyReviews();
+  const hasMyReview = React.useMemo(() => {
+    if (!initialCafe?.id) return false;
+    const cid = Number(initialCafe.id);
+    return (myReviewsQuery.data ?? []).some((r) => r.cafeId === cid);
+  }, [myReviewsQuery.data, initialCafe?.id]);
+  const googleReviewsQuery = useGoogleReviews(initialCafe?.id, 5);
+  const googleReviews = googleReviewsQuery.data?.data ?? [];
+  const googleReviewTotal = googleReviewsQuery.data?.meta?.total ?? 0;
   const leaderboardQuery = useLeaderboard(initialCafe?.id);
   const qc = useQueryClient();
 
@@ -274,6 +323,18 @@ export default function CafeDetailScreen() {
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [currentPhoto, setCurrentPhoto] = useState(0);
   const [gridReady, setGridReady] = useState(false);
+  const [failedPhotos, setFailedPhotos] = useState<Set<number>>(new Set());
+  const markPhotoFailed = useCallback((index: number) => {
+    setFailedPhotos((prev) => {
+      if (prev.has(index)) return prev;
+      const next = new Set(prev);
+      next.add(index);
+      return next;
+    });
+  }, []);
+  const allPhotosFailed =
+    (cafe?.photos?.length ?? 0) > 0 &&
+    failedPhotos.size >= (cafe?.photos?.length ?? 0);
   const inShortlist = isInShortlist(cafe.id);
 
   useEffect(() => {
@@ -290,11 +351,11 @@ export default function CafeDetailScreen() {
   // All dedupe by normalized slug. Final count = scraped_signals + user_votes.
   const moodChips = React.useMemo(() => {
     const slugToLabel: Record<string, string> = {
-      'me-time': '🧘 Me Time',
-      'date': '💑 Date',
-      'family': '👨‍👩‍👧 Family',
-      'group-work': '📚 Group Study',
-      'wfc': '💻 WFC',
+      'me-time': 'Me Time',
+      'date': 'Date',
+      'family': 'Family',
+      'group-work': 'Group Study',
+      'wfc': 'WFC',
     };
     // Map English purpose name → slug (for cafe.purposes array)
     const nameToSlug: Record<string, string> = {
@@ -307,14 +368,14 @@ export default function CafeDetailScreen() {
       'WFC': 'wfc',
       'Work from Cafe': 'wfc',
     };
-    const combined = new Map<string, { label: string; count: number }>();
+    const combined = new Map<string, { slug: string; label: string; count: number }>();
 
     const bump = (slug: string, delta: number) => {
       const label = slugToLabel[slug];
       if (!label) return;
       const existing = combined.get(slug);
       if (existing) existing.count += delta;
-      else combined.set(slug, { label, count: delta });
+      else combined.set(slug, { slug, label, count: delta });
     };
 
     // 1. Scraped purposes (cafe.purposes string array) — each +1
@@ -344,12 +405,15 @@ export default function CafeDetailScreen() {
     return Array.from(combined.values())
       .sort((a, b) => b.count - a.count)
       .slice(0, 5)
-      .map((v) => ({ label: v.label, count: v.count }));
+      .map((v) => ({ slug: v.slug, label: v.label, count: v.count }));
   }, [reviewSummary, cafe]);
 
   // Single facility chip list — same logic as web (buildFacilityChips reads
   // cafe.facilitiesRich + bool columns + dedupes). Mirrors the cafe list cards.
-  const facilityChips = React.useMemo(() => buildFacilityChips(cafe), [cafe]);
+  const facilityChips = React.useMemo(
+    () => cafe.chips ?? buildFacilityChips(cafe),
+    [cafe],
+  );
 
   // Star-only review summary (excludes mood_/facility_)
   const starSummary = React.useMemo(
@@ -386,6 +450,7 @@ export default function CafeDetailScreen() {
     qc.invalidateQueries({ queryKey: reviewKeys.summary(initialCafe.id) });
     qc.invalidateQueries({ queryKey: reviewKeys.ofCafe(initialCafe.id) });
     qc.invalidateQueries({ queryKey: cafeKeys.detail(initialCafe.id) });
+    qc.invalidateQueries({ queryKey: ['reviews', 'me'] });
     navigation.setParams({
       newReviewTimestamp: undefined,
       newReview: undefined,
@@ -503,53 +568,65 @@ export default function CafeDetailScreen() {
         </View>
       )}
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Hero photo carousel — single photo at a time, with the next
-            photo peeking from the right edge so user knows to swipe. */}
+        {/* Hero photo carousel — when all photos fail (or none exist),
+            render a single placeholder photo instead of hiding. */}
         <View style={styles.carouselContainer}>
-          <FlatList
-            data={cafe.photos}
-            horizontal
-            // snapToInterval lets each card "snap" while still leaving a
-            // peek of the next photo on the right (pagingEnabled snaps to
-            // full screen width with no peek).
-            snapToInterval={HERO_CARD_W + HERO_GAP}
-            decelerationRate="fast"
-            snapToAlignment="start"
-            showsHorizontalScrollIndicator={false}
-            keyExtractor={(_, i) => i.toString()}
-            contentContainerStyle={{ paddingHorizontal: HERO_SIDE_PAD }}
-            ItemSeparatorComponent={() => <View style={{ width: HERO_GAP }} />}
-            onMomentumScrollEnd={(e) => {
-              const idx = Math.round(
-                e.nativeEvent.contentOffset.x / (HERO_CARD_W + HERO_GAP),
-              );
-              setCurrentPhoto(idx);
-            }}
-            renderItem={({ item, index }) => (
-              <TouchableOpacity
-                activeOpacity={0.95}
-                onPress={() => openZoom(index)}
-              >
-                <Image
-                  source={{ uri: item }}
-                  style={styles.photo}
-                  cachePolicy="memory-disk"
-                  transition={200}
-                />
-              </TouchableOpacity>
-            )}
-          />
-          <View style={styles.photoDots}>
-            {(cafe.photos ?? []).map((_, i) => (
-              <View
-                key={i}
-                style={[
-                  styles.photoDot,
-                  i === currentPhoto && styles.photoDotActive,
-                ]}
+          {allPhotosFailed || (cafe.photos?.length ?? 0) === 0 ? (
+            <Image
+              source={{ uri: placeholderImage(cafe.id) }}
+              style={styles.photo}
+              cachePolicy="memory-disk"
+              transition={200}
+            />
+          ) : (
+            <>
+              <FlatList
+                data={cafe.photos}
+                horizontal
+                snapToInterval={HERO_CARD_W + HERO_GAP}
+                decelerationRate="fast"
+                snapToAlignment="start"
+                showsHorizontalScrollIndicator={false}
+                keyExtractor={(_, i) => i.toString()}
+                contentContainerStyle={{ paddingHorizontal: HERO_SIDE_PAD }}
+                ItemSeparatorComponent={() => <View style={{ width: HERO_GAP }} />}
+                onMomentumScrollEnd={(e) => {
+                  const idx = Math.round(
+                    e.nativeEvent.contentOffset.x / (HERO_CARD_W + HERO_GAP),
+                  );
+                  setCurrentPhoto(idx);
+                }}
+                renderItem={({ item, index }) => (
+                  <TouchableOpacity
+                    activeOpacity={0.95}
+                    onPress={() => openZoom(index)}
+                  >
+                    <HeroPhoto
+                      uri={item}
+                      style={styles.photo}
+                      onFail={() => markPhotoFailed(index)}
+                    />
+                  </TouchableOpacity>
+                )}
               />
-            ))}
-          </View>
+              <View style={styles.photoDots}>
+                {(cafe.photos ?? []).map((_, i) => (
+                  <View
+                    key={i}
+                    style={[
+                      styles.photoDot,
+                      i === currentPhoto && styles.photoDotActive,
+                    ]}
+                  />
+                ))}
+              </View>
+              <View style={[styles.photoCounter, { top: insets.top + 18 }]}>
+                <Text style={styles.photoCounterText}>
+                  {currentPhoto + 1} / {(cafe.photos ?? []).length}
+                </Text>
+              </View>
+            </>
+          )}
           <TouchableOpacity
             style={[styles.backBtn, { top: insets.top + 12 }]}
             onPress={() => navigation.goBack()}
@@ -558,11 +635,6 @@ export default function CafeDetailScreen() {
           >
             <ChevronLeft size={24} color="#FFFFFF" strokeWidth={2.5} />
           </TouchableOpacity>
-          <View style={[styles.photoCounter, { top: insets.top + 18 }]}>
-            <Text style={styles.photoCounterText}>
-              {currentPhoto + 1} / {(cafe.photos ?? []).length}
-            </Text>
-          </View>
         </View>
 
         <View style={styles.content}>
@@ -599,10 +671,19 @@ export default function CafeDetailScreen() {
             <Text style={styles.description}>{cafe.description}</Text>
           ) : null}
 
-          <TouchableOpacity style={styles.addressRow} onPress={openMaps}>
-            <MapPin size={14} color={colors.textSecondary} strokeWidth={2} style={styles.addressIconLead} />
-            <Text style={styles.addressText}>{cafe.address}</Text>
-            <Text style={styles.openMaps}>{t(cafeText.openInMaps)}</Text>
+          <TouchableOpacity style={styles.addressCard} onPress={openMaps} activeOpacity={0.85}>
+            <View style={styles.addressTop}>
+              <MapPin
+                size={16}
+                color={colors.textSecondary}
+                strokeWidth={2}
+                style={styles.addressIconLead}
+              />
+              <Text style={styles.addressText}>{cleanAddress(cafe.address)}</Text>
+            </View>
+            <View style={styles.addressFooter}>
+              <Text style={styles.openMaps}>{t(cafeText.openInMaps)}</Text>
+            </View>
           </TouchableOpacity>
 
           {/* Phone — clickable tel: link */}
@@ -712,22 +793,25 @@ export default function CafeDetailScreen() {
             ) : null}
           </View>
 
-          {/* Reviews Summary */}
+          {/* Reviews — header always present (parity with web). Rating bars
+              + preview cards when data exists; empty-state card otherwise. */}
+          <View style={styles.sectionRow}>
+            <Text style={styles.sectionTitle}>{t(cafeText.reviews)}</Text>
+            {previewReviews.length > 0 && (
+              <TouchableOpacity
+                onPress={() =>
+                  navigation.navigate("Reviews", {
+                    cafeId: cafe.id,
+                    cafeName: cafe.name,
+                  })
+                }
+              >
+                <Text style={styles.seeAll}>{t(cafeText.seeAllArrow)}</Text>
+              </TouchableOpacity>
+            )}
+          </View>
           {starSummary.length > 0 && (
             <>
-              <View style={styles.sectionRow}>
-                <Text style={styles.sectionTitle}>{t(cafeText.reviews)}</Text>
-                <TouchableOpacity
-                  onPress={() =>
-                    navigation.navigate("Reviews", {
-                      cafeId: cafe.id,
-                      cafeName: cafe.name,
-                    })
-                  }
-                >
-                  <Text style={styles.seeAll}>{t(cafeText.seeAllArrow)}</Text>
-                </TouchableOpacity>
-              </View>
               {starSummary.slice(0, 4).map((s) => (
                 <View key={s.category} style={styles.reviewBarRow}>
                   <View style={styles.reviewBarLabelWrap}>
@@ -841,23 +925,76 @@ export default function CafeDetailScreen() {
                 </View>
               )}
 
-              <TouchableOpacity
-                style={styles.writeReviewBtn}
-                onPress={handleWriteReview}
-              >
-                <Text style={styles.writeReviewText}>{t(cafeText.writeReviewCTA)}</Text>
-              </TouchableOpacity>
             </>
           )}
-          {starSummary.length === 0 && (
+          {previewReviews.length === 0 && (
+            <View style={styles.reviewsEmpty}>
+              <PencilLine
+                size={28}
+                color={colors.accent}
+                strokeWidth={2}
+                style={styles.reviewsEmptyIcon}
+              />
+              <Text style={styles.reviewsEmptyTitle}>
+                {t(cafeText.noReviewYet)}
+              </Text>
+              <Text style={styles.reviewsEmptyHint}>
+                {t(cafeText.beTheFirstReview)}
+              </Text>
+            </View>
+          )}
+          {hasMyReview ? (
+            <View style={styles.alreadyReviewedNote}>
+              <Text style={styles.alreadyReviewedText}>
+                Kamu sudah menulis ulasan untuk cafe ini.
+              </Text>
+            </View>
+          ) : (
             <TouchableOpacity
               style={styles.writeReviewBtn}
               onPress={handleWriteReview}
             >
               <Text style={styles.writeReviewText}>
-                {t(cafeText.beTheFirstReview)}
+                {previewReviews.length === 0
+                  ? t(cafeText.beTheFirstReview)
+                  : t(cafeText.writeReviewCTA)}
               </Text>
             </TouchableOpacity>
+          )}
+
+          {/* Google Maps Reviews — scraped, read-only. Mirrors web parity. */}
+          {googleReviews.length > 0 && (
+            <View style={styles.googleSection}>
+              <View style={styles.googleHeaderBadge}>
+                <GoogleGIcon size={14} />
+                <Text style={styles.googleHeaderLabel}>
+                  {t(cafeText.googleReviews)}
+                </Text>
+                <Text style={styles.googleHeaderCount}>
+                  ({googleReviewTotal})
+                </Text>
+              </View>
+              <View style={styles.googleList}>
+                {googleReviews.map((gr) => (
+                  <GoogleReviewCard key={gr.id} review={gr} />
+                ))}
+              </View>
+              {googleReviewTotal > googleReviews.length && (
+                <TouchableOpacity
+                  style={styles.googleSeeAllBtn}
+                  onPress={() =>
+                    navigation.navigate("Reviews", {
+                      cafeId: cafe.id,
+                      cafeName: cafe.name,
+                    })
+                  }
+                >
+                  <Text style={styles.googleSeeAllText}>
+                    {t(cafeText.seeAllArrow)}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
           )}
 
           {/* Hidden — check-in feature disabled. Mirrors web b5acbe27. */}
@@ -979,8 +1116,9 @@ export default function CafeDetailScreen() {
 
           {/* Photos — clean 3-column grid (square tiles, rounded, subtle
               shadow). Cap visible at 9 with a "+N more" overlay; tap any
-              tile to open the fullscreen zoom modal at that index. */}
-          {(cafe.photos?.length ?? 0) > 0 && (
+              tile to open the fullscreen zoom modal at that index.
+              Hidden entirely when all photos fail to load. */}
+          {(cafe.photos?.length ?? 0) > 0 && !allPhotosFailed && (
             <>
               <View style={styles.sectionRow}>
                 <Text style={styles.sectionTitle}>{t(cafeText.photos)}</Text>
@@ -1010,6 +1148,7 @@ export default function CafeDetailScreen() {
                           style={styles.photoGridImage}
                           cachePolicy="memory-disk"
                           transition={200}
+                          onError={() => markPhotoFailed(i)}
                         />
                       ) : (
                         <View style={[styles.photoGridImage, styles.photoGridPlaceholder]} />
@@ -1080,14 +1219,20 @@ export default function CafeDetailScreen() {
                 {t(cafeText.moodHeader)}
               </Text>
               <View style={styles.tagsRow}>
-                {moodChips.map((m) => (
-                  <View key={m.label} style={styles.moodChip}>
-                    <Text style={styles.moodChipText}>{m.label}</Text>
-                    {m.count > 0 && (
-                      <Text style={styles.moodChipCount}>· {m.count}</Text>
-                    )}
-                  </View>
-                ))}
+                {moodChips.map((m) => {
+                  const Icon = MOOD_SLUG_TO_ICON[m.slug];
+                  return (
+                    <View key={m.slug} style={styles.moodChip}>
+                      {Icon && (
+                        <Icon size={12} color={colors.accent} strokeWidth={2.2} />
+                      )}
+                      <Text style={styles.moodChipText}>{m.label}</Text>
+                      {m.count > 0 && (
+                        <Text style={styles.moodChipCount}>· {m.count}</Text>
+                      )}
+                    </View>
+                  );
+                })}
               </View>
             </View>
           )}
@@ -1463,22 +1608,33 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
     lineHeight: 20,
   },
-  addressRow: {
-    flexDirection: "row",
-    alignItems: "center",
+  addressCard: {
     marginTop: spacing.md,
     backgroundColor: colors.surface,
     borderRadius: radius.md,
     padding: spacing.md,
-    flexWrap: "wrap",
   },
-  addressIconLead: { marginRight: spacing.xs },
-  addressText: { fontSize: 14, color: colors.primary, flex: 1 },
+  addressTop: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.xs,
+  },
+  addressIconLead: { marginTop: 2 },
+  addressText: {
+    flex: 1,
+    fontSize: 14,
+    color: colors.primary,
+    lineHeight: 20,
+  },
+  addressFooter: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    marginTop: spacing.sm,
+  },
   openMaps: {
     fontSize: 13,
     color: colors.accent,
-    fontWeight: "600",
-    marginTop: 4,
+    fontWeight: "700",
   },
   tagsRow: {
     flexDirection: "row",
@@ -1538,6 +1694,7 @@ const styles = StyleSheet.create({
   moodChip: {
     flexDirection: "row",
     alignItems: "center",
+    gap: 5,
     backgroundColor: "#FDF6EC",
     borderRadius: radius.full,
     paddingHorizontal: spacing.sm + 4,
@@ -1703,6 +1860,80 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   writeReviewText: { color: colors.accent, fontWeight: "700", fontSize: 14 },
+
+  // ─── Empty state for reviews section (no in-app reviews yet) ────────
+  reviewsEmpty: {
+    backgroundColor: colors.white,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: '#F0EDE8',
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.md,
+    alignItems: 'center',
+    marginTop: spacing.sm,
+  },
+  reviewsEmptyIcon: { marginBottom: spacing.xs },
+  reviewsEmptyTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.primary,
+  },
+  reviewsEmptyHint: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  alreadyReviewedNote: {
+    marginTop: spacing.sm,
+    paddingVertical: spacing.sm + 2,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.md,
+    backgroundColor: '#F8F6F1',
+    borderWidth: 1,
+    borderColor: '#F0EDE8',
+    alignItems: 'center',
+  },
+  alreadyReviewedText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.textSecondary,
+  },
+
+  // ─── Google Maps reviews section ────────────────────────────────────
+  googleSection: { marginTop: spacing.lg },
+  googleHeaderBadge: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#F8F9FF',
+    borderWidth: 1,
+    borderColor: '#E8E4F0',
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    marginBottom: spacing.sm,
+  },
+  googleHeaderLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#5C5A52',
+  },
+  googleHeaderCount: { fontSize: 12, color: '#8A8880' },
+  googleList: { gap: spacing.sm },
+  googleSeeAllBtn: {
+    marginTop: spacing.sm,
+    paddingVertical: spacing.sm + 2,
+    borderRadius: radius.md,
+    backgroundColor: colors.accent,
+    alignItems: 'center',
+  },
+  googleSeeAllText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.white,
+  },
 
   // ─── Review preview cards (shown above "Tulis Review" CTA) ────────────
   reviewPreviewList: {

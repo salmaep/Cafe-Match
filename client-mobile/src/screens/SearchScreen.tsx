@@ -18,7 +18,6 @@ import { usePreferences } from '../context/PreferencesContext';
 import { useLocation } from '../context/LocationContext';
 import { useAutocomplete } from '../queries/cafes/use-autocomplete';
 import { useSearchHistory } from '../lib/use-search-history';
-import { fetchCafeDetail } from '../queries/cafes/api';
 import { AutocompleteHit } from '../queries/cafes/types';
 import { cleanAddress } from '../utils/address';
 import { colors, spacing, radius } from '../theme';
@@ -64,13 +63,17 @@ export default function SearchScreen() {
   );
 
   const openCafe = useCallback(
-    async (hit: AutocompleteHit) => {
-      try {
-        const cafe = await fetchCafeDetail(String(hit.id));
-        if (cafe) navigation.navigate('CafeDetail', { cafe });
-      } catch {
-        // ignore — user can tap again to retry
-      }
+    (hit: AutocompleteHit) => {
+      // Mirror web: navigate dengan partial cafe (id + nama + lokasi),
+      // CafeDetailScreen yang fetch full detail via useCafeDetail.
+      const partial = {
+        id: String(hit.id),
+        name: hit.name,
+        slug: hit.slug,
+        city: hit.city,
+        district: hit.district,
+      };
+      navigation.navigate('CafeDetail', { cafe: partial });
     },
     [navigation],
   );

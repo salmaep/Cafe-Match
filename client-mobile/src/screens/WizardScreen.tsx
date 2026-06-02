@@ -201,11 +201,13 @@ export default function WizardScreen({ onComplete, onSkip }: WizardScreenProps =
     );
   };
 
-  // Block "Next" on Step 2 (location) when user picked custom but coords are empty.
+  // Block "Next" on Step 1 (purpose) when nothing selected, and on Step 2
+  // (location) when user picked custom but coords are empty.
   const isNextDisabled =
-    step === 1 &&
-    locationType === 'custom' &&
-    (customLat === null || customLng === null);
+    (step === 0 && purposeId == null) ||
+    (step === 1 &&
+      locationType === 'custom' &&
+      (customLat === null || customLng === null));
 
   const renderProgressDots = () => (
     <View style={styles.dotsRow}>

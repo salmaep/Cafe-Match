@@ -4,10 +4,10 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  FlatList,
   ScrollView,
   ActivityIndicator,
 } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import {
   useNavigation,
   useRoute,
@@ -22,7 +22,7 @@ import { usePreferences } from '../context/PreferencesContext';
 import { useLocation } from '../context/LocationContext';
 import { useSearchCafes } from '../queries/cafes/use-search-cafes';
 import { usePurposes } from '../queries/purposes/use-purposes';
-import { hitsToCafes, fetchAutocomplete } from '../queries/cafes/api';
+import { hitsToCafesCached, fetchAutocomplete } from '../queries/cafes/api';
 import CafeListItem from '../components/cafe/CafeListItem';
 import MobileFilterModal from '../components/cafe/MobileFilterModal';
 import StatusBarScrim from '../components/StatusBarScrim';
@@ -30,6 +30,8 @@ import { Cafe } from '../types';
 import { colors, spacing, radius } from '../theme';
 
 const RESULTS_RADIUS_M = 50_000;
+
+const ItemSeparator = () => <View style={styles.separator} />;
 
 type SortKey = 'distance' | 'rating' | 'trending' | 'newest';
 type RouteParams = { SearchResults: { q: string } };
@@ -77,7 +79,7 @@ export default function SearchResultsScreen() {
     () =>
       cafesQuery.data
         ? cafesQuery.data.pages.flatMap((p) =>
-            hitsToCafes(p, lat ?? undefined, lng ?? undefined),
+            hitsToCafesCached(p, lat ?? undefined, lng ?? undefined),
           )
         : [],
     [cafesQuery.data, lat, lng],
@@ -201,10 +203,12 @@ export default function SearchResultsScreen() {
           <ActivityIndicator size="large" color={colors.accent} />
         </View>
       ) : (
-        <FlatList
+        <FlashList
           data={cafes}
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
+          drawDistance={1500}
+          style={styles.listSurface}
           ListHeaderComponent={
             <View>
               <Text style={styles.resultsCount}>
@@ -235,12 +239,9 @@ export default function SearchResultsScreen() {
             cafes.length === 0 ? styles.listEmptyContent : styles.listContent
           }
           showsVerticalScrollIndicator={false}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
+          ItemSeparatorComponent={ItemSeparator}
           onEndReached={onEndReached}
-          onEndReachedThreshold={0.5}
-          initialNumToRender={8}
-          maxToRenderPerBatch={6}
-          windowSize={9}
+          onEndReachedThreshold={0.8}
           ListFooterComponent={
             cafesQuery.isFetchingNextPage ? (
               <View style={styles.footerLoader}>
@@ -352,6 +353,7 @@ const styles = StyleSheet.create({
   },
   didYouMeanText: { fontSize: 14, color: colors.primary },
   didYouMeanTerm: { fontWeight: '800', color: colors.accent },
+  listSurface: { backgroundColor: colors.background },
   listContent: { paddingHorizontal: spacing.md, paddingBottom: spacing.xl },
   listEmptyContent: { flexGrow: 1 },
   separator: { height: spacing.sm },

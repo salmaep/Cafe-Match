@@ -15,7 +15,7 @@ import {
 } from "react-native";
 import MapView from "react-native-map-clustering";
 import { Circle } from "react-native-maps";
-import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
+import BottomSheet from "@gorhom/bottom-sheet";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
@@ -28,7 +28,7 @@ import { usePurposes } from "../../queries/purposes/use-purposes";
 import { useSearchCafes } from "../../queries/cafes/use-search-cafes";
 import { usePromotedCafes } from "../../queries/cafes/use-promoted-cafes";
 import { useFriendsMap } from "../../queries/friends/use-friends-map";
-import { hitsToCafes } from "../../queries/cafes/api";
+import { hitsToCafesCached } from "../../queries/cafes/api";
 import { throwEmojiApi } from "../../services/api";
 import MobileFilterModal from "../../components/cafe/MobileFilterModal";
 import RadiusPickerModal from "../../components/cafe/RadiusPickerModal";
@@ -44,9 +44,8 @@ import FriendMarker from "./components/FriendMarker";
 import SearchCenterMarker from "./components/SearchCenterMarker";
 import MapSearchBar from "./components/MapSearchBar";
 import EmojiPickerModal from "./components/EmojiPickerModal";
-import SelectedCafeCard from "./components/SelectedCafeCard";
-import FeaturedSection from "./components/FeaturedSection";
-import RadiusControls, { ActiveFilter } from "./components/RadiusControls";
+import { ActiveFilter } from "./components/RadiusControls";
+import MapSheetHeader from "./components/MapSheetHeader";
 import CafeList from "./components/CafeList";
 
 export default function MapScreen() {
@@ -226,12 +225,12 @@ export default function MapScreen() {
   const promotedQuery = usePromotedCafes("featured_promo");
 
   const displayCafes: Cafe[] = useMemo(
-    () => mapPinsQuery.data?.pages.flatMap((p) => hitsToCafes(p)) ?? [],
+    () => mapPinsQuery.data?.pages.flatMap((p) => hitsToCafesCached(p)) ?? [],
     [mapPinsQuery.data],
   );
 
   const listCafes: Cafe[] = useMemo(
-    () => listQuery.data?.pages.flatMap((p) => hitsToCafes(p)) ?? [],
+    () => listQuery.data?.pages.flatMap((p) => hitsToCafesCached(p)) ?? [],
     [listQuery.data],
   );
 
@@ -240,30 +239,32 @@ export default function MapScreen() {
   const loading =
     mapPinsQuery.isLoading || listQuery.isLoading || promotedQuery.isLoading;
 
-  const handleSheetScroll = useCallback(
-    ({ nativeEvent }: { nativeEvent: any }) => {
-      const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
-      const distanceFromBottom =
-        contentSize.height - (layoutMeasurement.height + contentOffset.y);
-      if (
-        distanceFromBottom < 600 &&
-        listQuery.hasNextPage &&
-        !listQuery.isFetchingNextPage
-      ) {
-        listQuery.fetchNextPage();
-      }
-    },
-    [
-      listQuery.hasNextPage,
-      listQuery.isFetchingNextPage,
-      listQuery.fetchNextPage,
-    ],
-  );
-
   const sheetListItems = useMemo(
     () => interleaveAds(listCafes, { maxAds: 2 }),
     [listCafes],
   );
+
+  const handleSelectedCafePress = useCallback(
+    (cafe: Cafe) => navigation.navigate("CafeDetail", { cafe }),
+    [navigation],
+  );
+  const handleSelectedCafeDismiss = useCallback(
+    () => setSelectedCafe(null),
+    [],
+  );
+  const handleFeaturedCafePress = useCallback(
+    (cafe: Cafe) => navigation.navigate("CafeDetail", { cafe }),
+    [navigation],
+  );
+  const handleOpenRadiusModal = useCallback(
+    () => setRadiusModalOpen(true),
+    [],
+  );
+  const handleListEndReached = useCallback(() => {
+    if (listQuery.hasNextPage && !listQuery.isFetchingNextPage) {
+      listQuery.fetchNextPage();
+    }
+  }, [listQuery.hasNextPage, listQuery.isFetchingNextPage, listQuery.fetchNextPage]);
 
   const handleThrowEmoji = async (emoji: string) => {
     if (!emojiTargetFriend) return;
@@ -274,37 +275,40 @@ export default function MapScreen() {
     }
   };
 
-  const activeFilters: ActiveFilter[] = [];
-  if (filterPurposeId != null) {
-    const p = purposeList.find((x) => x.id === filterPurposeId);
-    activeFilters.push({
-      key: `purpose-${filterPurposeId}`,
-      label: p ? `${p.icon ?? ""} ${p.name}`.trim() : "Tujuan",
-      remove: () => setFilterPurposeId(null),
+  const activeFilters: ActiveFilter[] = useMemo(() => {
+    const arr: ActiveFilter[] = [];
+    if (filterPurposeId != null) {
+      const p = purposeList.find((x) => x.id === filterPurposeId);
+      arr.push({
+        key: `purpose-${filterPurposeId}`,
+        label: p ? `${p.icon ?? ""} ${p.name}`.trim() : "Tujuan",
+        remove: () => setFilterPurposeId(null),
+      });
+    }
+    filterFacilityKeys.forEach((k) => {
+      arr.push({
+        key: `fac-${k}`,
+        label: k.replace(/_/g, " "),
+        remove: () =>
+          setFilterFacilityKeys((prev) => prev.filter((x) => x !== k)),
+      });
     });
-  }
-  filterFacilityKeys.forEach((k) => {
-    activeFilters.push({
-      key: `fac-${k}`,
-      label: k.replace(/_/g, " "),
-      remove: () =>
-        setFilterFacilityKeys((prev) => prev.filter((x) => x !== k)),
-    });
-  });
-  if (filterPriceRange) {
-    activeFilters.push({
-      key: "price",
-      label: filterPriceRange,
-      remove: () => setFilterPriceRange(""),
-    });
-  }
+    if (filterPriceRange) {
+      arr.push({
+        key: "price",
+        label: filterPriceRange,
+        remove: () => setFilterPriceRange(""),
+      });
+    }
+    return arr;
+  }, [filterPurposeId, filterFacilityKeys, filterPriceRange, purposeList]);
 
-  const resetFilters = () => {
+  const resetFilters = useCallback(() => {
     setFilterPurposeId(null);
     setFilterFacilityKeys([]);
     setFilterPriceRange("");
     setRadiusKm(2);
-  };
+  }, []);
 
   const hasAnyFilter = activeFilters.length > 0 || radiusKm !== 2;
 
@@ -367,6 +371,7 @@ export default function MapScreen() {
           longitudeDelta: Math.max(0.02, (radiusKm * 2.4) / 111),
         }}
         showsUserLocation
+        zoomControlEnabled={false}
         radius={40}
         maxZoom={15}
         minPoints={2}
@@ -433,52 +438,36 @@ export default function MapScreen() {
         handleIndicatorStyle={styles.sheetHandle}
         enablePanDownToClose={false}
       >
-        <BottomSheetScrollView
+        <CafeList
+          loading={loading}
+          listTotal={listTotal}
+          radiusKm={radiusKm}
+          searchActive={false}
+          preferencePurpose={preferences?.purpose ?? null}
+          cafes={listCafes}
+          items={sheetListItems}
+          selectedCafeId={selectedCafe?.id ?? null}
+          isFetchingNextPage={listQuery.isFetchingNextPage}
+          hasNextPage={!!listQuery.hasNextPage}
+          onResetFilters={resetFilters}
+          onEndReached={handleListEndReached}
           contentContainerStyle={styles.sheetContent}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-          onScroll={handleSheetScroll}
-        >
-          {selectedCafe && (
-            <SelectedCafeCard
-              cafe={selectedCafe}
-              onPress={() =>
-                navigation.navigate("CafeDetail", { cafe: selectedCafe })
-              }
-              onDismiss={() => setSelectedCafe(null)}
+          header={
+            <MapSheetHeader
+              selectedCafe={selectedCafe}
+              onSelectedCafePress={handleSelectedCafePress}
+              onSelectedCafeDismiss={handleSelectedCafeDismiss}
+              featuredCafes={featuredCafes}
+              onFeaturedCafePress={handleFeaturedCafePress}
+              radiusKm={radiusKm}
+              onRadiusChange={setRadiusKm}
+              onOpenRadiusModal={handleOpenRadiusModal}
+              activeFilters={activeFilters}
+              hasAnyFilter={hasAnyFilter}
+              onResetFilters={resetFilters}
             />
-          )}
-
-          <FeaturedSection
-            cafes={featuredCafes}
-            onCafePress={(cafe) => navigation.navigate("CafeDetail", { cafe })}
-          />
-
-          <RadiusControls
-            radiusKm={radiusKm}
-            onRadiusChange={setRadiusKm}
-            onOpenRadiusModal={() => setRadiusModalOpen(true)}
-            activeFilters={activeFilters}
-            hasAnyFilter={hasAnyFilter}
-            onResetFilters={resetFilters}
-          />
-
-          <CafeList
-            loading={loading}
-            listTotal={listTotal}
-            radiusKm={radiusKm}
-            searchActive={false}
-            preferencePurpose={
-              preferences?.purpose ? preferences.purpose : null
-            }
-            cafes={listCafes}
-            items={sheetListItems}
-            selectedCafeId={selectedCafe?.id ?? null}
-            isFetchingNextPage={listQuery.isFetchingNextPage}
-            hasNextPage={!!listQuery.hasNextPage}
-            onResetFilters={resetFilters}
-          />
-        </BottomSheetScrollView>
+          }
+        />
       </BottomSheet>
 
       <MobileFilterModal

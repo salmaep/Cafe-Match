@@ -18,7 +18,7 @@ function SelectedCafeCard({ cafe, onPress, onDismiss }: Props) {
   return (
     <View style={styles.section}>
       <TouchableOpacity style={styles.card} activeOpacity={0.85} onPress={onPress}>
-        <CafePhoto photos={cafe.photos} name={cafe.name} style={styles.photo} />
+        <CafePhoto photos={cafe.photos} name={cafe.name} cafeId={cafe.id} style={styles.photo} />
         <View style={styles.info}>
           <Text style={styles.name} numberOfLines={1}>
             {cafe.name}

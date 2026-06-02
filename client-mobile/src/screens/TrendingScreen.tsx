@@ -1,19 +1,20 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
-  FlatList,
   TouchableOpacity,
   ActivityIndicator,
   ScrollView,
   StyleSheet,
   Dimensions,
+  InteractionManager,
 } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import CafePhoto from '../components/CafePhoto';
 import CafeListItem from '../components/cafe/CafeListItem';
 import MobileFilterModal from '../components/cafe/MobileFilterModal';
 import { getOpenStatus } from '../utils/openingHours';
-import { buildFacilityChips, formatDistance } from '../utils/facilities';
+import { formatDistance } from '../utils/facilities';
 import { formatRating } from '../utils/rating';
 import { cleanAddress } from '../utils/address';
 import { useNavigation } from '@react-navigation/native';
@@ -23,23 +24,45 @@ import { useTranslation } from 'react-i18next';
 import { cafeText, trendingText } from '@shared/i18n/keys';
 import { useLocation } from '../context/LocationContext';
 import { useSearchCafes } from '../queries/cafes/use-search-cafes';
-import { hitsToCafes } from '../queries/cafes/api';
+import { hitsToCafesCached } from '../queries/cafes/api';
 import { usePurposes } from '../queries/purposes/use-purposes';
-import { getPurposeBySlug } from '@shared/constants/purposes';
 import { Cafe } from '../types';
 import { colors, spacing, radius } from '../theme';
-import { Flame, Crown, Star, MapPin } from 'lucide-react-native';
+import {
+  Flame, Crown, Star, MapPin, Heart, Bookmark, SlidersHorizontal,
+  User, Users, BookOpen, Laptop, Briefcase, Lightbulb, Coffee, Book, Zap,
+  PartyPopper, Camera,
+} from 'lucide-react-native';
+import type { LucideIcon as LucideIconType } from 'lucide-react-native';
+import { LucideIcon } from '../utils/lucideIcon';
+
+const SCREEN_W = Dimensions.get('window').width;
+// FlashList content padding + winnerWrap 2px border padding (each side)
+const WINNER_PHOTO_SIZE = SCREEN_W - spacing.md * 2 - 4;
+// Two runners side-by-side with sm gap, inside the same listContent padding
+const RUNNER_PHOTO_W = Math.floor((SCREEN_W - spacing.md * 2 - spacing.sm) / 2);
+const RUNNER_PHOTO_H = Math.round((RUNNER_PHOTO_W * 3) / 4);
+
+const PURPOSE_SLUG_TO_ICON: Record<string, LucideIconType> = {
+  'me-time': User,
+  'date': Heart,
+  'family': Users,
+  'group-work': BookOpen,
+  'wfc': Laptop,
+  'meeting': Briefcase,
+  'brainstorm': Lightbulb,
+  'catch-up': Coffee,
+  'reading': Book,
+  'quick-coffee': Zap,
+  'celebration': PartyPopper,
+  'photo-spot': Camera,
+};
 import NativeAdCard from '../components/NativeAdCard';
 import { interleaveAds, WithAd } from '../utils/adInterleave';
 
 type ListItem = WithAd<{ cafe: Cafe; rank: number }>;
 
-// ─── Rank badge colors ───
-const RANK_COLORS: Record<number, string> = {
-  1: '#FFD700', // gold
-  2: '#C0C0C0', // silver
-  3: '#CD7F32', // bronze
-};
+const ItemSeparator = () => <View style={styles.separator} />;
 
 export default function TrendingScreen() {
   const navigation = useNavigation<StackNavigationProp<any>>();
@@ -78,7 +101,7 @@ export default function TrendingScreen() {
     () =>
       cafesQuery.data
         ? cafesQuery.data.pages.flatMap((p) =>
-            hitsToCafes(p, latitude ?? undefined, longitude ?? undefined),
+            hitsToCafesCached(p, latitude ?? undefined, longitude ?? undefined),
           )
         : [],
     [cafesQuery.data, latitude, longitude],
@@ -105,14 +128,11 @@ export default function TrendingScreen() {
     if (item.kind === 'ad') return <NativeAdCard cacheKey={item.key} />;
     const cafe = item.data.cafe;
     const rank = item.data.rank;
-    const rankColor = RANK_COLORS[rank] || colors.surface;
     return (
-      <View style={styles.rankRowWrap}>
-        <View style={[styles.rankPill, { backgroundColor: rankColor }]}>
-          <Text style={styles.rankPillText}>#{rank}</Text>
-        </View>
-        <View style={{ flex: 1 }}>
-          <CafeListItem cafe={cafe} />
+      <View style={styles.rankItemWrap}>
+        <CafeListItem cafe={cafe} />
+        <View style={styles.rankBadgeOverlay} pointerEvents="none">
+          <Text style={styles.rankBadgeOverlayText}>{rank}</Text>
         </View>
       </View>
     );
@@ -120,6 +140,11 @@ export default function TrendingScreen() {
 
   const keyExtractor = useCallback(
     (item: ListItem) => (item.kind === 'ad' ? item.key : item.data.cafe.id),
+    [],
+  );
+
+  const getItemType = useCallback(
+    (item: ListItem) => item.kind,
     [],
   );
 
@@ -155,9 +180,13 @@ export default function TrendingScreen() {
         )}
 
         {restCafes.length > 0 && (
-          <Text style={styles.podiumDivider}>
-            Peringkat 4 – {cafes.length}
-          </Text>
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionHeaderAccent} />
+            <Text style={styles.sectionHeaderText}>
+              Peringkat 4 – {totalCount.toLocaleString()}
+            </Text>
+            <View style={styles.sectionHeaderLine} />
+          </View>
         )}
       </View>
     );
@@ -183,6 +212,7 @@ export default function TrendingScreen() {
           <View style={styles.heroTopRow}>
             <View style={{ flex: 1, minWidth: 0 }}>
               <View style={styles.heroPill}>
+                <Flame size={11} color="#B45309" fill="#B45309" strokeWidth={0} />
                 <Text style={styles.heroPillText}>{t(trendingText.heroPill)}</Text>
               </View>
               <Text style={styles.heroTitle}>
@@ -195,55 +225,36 @@ export default function TrendingScreen() {
               </Text>
             </View>
           </View>
-          <View style={styles.heroBadgeRow}>
-            <View style={styles.heroCountBadge}>
-              <Flame size={14} color="#B45309" fill="#B45309" strokeWidth={0} />
-              <Text style={styles.heroCountNum}>
-                {totalCount.toLocaleString()}
-              </Text>
-              <Text style={styles.heroCountLabel}>{t(trendingText.cafeCountLabel)}</Text>
-            </View>
-            <TouchableOpacity
-              style={styles.heroLbBtn}
-              onPress={() => navigation.navigate('GlobalLeaderboard')}
-            >
-              <Text style={styles.heroLbBtnText}>{t(trendingText.leaderboardBtn)}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.heroFilterBtn,
-                activeFilterCount > 0 && styles.heroFilterBtnActive,
-              ]}
-              onPress={() => setFilterOpen(true)}
-            >
-              <Text
-                style={[
-                  styles.heroFilterBtnText,
-                  activeFilterCount > 0 && styles.heroFilterBtnTextActive,
-                ]}
-              >
-                {t(trendingText.filterBtn)}
-              </Text>
-              {activeFilterCount > 0 && (
-                <View style={styles.heroFilterBadge}>
-                  <Text style={styles.heroFilterBadgeText}>
-                    {activeFilterCount}
-                  </Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          </View>
         </View>
       </View>
 
       {/* Trending content (no sub-tabs — leaderboard moved to standalone screen) */}
       <>
-          {/* Purpose chips (filter button moved into hero header) */}
+          {/* Sticky filter button + scrollable purpose chips */}
           <View style={styles.filterBar}>
+            <TouchableOpacity
+              style={[
+                styles.filterBarBtn,
+                activeFilterCount > 0 && styles.filterBarBtnActive,
+              ]}
+              onPress={() => setFilterOpen(true)}
+            >
+              <SlidersHorizontal
+                size={14}
+                color={activeFilterCount > 0 ? '#FFFFFF' : '#1C1C1A'}
+                strokeWidth={2.2}
+              />
+              {activeFilterCount > 0 && (
+                <View style={styles.filterBarBadge}>
+                  <Text style={styles.filterBarBadgeText}>{activeFilterCount}</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+            <View style={styles.filterBarDivider} />
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingHorizontal: spacing.md, gap: 6 }}
+              contentContainerStyle={{ paddingHorizontal: spacing.sm, gap: 6 }}
             >
               <TouchableOpacity
                 onPress={() => setPurposeId(null)}
@@ -255,15 +266,19 @@ export default function TrendingScreen() {
               </TouchableOpacity>
               {purposes.map((p) => {
                 const active = purposeId === p.id;
-                const emoji = getPurposeBySlug(p.slug)?.emoji ?? p.icon;
+                const Icon = PURPOSE_SLUG_TO_ICON[p.slug];
+                const iconColor = active ? colors.white : colors.primary;
                 return (
                   <TouchableOpacity
                     key={p.id}
                     onPress={() => setPurposeId(active ? null : p.id)}
                     style={[styles.purposeChip, active && styles.purposeChipActive]}
                   >
+                    {Icon && (
+                      <Icon size={12} color={iconColor} strokeWidth={2.2} />
+                    )}
                     <Text style={[styles.purposeChipText, active && styles.purposeChipTextActive]}>
-                      {emoji ? `${emoji} ` : ''}{p.name}
+                      {p.name}
                     </Text>
                   </TouchableOpacity>
                 );
@@ -277,24 +292,22 @@ export default function TrendingScreen() {
               <ActivityIndicator size="large" color={colors.accent} />
             </View>
           ) : (
-            <FlatList
+            <FlashList
               data={listItems}
               keyExtractor={keyExtractor}
+              getItemType={getItemType}
               renderItem={renderItem}
+              drawDistance={1500}
               ListHeaderComponent={renderPodium}
               ListEmptyComponent={cafes.length === 0 ? renderEmpty : null}
+              style={styles.listSurface}
               contentContainerStyle={
                 cafes.length === 0 ? styles.listEmptyContent : styles.listContent
               }
               showsVerticalScrollIndicator={false}
-              ItemSeparatorComponent={() => <View style={styles.separator} />}
+              ItemSeparatorComponent={ItemSeparator}
               onEndReached={onEndReached}
-              onEndReachedThreshold={0.5}
-              // Perf tuning for long lists with mixed item heights.
-              initialNumToRender={8}
-              maxToRenderPerBatch={6}
-              windowSize={8}
-              removeClippedSubviews={true}
+              onEndReachedThreshold={0.8}
               ListFooterComponent={
                 cafesQuery.isFetchingNextPage ? (
                   <View style={{ paddingVertical: spacing.lg, alignItems: 'center' }}>
@@ -326,7 +339,17 @@ export default function TrendingScreen() {
 
 // ─── Top podium cards — full data parity with web TrendingPage ─────────────
 
-function WinnerCard({ cafe, onPress }: { cafe: Cafe; onPress: () => void }) {
+function WinnerCard(props: { cafe: Cafe; onPress: () => void }) {
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    const handle = InteractionManager.runAfterInteractions(() => setReady(true));
+    return () => handle.cancel();
+  }, []);
+  if (!ready) return <WinnerCardSkeleton />;
+  return <WinnerCardContent {...props} />;
+}
+
+function WinnerCardContent({ cafe, onPress }: { cafe: Cafe; onPress: () => void }) {
   const { t } = useTranslation();
   const open = getOpenStatus(cafe.openingHours);
   const locality = cleanAddress(cafe.district || cafe.city || '');
@@ -336,8 +359,8 @@ function WinnerCard({ cafe, onPress }: { cafe: Cafe; onPress: () => void }) {
     cafe.distanceMeters ?? (cafe.distance != null ? Math.round(cafe.distance * 1000) : null);
   const km = distMeters != null ? formatDistance(distMeters) : null;
   const isHot = (cafe.favoritesCount ?? 0) >= 300;
-  const allChips = buildFacilityChips(cafe);
-  const visibleChips = allChips.slice(0, 4);
+  const allChips = cafe.chips ?? [];
+  const visibleChips = allChips.slice(0, 3);
   const overflow = allChips.length - visibleChips.length;
 
   return (
@@ -347,23 +370,27 @@ function WinnerCard({ cafe, onPress }: { cafe: Cafe; onPress: () => void }) {
       onPress={onPress}
     >
       <View style={cardStyles.winnerCard}>
-        {/* Photo with overlay */}
+        {/* Photo with stacked gradient overlays for stronger bottom readability */}
         <View style={cardStyles.winnerPhotoBox}>
           <CafePhoto
             photos={cafe.photos}
             name={cafe.name}
+            cafeId={cafe.id}
             style={cardStyles.winnerPhoto}
           />
-          <View style={cardStyles.winnerOverlay} />
+          <View style={cardStyles.winnerOverlayTop} />
 
           {/* Top-left: champion + HOT */}
           <View style={cardStyles.winnerTopLeft}>
             <View style={cardStyles.winnerCrown}>
-              <Crown size={14} color="#F59E0B" fill="#F59E0B" strokeWidth={0} />
+              <View style={cardStyles.winnerCrownIconWrap}>
+                <Crown size={12} color="#FFFFFF" fill="#FFFFFF" strokeWidth={0} />
+              </View>
               <Text style={cardStyles.winnerCrownText}>{t(trendingText.winnerCrown)}</Text>
             </View>
             {isHot && (
               <View style={cardStyles.hotPulse}>
+                <Flame size={11} color="#FFFFFF" fill="#FFFFFF" strokeWidth={0} />
                 <Text style={cardStyles.hotPulseText}>{t(trendingText.hotBadge)}</Text>
               </View>
             )}
@@ -372,7 +399,7 @@ function WinnerCard({ cafe, onPress }: { cafe: Cafe; onPress: () => void }) {
           {/* Top-right: rating pill */}
           {rating && (
             <View style={cardStyles.winnerRating}>
-              <Star size={11} color="#F59E0B" fill="#F59E0B" strokeWidth={0} />
+              <Star size={12} color="#F59E0B" fill="#F59E0B" strokeWidth={0} />
               <Text style={cardStyles.winnerRatingNum}>{rating}</Text>
               {reviews != null && (
                 <Text style={cardStyles.winnerRatingCount}>
@@ -388,19 +415,24 @@ function WinnerCard({ cafe, onPress }: { cafe: Cafe; onPress: () => void }) {
               {cafe.name}
             </Text>
             {(locality || km) && (
-              <Text style={cardStyles.winnerSubtitle} numberOfLines={1}>
-                {[locality, km].filter(Boolean).join(' · ')}
-              </Text>
+              <View style={cardStyles.winnerSubRow}>
+                <MapPin size={12} color="rgba(255,255,255,0.92)" strokeWidth={2.2} />
+                <Text style={cardStyles.winnerSubtitle} numberOfLines={1}>
+                  {[locality, km].filter(Boolean).join(' · ')}
+                </Text>
+              </View>
             )}
             <View style={cardStyles.winnerStatRow}>
               <View style={cardStyles.winnerStatPill}>
+                <Heart size={11} color="#FFFFFF" fill="#FFFFFF" strokeWidth={0} />
                 <Text style={cardStyles.winnerStatPillText}>
-                  ❤️ {(cafe.favoritesCount ?? 0).toLocaleString()}
+                  {(cafe.favoritesCount ?? 0).toLocaleString()}
                 </Text>
               </View>
               <View style={cardStyles.winnerStatPill}>
+                <Bookmark size={11} color="#FFFFFF" fill="#FFFFFF" strokeWidth={0} />
                 <Text style={cardStyles.winnerStatPillText}>
-                  🔖 {(cafe.bookmarksCount ?? 0).toLocaleString()}
+                  {(cafe.bookmarksCount ?? 0).toLocaleString()}
                 </Text>
               </View>
               {!!cafe.priceRange && (
@@ -415,40 +447,76 @@ function WinnerCard({ cafe, onPress }: { cafe: Cafe; onPress: () => void }) {
                     open.isOpen ? cardStyles.openOn : cardStyles.openOff,
                   ]}
                 >
-                  <Text style={cardStyles.winnerOpenText}>
-                    ● {open.isOpen
-                      ? `${t(cafeText.open)}${open.closesAt ? ` · ${open.closesAt}` : ''}`
-                      : t(cafeText.closed)}
+                  <View style={[
+                    cardStyles.openDot,
+                    { backgroundColor: open.isOpen ? '#A7F3D0' : '#FCA5A5' },
+                  ]} />
+                  <Text style={cardStyles.winnerOpenText} numberOfLines={1}>
+                    {open.isOpen
+                      ? open.closesAt
+                        ? `${t(cafeText.open)} · ${open.closesAt}`
+                        : t(cafeText.open)
+                      : open.opensAt
+                        ? `${t(cafeText.closed)} · ${open.opensAt}`
+                        : t(cafeText.closed)}
                   </Text>
                 </View>
               )}
             </View>
-          </View>
-        </View>
 
-        {/* Facility strip */}
-        {visibleChips.length > 0 && (
-          <View style={cardStyles.winnerFacilityStrip}>
-            {visibleChips.map((c) => (
-              <View key={c.key} style={cardStyles.winnerFacilityChip}>
-                <Text style={cardStyles.winnerFacilityText} numberOfLines={1}>
-                  {c.icon} {c.label}
-                </Text>
-              </View>
-            ))}
-            {overflow > 0 && (
-              <View style={cardStyles.winnerFacilityOverflow}>
-                <Text style={cardStyles.winnerFacilityOverflowText}>+{overflow}</Text>
+            {/* Facility chips on photo — semi-transparent over overlay */}
+            {visibleChips.length > 0 && (
+              <View style={cardStyles.winnerFacilityRow}>
+                {visibleChips.map((c) => (
+                  <View key={c.key} style={cardStyles.winnerFacilityChip}>
+                    {c.lucideName && (
+                      <LucideIcon
+                        name={c.lucideName}
+                        size={11}
+                        color="#FFFFFF"
+                        strokeWidth={2}
+                      />
+                    )}
+                    <Text style={cardStyles.winnerFacilityText} numberOfLines={1}>
+                      {c.label}
+                    </Text>
+                  </View>
+                ))}
+                {overflow > 0 && (
+                  <View style={cardStyles.winnerFacilityOverflow}>
+                    <Text style={cardStyles.winnerFacilityOverflowText}>+{overflow}</Text>
+                  </View>
+                )}
               </View>
             )}
           </View>
-        )}
+        </View>
       </View>
     </TouchableOpacity>
   );
 }
 
-function RunnerUpCard({
+function WinnerCardSkeleton() {
+  return (
+    <View style={cardStyles.winnerWrap}>
+      <View style={cardStyles.winnerCard}>
+        <View style={[cardStyles.winnerPhotoBox, { backgroundColor: '#EAE7E0' }]} />
+      </View>
+    </View>
+  );
+}
+
+function RunnerUpCard(props: { cafe: Cafe; rank: number; onPress: () => void }) {
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    const handle = InteractionManager.runAfterInteractions(() => setReady(true));
+    return () => handle.cancel();
+  }, []);
+  if (!ready) return <RunnerUpCardSkeleton />;
+  return <RunnerUpCardContent {...props} />;
+}
+
+function RunnerUpCardContent({
   cafe,
   rank,
   onPress,
@@ -464,11 +532,11 @@ function RunnerUpCard({
   const distMeters =
     cafe.distanceMeters ?? (cafe.distance != null ? Math.round(cafe.distance * 1000) : null);
   const km = distMeters != null ? formatDistance(distMeters) : null;
-  const allChips = buildFacilityChips(cafe);
-  const visibleChips = allChips.slice(0, 3);
+  const allChips = cafe.chips ?? [];
+  const visibleChips = allChips.slice(0, 2);
   const overflow = allChips.length - visibleChips.length;
   const rankBg = rank === 2 ? '#9CA3AF' : '#B45309';
-  const borderColor = rank === 2 ? '#9CA3AF' : '#D97706';
+  const borderColor = rank === 2 ? '#D1D5DB' : '#FDE3B8';
 
   return (
     <TouchableOpacity
@@ -476,101 +544,132 @@ function RunnerUpCard({
       activeOpacity={0.9}
       onPress={onPress}
     >
-      {/* Photo */}
+      {/* Photo with stacked overlays — mirrors winner */}
       <View style={cardStyles.runnerPhotoBox}>
         <CafePhoto
           photos={cafe.photos}
           name={cafe.name}
+          cafeId={cafe.id}
           style={cardStyles.runnerPhoto}
         />
-        <View style={cardStyles.runnerOverlay} />
+        <View style={cardStyles.runnerOverlayTop} />
+        <View style={cardStyles.runnerOverlayBottom} />
 
-        {/* Rank pill */}
+        {/* Top-left rank pill — same shape as winnerCrown, lite */}
         <View style={cardStyles.runnerRankPill}>
-          <View style={[cardStyles.runnerRankBubble, { backgroundColor: rankBg }]}>
-            <Text style={cardStyles.runnerRankBubbleText}>{rank}</Text>
+          <View style={[cardStyles.runnerRankIconWrap, { backgroundColor: rankBg }]}>
+            <Text style={cardStyles.runnerRankNum}>{rank}</Text>
           </View>
           <Text style={cardStyles.runnerRankLabel}>{t(trendingText.rankLabel)}</Text>
         </View>
 
-        {/* Distance pill */}
-        {km && (
-          <View style={cardStyles.runnerDistPill}>
-            <MapPin size={10} color="#FFFFFF" strokeWidth={2.2} />
-            <Text style={cardStyles.runnerDistText}>{km}</Text>
+        {/* Top-right rating */}
+        {rating && (
+          <View style={cardStyles.runnerRating}>
+            <Star size={10} color="#F59E0B" fill="#F59E0B" strokeWidth={0} />
+            <Text style={cardStyles.runnerRatingNum}>{rating}</Text>
           </View>
         )}
 
-        {/* Title overlay */}
-        <View style={cardStyles.runnerTitleOverlay}>
+        {/* Bottom: name + locality · km only */}
+        <View style={cardStyles.runnerBottom}>
           <Text style={cardStyles.runnerName} numberOfLines={1}>
             {cafe.name}
           </Text>
-          {!!locality && (
-            <Text style={cardStyles.runnerLocality} numberOfLines={1}>
-              {locality}
-            </Text>
+          {(locality || km) && (
+            <View style={cardStyles.runnerSubRow}>
+              <MapPin size={10} color="rgba(255,255,255,0.9)" strokeWidth={2.2} />
+              <Text style={cardStyles.runnerSubtitle} numberOfLines={1}>
+                {[locality, km].filter(Boolean).join(' · ')}
+              </Text>
+            </View>
           )}
         </View>
       </View>
 
-      {/* Body */}
+      {/* Body: open · price · favorites + facility chips */}
       <View style={cardStyles.runnerBody}>
-        <View style={cardStyles.runnerStatsRow}>
-          <Text style={cardStyles.runnerFavCount}>
-            ❤️ {(cafe.favoritesCount ?? 0).toLocaleString()}
-          </Text>
-          {rating && (
-            <Text style={cardStyles.runnerRating}>
-              ⭐ {rating}
-            </Text>
+        <View style={cardStyles.runnerBodyStats}>
+          {open && (
+            <View
+              style={[
+                cardStyles.runnerOpenChip,
+                open.isOpen ? cardStyles.openOnSoft : cardStyles.closedSoft,
+              ]}
+            >
+              <View style={[
+                cardStyles.openDot,
+                { backgroundColor: open.isOpen ? '#10B981' : '#EF4444' },
+              ]} />
+              <Text
+                style={[
+                  cardStyles.runnerOpenChipText,
+                  open.isOpen ? cardStyles.openOnText : cardStyles.closedText,
+                ]}
+                numberOfLines={1}
+              >
+                {open.isOpen
+                  ? open.closesAt
+                    ? `${t(cafeText.open)} · ${open.closesAt}`
+                    : t(cafeText.open)
+                  : open.opensAt
+                    ? `${t(cafeText.closed)} · ${open.opensAt}`
+                    : t(cafeText.closed)}
+              </Text>
+            </View>
           )}
           {!!cafe.priceRange && (
-            <Text style={cardStyles.runnerPrice}>{cafe.priceRange}</Text>
+            <Text style={cardStyles.runnerBodyPrice}>{cafe.priceRange}</Text>
           )}
+          <View style={cardStyles.runnerBodyFav}>
+            <Heart size={11} color="#EA580C" fill="#EA580C" strokeWidth={0} />
+            <Text style={cardStyles.runnerBodyFavText}>
+              {(cafe.favoritesCount ?? 0).toLocaleString()}
+            </Text>
+          </View>
         </View>
 
-        {(open || visibleChips.length > 0) && (
-          <View style={cardStyles.runnerChipRow}>
-            {open && (
-              <View
-                style={[
-                  cardStyles.runnerOpenChip,
-                  open.isOpen ? cardStyles.openOn : cardStyles.openOff,
-                ]}
-              >
-                <Text
-                  style={[
-                    cardStyles.runnerOpenChipText,
-                    open.isOpen ? cardStyles.openOnText : cardStyles.openOffText,
-                  ]}
-                >
-                  {open.isOpen
-                    ? open.closesAt
-                      ? `${t(cafeText.open)} · ${open.closesAt}`
-                      : t(cafeText.open)
-                    : open.opensAt
-                      ? `${t(cafeText.closed)} · ${open.opensAt}`
-                      : t(cafeText.closed)}
-                </Text>
-              </View>
-            )}
+        {visibleChips.length > 0 && (
+          <View style={cardStyles.runnerBodyChipRow}>
             {visibleChips.map((c) => (
-              <View key={c.key} style={cardStyles.runnerFacChip}>
-                <Text style={cardStyles.runnerFacChipText} numberOfLines={1}>
-                  {c.icon} {c.label}
+              <View key={c.key} style={cardStyles.runnerFacilityChip}>
+                {c.lucideName && (
+                  <LucideIcon
+                    name={c.lucideName}
+                    size={9}
+                    color="#5C5A52"
+                    strokeWidth={2}
+                  />
+                )}
+                <Text style={cardStyles.runnerFacilityText} numberOfLines={1}>
+                  {c.label}
                 </Text>
               </View>
             ))}
             {overflow > 0 && (
-              <View style={cardStyles.runnerFacOverflow}>
-                <Text style={cardStyles.runnerFacOverflowText}>+{overflow}</Text>
+              <View style={cardStyles.runnerFacilityOverflow}>
+                <Text style={cardStyles.runnerFacilityOverflowText}>+{overflow}</Text>
               </View>
             )}
           </View>
         )}
       </View>
     </TouchableOpacity>
+  );
+}
+
+function RunnerUpCardSkeleton() {
+  return (
+    <View style={[cardStyles.runnerWrap, { borderColor: '#EAE7E0' }]}>
+      <View style={[cardStyles.runnerPhotoBox, { backgroundColor: '#EAE7E0' }]} />
+      <View style={cardStyles.runnerBody}>
+        <View style={{ height: 14, width: '70%', borderRadius: 4, backgroundColor: '#EAE7E0' }} />
+        <View style={cardStyles.runnerBodyChipRow}>
+          <View style={[cardStyles.runnerFacilityChip, { width: 50, borderWidth: 0, backgroundColor: '#EAE7E0' }]} />
+          <View style={[cardStyles.runnerFacilityChip, { width: 40, borderWidth: 0, backgroundColor: '#EAE7E0' }]} />
+        </View>
+      </View>
+    </View>
   );
 }
 
@@ -581,10 +680,10 @@ const cardStyles = StyleSheet.create({
     padding: 2,
     backgroundColor: '#F59E0B',
     shadowColor: '#EA580C',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.18,
-    shadowRadius: 16,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.22,
+    shadowRadius: 18,
+    elevation: 8,
   },
   winnerCard: {
     backgroundColor: '#FFFFFF',
@@ -593,13 +692,16 @@ const cardStyles = StyleSheet.create({
   },
   winnerPhotoBox: {
     position: 'relative',
-    aspectRatio: 16 / 10,
+    width: WINNER_PHOTO_SIZE,
+    height: WINNER_PHOTO_SIZE,
     backgroundColor: '#F0EDE8',
   },
-  winnerPhoto: { width: '100%', height: '100%' },
-  winnerOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.35)',
+  winnerPhoto: { width: WINNER_PHOTO_SIZE, height: WINNER_PHOTO_SIZE },
+  winnerOverlayTop: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0,
+    height: '18%',
+    backgroundColor: 'rgba(0,0,0,0.18)',
   },
   winnerTopLeft: {
     position: 'absolute',
@@ -610,18 +712,36 @@ const cardStyles = StyleSheet.create({
   winnerCrown: {
     flexDirection: 'row',
     alignItems: 'center',
+    height: 28,
     backgroundColor: '#FFFFFF',
     borderRadius: 999,
-    paddingLeft: 4, paddingRight: 10,
-    paddingVertical: 4, gap: 6,
+    paddingLeft: 3,
+    paddingRight: 12,
+    gap: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  winnerCrownIconWrap: {
+    width: 22, height: 22,
+    borderRadius: 11,
+    backgroundColor: '#F59E0B',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   winnerCrownText: {
-    fontSize: 10, fontWeight: '900',
-    color: '#1C1C1A', letterSpacing: 1.5,
+    fontSize: 11, fontWeight: '900',
+    color: '#1C1C1A', letterSpacing: 1.2,
   },
   hotPulse: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 28,
+    gap: 4,
     backgroundColor: '#EA580C',
-    paddingHorizontal: 10, paddingVertical: 4,
+    paddingHorizontal: 10,
     borderRadius: 999,
   },
   hotPulseText: {
@@ -633,187 +753,285 @@ const cardStyles = StyleSheet.create({
     top: 12, right: 12,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.95)',
-    paddingHorizontal: 10, paddingVertical: 4,
+    backgroundColor: 'rgba(255,255,255,0.96)',
+    paddingHorizontal: 10, paddingVertical: 5,
     borderRadius: 999, gap: 3,
   },
   winnerRatingNum: { color: '#1C1C1A', fontSize: 12, fontWeight: '900' },
   winnerRatingCount: { color: '#8A8880', fontSize: 11, fontWeight: '500' },
   winnerBottom: {
     position: 'absolute',
-    left: 16, right: 16, bottom: 16,
+    left: 0, right: 0, bottom: 0,
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 16,
+    backgroundColor: 'rgba(0,0,0,0.5)',
   },
   winnerName: {
-    color: '#FFFFFF', fontSize: 24, fontWeight: '900',
-    lineHeight: 28,
-    textShadowColor: 'rgba(0,0,0,0.4)',
+    color: '#FFFFFF', fontSize: 26, fontWeight: '900',
+    lineHeight: 30,
+    letterSpacing: -0.3,
+    textShadowColor: 'rgba(0,0,0,0.5)',
     textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
+    textShadowRadius: 6,
+  },
+  winnerSubRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 6,
   },
   winnerSubtitle: {
     color: 'rgba(255,255,255,0.92)',
     fontSize: 12, fontWeight: '600',
-    marginTop: 4,
+    flexShrink: 1,
   },
   winnerStatRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 6, marginTop: 10,
+    gap: 6, marginTop: 12,
   },
   winnerStatPill: {
-    paddingHorizontal: 10, paddingVertical: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10, paddingVertical: 5,
     borderRadius: 999,
     backgroundColor: 'rgba(255,255,255,0.18)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.28)',
   },
   winnerStatPillText: {
     color: '#FFFFFF', fontSize: 11, fontWeight: '800',
   },
   winnerOpenPill: {
-    paddingHorizontal: 10, paddingVertical: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10, paddingVertical: 5,
     borderRadius: 999,
+  },
+  openDot: {
+    width: 6, height: 6, borderRadius: 3,
   },
   winnerOpenText: {
     color: '#FFFFFF', fontSize: 11, fontWeight: '800',
   },
   openOn: { backgroundColor: 'rgba(16,185,129,0.92)' },
   openOff: { backgroundColor: 'rgba(0,0,0,0.6)' },
+  openOnSoft: { backgroundColor: '#ECFDF5' },
+  closedSoft: { backgroundColor: '#FEF2F2' },
   openOnText: { color: '#047857' },
-  openOffText: { color: '#4B5563' },
-  winnerFacilityStrip: {
+  closedText: { color: '#B91C1C' },
+  winnerFacilityRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 6,
-    paddingHorizontal: 16, paddingVertical: 10,
-    backgroundColor: '#FDF6EC',
-    borderTopWidth: 1, borderTopColor: '#FDE3B8',
+    alignItems: 'center',
+    gap: 5,
+    marginTop: 8,
   },
   winnerFacilityChip: {
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 10, paddingVertical: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    height: 24,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    paddingHorizontal: 9,
     borderRadius: 999,
-    borderWidth: 1, borderColor: '#FDE3B8',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.28)',
     maxWidth: 150,
   },
-  winnerFacilityText: { fontSize: 11, fontWeight: '600', color: '#5C5A52' },
+  winnerFacilityText: { fontSize: 10, fontWeight: '700', color: '#FFFFFF' },
   winnerFacilityOverflow: {
-    backgroundColor: '#FFF1E0',
-    paddingHorizontal: 10, paddingVertical: 4,
+    height: 24,
+    paddingHorizontal: 9,
     borderRadius: 999,
-    borderWidth: 1, borderColor: '#FCD34D',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.28)',
   },
-  winnerFacilityOverflowText: { fontSize: 11, fontWeight: '800', color: '#B45309' },
+  winnerFacilityOverflowText: { fontSize: 10, fontWeight: '800', color: '#FFFFFF' },
 
   // Runner
   runnerWrap: {
     flex: 1,
     borderRadius: 16,
-    borderWidth: 2,
+    borderWidth: 1,
     backgroundColor: '#FFFFFF',
     overflow: 'hidden',
+    shadowColor: '#1C1C1A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 3,
   },
   runnerPhotoBox: {
     position: 'relative',
-    aspectRatio: 4 / 3,
+    width: '100%',
+    height: RUNNER_PHOTO_H,
     backgroundColor: '#F0EDE8',
   },
-  runnerPhoto: { width: '100%', height: '100%' },
-  runnerOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.25)',
+  runnerPhoto: { width: '100%', height: RUNNER_PHOTO_H },
+  runnerOverlayTop: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0,
+    height: '35%',
+    backgroundColor: 'rgba(0,0,0,0.18)',
   },
+  runnerOverlayBottom: {
+    position: 'absolute',
+    bottom: 0, left: 0, right: 0,
+    height: '60%',
+    backgroundColor: 'rgba(0,0,0,0.45)',
+  },
+
+  // Top-left rank pill — mirrors winnerCrown, lite
   runnerRankPill: {
     position: 'absolute',
-    top: 6, left: 6,
+    top: 8, left: 8,
     flexDirection: 'row',
     alignItems: 'center',
+    height: 22,
     backgroundColor: '#FFFFFF',
-    paddingLeft: 3, paddingRight: 8,
-    paddingVertical: 3, gap: 4,
     borderRadius: 999,
+    paddingLeft: 2,
+    paddingRight: 8,
+    gap: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 2,
   },
-  runnerRankBubble: {
-    width: 18, height: 18, borderRadius: 9,
-    alignItems: 'center', justifyContent: 'center',
+  runnerRankIconWrap: {
+    width: 18, height: 18,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  runnerRankBubbleText: {
-    color: '#FFFFFF', fontSize: 10, fontWeight: '900',
+  runnerRankNum: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '900',
   },
   runnerRankLabel: {
-    fontSize: 9, fontWeight: '900',
-    color: '#1C1C1A', letterSpacing: 1,
+    fontSize: 9,
+    fontWeight: '900',
+    color: '#1C1C1A',
+    letterSpacing: 1,
   },
-  runnerDistPill: {
+
+  // Top-right rating
+  runnerRating: {
     position: 'absolute',
+    top: 8, right: 8,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 3,
-    top: 6, right: 6,
-    backgroundColor: 'rgba(0,0,0,0.55)',
-    paddingHorizontal: 7, paddingVertical: 2,
+    height: 22,
+    backgroundColor: 'rgba(255,255,255,0.96)',
+    paddingHorizontal: 7,
     borderRadius: 999,
+    gap: 3,
   },
-  runnerDistText: {
-    color: '#FFFFFF', fontSize: 10, fontWeight: '700',
-  },
-  runnerTitleOverlay: {
+  runnerRatingNum: { color: '#1C1C1A', fontSize: 11, fontWeight: '900' },
+
+  // Bottom on-photo region
+  runnerBottom: {
     position: 'absolute',
-    left: 8, right: 8, bottom: 8,
+    left: 10, right: 10, bottom: 10,
   },
   runnerName: {
-    color: '#FFFFFF', fontSize: 14, fontWeight: '900',
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '900',
+    letterSpacing: -0.2,
     textShadowColor: 'rgba(0,0,0,0.5)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
   },
-  runnerLocality: {
-    color: 'rgba(255,255,255,0.88)',
-    fontSize: 11, fontWeight: '600',
-    marginTop: 2,
-  },
-  runnerBody: {
-    paddingHorizontal: 12, paddingVertical: 10,
-    backgroundColor: '#FDF6EC',
-    gap: 6,
-  },
-  runnerStatsRow: {
+  runnerSubRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 3,
+    marginTop: 3,
   },
-  runnerFavCount: {
-    fontSize: 12, fontWeight: '900', color: '#EA580C',
+  runnerSubtitle: {
+    color: 'rgba(255,255,255,0.9)',
+    fontSize: 10,
+    fontWeight: '600',
+    flexShrink: 1,
   },
-  runnerRating: { fontSize: 12, fontWeight: '700', color: '#1C1C1A' },
-  runnerPrice: {
-    marginLeft: 'auto',
-    fontSize: 12, fontWeight: '900', color: '#D48B3A',
+  // Body below photo — open · price · favorites
+  runnerBody: {
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    backgroundColor: '#FFFFFF',
+    gap: 6,
   },
-  runnerChipRow: {
+  runnerBodyStats: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 4,
+    alignItems: 'center',
+    gap: 6,
   },
   runnerOpenChip: {
-    paddingHorizontal: 8, paddingVertical: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
     borderRadius: 999,
   },
   runnerOpenChipText: { fontSize: 10, fontWeight: '800' },
-  runnerFacChip: {
-    backgroundColor: 'rgba(255,255,255,0.85)',
-    paddingHorizontal: 8, paddingVertical: 2,
-    borderRadius: 999,
-    borderWidth: 1, borderColor: 'rgba(253,227,184,0.6)',
-    maxWidth: 110,
+  runnerBodyPrice: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#D48B3A',
   },
-  runnerFacChipText: { fontSize: 10, fontWeight: '600', color: '#5C5A52' },
-  runnerFacOverflow: {
-    backgroundColor: '#FFF1E0',
-    paddingHorizontal: 8, paddingVertical: 2,
-    borderRadius: 999,
-    borderWidth: 1, borderColor: '#FCD34D',
+  runnerBodyFav: {
+    marginLeft: 'auto',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
   },
-  runnerFacOverflowText: { fontSize: 10, fontWeight: '800', color: '#B45309' },
+  runnerBodyFavText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#1C1C1A',
+  },
+
+  // Facility chip row inside body
+  runnerBodyChipRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: 4,
+  },
+  runnerFacilityChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    height: 22,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 8,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#F0E4CC',
+    maxWidth: 120,
+  },
+  runnerFacilityText: { fontSize: 10, fontWeight: '600', color: '#5C5A52' },
+  runnerFacilityOverflow: {
+    height: 22,
+    paddingHorizontal: 8,
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#F0E4CC',
+  },
+  runnerFacilityOverflowText: { fontSize: 10, fontWeight: '800', color: '#B45309' },
 });
 
 const styles = StyleSheet.create({
@@ -850,7 +1068,10 @@ const styles = StyleSheet.create({
   heroTopRow: { flexDirection: 'row', alignItems: 'flex-end' },
   heroPill: {
     alignSelf: 'flex-start',
-    paddingHorizontal: 10, paddingVertical: 3,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10, paddingVertical: 4,
     backgroundColor: 'rgba(255,255,255,0.78)',
     borderRadius: 999,
     borderWidth: 1, borderColor: '#FDE3B8',
@@ -868,59 +1089,6 @@ const styles = StyleSheet.create({
   heroSub: {
     fontSize: 13, color: '#5C5A52',
     marginTop: 6, lineHeight: 18,
-  },
-  heroBadgeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8, marginTop: 14,
-  },
-  heroCountBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F97316',
-    paddingHorizontal: 12, paddingVertical: 6,
-    borderRadius: 999, gap: 4,
-    shadowColor: '#EA580C',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  heroCountNum: { color: '#FFFFFF', fontSize: 12, fontWeight: '900' },
-  heroCountLabel: {
-    color: 'rgba(255,255,255,0.85)',
-    fontSize: 10, fontWeight: '800',
-    letterSpacing: 1.2,
-  },
-  heroFilterBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 12, paddingVertical: 6,
-    borderRadius: 999, gap: 4,
-    borderWidth: 1, borderColor: '#E8E4DD',
-  },
-  heroFilterBtnActive: { borderColor: '#D48B3A' },
-  heroFilterBtnText: { fontSize: 12, fontWeight: '800', color: '#1C1C1A' },
-  heroFilterBtnTextActive: { color: '#D48B3A' },
-  heroFilterBadge: {
-    backgroundColor: '#D48B3A',
-    paddingHorizontal: 6,
-    minWidth: 18, height: 18, borderRadius: 9,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  heroFilterBadgeText: {
-    color: '#FFFFFF', fontSize: 10, fontWeight: '900',
-  },
-  heroLbBtn: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 12, paddingVertical: 6,
-    borderRadius: 999,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1, borderColor: '#FDE3B8',
-  },
-  heroLbBtnText: {
-    fontSize: 12, fontWeight: '800', color: '#B45309',
   },
 
   header: {
@@ -967,10 +1135,42 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.surface,
     paddingVertical: spacing.sm,
-    paddingRight: spacing.md,
-    gap: spacing.sm,
+    paddingLeft: spacing.md,
+    paddingRight: 0,
+  },
+  filterBarBtn: {
+    width: 36, height: 36,
+    borderRadius: 18,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1, borderColor: '#E8E4DD',
+    alignItems: 'center', justifyContent: 'center',
+    position: 'relative',
+  },
+  filterBarBtnActive: {
+    backgroundColor: '#1C1C1A',
+    borderColor: '#1C1C1A',
+  },
+  filterBarBadge: {
+    position: 'absolute',
+    top: -3, right: -3,
+    minWidth: 18, height: 18, borderRadius: 9,
+    backgroundColor: '#EA580C',
+    paddingHorizontal: 4,
+    alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1.5, borderColor: '#FFFFFF',
+  },
+  filterBarBadgeText: {
+    color: '#FFFFFF', fontSize: 10, fontWeight: '900',
+  },
+  filterBarDivider: {
+    width: 1, height: 20,
+    backgroundColor: '#E8E4DD',
+    marginHorizontal: spacing.sm,
   },
   purposeChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 999,
@@ -1005,20 +1205,35 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   filterBadgeText: { color: colors.accent, fontSize: 10, fontWeight: '800' },
-  rankRowWrap: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.sm,
+  rankItemWrap: {
+    position: 'relative',
   },
-  rankPill: {
-    minWidth: 36,
+  rankBadgeOverlay: {
+    position: 'absolute',
+    top: 6,
+    left: 6,
+    minWidth: 28,
+    height: 28,
     paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 999,
-    alignItems: 'center', justifyContent: 'center',
-    marginTop: 12,
+    borderRadius: 14,
+    backgroundColor: 'rgba(28,28,26,0.92)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+    zIndex: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 4,
   },
-  rankPillText: { fontSize: 12, fontWeight: '900', color: colors.primary },
+  rankBadgeOverlayText: {
+    fontSize: 12,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: 0.3,
+  },
   endHint: {
     textAlign: 'center',
     fontSize: 12,
@@ -1030,6 +1245,9 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  listSurface: {
+    backgroundColor: colors.background,
   },
   listContent: {
     padding: spacing.md,
@@ -1217,6 +1435,32 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     letterSpacing: 1.5,
     marginTop: spacing.md, marginBottom: 4,
+    marginLeft: 4,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: spacing.lg,
+    marginBottom: spacing.xs,
+    paddingHorizontal: 2,
+  },
+  sectionHeaderAccent: {
+    width: 3,
+    height: 14,
+    borderRadius: 2,
+    backgroundColor: '#EA580C',
+  },
+  sectionHeaderText: {
+    fontSize: 13,
+    fontWeight: '900',
+    color: '#1C1C1A',
+    letterSpacing: 0.3,
+  },
+  sectionHeaderLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#EFEAE0',
     marginLeft: 4,
   },
 });

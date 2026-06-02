@@ -58,6 +58,25 @@ export function hitsToCafes(
   });
 }
 
+const pageCafeCache = new WeakMap<
+  CafeSearchResult,
+  { lat?: number; lng?: number; cafes: Cafe[] }
+>();
+
+export function hitsToCafesCached(
+  result: CafeSearchResult,
+  userLat?: number,
+  userLng?: number,
+): Cafe[] {
+  const cached = pageCafeCache.get(result);
+  if (cached && cached.lat === userLat && cached.lng === userLng) {
+    return cached.cafes;
+  }
+  const cafes = hitsToCafes(result, userLat, userLng);
+  pageCafeCache.set(result, { lat: userLat, lng: userLng, cafes });
+  return cafes;
+}
+
 /**
  * Backward-compatible wrapper: legacy fetchCafes signature → Meilisearch endpoint.
  * Re-exported via services/api.ts for screens that haven't migrated yet.

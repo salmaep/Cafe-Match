@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -11,7 +11,7 @@ import { Cafe } from '../../types';
 import { cleanAddress } from '../../utils/address';
 import { formatRating } from '../../utils/rating';
 import { getOpenStatus } from '../../utils/openingHours';
-import { buildFacilityChips, formatDistance } from '../../utils/facilities';
+import { formatDistance } from '../../utils/facilities';
 
 interface Props {
   cafe: Cafe;
@@ -23,15 +23,22 @@ interface Props {
 
 const VISIBLE_CHIPS = 3;
 
-export default function CafeListItem({ cafe, onPress, rightAccessory }: Props) {
+function CafeListItem({ cafe, onPress, rightAccessory }: Props) {
   const navigation = useNavigation<StackNavigationProp<any>>();
   const { t } = useTranslation();
-  const open = getOpenStatus(cafe.openingHours);
-  const locality = cleanAddress(cafe.district || cafe.city || '');
-  const allChips = buildFacilityChips(cafe);
-  const visibleChips = allChips.slice(0, VISIBLE_CHIPS);
-  const overflow = allChips.length - visibleChips.length;
-  const ratingText = formatRating(cafe.googleRating);
+  const open = useMemo(() => getOpenStatus(cafe.openingHours), [cafe.openingHours]);
+  const locality = useMemo(
+    () => cleanAddress(cafe.district || cafe.city || ''),
+    [cafe.district, cafe.city],
+  );
+  const { visibleChips, overflow } = useMemo(() => {
+    const all = cafe.chips ?? [];
+    return {
+      visibleChips: all.slice(0, VISIBLE_CHIPS),
+      overflow: all.length - Math.min(all.length, VISIBLE_CHIPS),
+    };
+  }, [cafe.chips]);
+  const ratingText = useMemo(() => formatRating(cafe.googleRating), [cafe.googleRating]);
   const distMeters =
     cafe.distanceMeters != null
       ? cafe.distanceMeters
@@ -59,7 +66,9 @@ export default function CafeListItem({ cafe, onPress, rightAccessory }: Props) {
       <CafePhoto
         photos={cafe.photos}
         name={cafe.name}
+        cafeId={cafe.id}
         style={styles.photo}
+        hideOnError
       />
 
       <View style={styles.body}>
@@ -308,4 +317,16 @@ const styles = StyleSheet.create({
   },
   favRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   favCount: { fontSize: 13, fontWeight: '700', color: C.amber },
+});
+
+export default React.memo(CafeListItem, (prev, next) => {
+  // Cell is recycled with different cafe → re-render. Same cafe → skip.
+  // Right-accessory + onPress are usually stable refs from parent.
+  return (
+    prev.cafe.id === next.cafe.id &&
+    prev.cafe.favoritesCount === next.cafe.favoritesCount &&
+    prev.cafe.bookmarksCount === next.cafe.bookmarksCount &&
+    prev.onPress === next.onPress &&
+    prev.rightAccessory === next.rightAccessory
+  );
 });

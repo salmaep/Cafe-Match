@@ -14,6 +14,8 @@ export const API_PATHS = {
   favoriteToggle: (cafeId: string | number) => `/favorites/${cafeId}`,
   reviewsOfCafe: (cafeId: string | number) => `/reviews/cafe/${cafeId}`,
   reviewSummary: (cafeId: string | number) => `/reviews/cafe/${cafeId}/summary`,
+  googleReviewsOfCafe: (cafeId: string | number) =>
+    `/cafes/${cafeId}/google-reviews`,
   cafeLeaderboard: (cafeId: string | number) =>
     `/checkins/cafe/${cafeId}/leaderboard`,
 } as const;

@@ -311,7 +311,7 @@ export default function CardSwipeScreen() {
             : null;
       const rating = formatRating(cafe.googleRating);
       const shortlisted = isInShortlistRef.current(cafe.id);
-      const allTags = buildFacilityChips(cafe);
+      const allTags = cafe.chips ?? buildFacilityChips(cafe);
       const visibleTags = allTags.slice(0, VISIBLE_TAGS);
       const extra = allTags.length - visibleTags.length;
       const metaParts: string[] = [];

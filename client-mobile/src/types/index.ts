@@ -5,6 +5,13 @@ export interface CafeFacilityRich {
   facilityValue: string | null;
 }
 
+export interface CafeChip {
+  key: string;
+  icon: string;
+  lucideName?: string;
+  label: string;
+}
+
 // Backend cafe entity mapped to frontend
 export interface Cafe {
   id: string;
@@ -27,6 +34,9 @@ export interface Cafe {
   // Rich facility list (key + value) from backend — used by buildFacilityChips.
   facilitiesRich?: CafeFacilityRich[];
   facilityValues?: string[];
+  // Precomputed facility chips (resolved icon + label). Built once at the
+  // mapper layer so list rows can render without per-render lookups.
+  chips?: CafeChip[];
   menu: MenuCategory[];
   matchScore?: number;
   favoritesCount: number;

@@ -38,7 +38,7 @@ interface NativeAdCardProps {
   cacheKey?: string;
 }
 
-export default function NativeAdCard({ cacheKey = '__default__' }: NativeAdCardProps) {
+function NativeAdCard({ cacheKey = '__default__' }: NativeAdCardProps) {
   const { t } = useTranslation();
   const [ad, setAd] = useState<NativeAdType | null>(() => adCache.get(cacheKey) ?? null);
   const [failed, setFailed] = useState(false);
@@ -319,3 +319,5 @@ const styles = StyleSheet.create({
   },
   chev: { fontSize: 22, color: C.muted, lineHeight: 22 },
 });
+
+export default React.memo(NativeAdCard, (prev, next) => prev.cacheKey === next.cacheKey);

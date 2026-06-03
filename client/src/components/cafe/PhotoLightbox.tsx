@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { X } from "../../utils/lucideIcon";
 
 interface Props {
@@ -14,6 +14,9 @@ export default function PhotoLightbox({
   onClose,
   onChange,
 }: Props) {
+  const startXRef = useRef(0);
+  const movingRef = useRef(false);
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -22,12 +25,26 @@ export default function PhotoLightbox({
         onChange(index + 1);
     };
     window.addEventListener("keydown", handler);
+    const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       window.removeEventListener("keydown", handler);
-      document.body.style.overflow = "";
+      document.body.style.overflow = prevOverflow;
     };
   }, [index, photos.length, onClose, onChange]);
+
+  // Touch / pointer swipe (same threshold semantics as PhotoSlider).
+  const onPointerDown = (e: React.PointerEvent) => {
+    startXRef.current = e.clientX;
+    movingRef.current = true;
+  };
+  const onPointerUp = (e: React.PointerEvent) => {
+    if (!movingRef.current) return;
+    movingRef.current = false;
+    const dx = e.clientX - startXRef.current;
+    if (dx > 50 && index > 0) onChange(index - 1);
+    else if (dx < -50 && index < photos.length - 1) onChange(index + 1);
+  };
 
   const current = photos[index];
   if (!current) return null;
@@ -82,8 +99,12 @@ export default function PhotoLightbox({
         src={current.url}
         alt={current.caption || "Photo"}
         referrerPolicy="no-referrer"
-        className="max-w-[92vw] max-h-[88vh] object-contain rounded-lg shadow-2xl"
+        draggable={false}
+        className="max-w-[92vw] max-h-[88vh] object-contain rounded-lg shadow-2xl select-none"
         onClick={(e) => e.stopPropagation()}
+        onPointerDown={onPointerDown}
+        onPointerUp={onPointerUp}
+        onPointerCancel={() => (movingRef.current = false)}
       />
     </div>
   );

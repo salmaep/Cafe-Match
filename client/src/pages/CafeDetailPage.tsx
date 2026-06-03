@@ -1109,6 +1109,7 @@ export default function CafeDetailPage() {
 }
 
 function GoogleReviewCard({ review }: { review: GoogleReview }) {
+  const [lightboxOpen, setLightboxOpen] = useState(false);
   const initials = review.guestName.charAt(0).toUpperCase();
   const stars = Array.from({ length: 5 }, (_, i) => i < review.rating);
   const date = new Date(review.scrapedAt).toLocaleDateString("id-ID", {
@@ -1187,7 +1188,16 @@ function GoogleReviewCard({ review }: { review: GoogleReview }) {
           src={review.photoUrl}
           alt=""
           referrerPolicy="no-referrer"
-          className="mt-2 w-full max-h-40 object-cover rounded-lg"
+          className="mt-2 w-full max-h-40 object-cover rounded-lg cursor-pointer"
+          onClick={() => setLightboxOpen(true)}
+        />
+      )}
+      {lightboxOpen && review.photoUrl && (
+        <PhotoLightbox
+          photos={[{ url: review.photoUrl }]}
+          index={0}
+          onClose={() => setLightboxOpen(false)}
+          onChange={() => {}}
         />
       )}
     </div>

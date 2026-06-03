@@ -158,6 +158,7 @@ export interface SemanticSearchResult {
   meta: SemanticSearchMeta;
 }
 
+
 export const cafesApi = {
   search: async (params: SearchParams) => {
     const { facilities, ...rest } = params;
@@ -197,6 +198,7 @@ export const cafesApi = {
       meta: res.data?.meta,
     };
   },
+
 
   discover: async (params: DiscoverParams): Promise<DiscoverResult> => {
     const { facilities, excludeIds, ...rest } = params;

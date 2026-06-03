@@ -270,10 +270,7 @@ export default function TrendingPage() {
               )}
 
               {rest.length > 0 && (
-                <div className="mt-10 mb-4 flex items-center justify-between">
-                  <h2 className="text-sm font-extrabold text-[#1C1C1A] uppercase tracking-[0.1em]">
-                    Peringkat 4 – {Math.min(total, cafes.length)}
-                  </h2>
+                <div className="mt-10 mb-4 flex items-center justify-end">
                   <span className="text-[11px] text-[#8A8880] font-semibold">
                     Geser bawah untuk lihat lebih
                   </span>

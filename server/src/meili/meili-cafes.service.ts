@@ -324,11 +324,7 @@ export class MeiliCafesService {
 
     const sort: string[] = [];
     if (sortMode === 'trending') {
-      sort.push(
-        'favoritesCount:desc',
-        'bookmarksCount:desc',
-        'googleRating:desc',
-      );
+      sort.push('favoritesCount:desc');
     } else if (sortMode === 'rating') {
       sort.push('googleRating:desc', 'favoritesCount:desc');
     } else if (sortMode === 'newest') {

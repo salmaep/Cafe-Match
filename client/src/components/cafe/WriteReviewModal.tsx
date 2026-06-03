@@ -400,9 +400,9 @@ export default function WriteReviewModal({
               </div>
 
               {media.length > 0 && (
-                <div className="flex gap-2.5 overflow-x-auto mt-4 pb-2">
+                <div className="flex gap-2.5 overflow-x-auto mt-4 pt-2 pb-2 px-1.5">
                   {media.map((m, i) => (
-                    <div key={i} className="relative shrink-0">
+                    <div key={i} className="relative shrink-0 isolate">
                       {m.type === "photo" ? (
                         <img
                           src={m.url}

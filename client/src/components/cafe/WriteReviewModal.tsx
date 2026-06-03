@@ -7,16 +7,16 @@ import {
   ChevronLeft,
   Flame,
   Frown,
+  LucideIcon,
+  lucideForFacility,
   Meh,
   Smile,
-  Sparkles,
   Star,
   ThumbsUp,
   Video,
   X,
 } from "../../utils/lucideIcon";
-import { getPurposeBySlug } from "@shared/constants/purposes";
-import { chipFromFacilityKey } from "@shared/constants/facilities";
+import { PurposeIcon } from "../../utils/purposeIcons";
 
 const TOTAL_STEPS = 5;
 
@@ -29,7 +29,8 @@ interface MoodOption {
 interface FacilityOption {
   key: string;
   label: string;
-  icon: string;
+  /** Feature category (amenity / ambience / …) for lucideForFacility fallback. */
+  category: string;
 }
 
 // Module-level cache so we don't re-hit /cafes/filters every time the modal opens.
@@ -116,7 +117,7 @@ export default function WriteReviewModal({
       g.options.map((o) => ({
         key: o.key,
         label: o.label,
-        icon: chipFromFacilityKey(o.key).icon,
+        category: g.key,
       })),
     );
   }, [facilityGroups]);
@@ -261,7 +262,6 @@ export default function WriteReviewModal({
               <div className="grid grid-cols-2 gap-3">
                 {moodOptions.map((m) => {
                   const active = mood === m.key;
-                  const emoji = getPurposeBySlug(m.key)?.emoji;
                   return (
                     <button
                       key={m.key}
@@ -273,15 +273,12 @@ export default function WriteReviewModal({
                           : "border-transparent bg-white hover:border-[#E8E4DD]"
                       }`}
                     >
-                      {emoji ? (
-                        <span className="text-3xl leading-none">{emoji}</span>
-                      ) : (
-                        <Sparkles
-                          size={28}
-                          strokeWidth={2}
-                          className={active ? "text-[#D48B3A]" : "text-[#8A8880]"}
-                        />
-                      )}
+                      <PurposeIcon
+                        slug={m.key}
+                        icon={m.icon}
+                        size={28}
+                        className={active ? "text-[#D48B3A]" : "text-[#8A8880]"}
+                      />
                       <span
                         className={`text-sm font-bold ${
                           active ? "text-[#D48B3A]" : "text-[#1C1C1A]"
@@ -315,7 +312,12 @@ export default function WriteReviewModal({
                           : "border-transparent bg-white hover:border-[#E8E4DD]"
                       }`}
                     >
-                      <span className="text-sm leading-none">{f.icon}</span>
+                      <LucideIcon
+                        name={lucideForFacility(f.key, f.category)}
+                        size={16}
+                        strokeWidth={2}
+                        className={active ? "text-[#D48B3A]" : "text-[#8A8880]"}
+                      />
                       <span
                         className={`text-sm font-semibold ${
                           active ? "text-[#D48B3A]" : "text-[#1C1C1A]"

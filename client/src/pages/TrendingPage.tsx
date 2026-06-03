@@ -685,9 +685,14 @@ function RunnerUpCard({
               {visibleChips.map((c) => (
                 <span
                   key={c.key}
-                  className="bg-white/80 text-[#5C5A52] text-[10px] font-semibold rounded-full px-2 py-0.5 ring-1 ring-amber-200/60"
+                  className="inline-flex items-center gap-1 bg-white/80 text-[#5C5A52] text-[10px] font-semibold rounded-full px-2 py-0.5 ring-1 ring-amber-200/60"
                 >
-                  {c.icon} {c.label}
+                  <LucideIcon
+                    name={lucideForFacility(c.key)}
+                    size={10}
+                    strokeWidth={2}
+                  />
+                  {c.label}
                 </span>
               ))}
               {overflow > 0 && (
@@ -820,9 +825,14 @@ function ListRow({
           {visibleChips.map((c) => (
             <span
               key={c.key}
-              className="bg-[#F0EDE8] text-[#5C5A52] text-[10px] font-medium rounded-full px-2 py-px"
+              className="inline-flex items-center gap-1 bg-[#F0EDE8] text-[#5C5A52] text-[10px] font-medium rounded-full px-2 py-px"
             >
-              {c.icon} {c.label}
+              <LucideIcon
+                name={lucideForFacility(c.key)}
+                size={10}
+                strokeWidth={2}
+              />
+              {c.label}
             </span>
           ))}
           {overflow > 0 && (

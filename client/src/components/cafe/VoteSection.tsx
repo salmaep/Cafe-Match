@@ -3,21 +3,10 @@ import { votesApi } from "../../api/votes.api";
 import { purposesApi } from "../../api/purposes.api";
 import type { Purpose, VoteTally } from "../../types";
 import { useAuth } from "../../context/AuthContext";
-import { getPurposeBySlug } from "@shared/constants/purposes";
+import { PurposeIcon } from "../../utils/purposeIcons";
 
 interface Props {
   cafeId: number;
-}
-
-// Server's `purpose.icon` is a lucide-style name (e.g. "coffee"). Map to emoji
-// via shared wizard constants so chips render visually instead of as raw text.
-function emojiFor(purpose: { slug?: string; icon?: string | null }): string {
-  const fromShared = purpose.slug
-    ? getPurposeBySlug(purpose.slug)?.emoji
-    : undefined;
-  if (fromShared) return fromShared;
-  if (purpose.icon && !/^[a-z0-9_-]+$/i.test(purpose.icon)) return purpose.icon;
-  return "☕";
 }
 
 export default function VoteSection({ cafeId }: Props) {
@@ -127,8 +116,13 @@ export default function VoteSection({ cafeId }: Props) {
                     }`}
                   >
                     <div className="flex justify-between items-center">
-                      <span>
-                        <span className="mr-2">{emojiFor(purpose)}</span>
+                      <span className="inline-flex items-center">
+                        <PurposeIcon
+                          slug={purpose.slug}
+                          icon={purpose.icon}
+                          size={16}
+                          className="mr-2"
+                        />
                         {purpose.name}
                       </span>
                       <span className="text-xs text-gray-400">

@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { mapText } from "@shared/i18n";
-import { getPurposeBySlug } from "@shared/constants/purposes";
 import {
   useGeolocation,
   FALLBACK_LAT,
@@ -1283,7 +1282,6 @@ function MobileFilterModal({
               </button>
               {purposes.map((p) => {
                 const active = activePurposeId === p.id;
-                const emoji = getPurposeBySlug(p.slug)?.emoji;
                 return (
                   <button
                     key={p.id}
@@ -1295,9 +1293,7 @@ function MobileFilterModal({
                         : "bg-white text-[#1C1C1A] border-[#E8E4DD]"
                     }`}
                   >
-                    {emoji && (
-                      <span className="text-sm leading-none">{emoji}</span>
-                    )}
+                    <PurposeIcon slug={p.slug} icon={p.icon} size={14} />
                     {p.name}
                   </button>
                 );

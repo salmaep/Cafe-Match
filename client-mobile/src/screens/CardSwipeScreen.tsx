@@ -259,10 +259,10 @@ export default function CardSwipeScreen() {
   // Prefetch upcoming card images + fetch more when the deck runs low.
   useEffect(() => {
     if (showWizard) return;
-    const upcoming = cafes.slice(index, index + 3);
+    const upcoming = cafes.slice(index, index + 5);
     upcoming.forEach((cafe) => {
       const url = cafe.photos?.[0];
-      if (url) Image.prefetch(url);
+      if (url) Image.prefetch(url, 'memory-disk');
     });
     if (cafes.length > 0 && cafes.length - index <= PREFETCH_THRESHOLD) {
       fetchMore();
@@ -336,7 +336,8 @@ export default function CardSwipeScreen() {
             source={{ uri: bgPhoto }}
             style={styles.cardImage}
             cachePolicy="memory-disk"
-            transition={200}
+            recyclingKey={String(cafe.id)}
+            transition={0}
             contentFit="cover"
           />
 

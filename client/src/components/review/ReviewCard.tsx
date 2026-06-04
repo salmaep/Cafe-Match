@@ -39,9 +39,11 @@ export default function ReviewCard({
   const [voted, setVoted] = useState(votedByMe);
   const [count, setCount] = useState(review.helpfulCount ?? 0);
   const [busy, setBusy] = useState(false);
-  // Fullscreen photo viewer (photos only; videos play inline).
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
-  const photos = (review.media ?? []).filter((m) => m.mediaType === "photo");
+  const mediaItems = (review.media ?? []).map((m) => ({
+    url: m.url,
+    mediaType: m.mediaType as "photo" | "video",
+  }));
 
   const handleVote = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -116,28 +118,59 @@ export default function ReviewCard({
         </p>
       )}
 
-      {!isPreview && review.media && review.media.length > 0 && (
+      {!isPreview && mediaItems.length > 0 && (
         <div className="mt-3 grid grid-cols-3 gap-2">
-          {review.media.map((m) =>
-            m.mediaType === "photo" ? (
-              <img
-                key={m.id}
-                src={m.url}
-                alt=""
-                className="w-full h-24 object-cover rounded-lg cursor-pointer"
-                onClick={() =>
-                  setLightboxIndex(photos.findIndex((p) => p.id === m.id))
-                }
-              />
-            ) : (
-              <video
-                key={m.id}
-                src={m.url}
-                className="w-full h-24 object-cover rounded-lg"
-                controls
-              />
-            ),
-          )}
+          {mediaItems.slice(0, 6).map((m, i) => {
+            const isLast = i === 5 && mediaItems.length > 6;
+            const overflow = mediaItems.length - 6;
+            return (
+              <button
+                key={i}
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setLightboxIndex(i);
+                }}
+                className="relative w-full aspect-square rounded-xl overflow-hidden bg-[#F0EDE8] group focus:outline-none focus:ring-2 focus:ring-[#D48B3A] cursor-pointer transition-transform active:scale-95"
+              >
+                {m.mediaType === "photo" ? (
+                  <img
+                    src={m.url}
+                    alt=""
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
+                  />
+                ) : (
+                  <>
+                    <video
+                      src={m.url}
+                      preload="metadata"
+                      muted
+                      className="absolute inset-0 w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/15 flex items-center justify-center">
+                      <div className="w-10 h-10 rounded-full bg-black/55 flex items-center justify-center backdrop-blur-sm">
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="#FFFFFF"
+                        >
+                          <path d="M8 5v14l11-7z" />
+                        </svg>
+                      </div>
+                    </div>
+                  </>
+                )}
+                {isLast && (
+                  <div className="absolute inset-0 bg-black/55 flex items-center justify-center">
+                    <span className="text-white font-bold text-lg">
+                      +{overflow}
+                    </span>
+                  </div>
+                )}
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -160,7 +193,7 @@ export default function ReviewCard({
 
       {lightboxIndex !== null && (
         <PhotoLightbox
-          photos={photos.map((p) => ({ url: p.url }))}
+          photos={mediaItems}
           index={lightboxIndex}
           onClose={() => setLightboxIndex(null)}
           onChange={setLightboxIndex}

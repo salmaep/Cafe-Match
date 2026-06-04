@@ -2,7 +2,11 @@ import { useEffect, useRef } from "react";
 import { X } from "../../utils/lucideIcon";
 
 interface Props {
-  photos: { url: string; caption?: string | null }[];
+  photos: {
+    url: string;
+    caption?: string | null;
+    mediaType?: "photo" | "video";
+  }[];
   index: number;
   onClose: () => void;
   onChange: (i: number) => void;
@@ -95,17 +99,27 @@ export default function PhotoLightbox({
         </button>
       )}
 
-      <img
-        src={current.url}
-        alt={current.caption || "Photo"}
-        referrerPolicy="no-referrer"
-        draggable={false}
-        className="max-w-[92vw] max-h-[88vh] object-contain rounded-lg shadow-2xl select-none"
-        onClick={(e) => e.stopPropagation()}
-        onPointerDown={onPointerDown}
-        onPointerUp={onPointerUp}
-        onPointerCancel={() => (movingRef.current = false)}
-      />
+      {current.mediaType === "video" ? (
+        <video
+          src={current.url}
+          controls
+          autoPlay
+          className="max-w-[92vw] max-h-[88vh] rounded-lg shadow-2xl"
+          onClick={(e) => e.stopPropagation()}
+        />
+      ) : (
+        <img
+          src={current.url}
+          alt={current.caption || "Photo"}
+          referrerPolicy="no-referrer"
+          draggable={false}
+          className="max-w-[92vw] max-h-[88vh] object-contain rounded-lg shadow-2xl select-none"
+          onClick={(e) => e.stopPropagation()}
+          onPointerDown={onPointerDown}
+          onPointerUp={onPointerUp}
+          onPointerCancel={() => (movingRef.current = false)}
+        />
+      )}
     </div>
   );
 }

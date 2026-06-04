@@ -873,10 +873,12 @@ export default function CafeDetailScreen() {
                         rt.category === 'overall',
                     );
                     const stars = overall ? Math.round(overall.score) : 0;
-                    const firstPhoto = r.media?.find(
-                      (m: { mediaType: 'photo' | 'video' }) =>
-                        m.mediaType === 'photo',
-                    );
+                    const reviewMedia = (r.media ?? []) as Array<{
+                      url: string;
+                      mediaType: 'photo' | 'video';
+                    }>;
+                    const visibleMedia = reviewMedia.slice(0, 3);
+                    const mediaOverflow = reviewMedia.length - 3;
                     return (
                       <TouchableOpacity
                         key={r.id}
@@ -935,13 +937,41 @@ export default function CafeDetailScreen() {
                             {r.text}
                           </Text>
                         )}
-                        {firstPhoto && (
-                          <Image
-                            source={{ uri: firstPhoto.url }}
-                            style={styles.reviewPreviewPhoto}
-                            cachePolicy="memory-disk"
-                            transition={200}
-                          />
+                        {visibleMedia.length > 0 && (
+                          <View style={styles.reviewPreviewMediaRow}>
+                            {visibleMedia.map((m, idx) => {
+                              const isLast = idx === 2 && mediaOverflow > 0;
+                              return (
+                                <View
+                                  key={idx}
+                                  style={styles.reviewPreviewMediaCell}
+                                >
+                                  {m.mediaType === 'photo' ? (
+                                    <Image
+                                      source={{ uri: m.url }}
+                                      style={styles.reviewPreviewMediaImg}
+                                      cachePolicy="memory-disk"
+                                      transition={150}
+                                      contentFit="cover"
+                                    />
+                                  ) : (
+                                    <View style={styles.reviewPreviewVideoBox}>
+                                      <View style={styles.reviewPreviewPlayCircle}>
+                                        <Text style={styles.reviewPreviewPlayIcon}>▶</Text>
+                                      </View>
+                                    </View>
+                                  )}
+                                  {isLast && (
+                                    <View style={styles.reviewPreviewOverflow}>
+                                      <Text style={styles.reviewPreviewOverflowText}>
+                                        +{mediaOverflow}
+                                      </Text>
+                                    </View>
+                                  )}
+                                </View>
+                              );
+                            })}
+                          </View>
                         )}
                       </TouchableOpacity>
                     );
@@ -2019,12 +2049,57 @@ const styles = StyleSheet.create({
     color: colors.primary,
     lineHeight: 18,
   },
-  reviewPreviewPhoto: {
-    width: "100%",
-    height: 140,
-    borderRadius: radius.sm,
+  reviewPreviewMediaRow: {
+    flexDirection: 'row',
+    gap: 6,
     marginTop: spacing.sm,
-    backgroundColor: "#F0EDE8",
+  },
+  reviewPreviewMediaCell: {
+    flex: 1,
+    aspectRatio: 1,
+    borderRadius: radius.md,
+    overflow: 'hidden',
+    backgroundColor: '#F0EDE8',
+    position: 'relative',
+  },
+  reviewPreviewMediaImg: {
+    width: '100%',
+    height: '100%',
+  },
+  reviewPreviewVideoBox: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#1f1f1f',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  reviewPreviewPlayCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  reviewPreviewPlayIcon: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    marginLeft: 2,
+  },
+  reviewPreviewOverflow: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  reviewPreviewOverflowText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '800',
   },
 
   // ─── Top check-in leaderboard ─────────────────────────────────────────

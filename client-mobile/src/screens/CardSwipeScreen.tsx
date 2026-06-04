@@ -47,22 +47,25 @@ interface Tier {
   dropPurpose?: boolean;
   dropPrice?: boolean;
   maxRadiusKm?: number;
+  absoluteRadiusKm?: number;
 }
+
+const MAX_RADIUS_KM = 50;
 
 // Fallback tiers — when the current filter set is exhausted, progressively
 // widen. Each tier is tried in order; advance only when the current one yields
 // no new cafes. Mirrors web DiscoverSwipePage TIERS.
 const TIERS: Tier[] = [
   { radiusMultiplier: 1 },
-  { radiusMultiplier: 2, maxRadiusKm: 50 },
-  { radiusMultiplier: 2, dropFacilities: true, maxRadiusKm: 50 },
-  { radiusMultiplier: 3, dropFacilities: true, dropPurpose: true, maxRadiusKm: 75 },
+  { radiusMultiplier: 2, maxRadiusKm: MAX_RADIUS_KM },
+  { radiusMultiplier: 1, dropFacilities: true },
+  { radiusMultiplier: 1, dropFacilities: true, dropPurpose: true },
   {
-    radiusMultiplier: 4,
+    radiusMultiplier: 1,
+    absoluteRadiusKm: MAX_RADIUS_KM,
     dropFacilities: true,
     dropPurpose: true,
     dropPrice: true,
-    maxRadiusKm: 100,
   },
 ];
 
@@ -117,8 +120,9 @@ export default function CardSwipeScreen() {
   const cardTop = 0;
   const cardLeft = Math.max(CARD_SIDE_GAP, (cardAreaW - CARD_W) / 2);
 
-  const lat = preferences?.location?.latitude ?? latitude;
-  const lng = preferences?.location?.longitude ?? longitude;
+  const useLiveGps = preferences?.location?.type !== 'custom';
+  const lat = useLiveGps ? latitude : (preferences?.location?.latitude ?? latitude);
+  const lng = useLiveGps ? longitude : (preferences?.location?.longitude ?? longitude);
   const baseRadiusKm = preferences?.radius ?? 5;
 
   const priceRange =
@@ -143,8 +147,10 @@ export default function CardSwipeScreen() {
   const indexRef = useRef(0);
   indexRef.current = index;
 
-  // Infinite-deck bookkeeping.
-  const seenIdsRef = useRef<Set<number>>(new Set());
+  // Infinite-deck bookkeeping. Mirrors web: only IDs the user has actually
+  // swiped are sent to the server as excludeIds. The current deck is deduped
+  // locally so the server can keep widening returns instead of running dry.
+  const swipedIdsRef = useRef<Set<number>>(new Set());
   const tierRef = useRef(0);
   const exhaustedRef = useRef(false);
   const fetchingRef = useRef(false);
@@ -178,16 +184,18 @@ export default function CardSwipeScreen() {
     let appended = 0;
     while (tierRef.current < TIERS.length && appended === 0) {
       const tier = TIERS[tierRef.current];
-      const effectiveRadiusKm = Math.min(
-        p.baseRadiusKm * tier.radiusMultiplier,
-        tier.maxRadiusKm ?? p.baseRadiusKm * tier.radiusMultiplier,
-      );
+      const effectiveRadiusKm =
+        tier.absoluteRadiusKm ??
+        Math.min(
+          p.baseRadiusKm * tier.radiusMultiplier,
+          tier.maxRadiusKm ?? p.baseRadiusKm * tier.radiusMultiplier,
+        );
       const params: DiscoverDeckParams = {
         lat: p.lat,
         lng: p.lng,
         radius: effectiveRadiusKm * 1000,
         limit: BATCH_SIZE,
-        excludeIds: Array.from(seenIdsRef.current),
+        excludeIds: Array.from(swipedIdsRef.current),
       };
       if (!tier.dropPurpose && p.purposeId != null)
         params.purposeId = p.purposeId;
@@ -197,11 +205,15 @@ export default function CardSwipeScreen() {
 
       try {
         const res = await fetchDiscoverDeck(params);
+        const deckIds = new Set<number>(
+          cafesRef.current.map((c) => Number(c.id)),
+        );
         const fresh = res.data.filter(
-          (c) => !seenIdsRef.current.has(Number(c.id)),
+          (c) =>
+            !swipedIdsRef.current.has(Number(c.id)) &&
+            !deckIds.has(Number(c.id)),
         );
         if (fresh.length > 0) {
-          fresh.forEach((c) => seenIdsRef.current.add(Number(c.id)));
           setCafes((prev) => [...prev, ...fresh]);
           appended += fresh.length;
         } else {
@@ -225,7 +237,7 @@ export default function CardSwipeScreen() {
     if (showWizard) return;
     if (!purposeReady) return;
     if (lat == null || lng == null) return;
-    seenIdsRef.current = new Set();
+    swipedIdsRef.current = new Set();
     tierRef.current = 0;
     exhaustedRef.current = false;
     setExhausted(false);
@@ -276,6 +288,7 @@ export default function CardSwipeScreen() {
     (dir: 'left' | 'right') => {
       const i = indexRef.current;
       const cafe = cafesRef.current[i];
+      if (cafe) swipedIdsRef.current.add(Number(cafe.id));
       if (dir === 'right' && cafe && !isInShortlistRef.current(cafe.id)) {
         if (!userRef.current) {
           navigation.navigate('AuthModal');
@@ -306,9 +319,7 @@ export default function CardSwipeScreen() {
       const distanceKm =
         cafe.distanceMeters != null
           ? (cafe.distanceMeters / 1000).toFixed(1)
-          : cafe.distance != null
-            ? cafe.distance.toFixed(1)
-            : null;
+          : null;
       const rating = formatRating(cafe.googleRating);
       const shortlisted = isInShortlistRef.current(cafe.id);
       const allTags = cafe.chips ?? buildFacilityChips(cafe);

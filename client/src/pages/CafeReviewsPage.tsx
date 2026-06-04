@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import {
-  Link,
   useParams,
   useNavigate,
   useSearchParams,
@@ -280,13 +279,18 @@ export default function CafeReviewsPage() {
       {/* Header */}
       <div className="bg-white border-b border-[#F0EDE8] sticky top-0 z-20">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center gap-3">
-          <Link
-            to={cafe ? cafeUrl(cafe) : "/"}
-            className="w-9 h-9 rounded-full hover:bg-[#F0EDE8] flex items-center justify-center text-[#1C1C1A]"
+          <button
+            type="button"
+            onClick={() => {
+              if (window.history.length > 1) navigate(-1);
+              else navigate(cafe ? cafeUrl(cafe) : "/", { replace: true });
+            }}
+            className="w-10 h-10 rounded-full bg-white border border-[#E8E4DD] hover:bg-[#FDF6EC] hover:border-[#D48B3A] hover:text-[#D48B3A] shadow-sm flex items-center justify-center text-[#5C5A52] transition-all active:scale-95"
+            aria-label="Back"
             title="Back"
           >
-            <ChevronLeft size={20} />
-          </Link>
+            <ChevronLeft size={20} strokeWidth={2.4} />
+          </button>
           <div className="flex-1 min-w-0">
             <div className="text-xs text-[#8A8880]">Reviews</div>
             <div className="text-base font-bold text-[#1C1C1A] truncate">

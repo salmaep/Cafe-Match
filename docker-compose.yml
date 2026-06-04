@@ -71,6 +71,8 @@ services:
       PORT: "3084"
     ports:
       - "3084:3084"
+    volumes:
+      - app_storage:/app/storage
     networks:
       - cafematch-net
     depends_on:
@@ -106,3 +108,4 @@ networks:
 volumes:
   mysql_data:
   meili_data:
+  app_storage:

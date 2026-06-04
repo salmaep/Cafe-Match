@@ -26,6 +26,7 @@ import {
   Video,
   MessageSquareText,
 } from 'lucide-react-native';
+import * as VideoThumbnails from 'expo-video-thumbnails';
 import { useReviewSummary } from '../queries/reviews/use-review-summary';
 import {
   fetchGoogleReviews,
@@ -34,6 +35,7 @@ import {
 import { fetchReviews } from '../services/api';
 import GoogleReviewCard from '../components/cafe/GoogleReviewCard';
 import GoogleGIcon from '../components/cafe/GoogleGIcon';
+import MediaZoomModal from '../components/MediaZoomModal';
 import { useAuth } from '../context/AuthContext';
 import { colors, spacing, radius } from '../theme';
 import {
@@ -233,6 +235,48 @@ function ReviewAvatar({ name, url }: { name: string; url?: string }) {
   );
 }
 
+function VideoMediaThumb({ url, style }: { url: string; style: any }) {
+  const [thumb, setThumb] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { uri } = await VideoThumbnails.getThumbnailAsync(url, {
+          time: 1000,
+          quality: 0.6,
+        });
+        if (!cancelled) setThumb(uri);
+      } catch {
+        // ignore — fallback placeholder shown
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [url]);
+
+  return (
+    <View style={style}>
+      {thumb ? (
+        <Image
+          source={{ uri: thumb }}
+          style={StyleSheet.absoluteFill}
+          contentFit="cover"
+          cachePolicy="memory-disk"
+        />
+      ) : (
+        <View style={[StyleSheet.absoluteFill, styles.videoPlaceholder]} />
+      )}
+      <View style={styles.videoPlayOverlay}>
+        <View style={styles.videoPlayCircle}>
+          <Play size={18} color="#FFFFFF" fill="#FFFFFF" strokeWidth={0} />
+        </View>
+      </View>
+    </View>
+  );
+}
+
 function ReviewCard({
   review,
   onOpenMedia,
@@ -303,28 +347,36 @@ function ReviewCard({
       {review.text ? <ReviewBody text={review.text} /> : null}
 
       {media.length > 0 && (
-        <View style={styles.mediaRow}>
-          {media.map((m, i) => (
-            <TouchableOpacity
-              key={i}
-              activeOpacity={0.85}
-              onPress={() => onOpenMedia(media, i)}
-            >
-              {m.mediaType === 'photo' ? (
-                <Image
-                  source={{ uri: m.url }}
-                  style={styles.mediaThumb}
-                  cachePolicy="memory-disk"
-                  transition={200}
-                  contentFit="cover"
-                />
-              ) : (
-                <View style={[styles.mediaThumb, styles.videoThumb]}>
-                  <Play size={22} color="#FFFFFF" fill="#FFFFFF" strokeWidth={0} />
-                </View>
-              )}
-            </TouchableOpacity>
-          ))}
+        <View style={styles.mediaGrid}>
+          {media.slice(0, 6).map((m, i) => {
+            const isLast = i === 5 && media.length > 6;
+            const overflowCount = media.length - 6;
+            return (
+              <TouchableOpacity
+                key={i}
+                activeOpacity={0.85}
+                onPress={() => onOpenMedia(media, i)}
+                style={styles.mediaCell}
+              >
+                {m.mediaType === 'photo' ? (
+                  <Image
+                    source={{ uri: m.url }}
+                    style={styles.mediaThumbFull}
+                    cachePolicy="memory-disk"
+                    transition={200}
+                    contentFit="cover"
+                  />
+                ) : (
+                  <VideoMediaThumb url={m.url} style={styles.mediaThumbFull} />
+                )}
+                {isLast && (
+                  <View style={styles.overflowOverlay}>
+                    <Text style={styles.overflowText}>+{overflowCount}</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            );
+          })}
         </View>
       )}
     </View>
@@ -377,79 +429,6 @@ function EmptyState({ onWrite }: { onWrite: () => void }) {
   );
 }
 
-function ZoomModal({
-  state,
-  onClose,
-}: {
-  state: ZoomState;
-  onClose: () => void;
-}) {
-  const { t } = useTranslation();
-  return (
-    <Modal
-      visible={!!state}
-      transparent={false}
-      animationType="fade"
-      onRequestClose={onClose}
-      statusBarTranslucent
-    >
-      <StatusBar hidden />
-      <View style={styles.zoomRoot}>
-        {state && (
-          <FlatList
-            data={state.list}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            initialScrollIndex={state.index}
-            getItemLayout={(_, index) => ({
-              length: SCREEN_W,
-              offset: SCREEN_W * index,
-              index,
-            })}
-            keyExtractor={(_, i) => 'zoom-' + i}
-            renderItem={({ item }) => (
-              <ScrollView
-                style={{ width: SCREEN_W, height: SCREEN_H }}
-                contentContainerStyle={styles.zoomScrollContent}
-                maximumZoomScale={3}
-                minimumZoomScale={1}
-                pinchGestureEnabled
-                centerContent
-                showsVerticalScrollIndicator={false}
-                showsHorizontalScrollIndicator={false}
-              >
-                {item.mediaType === 'photo' ? (
-                  <Image
-                    source={{ uri: item.url }}
-                    style={styles.zoomImage}
-                    contentFit="contain"
-                    cachePolicy="memory-disk"
-                    transition={200}
-                  />
-                ) : (
-                  <View style={styles.zoomVideoBox}>
-                    <Video size={48} color={colors.textSecondary} strokeWidth={1.5} />
-                    <Text style={styles.zoomVideoHint}>
-                      {t(reviewsText.videoPreview)}
-                    </Text>
-                  </View>
-                )}
-              </ScrollView>
-            )}
-          />
-        )}
-        <TouchableOpacity
-          style={styles.zoomCloseBtn}
-          onPress={onClose}
-          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-        >
-          <X size={22} color="#FFFFFF" strokeWidth={2.5} />
-        </TouchableOpacity>
-      </View>
-    </Modal>
-  );
-}
 
 type SourceTab = 'all' | 'app' | 'google';
 type ReviewSort = 'helpful' | 'recent';
@@ -742,7 +721,11 @@ export default function ReviewsScreen() {
           !loadingGoogle && <EmptyState onWrite={goWriteReview} />}
       </ScrollView>
 
-      <ZoomModal state={zoomMedia} onClose={() => setZoomMedia(null)} />
+      <MediaZoomModal
+        list={zoomMedia?.list ?? null}
+        initialIndex={zoomMedia?.index ?? 0}
+        onClose={() => setZoomMedia(null)}
+      />
     </View>
   );
 }
@@ -1057,22 +1040,51 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
 
-  mediaRow: {
+  mediaGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 6,
     marginTop: spacing.sm,
   },
-  mediaThumb: {
-    width: 72,
-    height: 72,
-    borderRadius: radius.sm,
+  mediaCell: {
+    width: '32%',
+    aspectRatio: 1,
+    borderRadius: radius.md,
+    overflow: 'hidden',
     backgroundColor: colors.surface,
+    position: 'relative',
   },
-  videoThumb: {
+  mediaThumbFull: {
+    width: '100%',
+    height: '100%',
+  },
+  videoPlaceholder: {
+    backgroundColor: '#1f1f1f',
+  },
+  videoPlayOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.18)',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.primary,
+  },
+  videoPlayCircle: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  overflowOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  overflowText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '800',
   },
 
   skel: { backgroundColor: '#EFECE6', borderRadius: 6 },

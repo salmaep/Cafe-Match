@@ -9,7 +9,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { commonText, reviewsText } from '@shared/i18n/keys';
 import * as ImagePicker from 'expo-image-picker';
+import * as VideoThumbnails from 'expo-video-thumbnails';
 import { createReview, uploadReviewMedia } from '../services/api';
+import MediaZoomModal, { ZoomMediaItem } from '../components/MediaZoomModal';
 import { colors, spacing, radius } from '../theme';
 import { usePurposes } from '../queries/purposes/use-purposes';
 import { useCafeFilters } from '../queries/cafes/use-cafe-filters';
@@ -25,7 +27,7 @@ type RouteParams = { WriteReview: { cafeId: string; cafeName: string } };
 
 const TOTAL_STEPS = 5;
 
-type MediaItem = { uri: string; type: 'photo' | 'video' };
+type MediaItem = { uri: string; type: 'photo' | 'video'; thumbnailUri?: string };
 
 export default function WriteReviewScreen() {
   const { t } = useTranslation();
@@ -40,6 +42,11 @@ export default function WriteReviewScreen() {
       navigation.replace('AuthModal');
     }
   }, [user, navigation]);
+
+  const [zoomState, setZoomState] = useState<{
+    list: ZoomMediaItem[];
+    index: number;
+  } | null>(null);
 
   const filtersQuery = useCafeFilters();
   const filterGroups = filtersQuery.data?.groups ?? [];
@@ -119,7 +126,18 @@ export default function WriteReviewScreen() {
       videoMaxDuration: 30,
     });
     if (!result.canceled && result.assets[0]) {
-      setMedia((prev) => [...prev, { uri: result.assets[0].uri, type: 'video' }]);
+      const videoUri = result.assets[0].uri;
+      let thumbnailUri: string | undefined;
+      try {
+        const { uri } = await VideoThumbnails.getThumbnailAsync(videoUri, {
+          time: 1000,
+          quality: 0.7,
+        });
+        thumbnailUri = uri;
+      } catch {
+        // Fallback: render placeholder icon below if thumbnail extraction fails.
+      }
+      setMedia((prev) => [...prev, { uri: videoUri, type: 'video', thumbnailUri }]);
     }
   };
 
@@ -347,14 +365,42 @@ export default function WriteReviewScreen() {
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.mediaPreview}>
                   {media.map((m, i) => (
                     <View key={i} style={styles.mediaItem}>
-                      {m.type === 'photo' ? (
-                        <Image source={{ uri: m.uri }} style={styles.mediaThumb} />
-                      ) : (
-                        <View style={[styles.mediaThumb, styles.videoThumb]}>
-                          <VideoIcon size={28} strokeWidth={1.8} color="#FFF" />
-                        </View>
-                      )}
-                      <TouchableOpacity style={styles.removeBtn} onPress={() => removeMedia(i)}>
+                      <TouchableOpacity
+                        activeOpacity={0.85}
+                        onPress={() =>
+                          setZoomState({
+                            list: media.map((mm) => ({
+                              mediaType: mm.type,
+                              url: mm.uri,
+                            })),
+                            index: i,
+                          })
+                        }
+                      >
+                        {m.type === 'photo' ? (
+                          <Image source={{ uri: m.uri }} style={styles.mediaThumb} />
+                        ) : m.thumbnailUri ? (
+                          <View style={styles.mediaThumb}>
+                            <Image
+                              source={{ uri: m.thumbnailUri }}
+                              style={styles.mediaThumb}
+                            />
+                            <View style={styles.videoOverlay}>
+                              <VideoIcon size={20} strokeWidth={2.2} color="#FFF" />
+                            </View>
+                          </View>
+                        ) : (
+                          <View style={[styles.mediaThumb, styles.videoThumb]}>
+                            <VideoIcon size={28} strokeWidth={1.8} color="#FFF" />
+                          </View>
+                        )}
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.removeBtn}
+                        onPress={() => removeMedia(i)}
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                        activeOpacity={0.7}
+                      >
                         <X size={14} color="#FFFFFF" strokeWidth={2.5} />
                       </TouchableOpacity>
                     </View>
@@ -402,11 +448,24 @@ export default function WriteReviewScreen() {
           onPress={next}
           disabled={!canProceed() || submitting}
         >
-          <Text style={styles.nextBtnText}>
-            {submitting ? '...' : step === TOTAL_STEPS - 1 ? t(reviewsText.submitReview) : t(commonText.next)}
-          </Text>
+          {submitting ? (
+            <View style={styles.submittingRow}>
+              <ActivityIndicator size="small" color={colors.white} />
+              <Text style={styles.nextBtnText}>Mengunggah…</Text>
+            </View>
+          ) : (
+            <Text style={styles.nextBtnText}>
+              {step === TOTAL_STEPS - 1 ? t(reviewsText.submitReview) : t(commonText.next)}
+            </Text>
+          )}
         </TouchableOpacity>
       </View>
+
+      <MediaZoomModal
+        list={zoomState?.list ?? null}
+        initialIndex={zoomState?.index ?? 0}
+        onClose={() => setZoomState(null)}
+      />
     </View>
   );
 }
@@ -539,16 +598,42 @@ const styles = StyleSheet.create({
     borderColor: colors.accent + '50',
   },
   mediaBtnText: { fontSize: 13, fontWeight: '700', color: colors.accent },
-  mediaPreview: { marginTop: spacing.sm },
-  mediaItem: { marginRight: spacing.sm, position: 'relative' },
+  mediaPreview: {
+    marginTop: spacing.sm,
+    paddingTop: 12,
+    paddingRight: 12,
+    overflow: 'visible',
+  },
+  mediaItem: {
+    marginRight: spacing.sm,
+    position: 'relative',
+    overflow: 'visible',
+  },
   mediaThumb: { width: 80, height: 80, borderRadius: radius.sm, backgroundColor: colors.surface },
   videoThumb: { justifyContent: 'center', alignItems: 'center', backgroundColor: colors.primary },
+  videoOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: radius.sm,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   removeBtn: {
     position: 'absolute',
-    top: -6, right: -6,
-    width: 22, height: 22, borderRadius: 11,
+    top: -8, right: -8,
+    width: 24, height: 24, borderRadius: 12,
     backgroundColor: colors.error,
     justifyContent: 'center', alignItems: 'center',
+    zIndex: 10,
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3,
   },
   removeBtnText: { color: colors.white, fontSize: 16, fontWeight: '700', lineHeight: 18 },
 
@@ -577,5 +662,10 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontSize: 16,
     fontWeight: '700',
+  },
+  submittingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
   },
 });

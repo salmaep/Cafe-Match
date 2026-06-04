@@ -9,7 +9,6 @@ import {
   View,
   Text,
   StyleSheet,
-  Animated,
   ActivityIndicator,
   InteractionManager,
 } from "react-native";
@@ -32,7 +31,6 @@ import { hitsToCafesCached } from "../../queries/cafes/api";
 import { throwEmojiApi } from "../../services/api";
 import MobileFilterModal from "../../components/cafe/MobileFilterModal";
 import RadiusPickerModal from "../../components/cafe/RadiusPickerModal";
-import StatusBarScrim from "../../components/StatusBarScrim";
 import { Cafe } from "../../types";
 import { colors, spacing, radius } from "../../theme";
 import { interleaveAds } from "../../utils/adInterleave";
@@ -52,7 +50,7 @@ export default function MapScreen() {
   const navigation = useNavigation<StackNavigationProp<any>>();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const { preferences } = usePreferences();
+  const { preferences, updatePreference } = usePreferences();
   const { latitude: userLat, longitude: userLng, isLoading: locationLoading } =
     useLocation();
   const mapRef = useRef<any>(null);
@@ -161,27 +159,6 @@ export default function MapScreen() {
     }
     return map;
   }, [friendsOnMap]);
-
-  const bounceAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(bounceAnim, {
-          toValue: -8,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(bounceAnim, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-      ]),
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [bounceAnim]);
 
   const useLiveGps = preferences?.location?.type !== 'custom';
   const prefLat = preferences?.location?.latitude;
@@ -308,7 +285,13 @@ export default function MapScreen() {
     setFilterFacilityKeys([]);
     setFilterPriceRange("");
     setRadiusKm(2);
-  }, []);
+    updatePreference({
+      purpose: undefined,
+      amenities: [],
+      priceRange: "",
+      radius: 2,
+    });
+  }, [updatePreference]);
 
   const hasAnyFilter = activeFilters.length > 0 || radiusKm !== 2;
 
@@ -334,12 +317,11 @@ export default function MapScreen() {
           cafe={cafe}
           friendCount={friendCount}
           isPromoted={isNewCafePromo(cafe)}
-          bounceAnim={bounceAnim}
           onPress={onMarkerPress}
         />
       );
     });
-  }, [pinsReady, showCafePins, displayCafes, friendsByCafe, bounceAnim, onMarkerPress]);
+  }, [pinsReady, showCafePins, displayCafes, friendsByCafe, onMarkerPress]);
 
   const friendMarkers = useMemo(() => {
     if (!showFriendPins) return null;
@@ -354,7 +336,6 @@ export default function MapScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBarScrim />
       <MapSearchBar
         topInset={insets.top}
         onPress={() => navigation.navigate("Search")}
@@ -371,7 +352,9 @@ export default function MapScreen() {
           longitudeDelta: Math.max(0.02, (radiusKm * 2.4) / 111),
         }}
         showsUserLocation
+        showsMyLocationButton={false}
         zoomControlEnabled={false}
+        toolbarEnabled={false}
         radius={40}
         maxZoom={15}
         minPoints={2}
@@ -465,6 +448,7 @@ export default function MapScreen() {
               activeFilters={activeFilters}
               hasAnyFilter={hasAnyFilter}
               onResetFilters={resetFilters}
+              onOpenFilters={() => setFilterModalOpen(true)}
             />
           }
         />

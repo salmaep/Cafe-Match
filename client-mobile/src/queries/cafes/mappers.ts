@@ -92,17 +92,22 @@ export function mapBackendCafe(
     items,
   }));
 
-  let distance = 0;
+  let distanceMetersValue: number | undefined;
   if (raw.distanceMeters != null) {
-    distance = Math.round(raw.distanceMeters / 100) / 10;
+    distanceMetersValue = Number(raw.distanceMeters);
   } else if (userLat != null && userLng != null) {
-    distance = haversineKm(
-      userLat,
-      userLng,
-      Number(raw.latitude),
-      Number(raw.longitude),
-    );
+    const lat = Number(raw.latitude);
+    const lng = Number(raw.longitude);
+    if (Number.isFinite(lat) && Number.isFinite(lng)) {
+      distanceMetersValue = Math.round(
+        haversineKm(userLat, userLng, lat, lng) * 1000,
+      );
+    }
   }
+  const distance =
+    distanceMetersValue != null
+      ? Math.round(distanceMetersValue / 100) / 10
+      : 0;
 
   let promotionType: 'A' | 'B' | undefined;
   let promoTitle: string | undefined;
@@ -148,7 +153,7 @@ export function mapBackendCafe(
     photos,
     primaryPhotoUrl: raw.primaryPhotoUrl ?? null,
     distance,
-    distanceMeters: raw.distanceMeters ?? (distance != null ? Math.round(distance * 1000) : undefined),
+    distanceMeters: distanceMetersValue,
     address: raw.address || '',
     city: raw.city ?? null,
     district: raw.district ?? null,

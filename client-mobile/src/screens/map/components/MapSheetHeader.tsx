@@ -16,6 +16,7 @@ type Props = {
   activeFilters: ActiveFilter[];
   hasAnyFilter: boolean;
   onResetFilters: () => void;
+  onOpenFilters: () => void;
 };
 
 function MapSheetHeader({
@@ -30,6 +31,7 @@ function MapSheetHeader({
   activeFilters,
   hasAnyFilter,
   onResetFilters,
+  onOpenFilters,
 }: Props) {
   return (
     <>
@@ -51,6 +53,7 @@ function MapSheetHeader({
         activeFilters={activeFilters}
         hasAnyFilter={hasAnyFilter}
         onResetFilters={onResetFilters}
+        onOpenFilters={onOpenFilters}
       />
     </>
   );

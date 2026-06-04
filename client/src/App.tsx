@@ -26,8 +26,6 @@ import TrendingPage from "./pages/TrendingPage";
 import AuthCallbackPage from "./pages/AuthCallbackPage";
 import ProfilePage from "./pages/ProfilePage";
 import FriendsPage from "./pages/FriendsPage";
-import AchievementsPage from "./pages/AchievementsPage";
-import NotificationsPage from "./pages/NotificationsPage";
 import LeaderboardPage from "./pages/LeaderboardPage";
 import RecapPage from "./pages/RecapPage";
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
@@ -81,8 +79,6 @@ function App() {
           <Route path="/trending" element={<TrendingPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/friends" element={<FriendsPage />} />
-          <Route path="/achievements" element={<AchievementsPage />} />
-          <Route path="/notifications" element={<NotificationsPage />} />
           <Route path="/leaderboard" element={<LeaderboardPage />} />
           <Route path="/recap/:year" element={<RecapPage />} />
           <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />

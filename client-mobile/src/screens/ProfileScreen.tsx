@@ -285,17 +285,21 @@ export default function ProfileScreen() {
             onPress={() => navigation.navigate('GlobalLeaderboard')}
           />
         )}
-        <QuickAction
-          Icon={Award}
-          label={t(profileText.quickAchievement)}
-          onPress={() => navigation.navigate('Achievements')}
-        />
-        <QuickAction
-          Icon={Bell}
-          label={t(profileText.quickNotifications)}
-          badge={unread > 0 ? unread : undefined}
-          onPress={() => navigation.navigate('Notifications')}
-        />
+        {false && (
+          <QuickAction
+            Icon={Award}
+            label={t(profileText.quickAchievement)}
+            onPress={() => navigation.navigate('Achievements')}
+          />
+        )}
+        {false && (
+          <QuickAction
+            Icon={Bell}
+            label={t(profileText.quickNotifications)}
+            badge={unread > 0 ? unread : undefined}
+            onPress={() => navigation.navigate('Notifications')}
+          />
+        )}
         {false && (
           <QuickAction
             Icon={BarChart3}

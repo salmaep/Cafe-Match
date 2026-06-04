@@ -11,7 +11,7 @@ async function bootstrap() {
 
   app.use(json({ limit: '10mb' }));
   app.use(
-    '/storage',
+    '/api/v1/storage',
     expressStatic(join(process.cwd(), 'storage'), {
       maxAge: '7d',
       fallthrough: false,

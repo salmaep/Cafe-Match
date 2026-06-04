@@ -105,7 +105,8 @@ export class UploadsController {
 
   private publicUrlFor(folder: string, filename: string): string {
     const publicBase =
-      this.config.get<string>('PUBLIC_API_URL') ?? 'http://localhost:3000';
+      this.config.get<string>('PUBLIC_API_URL') ??
+      'http://localhost:3000/api/v1';
     return `${publicBase.replace(/\/$/, '')}/storage/${folder}/${filename}`;
   }
 }

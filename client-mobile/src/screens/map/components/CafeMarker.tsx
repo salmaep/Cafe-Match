@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { View, Text, StyleSheet, Animated } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import { Marker } from "react-native-maps";
 import Svg, { Path } from "react-native-svg";
 import { User } from "lucide-react-native";
@@ -14,7 +14,6 @@ type Props = {
   coordinate: { latitude: number; longitude: number };
   friendCount: number;
   isPromoted: boolean;
-  bounceAnim: Animated.Value;
   onPress: (cafe: Cafe) => void;
 };
 
@@ -23,7 +22,6 @@ const CafeMarker = React.memo(function CafeMarker({
   coordinate,
   friendCount,
   isPromoted,
-  bounceAnim,
   onPress,
 }: Props) {
   const { t } = useTranslation();
@@ -53,11 +51,9 @@ const CafeMarker = React.memo(function CafeMarker({
     >
       <View style={styles.container} collapsable={false}>
         {isPromoted && (
-          <Animated.View
-            style={[styles.newBadge, { transform: [{ translateY: bounceAnim }] }]}
-          >
+          <View style={styles.newBadge}>
             <Text style={styles.newBadgeText}>{t(mapText.newBadgeExcited)}</Text>
-          </Animated.View>
+          </View>
         )}
         {friendCount > 0 && (
           <View style={styles.friendBadge}>

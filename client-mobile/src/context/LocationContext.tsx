@@ -1,7 +1,10 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import * as Location from 'expo-location';
-import { Alert, Linking, Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Alert, Linking } from 'react-native';
 import { DEFAULT_LOCATION } from '../constant/location';
+
+const CACHE_KEY = 'cm_last_location';
 
 interface LocationContextType {
   latitude: number;
@@ -27,6 +30,10 @@ export function LocationProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [hasPermission, setHasPermission] = useState(false);
 
+  const persist = (lat: number, lng: number) => {
+    AsyncStorage.setItem(CACHE_KEY, JSON.stringify({ lat, lng })).catch(() => {});
+  };
+
   const requestLocation = async () => {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
@@ -46,20 +53,55 @@ export function LocationProvider({ children }: { children: ReactNode }) {
       }
 
       setHasPermission(true);
+
+      // Fast path — return device-cached position (no GPS query).
+      try {
+        const last = await Location.getLastKnownPositionAsync({
+          maxAge: 60_000,
+          requiredAccuracy: 200,
+        });
+        if (last) {
+          setLatitude(last.coords.latitude);
+          setLongitude(last.coords.longitude);
+          persist(last.coords.latitude, last.coords.longitude);
+          setIsLoading(false);
+        }
+      } catch {
+        // Ignore — fall through to slow path.
+      }
+
+      // Slow path — fresh GPS reading.
       const loc = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.Balanced,
       });
       setLatitude(loc.coords.latitude);
       setLongitude(loc.coords.longitude);
+      persist(loc.coords.latitude, loc.coords.longitude);
     } catch {
-      // Keep default location on error
+      // Keep current/default location on error
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    requestLocation();
+    // Hydrate from AsyncStorage cache first for instant render before GPS resolves.
+    AsyncStorage.getItem(CACHE_KEY)
+      .then((raw) => {
+        if (!raw) return;
+        try {
+          const { lat, lng } = JSON.parse(raw);
+          if (typeof lat === 'number' && typeof lng === 'number') {
+            setLatitude(lat);
+            setLongitude(lng);
+          }
+        } catch {
+          // ignore
+        }
+      })
+      .finally(() => {
+        requestLocation();
+      });
   }, []);
 
   return (

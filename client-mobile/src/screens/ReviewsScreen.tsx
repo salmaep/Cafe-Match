@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   Dimensions,
   ScrollView,
   StatusBar,
+  ActivityIndicator,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
@@ -25,8 +26,14 @@ import {
   Video,
   MessageSquareText,
 } from 'lucide-react-native';
-import { useReviews } from '../queries/reviews/use-reviews';
 import { useReviewSummary } from '../queries/reviews/use-review-summary';
+import {
+  fetchGoogleReviews,
+  type GoogleReview,
+} from '../queries/cafes/google-reviews';
+import { fetchReviews } from '../services/api';
+import GoogleReviewCard from '../components/cafe/GoogleReviewCard';
+import GoogleGIcon from '../components/cafe/GoogleGIcon';
 import { useAuth } from '../context/AuthContext';
 import { colors, spacing, radius } from '../theme';
 import {
@@ -444,6 +451,9 @@ function ZoomModal({
   );
 }
 
+type SourceTab = 'all' | 'app' | 'google';
+type ReviewSort = 'helpful' | 'recent';
+
 export default function ReviewsScreen() {
   const route = useRoute<RouteProp<RouteParams, 'Reviews'>>();
   const navigation = useNavigation<StackNavigationProp<any>>();
@@ -451,13 +461,63 @@ export default function ReviewsScreen() {
   const { cafeId, cafeName } = route.params;
   const { user } = useAuth();
 
-  const reviewsQuery = useReviews(cafeId);
   const summaryQuery = useReviewSummary(cafeId);
-  const reviews: Review[] = reviewsQuery.data?.reviews ?? [];
   const summary: ReviewSummary[] = summaryQuery.data ?? [];
-  const totalReviews =
-    reviewsQuery.data?.meta?.total ?? reviews.length;
-  const loading = reviewsQuery.isLoading || summaryQuery.isLoading;
+
+  const [sourceTab, setSourceTab] = useState<SourceTab>('all');
+  const [sort, setSort] = useState<ReviewSort>('helpful');
+
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [appPage, setAppPage] = useState(1);
+  const [appTotal, setAppTotal] = useState(0);
+  const [loadingApp, setLoadingApp] = useState(true);
+  const [loadingMoreApp, setLoadingMoreApp] = useState(false);
+
+  const [googleReviews, setGoogleReviews] = useState<GoogleReview[]>([]);
+  const [googlePage, setGooglePage] = useState(1);
+  const [googleTotal, setGoogleTotal] = useState(0);
+  const [loadingGoogle, setLoadingGoogle] = useState(true);
+  const [loadingMoreGoogle, setLoadingMoreGoogle] = useState(false);
+
+  const PAGE_SIZE = 10;
+
+  const loadAppReviews = useCallback(
+    async (targetPage: number, replace: boolean, sortValue: ReviewSort) => {
+      const res = await fetchReviews(String(cafeId), targetPage, sortValue);
+      const total = res.meta?.total ?? res.reviews.length;
+      setAppTotal(total);
+      setReviews((prev) => (replace ? res.reviews : [...prev, ...res.reviews]));
+    },
+    [cafeId],
+  );
+
+  const loadGoogleReviews = useCallback(
+    async (targetPage: number, replace: boolean) => {
+      const res = await fetchGoogleReviews(cafeId, {
+        page: targetPage,
+        limit: PAGE_SIZE,
+      });
+      setGoogleTotal(res.meta.total);
+      setGoogleReviews((prev) => (replace ? res.data : [...prev, ...res.data]));
+    },
+    [cafeId],
+  );
+
+  useEffect(() => {
+    if (!cafeId) return;
+    setLoadingApp(true);
+    setAppPage(1);
+    loadAppReviews(1, true, sort).finally(() => setLoadingApp(false));
+  }, [cafeId, sort, loadAppReviews]);
+
+  useEffect(() => {
+    if (!cafeId) return;
+    setLoadingGoogle(true);
+    setGooglePage(1);
+    loadGoogleReviews(1, true).finally(() => setLoadingGoogle(false));
+  }, [cafeId, loadGoogleReviews]);
+
+  const totalReviews = appTotal;
 
   const starSummary = useMemo(
     () => summary.filter((s) => isStarCategory(s.category)),
@@ -467,6 +527,12 @@ export default function ReviewsScreen() {
     () => starSummary.find((s) => s.category === 'overall'),
     [starSummary],
   );
+
+  const tabCount: Record<SourceTab, number> = {
+    all: appTotal + googleTotal,
+    app: appTotal,
+    google: googleTotal,
+  };
 
   const [zoomMedia, setZoomMedia] = useState<ZoomState>(null);
 
@@ -481,14 +547,32 @@ export default function ReviewsScreen() {
   const handleOpenMedia = (list: MediaItem[], index: number) =>
     setZoomMedia({ list, index });
 
-  const ListHeader =
-    starSummary.length > 0 ? (
-      <HeroSummary
-        starSummary={starSummary}
-        overall={overall}
-        totalReviews={totalReviews}
-      />
-    ) : null;
+  const handleLoadMoreApp = async () => {
+    if (loadingMoreApp || reviews.length >= appTotal) return;
+    setLoadingMoreApp(true);
+    const next = appPage + 1;
+    try {
+      await loadAppReviews(next, false, sort);
+      setAppPage(next);
+    } finally {
+      setLoadingMoreApp(false);
+    }
+  };
+
+  const handleLoadMoreGoogle = async () => {
+    if (loadingMoreGoogle || googleReviews.length >= googleTotal) return;
+    setLoadingMoreGoogle(true);
+    const next = googlePage + 1;
+    try {
+      await loadGoogleReviews(next, false);
+      setGooglePage(next);
+    } finally {
+      setLoadingMoreGoogle(false);
+    }
+  };
+
+  const showAppSection = sourceTab === 'all' || sourceTab === 'app';
+  const showGoogleSection = sourceTab === 'all' || sourceTab === 'google';
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -498,32 +582,214 @@ export default function ReviewsScreen() {
         onWrite={goWriteReview}
       />
 
-      {loading ? (
-        <ScrollView contentContainerStyle={styles.listContainer}>
-          {ListHeader}
-          <LoadingState />
-        </ScrollView>
-      ) : reviews.length === 0 ? (
-        <ScrollView contentContainerStyle={styles.listContainer}>
-          {ListHeader}
-          <EmptyState onWrite={goWriteReview} />
-        </ScrollView>
-      ) : (
-        <FlatList
-          data={reviews.filter((r) => r && r.id)}
-          keyExtractor={(r, i) => r?.id || `review-${i}`}
-          contentContainerStyle={[
-            styles.listContainer,
-            { paddingBottom: insets.bottom + spacing.lg },
-          ]}
-          ListHeaderComponent={ListHeader}
-          renderItem={({ item }) => (
-            <ReviewCard review={item} onOpenMedia={handleOpenMedia} />
-          )}
-        />
-      )}
+      <SourceTabs
+        sourceTab={sourceTab}
+        onChange={setSourceTab}
+        counts={tabCount}
+      />
+
+      <ScrollView
+        contentContainerStyle={[
+          styles.listContainer,
+          { paddingBottom: insets.bottom + spacing.lg },
+        ]}
+      >
+        {starSummary.length > 0 && (
+          <HeroSummary
+            starSummary={starSummary}
+            overall={overall}
+            totalReviews={totalReviews}
+          />
+        )}
+
+        {showAppSection && (
+          <View style={sourceTab === 'all' ? styles.sectionWithGap : undefined}>
+            {sourceTab === 'all' && (
+              <Text style={styles.sectionTitle}>
+                App Reviews
+                {appTotal > 0 && (
+                  <Text style={styles.sectionCount}> ({appTotal})</Text>
+                )}
+              </Text>
+            )}
+
+            {sourceTab === 'app' && (
+              <View style={styles.sortRow}>
+                <Text style={styles.sortLabel}>
+                  {appTotal > 0 ? `${appTotal} ulasan` : ''}
+                </Text>
+                <View style={styles.sortToggle}>
+                  <TouchableOpacity
+                    style={[
+                      styles.sortBtn,
+                      sort === 'helpful' && styles.sortBtnActive,
+                    ]}
+                    onPress={() => setSort('helpful')}
+                  >
+                    <Text
+                      style={[
+                        styles.sortBtnText,
+                        sort === 'helpful' && styles.sortBtnTextActive,
+                      ]}
+                    >
+                      Helpful
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.sortBtn,
+                      sort === 'recent' && styles.sortBtnActive,
+                    ]}
+                    onPress={() => setSort('recent')}
+                  >
+                    <Text
+                      style={[
+                        styles.sortBtnText,
+                        sort === 'recent' && styles.sortBtnTextActive,
+                      ]}
+                    >
+                      Terbaru
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+
+            {loadingApp ? (
+              <LoadingState />
+            ) : reviews.length === 0 ? (
+              <EmptyState onWrite={goWriteReview} />
+            ) : (
+              <>
+                {reviews
+                  .filter((r) => r && r.id)
+                  .map((item) => (
+                    <ReviewCard
+                      key={item.id}
+                      review={item}
+                      onOpenMedia={handleOpenMedia}
+                    />
+                  ))}
+                {reviews.length < appTotal && (
+                  <TouchableOpacity
+                    style={styles.loadMoreBtn}
+                    onPress={handleLoadMoreApp}
+                    disabled={loadingMoreApp}
+                  >
+                    {loadingMoreApp ? (
+                      <ActivityIndicator size="small" color={colors.accent} />
+                    ) : (
+                      <Text style={styles.loadMoreText}>Lihat lebih banyak</Text>
+                    )}
+                  </TouchableOpacity>
+                )}
+              </>
+            )}
+          </View>
+        )}
+
+        {showGoogleSection && (
+          <View style={sourceTab === 'all' ? styles.googleSectionGap : undefined}>
+            <View style={styles.googleHeader}>
+              <GoogleGIcon size={14} />
+              <Text style={styles.googleHeaderText}>
+                Google Maps Reviews
+                {googleTotal > 0 && (
+                  <Text style={styles.sectionCount}> ({googleTotal})</Text>
+                )}
+              </Text>
+            </View>
+
+            {loadingGoogle ? (
+              <LoadingState />
+            ) : googleReviews.length === 0 ? (
+              <View style={styles.googleEmpty}>
+                <Text style={styles.googleEmptyText}>
+                  Belum ada Google review tersedia
+                </Text>
+              </View>
+            ) : (
+              <>
+                <View style={{ gap: spacing.sm }}>
+                  {googleReviews.map((gr) => (
+                    <GoogleReviewCard key={gr.id} review={gr} />
+                  ))}
+                </View>
+                {googleReviews.length < googleTotal && (
+                  <TouchableOpacity
+                    style={[styles.loadMoreBtn, styles.loadMoreGoogle]}
+                    onPress={handleLoadMoreGoogle}
+                    disabled={loadingMoreGoogle}
+                  >
+                    {loadingMoreGoogle ? (
+                      <ActivityIndicator size="small" color="#4285F4" />
+                    ) : (
+                      <Text style={styles.loadMoreGoogleText}>
+                        Lihat lebih banyak Google reviews
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                )}
+              </>
+            )}
+          </View>
+        )}
+
+        {sourceTab === 'all' &&
+          appTotal === 0 &&
+          googleTotal === 0 &&
+          !loadingApp &&
+          !loadingGoogle && <EmptyState onWrite={goWriteReview} />}
+      </ScrollView>
 
       <ZoomModal state={zoomMedia} onClose={() => setZoomMedia(null)} />
+    </View>
+  );
+}
+
+function SourceTabs({
+  sourceTab,
+  onChange,
+  counts,
+}: {
+  sourceTab: SourceTab;
+  onChange: (t: SourceTab) => void;
+  counts: Record<SourceTab, number>;
+}) {
+  const tabs: { key: SourceTab; label: string; icon?: React.ReactNode }[] = [
+    { key: 'all', label: 'Semua' },
+    { key: 'app', label: 'App Reviews' },
+    { key: 'google', label: 'Google Maps', icon: <GoogleGIcon size={11} /> },
+  ];
+  return (
+    <View style={styles.tabBar}>
+      {tabs.map((tab) => {
+        const active = sourceTab === tab.key;
+        return (
+          <TouchableOpacity
+            key={tab.key}
+            style={[styles.tabBtn, active && styles.tabBtnActive]}
+            onPress={() => onChange(tab.key)}
+          >
+            {tab.icon}
+            <Text
+              style={[styles.tabBtnText, active && styles.tabBtnTextActive]}
+            >
+              {tab.label}
+            </Text>
+            {counts[tab.key] > 0 && (
+              <Text
+                style={[
+                  styles.tabBtnCount,
+                  active && styles.tabBtnCountActive,
+                ]}
+              >
+                {counts[tab.key]}
+              </Text>
+            )}
+          </TouchableOpacity>
+        );
+      })}
     </View>
   );
 }
@@ -845,5 +1111,146 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 10,
+  },
+  tabBar: {
+    flexDirection: 'row',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.white,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#E8E4DD',
+  },
+  tabBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: 6,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: '#E8E4DD',
+    backgroundColor: colors.white,
+  },
+  tabBtnActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  tabBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.textSecondary,
+  },
+  tabBtnTextActive: { color: colors.white },
+  tabBtnCount: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: colors.textSecondary,
+  },
+  tabBtnCountActive: { color: 'rgba(255,255,255,0.75)' },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: colors.primary,
+    marginBottom: spacing.sm,
+  },
+  sectionCount: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: colors.textSecondary,
+  },
+  sectionWithGap: {
+    marginBottom: spacing.lg,
+  },
+  googleSectionGap: {
+    marginTop: spacing.md,
+    paddingTop: spacing.md,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: '#E8E4DD',
+  },
+  googleHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#F8F9FF',
+    borderWidth: 1,
+    borderColor: '#E8E4F0',
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: 5,
+    alignSelf: 'flex-start',
+    marginBottom: spacing.sm,
+  },
+  googleHeaderText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#5C5A52',
+  },
+  googleEmpty: {
+    backgroundColor: colors.white,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#F0EDE8',
+    paddingVertical: spacing.lg,
+    alignItems: 'center',
+  },
+  googleEmptyText: {
+    fontSize: 13,
+    color: colors.textSecondary,
+  },
+  sortRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.sm,
+  },
+  sortLabel: {
+    fontSize: 12,
+    color: colors.textSecondary,
+  },
+  sortToggle: {
+    flexDirection: 'row',
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: '#E8E4DD',
+    backgroundColor: colors.white,
+    overflow: 'hidden',
+  },
+  sortBtn: {
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: 5,
+  },
+  sortBtnActive: {
+    backgroundColor: colors.accent,
+  },
+  sortBtnText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.textSecondary,
+  },
+  sortBtnTextActive: {
+    color: colors.white,
+  },
+  loadMoreBtn: {
+    alignSelf: 'center',
+    marginTop: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: colors.accent,
+  },
+  loadMoreText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.accent,
+  },
+  loadMoreGoogle: {
+    borderColor: '#4285F4',
+  },
+  loadMoreGoogleText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#4285F4',
   },
 });

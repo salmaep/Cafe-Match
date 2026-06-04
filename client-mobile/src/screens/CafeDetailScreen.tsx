@@ -56,7 +56,6 @@ import {
   isStarCategory,
 } from "../constant/ui/review-categories";
 import { LucideIcon } from "../utils/lucideIcon";
-import StatusBarScrim from "../components/StatusBarScrim";
 import { Star, MapPin, Heart, Bookmark, BookmarkCheck, ChevronLeft, Phone, PencilLine, User, Users, BookOpen, Laptop } from "lucide-react-native";
 import type { LucideIcon as LucideIconType } from "lucide-react-native";
 
@@ -274,7 +273,7 @@ export default function CafeDetailScreen() {
     ((route.params as any)?.cafe as Cafe) ?? ({ id: '', name: '' } as any);
   const { addToShortlist, removeFromShortlist, isInShortlist } = useShortlist();
   const { user } = useAuth();
-  const { latitude: userLat, longitude: userLng } = useLocation();
+  const { latitude: userLat, longitude: userLng, hasPermission } = useLocation();
 
   // Fix 7: Start with nav param data, then enrich with full backend detail.
   // Defensively fill in any missing arrays so subsequent .map() calls never
@@ -460,12 +459,10 @@ export default function CafeDetailScreen() {
     (route.params as any)?.newReview,
   ]);
 
-  const realDistance = haversineKm(
-    userLat,
-    userLng,
-    cafe.latitude,
-    cafe.longitude,
-  );
+  const realDistance =
+    hasPermission && cafe.latitude && cafe.longitude
+      ? haversineKm(userLat, userLng, cafe.latitude, cafe.longitude)
+      : null;
 
   const openMaps = () => {
     const query = encodeURIComponent(
@@ -561,7 +558,6 @@ export default function CafeDetailScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBarScrim />
       {detailLoading && (
         <View style={styles.detailLoadingBar}>
           <ActivityIndicator size="small" color={colors.accent} />
@@ -571,13 +567,39 @@ export default function CafeDetailScreen() {
         {/* Hero photo carousel — when all photos fail (or none exist),
             render a single placeholder photo instead of hiding. */}
         <View style={styles.carouselContainer}>
-          {allPhotosFailed || (cafe.photos?.length ?? 0) === 0 ? (
+          {!cafeDetailQuery.data &&
+          (!initialCafe.photos?.[0] ||
+            initialCafe.photos[0].includes("images.unsplash.com")) ? (
+            <View style={styles.photoSkeleton} />
+          ) : !cafeDetailQuery.data ? (
+            <TouchableOpacity
+              activeOpacity={0.95}
+              onPress={() => openZoom(0)}
+            >
+              <HeroPhoto
+                uri={initialCafe.photos![0]}
+                style={styles.photoSingle}
+                onFail={() => markPhotoFailed(0)}
+              />
+            </TouchableOpacity>
+          ) : allPhotosFailed || (cafe.photos?.length ?? 0) === 0 ? (
             <Image
               source={{ uri: placeholderImage(cafe.id) }}
-              style={styles.photo}
+              style={styles.photoSingle}
               cachePolicy="memory-disk"
               transition={200}
             />
+          ) : (cafe.photos?.length ?? 0) === 1 ? (
+            <TouchableOpacity
+              activeOpacity={0.95}
+              onPress={() => openZoom(0)}
+            >
+              <HeroPhoto
+                uri={cafe.photos![0]}
+                style={styles.photoSingle}
+                onFail={() => markPhotoFailed(0)}
+              />
+            </TouchableOpacity>
           ) : (
             <>
               <FlatList
@@ -662,9 +684,11 @@ export default function CafeDetailScreen() {
                 <Text style={styles.ratingDot}>·</Text>
               </>
             )}
-            <Text style={styles.ratingMeta}>
-              {t(cafeText.kmFromYou, { km: realDistance })}
-            </Text>
+            {realDistance != null && (
+              <Text style={styles.ratingMeta}>
+                {t(cafeText.kmFromYou, { km: realDistance })}
+              </Text>
+            )}
           </View>
 
           {cafe.description ? (
@@ -1377,6 +1401,17 @@ const styles = StyleSheet.create({
     width: HERO_CARD_W,
     height: 280,
     resizeMode: "cover",
+    backgroundColor: "#F0EDE8",
+  },
+  photoSingle: {
+    width: "100%",
+    height: 280,
+    resizeMode: "cover",
+    backgroundColor: "#F0EDE8",
+  },
+  photoSkeleton: {
+    width: "100%",
+    height: 280,
     backgroundColor: "#F0EDE8",
   },
   photoDots: {

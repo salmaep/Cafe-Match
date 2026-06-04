@@ -270,10 +270,7 @@ export default function TrendingPage() {
               )}
 
               {rest.length > 0 && (
-                <div className="mt-10 mb-4 flex items-center justify-between">
-                  <h2 className="text-sm font-extrabold text-[#1C1C1A] uppercase tracking-[0.1em]">
-                    Peringkat 4 – {Math.min(total, cafes.length)}
-                  </h2>
+                <div className="mt-10 mb-4 flex items-center justify-end">
                   <span className="text-[11px] text-[#8A8880] font-semibold">
                     Geser bawah untuk lihat lebih
                   </span>
@@ -685,9 +682,14 @@ function RunnerUpCard({
               {visibleChips.map((c) => (
                 <span
                   key={c.key}
-                  className="bg-white/80 text-[#5C5A52] text-[10px] font-semibold rounded-full px-2 py-0.5 ring-1 ring-amber-200/60"
+                  className="inline-flex items-center gap-1 bg-white/80 text-[#5C5A52] text-[10px] font-semibold rounded-full px-2 py-0.5 ring-1 ring-amber-200/60"
                 >
-                  {c.icon} {c.label}
+                  <LucideIcon
+                    name={lucideForFacility(c.key)}
+                    size={10}
+                    strokeWidth={2}
+                  />
+                  {c.label}
                 </span>
               ))}
               {overflow > 0 && (
@@ -820,9 +822,14 @@ function ListRow({
           {visibleChips.map((c) => (
             <span
               key={c.key}
-              className="bg-[#F0EDE8] text-[#5C5A52] text-[10px] font-medium rounded-full px-2 py-px"
+              className="inline-flex items-center gap-1 bg-[#F0EDE8] text-[#5C5A52] text-[10px] font-medium rounded-full px-2 py-px"
             >
-              {c.icon} {c.label}
+              <LucideIcon
+                name={lucideForFacility(c.key)}
+                size={10}
+                strokeWidth={2}
+              />
+              {c.label}
             </span>
           ))}
           {overflow > 0 && (

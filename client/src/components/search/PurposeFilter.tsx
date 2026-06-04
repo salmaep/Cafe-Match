@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import type { Purpose } from "../../types";
 import { purposesApi } from "../../api/purposes.api";
 import { getPurposeBySlug } from "../../constants/purposes";
-import { LucideIcon } from "../../utils/lucideIcon";
+import { PurposeIcon } from "../../utils/purposeIcons";
 
 interface Props {
   selectedPurposeId: number | null;
@@ -29,9 +29,8 @@ export default function PurposeFilter({ selectedPurposeId, onSelect }: Props) {
         All Cafes
       </button>
       {purposes.map((p) => {
-        // Server purpose.icon is a lucide-style name (e.g. "coffee"). Resolve
-        // it via LucideIcon. When the server hasn't set one yet, fall back to
-        // the bundled WIZARD_PURPOSES emoji so the chip never renders blank.
+        // Purpose icon is rendered via PurposeIcon: server purpose.icon (lucide
+        // name) → slug→lucide map → Sparkles fallback, so it never renders blank.
         const wizard = getPurposeBySlug(p.slug);
         const label = p.name || wizard?.label || p.slug;
         const active = selectedPurposeId === p.id;
@@ -45,13 +44,7 @@ export default function PurposeFilter({ selectedPurposeId, onSelect }: Props) {
                 : "bg-white text-gray-600 border-gray-300 hover:border-amber-400"
             }`}
           >
-            {p.icon ? (
-              <LucideIcon name={p.icon} size={14} strokeWidth={2} />
-            ) : wizard?.emoji ? (
-              <span className="text-sm leading-none">{wizard.emoji}</span>
-            ) : (
-              <LucideIcon size={14} strokeWidth={2} />
-            )}
+            <PurposeIcon slug={p.slug} icon={p.icon} size={14} />
             <span>{label}</span>
           </button>
         );

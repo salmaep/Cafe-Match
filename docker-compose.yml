@@ -52,6 +52,10 @@ services:
     build:
       context: ./server
       dockerfile: Dockerfile
+      # Bridge NAT chokes under the parallel-connection load of a full `npm ci`
+      # (hangs ~141s on IPv6 attempts). Build on the host network stack, which
+      # has working IPv4+IPv6. ipv4first ENV in Dockerfile guards runtime too.
+      network: host
     container_name: cafematch-app
     restart: unless-stopped
     dns:
@@ -83,6 +87,7 @@ services:
       # dependency on layout).
       context: .
       dockerfile: client/Dockerfile
+      network: host
       # Vite reads VITE_API_URL from client/.env during the build (inside container).
       # No build args needed here.
     container_name: cafematch-client

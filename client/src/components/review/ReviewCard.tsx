@@ -3,6 +3,7 @@ import { ThumbsUp, Star } from "../../utils/lucideIcon";
 import type { Review } from "../../api/reviews.api";
 import { reviewsApi } from "../../api/reviews.api";
 import { useAuth } from "../../context/AuthContext";
+import PhotoLightbox from "../cafe/PhotoLightbox";
 
 interface Props {
   review: Review;
@@ -38,6 +39,9 @@ export default function ReviewCard({
   const [voted, setVoted] = useState(votedByMe);
   const [count, setCount] = useState(review.helpfulCount ?? 0);
   const [busy, setBusy] = useState(false);
+  // Fullscreen photo viewer (photos only; videos play inline).
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const photos = (review.media ?? []).filter((m) => m.mediaType === "photo");
 
   const handleVote = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -120,7 +124,10 @@ export default function ReviewCard({
                 key={m.id}
                 src={m.url}
                 alt=""
-                className="w-full h-24 object-cover rounded-lg"
+                className="w-full h-24 object-cover rounded-lg cursor-pointer"
+                onClick={() =>
+                  setLightboxIndex(photos.findIndex((p) => p.id === m.id))
+                }
               />
             ) : (
               <video
@@ -150,6 +157,15 @@ export default function ReviewCard({
           {count > 0 ? count : "Helpful"}
         </button>
       </div>
+
+      {lightboxIndex !== null && (
+        <PhotoLightbox
+          photos={photos.map((p) => ({ url: p.url }))}
+          index={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+          onChange={setLightboxIndex}
+        />
+      )}
     </Wrapper>
   );
 }

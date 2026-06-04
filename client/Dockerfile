@@ -3,9 +3,14 @@
 # `@shared` → `../shared` at build time and bundles the files into the static
 # output. After build there's no runtime dependency on this folder layout.
 
+# Force Node to resolve IPv4 first. The Docker bridge has no IPv6 NAT, so when
+# DNS returns AAAA records npm/node would try IPv6 and hang until timeout. This
+# lets us avoid `network: host` in the build. See docker-compose.yml.
+
 # Stage 1: install deps
 FROM node:20-alpine AS deps
 WORKDIR /app/client
+ENV NODE_OPTIONS=--dns-result-order=ipv4first
 COPY client/package*.json ./
 RUN npm ci
 
@@ -14,6 +19,7 @@ RUN npm ci
 # values into the bundle.
 FROM node:20-alpine AS build
 WORKDIR /app
+ENV NODE_OPTIONS=--dns-result-order=ipv4first
 COPY --from=deps /app/client/node_modules ./client/node_modules
 COPY shared ./shared
 COPY client ./client

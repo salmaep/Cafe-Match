@@ -14,7 +14,6 @@ export default function SplashScreen() {
   const { hydrated, wizardCompleted, preferences } = usePreferences();
   const [minElapsed, setMinElapsed] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     Animated.timing(fadeAnim, {

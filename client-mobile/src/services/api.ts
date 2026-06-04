@@ -346,9 +346,13 @@ export async function trackAnalytics(
 
 // ─── Reviews ───
 
-export async function fetchReviews(cafeId: string, page = 1) {
+export async function fetchReviews(
+  cafeId: string,
+  page = 1,
+  sort: 'helpful' | 'recent' = 'helpful',
+) {
   const { data } = await api.get(`/reviews/cafe/${cafeId}`, {
-    params: { page },
+    params: { page, sort },
   });
   const reviews = (data.data || data).map((r: any) => ({
     id: String(r.id),

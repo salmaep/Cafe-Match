@@ -1,5 +1,6 @@
 import { useRef, useState, type FormEvent } from "react";
 import { usersApi } from "../../api/users.api";
+import { uploadsApi } from "../../api/uploads.api";
 import { useAuth } from "../../context/AuthContext";
 import {
   Camera,
@@ -17,8 +18,6 @@ interface Props {
 }
 
 type Tab = "profile" | "password";
-
-const MAX_AVATAR_BYTES = 50_000; // 50KB after compression — fits TEXT column comfortably
 
 export default function EditProfileModal({ open, onClose }: Props) {
   const { user, refresh } = useAuth();
@@ -128,21 +127,15 @@ function ProfileTab({
       return;
     }
     try {
-      const dataUrl = await compressImage(file, 256, 0.78);
-      const sizeBytes = Math.round((dataUrl.length * 3) / 4);
-      if (sizeBytes > MAX_AVATAR_BYTES) {
-        // Try once more with lower quality
-        const smaller = await compressImage(file, 192, 0.65);
-        if (Math.round((smaller.length * 3) / 4) > MAX_AVATAR_BYTES) {
-          setError("Gambarnya kegedean, pilih yang lain dong.");
-          return;
-        }
-        setAvatarUrl(smaller);
-      } else {
-        setAvatarUrl(dataUrl);
-      }
-    } catch {
-      setError("Gagal memproses gambar.");
+      const blob = await compressImage(file, 512, 0.85);
+      const uploaded = await uploadsApi.avatar(blob);
+      setAvatarUrl(uploaded.url);
+    } catch (err: any) {
+      setError(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Gagal mengunggah gambar.",
+      );
     }
   };
 
@@ -407,7 +400,7 @@ function compressImage(
   file: File,
   maxDim: number,
   quality: number,
-): Promise<string> {
+): Promise<Blob> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onerror = () => reject(reader.error);
@@ -427,7 +420,14 @@ function compressImage(
           return;
         }
         ctx.drawImage(img, 0, 0, w, h);
-        resolve(canvas.toDataURL("image/jpeg", quality));
+        canvas.toBlob(
+          (blob) => {
+            if (blob) resolve(blob);
+            else reject(new Error("blob conversion failed"));
+          },
+          "image/jpeg",
+          quality,
+        );
       };
       img.src = reader.result as string;
     };

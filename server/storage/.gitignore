@@ -3,3 +3,6 @@
 !review-media/
 review-media/*
 !review-media/.gitkeep
+!avatars/
+avatars/*
+!avatars/.gitkeep

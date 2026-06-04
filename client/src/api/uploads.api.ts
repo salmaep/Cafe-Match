@@ -21,4 +21,21 @@ export const uploadsApi = {
     );
     return res.data;
   },
+  avatar: async (file: File | Blob): Promise<{ url: string }> => {
+    const form = new FormData();
+    form.append(
+      "file",
+      file,
+      file instanceof File ? file.name : "avatar.jpg",
+    );
+    const res = await apiClient.post<{ url: string }>(
+      "/uploads/avatar",
+      form,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+        timeout: 30_000,
+      },
+    );
+    return res.data;
+  },
 };

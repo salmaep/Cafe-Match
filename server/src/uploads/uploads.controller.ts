@@ -14,9 +14,10 @@ import { existsSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 const REVIEW_MEDIA_DIR = join(process.cwd(), 'storage', 'review-media');
+const AVATAR_DIR = join(process.cwd(), 'storage', 'avatars');
 
-if (!existsSync(REVIEW_MEDIA_DIR)) {
-  mkdirSync(REVIEW_MEDIA_DIR, { recursive: true });
+for (const dir of [REVIEW_MEDIA_DIR, AVATAR_DIR]) {
+  if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
 }
 
 const ALLOWED_PHOTO_MIME = new Set([
@@ -28,6 +29,7 @@ const ALLOWED_PHOTO_MIME = new Set([
 const ALLOWED_VIDEO_MIME = new Set(['video/mp4', 'video/quicktime']);
 const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
 const MAX_VIDEO_BYTES = 30 * 1024 * 1024;
+const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
 
 @Controller('uploads')
 export class UploadsController {
@@ -64,15 +66,47 @@ export class UploadsController {
       throw new BadRequestException('Photo exceeds 5 MB');
     }
 
-    const publicBase =
-      this.config.get<string>('PUBLIC_URL') ?? 'http://localhost:3000';
-    const url = `${publicBase.replace(/\/$/, '')}/storage/review-media/${file.filename}`;
     return {
-      url,
+      url: this.publicUrlFor('review-media', file.filename),
       mediaType: isPhoto ? 'photo' : 'video',
       size: file.size,
       mimeType: file.mimetype,
     };
+  }
+
+  @Post('avatar')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: AVATAR_DIR,
+        filename: (_req, file, cb) => {
+          const ext = extname(file.originalname).toLowerCase() || guessExt(file.mimetype);
+          cb(null, `${randomUUID()}${ext}`);
+        },
+      }),
+      limits: { fileSize: MAX_AVATAR_BYTES },
+      fileFilter: (_req, file, cb) => {
+        if (ALLOWED_PHOTO_MIME.has(file.mimetype)) {
+          cb(null, true);
+        } else {
+          cb(new BadRequestException('Only image files allowed'), false);
+        }
+      },
+    }),
+  )
+  uploadAvatar(@UploadedFile() file: Express.Multer.File) {
+    if (!file) throw new BadRequestException('File is required');
+    return {
+      url: this.publicUrlFor('avatars', file.filename),
+      size: file.size,
+      mimeType: file.mimetype,
+    };
+  }
+
+  private publicUrlFor(folder: string, filename: string): string {
+    const publicBase =
+      this.config.get<string>('PUBLIC_URL') ?? 'http://localhost:3000';
+    return `${publicBase.replace(/\/$/, '')}/storage/${folder}/${filename}`;
   }
 }
 

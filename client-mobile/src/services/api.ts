@@ -414,10 +414,7 @@ export interface UploadResult {
   mimeType: string;
 }
 
-export async function uploadReviewMedia(
-  uri: string,
-  mediaType: 'photo' | 'video',
-): Promise<UploadResult> {
+function buildFormFile(uri: string, mediaType: 'photo' | 'video'): FormData {
   const ext = (uri.split('.').pop() ?? '').toLowerCase();
   const mime =
     mediaType === 'video'
@@ -437,11 +434,33 @@ export async function uploadReviewMedia(
     name,
     type: mime,
   } as unknown as Blob);
+  return form;
+}
 
-  const { data } = await api.post<UploadResult>('/uploads/review-media', form, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-    timeout: 60_000,
-  });
+export async function uploadReviewMedia(
+  uri: string,
+  mediaType: 'photo' | 'video',
+): Promise<UploadResult> {
+  const { data } = await api.post<UploadResult>(
+    '/uploads/review-media',
+    buildFormFile(uri, mediaType),
+    {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 60_000,
+    },
+  );
+  return data;
+}
+
+export async function uploadAvatar(uri: string): Promise<{ url: string }> {
+  const { data } = await api.post<{ url: string }>(
+    '/uploads/avatar',
+    buildFormFile(uri, 'photo'),
+    {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 30_000,
+    },
+  );
   return data;
 }
 

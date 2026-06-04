@@ -21,7 +21,7 @@ import * as ImageManipulator from 'expo-image-manipulator';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Camera, X } from 'lucide-react-native';
 import { useAuth } from '../context/AuthContext';
-import { updateProfileApi, changePasswordApi } from '../services/api';
+import { updateProfileApi, changePasswordApi, uploadAvatar } from '../services/api';
 import { colors, spacing, radius } from '../theme';
 
 type Tab = 'profile' | 'password';
@@ -133,32 +133,13 @@ function ProfileTab() {
         return;
       }
 
-      const MAX_BYTES = 58_000;
-      const sizes = [512, 384, 256];
-      const qualities = [0.7, 0.5, 0.3, 0.2];
-      let dataUrl: string | null = null;
-      for (const size of sizes) {
-        for (const q of qualities) {
-          const out = await ImageManipulator.manipulateAsync(
-            asset.uri,
-            [{ resize: { width: size } }],
-            { compress: q, format: ImageManipulator.SaveFormat.JPEG, base64: true },
-          );
-          if (!out.base64) continue;
-          const bytes = out.base64.length * 0.75;
-          if (bytes <= MAX_BYTES) {
-            dataUrl = `data:image/jpeg;base64,${out.base64}`;
-            break;
-          }
-        }
-        if (dataUrl) break;
-      }
-
-      if (!dataUrl) {
-        setError(t(profileText.imageTooLarge));
-        return;
-      }
-      setAvatarUrl(dataUrl);
+      const resized = await ImageManipulator.manipulateAsync(
+        asset.uri,
+        [{ resize: { width: 512 } }],
+        { compress: 0.85, format: ImageManipulator.SaveFormat.JPEG },
+      );
+      const uploaded = await uploadAvatar(resized.uri);
+      setAvatarUrl(uploaded.url);
     } catch (err: any) {
       setError(err?.message || t(profileText.imagePickFailed));
     } finally {

@@ -1,0 +1,5 @@
+*
+!.gitignore
+!review-media/
+review-media/*
+!review-media/.gitkeep

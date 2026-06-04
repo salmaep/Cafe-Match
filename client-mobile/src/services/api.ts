@@ -405,6 +405,46 @@ export async function deleteReview(reviewId: string) {
   await api.delete(`/reviews/${reviewId}`);
 }
 
+// ─── Uploads ───
+
+export interface UploadResult {
+  url: string;
+  mediaType: 'photo' | 'video';
+  size: number;
+  mimeType: string;
+}
+
+export async function uploadReviewMedia(
+  uri: string,
+  mediaType: 'photo' | 'video',
+): Promise<UploadResult> {
+  const ext = (uri.split('.').pop() ?? '').toLowerCase();
+  const mime =
+    mediaType === 'video'
+      ? ext === 'mov' || ext === 'qt'
+        ? 'video/quicktime'
+        : 'video/mp4'
+      : ext === 'png'
+        ? 'image/png'
+        : ext === 'webp'
+          ? 'image/webp'
+          : 'image/jpeg';
+  const name = `upload.${ext || (mediaType === 'video' ? 'mp4' : 'jpg')}`;
+
+  const form = new FormData();
+  form.append('file', {
+    uri,
+    name,
+    type: mime,
+  } as unknown as Blob);
+
+  const { data } = await api.post<UploadResult>('/uploads/review-media', form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: 60_000,
+  });
+  return data;
+}
+
 // ─── Check-ins ───
 
 export async function checkInApi(cafeId: number, lat: number, lng: number) {

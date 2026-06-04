@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { reviewsApi } from "../../api/reviews.api";
 import { cafesApi, type FilterGroup } from "../../api/cafes.api";
+import { uploadsApi } from "../../api/uploads.api";
 import { usePreferences } from "../../context/PreferencesContext";
 import {
   Camera,
@@ -52,7 +53,12 @@ async function loadFacilityCatalog(): Promise<FilterGroup[]> {
   return facilityCatalogPromise;
 }
 
-type MediaItem = { url: string; type: "photo" | "video"; name: string };
+type MediaItem = {
+  url: string;
+  type: "photo" | "video";
+  name: string;
+  file: File;
+};
 
 interface Props {
   cafeId: number;
@@ -165,7 +171,12 @@ export default function WriteReviewModal({
     const items: MediaItem[] = [];
     for (let i = 0; i < Math.min(files.length, limit); i++) {
       const f = files[i];
-      items.push({ url: URL.createObjectURL(f), type: kind, name: f.name });
+      items.push({
+        url: URL.createObjectURL(f),
+        type: kind,
+        name: f.name,
+        file: f,
+      });
     }
     setMedia((p) => [...p, ...items]);
   };
@@ -196,9 +207,13 @@ export default function WriteReviewModal({
         ...facilities.map((f) => ({ category: `facility_${f}`, score: 5 })),
         { category: "overall", score: rating },
       ];
-      const mediaPayload = media
-        .filter((m) => m.url && m.url.length < 2000)
-        .map((m) => ({ mediaType: m.type, url: m.url }));
+      const uploaded = await Promise.all(
+        media.map((m) => uploadsApi.reviewMedia(m.file)),
+      );
+      const mediaPayload = uploaded.map((u) => ({
+        mediaType: u.mediaType,
+        url: u.url,
+      }));
       await reviewsApi.create(cafeId, {
         text: text.trim() || undefined,
         ratings,

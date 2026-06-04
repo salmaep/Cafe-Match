@@ -9,7 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { commonText, reviewsText } from '@shared/i18n/keys';
 import * as ImagePicker from 'expo-image-picker';
-import { createReview } from '../services/api';
+import { createReview, uploadReviewMedia } from '../services/api';
 import { colors, spacing, radius } from '../theme';
 import { usePurposes } from '../queries/purposes/use-purposes';
 import { useCafeFilters } from '../queries/cafes/use-cafe-filters';
@@ -150,12 +150,18 @@ export default function WriteReviewScreen() {
         ...facilities.map((f) => ({ category: `facility_${f}`, score: 5 })),
         { category: 'overall', score: rating },
       ];
-      const mediaPayload = media
-        .filter((m) => m && m.uri && typeof m.uri === 'string' && m.uri.length < 2000)
-        .map((m) => ({
-          mediaType: m.type,
-          url: m.uri,
-        }));
+
+      const validMedia = media.filter(
+        (m) => m && m.uri && typeof m.uri === 'string',
+      );
+      const uploaded = await Promise.all(
+        validMedia.map((m) => uploadReviewMedia(m.uri, m.type)),
+      );
+      const mediaPayload = uploaded.map((u) => ({
+        mediaType: u.mediaType,
+        url: u.url,
+      }));
+
       await createReview(cafeId, {
         text: text.trim() || undefined,
         ratings,

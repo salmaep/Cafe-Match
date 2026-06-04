@@ -1,7 +1,8 @@
 import { NestFactory } from '@nestjs/core';
 import { RequestMethod, ValidationPipe } from '@nestjs/common';
 import { Logger } from 'nestjs-pino';
-import { json } from 'express';
+import { json, static as expressStatic } from 'express';
+import { join } from 'node:path';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -9,6 +10,13 @@ async function bootstrap() {
   app.useLogger(app.get(Logger));
 
   app.use(json({ limit: '10mb' }));
+  app.use(
+    '/storage',
+    expressStatic(join(process.cwd(), 'storage'), {
+      maxAge: '7d',
+      fallthrough: false,
+    }),
+  );
 
   app.setGlobalPrefix('api/v1', {
     exclude: [

@@ -57,6 +57,7 @@ import {
 } from "../constant/ui/review-categories";
 import { LucideIcon } from "../utils/lucideIcon";
 import { Star, MapPin, Heart, Bookmark, BookmarkCheck, ChevronLeft, Phone, PencilLine, User, Users, BookOpen, Laptop } from "lucide-react-native";
+import Toast from "../components/Toast";
 import type { LucideIcon as LucideIconType } from "lucide-react-native";
 
 const MOOD_SLUG_TO_ICON: Record<string, LucideIconType> = {
@@ -512,11 +513,24 @@ export default function CafeDetailScreen() {
     }
   };
 
+  const [shortlistToast, setShortlistToast] = useState<{
+    message: string;
+    undo: (() => void) | null;
+  } | null>(null);
+
   const handleShortlist = () => {
     if (inShortlist) {
       removeFromShortlist(cafe.id);
+      setShortlistToast({
+        message: `${cafe.name} dihapus dari shortlist`,
+        undo: () => addToShortlist(cafe),
+      });
     } else {
       addToShortlist(cafe);
+      setShortlistToast({
+        message: `${cafe.name} ditambahkan ke shortlist`,
+        undo: null,
+      });
     }
   };
 
@@ -1402,12 +1416,32 @@ export default function CafeDetailScreen() {
             inShortlist && styles.shortlistBtnActive,
           ]}
           onPress={handleShortlist}
+          activeOpacity={0.85}
         >
-          <Text style={styles.shortlistBtnText}>
+          {inShortlist ? (
+            <BookmarkCheck size={18} color={colors.accent} fill={colors.accent} strokeWidth={2} />
+          ) : (
+            <Bookmark size={18} color={colors.white} strokeWidth={2.2} />
+          )}
+          <Text
+            style={[
+              styles.shortlistBtnText,
+              inShortlist && styles.shortlistBtnTextActive,
+            ]}
+          >
             {inShortlist ? t(cafeText.shortlistAdded) : t(cafeText.shortlistAdd)}
           </Text>
         </TouchableOpacity>
       </View>
+
+      <Toast
+        message={shortlistToast?.message ?? ''}
+        visible={!!shortlistToast}
+        onHide={() => setShortlistToast(null)}
+        duration={shortlistToast?.undo ? 3500 : 1800}
+        actionLabel={shortlistToast?.undo ? 'Urungkan' : undefined}
+        onAction={shortlistToast?.undo ?? undefined}
+      />
     </View>
   );
 }
@@ -1853,13 +1887,22 @@ const styles = StyleSheet.create({
   actionLabel: { fontSize: 11, color: colors.textSecondary, marginTop: 2 },
   shortlistBtn: {
     flex: 1,
+    flexDirection: "row",
+    gap: spacing.sm,
     backgroundColor: colors.primary,
     borderRadius: radius.md,
     paddingVertical: spacing.sm + 4,
     alignItems: "center",
+    justifyContent: "center",
   },
-  shortlistBtnActive: { backgroundColor: colors.accent },
+  shortlistBtnActive: {
+    backgroundColor: colors.white,
+    borderWidth: 2,
+    borderColor: colors.accent,
+    paddingVertical: spacing.sm + 2,
+  },
   shortlistBtnText: { color: colors.white, fontWeight: "700", fontSize: 15 },
+  shortlistBtnTextActive: { color: colors.accent },
   // checkinBtn: {
   //   width: 48,
   //   height: 48,

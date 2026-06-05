@@ -48,6 +48,7 @@ export default function WriteReviewScreen() {
     index: number;
   } | null>(null);
 
+
   const filtersQuery = useCafeFilters();
   const filterGroups = filtersQuery.data?.groups ?? [];
   const facilityOptions = useMemo(
@@ -224,15 +225,26 @@ export default function WriteReviewScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         {step > 0 ? (
-          <TouchableOpacity onPress={prev}>
-            <Text style={styles.backText}>{t(commonText.back)}</Text>
+          <TouchableOpacity onPress={prev} disabled={submitting}>
+            <Text
+              style={[styles.backText, submitting && styles.headerBtnDisabled]}
+            >
+              {t(commonText.back)}
+            </Text>
           </TouchableOpacity>
         ) : (
           <View style={{ width: 50 }} />
         )}
         {renderProgressDots()}
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.skipText}>{t(commonText.close)}</Text>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          disabled={submitting}
+        >
+          <Text
+            style={[styles.skipText, submitting && styles.headerBtnDisabled]}
+          >
+            {t(commonText.close)}
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -305,7 +317,7 @@ export default function WriteReviewScreen() {
                         <LucideIcon
                           name={f.icon}
                           size={14}
-                          color={active ? colors.white : colors.primary}
+                          color={active ? colors.accent : colors.primary}
                           strokeWidth={2}
                         />
                         <Text
@@ -482,6 +494,7 @@ const styles = StyleSheet.create({
   },
   backText: { fontSize: 15, color: colors.primary, fontWeight: '500' },
   skipText: { fontSize: 15, color: colors.textSecondary },
+  headerBtnDisabled: { opacity: 0.3 },
   dotsRow: { flexDirection: 'row', gap: 6 },
   dot: {
     width: 8,

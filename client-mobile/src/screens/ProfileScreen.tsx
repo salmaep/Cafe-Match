@@ -185,14 +185,17 @@ export default function ProfileScreen() {
       {/* Profile card */}
       <View style={styles.card}>
         <TouchableOpacity
-          style={styles.avatarBtn}
+          style={styles.avatarWrap}
+          activeOpacity={0.85}
           onPress={() => navigation.navigate('EditProfileModal')}
         >
-          {user.avatarUrl ? (
-            <Image source={{ uri: user.avatarUrl }} style={styles.avatarImg} />
-          ) : (
-            <Text style={styles.avatarText}>{initials}</Text>
-          )}
+          <View style={styles.avatarBtn}>
+            {user.avatarUrl ? (
+              <Image source={{ uri: user.avatarUrl }} style={styles.avatarImg} />
+            ) : (
+              <Text style={styles.avatarText}>{initials}</Text>
+            )}
+          </View>
           <View style={styles.avatarBadge}>
             <Camera size={12} color="#FFFFFF" strokeWidth={2.2} />
           </View>
@@ -494,20 +497,31 @@ const styles = StyleSheet.create({
   cardTitle: { fontSize: 14, fontWeight: '700', color: colors.primary },
   cardSubtitle: { fontSize: 12, color: colors.textSecondary, marginTop: 2 },
 
+  avatarWrap: {
+    position: 'relative',
+    width: 64, height: 64,
+  },
   avatarBtn: {
     width: 64, height: 64, borderRadius: 32,
     backgroundColor: colors.accent,
     alignItems: 'center', justifyContent: 'center',
-    overflow: 'hidden', position: 'relative',
+    overflow: 'hidden',
   },
-  avatarImg: { width: '100%', height: '100%' },
+  avatarImg: { width: '100%', height: '100%', resizeMode: 'cover' },
   avatarText: { fontSize: 22, fontWeight: '800', color: colors.white },
   avatarBadge: {
-    position: 'absolute', bottom: 0, right: 0,
-    width: 20, height: 20, borderRadius: 10,
-    backgroundColor: colors.primary,
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 22, height: 22, borderRadius: 11,
+    backgroundColor: colors.accent,
     alignItems: 'center', justifyContent: 'center',
     borderWidth: 2, borderColor: colors.white,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 2,
+    elevation: 3,
   },
   profileInfo: { flex: 1, minWidth: 0 },
   profileNameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },

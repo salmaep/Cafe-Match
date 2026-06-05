@@ -19,7 +19,7 @@ import { profileText } from '@shared/i18n/keys';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Camera, X } from 'lucide-react-native';
+import { Camera, X, User as UserIcon, Lock } from 'lucide-react-native';
 import { useAuth } from '../context/AuthContext';
 import { updateProfileApi, changePasswordApi, uploadAvatar } from '../services/api';
 import { colors, spacing, radius } from '../theme';
@@ -56,12 +56,30 @@ export default function EditProfileModal() {
         </View>
 
         <View style={styles.tabsRow}>
-          <TabBtn active={tab === 'profile'} onPress={() => setTab('profile')}>
-            👤 Profil
-          </TabBtn>
-          <TabBtn active={tab === 'password'} onPress={() => setTab('password')}>
-            🔒 Password
-          </TabBtn>
+          <TabBtn
+            active={tab === 'profile'}
+            onPress={() => setTab('profile')}
+            icon={
+              <UserIcon
+                size={14}
+                color={tab === 'profile' ? colors.primary : colors.textSecondary}
+                strokeWidth={2.2}
+              />
+            }
+            label="Profil"
+          />
+          <TabBtn
+            active={tab === 'password'}
+            onPress={() => setTab('password')}
+            icon={
+              <Lock
+                size={14}
+                color={tab === 'password' ? colors.primary : colors.textSecondary}
+                strokeWidth={2.2}
+              />
+            }
+            label="Password"
+          />
         </View>
 
         <ScrollView
@@ -78,16 +96,24 @@ export default function EditProfileModal() {
 function TabBtn({
   active,
   onPress,
-  children,
+  icon,
+  label,
 }: {
   active: boolean;
   onPress: () => void;
-  children: React.ReactNode;
+  icon: React.ReactNode;
+  label: string;
 }) {
   return (
-    <TouchableOpacity onPress={onPress} style={styles.tabBtn}>
+    <TouchableOpacity
+      onPress={onPress}
+      style={styles.tabBtn}
+      activeOpacity={0.7}
+      hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+    >
+      {icon}
       <Text style={[styles.tabBtnText, active && styles.tabBtnTextActive]}>
-        {children}
+        {label}
       </Text>
       {active && <View style={styles.tabBtnUnderline} />}
     </TouchableOpacity>
@@ -168,37 +194,37 @@ function ProfileTab() {
   return (
     <View style={{ gap: spacing.md }}>
       <View style={styles.avatarBlock}>
-        <View style={styles.avatarLarge}>
-          {avatarUrl ? (
-            <Image source={{ uri: avatarUrl }} style={styles.avatarImg} />
-          ) : (
-            <Text style={styles.avatarLargeText}>{initials}</Text>
-          )}
-        </View>
-        <View style={styles.avatarActions}>
-          <TouchableOpacity
-            onPress={pickImage}
-            disabled={picking}
-            style={styles.avatarActionBtn}
-          >
-            {picking ? (
-              <ActivityIndicator color={colors.accent} size="small" />
+        <TouchableOpacity
+          onPress={pickImage}
+          disabled={picking}
+          activeOpacity={0.85}
+          style={styles.avatarLargeWrap}
+        >
+          <View style={styles.avatarLarge}>
+            {avatarUrl ? (
+              <Image source={{ uri: avatarUrl }} style={styles.avatarImg} />
             ) : (
-              <View style={styles.avatarActionRow}>
-                <Camera size={14} color={colors.accent} strokeWidth={2.2} />
-                <Text style={styles.avatarActionText}>Upload foto</Text>
-              </View>
+              <Text style={styles.avatarLargeText}>{initials}</Text>
             )}
+          </View>
+          <View style={styles.avatarBadge}>
+            {picking ? (
+              <ActivityIndicator color={colors.white} size="small" />
+            ) : (
+              <Camera size={16} color={colors.white} strokeWidth={2.4} />
+            )}
+          </View>
+        </TouchableOpacity>
+        <Text style={styles.avatarHint}>Ketuk foto untuk ganti</Text>
+        {!!avatarUrl && (
+          <TouchableOpacity
+            onPress={() => setAvatarUrl('')}
+            disabled={picking}
+            hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+          >
+            <Text style={styles.avatarActionRemove}>{t(profileText.removeAvatar)}</Text>
           </TouchableOpacity>
-          {!!avatarUrl && (
-            <>
-              <Text style={styles.avatarActionDivider}>·</Text>
-              <TouchableOpacity onPress={() => setAvatarUrl('')}>
-                <Text style={styles.avatarActionRemove}>{t(profileText.removeAvatar)}</Text>
-              </TouchableOpacity>
-            </>
-          )}
-        </View>
+        )}
       </View>
 
       {!!error && (
@@ -385,7 +411,16 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.surface,
     gap: spacing.xs,
   },
-  tabBtn: { paddingHorizontal: spacing.sm, paddingVertical: spacing.sm, position: 'relative' },
+  tabBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.sm + 2,
+    position: 'relative',
+  },
   tabBtnText: { fontSize: 14, fontWeight: '700', color: colors.textSecondary },
   tabBtnTextActive: { color: colors.accent },
   tabBtnUnderline: {
@@ -398,21 +433,57 @@ const styles = StyleSheet.create({
 
   tabBody: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg },
 
-  avatarBlock: { alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm },
+  avatarBlock: {
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginBottom: spacing.md,
+  },
+  avatarLargeWrap: {
+    position: 'relative',
+    width: 104,
+    height: 104,
+    marginBottom: 4,
+  },
   avatarLarge: {
-    width: 96, height: 96, borderRadius: 24,
+    width: 104,
+    height: 104,
+    borderRadius: 52,
     backgroundColor: colors.accent,
-    alignItems: 'center', justifyContent: 'center',
+    alignItems: 'center',
+    justifyContent: 'center',
     overflow: 'hidden',
   },
-  avatarLargeText: { fontSize: 32, fontWeight: '800', color: colors.white },
-  avatarImg: { width: '100%', height: '100%' },
-  avatarActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-  avatarActionBtn: { paddingVertical: 4 },
-  avatarActionRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  avatarActionText: { fontSize: 13, fontWeight: '700', color: colors.accent },
-  avatarActionDivider: { color: colors.textSecondary, marginHorizontal: 4 },
-  avatarActionRemove: { fontSize: 13, fontWeight: '700', color: colors.error },
+  avatarLargeText: { fontSize: 36, fontWeight: '800', color: colors.white },
+  avatarImg: { width: '100%', height: '100%', resizeMode: 'cover' },
+  avatarBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 3,
+    borderColor: colors.white,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.18,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  avatarHint: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    fontWeight: '500',
+  },
+  avatarActionRemove: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.error,
+    marginTop: 2,
+  },
 
   fieldLabel: {
     fontSize: 11, fontWeight: '700',

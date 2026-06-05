@@ -203,12 +203,12 @@ export default function TrendingScreen() {
   const totalCount = cafesQuery.data?.pages?.[0]?.meta?.total ?? cafes.length;
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={styles.container}>
       {/* Branded hero header — mirrors web TrendingPage */}
       <View style={styles.heroHeader}>
         <View style={styles.heroBlobAmber} />
         <View style={styles.heroBlobOrange} />
-        <View style={styles.heroBody}>
+        <View style={[styles.heroBody, { paddingTop: insets.top + spacing.sm }]}>
           <View style={styles.heroTopRow}>
             <View style={{ flex: 1, minWidth: 0 }}>
               <View style={styles.heroPill}>

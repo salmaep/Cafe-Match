@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Animated, Text, StyleSheet } from 'react-native';
+import { Animated, Text, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { colors, radius, spacing } from '../theme';
 
 interface Props {
@@ -7,9 +7,18 @@ interface Props {
   visible: boolean;
   onHide: () => void;
   duration?: number;
+  actionLabel?: string;
+  onAction?: () => void;
 }
 
-export default function Toast({ message, visible, onHide, duration = 1500 }: Props) {
+export default function Toast({
+  message,
+  visible,
+  onHide,
+  duration = 1500,
+  actionLabel,
+  onAction,
+}: Props) {
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(30)).current;
 
@@ -29,13 +38,27 @@ export default function Toast({ message, visible, onHide, duration = 1500 }: Pro
 
       return () => clearTimeout(timer);
     }
-  }, [visible]);
+  }, [visible, duration]);
 
   if (!visible) return null;
 
   return (
     <Animated.View style={[styles.container, { opacity, transform: [{ translateY }] }]}>
       <Text style={styles.text}>{message}</Text>
+      {actionLabel && onAction && (
+        <>
+          <View style={styles.divider} />
+          <TouchableOpacity
+            onPress={() => {
+              onAction();
+              onHide();
+            }}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Text style={styles.actionText}>{actionLabel}</Text>
+          </TouchableOpacity>
+        </>
+      )}
     </Animated.View>
   );
 }
@@ -44,7 +67,12 @@ const styles = StyleSheet.create({
   container: {
     position: 'absolute',
     bottom: 100,
+    left: spacing.md,
+    right: spacing.md,
     alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm + 2,
     backgroundColor: colors.primary,
     borderRadius: radius.full,
     paddingHorizontal: spacing.lg,
@@ -57,8 +85,21 @@ const styles = StyleSheet.create({
     zIndex: 999,
   },
   text: {
+    flex: 1,
     color: colors.white,
     fontWeight: '600',
     fontSize: 14,
+  },
+  divider: {
+    width: StyleSheet.hairlineWidth,
+    height: 18,
+    backgroundColor: 'rgba(255,255,255,0.35)',
+  },
+  actionText: {
+    color: colors.accent,
+    fontWeight: '800',
+    fontSize: 14,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
 });

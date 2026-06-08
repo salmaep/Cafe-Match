@@ -163,15 +163,16 @@ export default function TrendingPage() {
       />
       {/* Header — dark hero (mirrors mobile app) */}
       <div className="lg:max-w-[88rem] lg:mx-auto lg:px-8 lg:pt-5">
-        <header className="relative overflow-hidden bg-[#1C1C1A] lg:rounded-3xl shadow-xl">
+        <header className="relative bg-[#1C1C1A] lg:rounded-3xl shadow-xl">
+          {/* Clipped decorative blobs in their own wrapper so the search
+              dropdown rendered below can overflow past the hero. */}
           <div
             aria-hidden
-            className="pointer-events-none absolute -top-32 -right-24 w-[28rem] h-[28rem] rounded-full bg-[#D48B3A]/20 blur-3xl"
-          />
-          <div
-            aria-hidden
-            className="pointer-events-none absolute -bottom-28 -left-20 w-72 h-72 rounded-full bg-[#D48B3A]/10 blur-3xl"
-          />
+            className="pointer-events-none absolute inset-0 overflow-hidden lg:rounded-3xl"
+          >
+            <div className="absolute -top-32 -right-24 w-[28rem] h-[28rem] rounded-full bg-[#D48B3A]/20 blur-3xl" />
+            <div className="absolute -bottom-28 -left-20 w-72 h-72 rounded-full bg-[#D48B3A]/10 blur-3xl" />
+          </div>
 
           <div className="relative px-5 sm:px-6 lg:px-7 py-5 sm:py-6">
             <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#D48B3A]/15 ring-1 ring-[#D48B3A]/45 text-[10px] font-extrabold tracking-[0.18em] uppercase text-[#D48B3A] mb-2.5">
@@ -180,14 +181,15 @@ export default function TrendingPage() {
             </div>
             <h1 className="text-white text-2xl sm:text-3xl lg:text-[34px] font-extrabold tracking-tight leading-[1.05] max-w-2xl">
               Cafe paling{" "}
-              <span className="italic text-[#D48B3A]">hits</span> minggu ini
+              <span className="italic text-[#D48B3A]">hits</span>{" "}
+              minggu ini
             </h1>
             <p className="text-[13px] sm:text-sm text-white/65 mt-2 max-w-xl leading-relaxed">
               Diranking dari jumlah favorit & bookmark komunitas CafeMatch.
               Diperbarui tiap hari, supaya kamu selalu satu langkah di depan.
             </p>
 
-            <div className="relative max-w-xl mt-4">
+            <div className="relative max-w-xl mt-4 z-30">
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
@@ -248,9 +250,6 @@ export default function TrendingPage() {
                 />
                 {total.toLocaleString()}
                 <span className="font-medium text-white/70">cafe diranking</span>
-              </span>
-              <span className="text-[12px] text-white/55">
-                Diperbarui <span className="font-bold text-white/80">hari ini, 09.00</span>
               </span>
               <button
                 type="button"

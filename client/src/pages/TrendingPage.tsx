@@ -26,6 +26,7 @@ import {
   Heart,
   MapPin,
   MessageCircle,
+  Search,
   Settings,
   Star,
   X,
@@ -126,62 +127,67 @@ export default function TrendingPage() {
         title="Trending cafes"
         description="See which cafes are getting the most votes and bookmarks this week."
       />
-      {/* Header — full-width on mobile, card on desktop */}
+      {/* Header — dark hero (mirrors mobile app) */}
       <div className="lg:max-w-[88rem] lg:mx-auto lg:px-8 lg:pt-5">
-        <header className="relative overflow-hidden bg-gradient-to-br from-[#FFF1E0] via-[#FFFBF3] to-[#FFF8EC] border-b border-amber-100 lg:border-0 lg:rounded-2xl lg:ring-1 lg:ring-amber-200/60 lg:shadow-sm">
-          {/* Decorative glow blobs */}
+        <header className="relative overflow-hidden bg-[#1C1C1A] lg:rounded-3xl shadow-xl">
           <div
             aria-hidden
-            className="pointer-events-none absolute -top-20 -left-12 w-60 h-60 rounded-full bg-amber-200/50 blur-3xl"
+            className="pointer-events-none absolute -top-32 -right-24 w-[28rem] h-[28rem] rounded-full bg-[#D48B3A]/20 blur-3xl"
           />
           <div
             aria-hidden
-            className="pointer-events-none absolute -bottom-20 right-0 w-72 h-72 rounded-full bg-orange-200/40 blur-3xl"
+            className="pointer-events-none absolute -bottom-28 -left-20 w-72 h-72 rounded-full bg-[#D48B3A]/10 blur-3xl"
           />
 
-          <div className="relative px-5 sm:px-7 lg:px-8 py-6 sm:py-8">
-            <div className="flex items-end justify-between gap-4">
-              <div className="min-w-0">
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/70 backdrop-blur-sm ring-1 ring-amber-200 text-[10px] font-extrabold tracking-[0.15em] uppercase text-[#B45309] mb-2.5 shadow-sm">
-                  <Flame size={12} strokeWidth={2.5} /> Trending Now
-                </div>
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#1C1C1A] tracking-tight leading-tight">
-                  Cafe paling{" "}
-                  <span className="bg-gradient-to-r from-[#F97316] to-[#EA580C] bg-clip-text text-transparent">
-                    hits
-                  </span>{" "}
-                  minggu ini
-                </h1>
-                <p className="text-sm sm:text-[15px] text-[#5C5A52] mt-2 max-w-xl">
-                  Berdasarkan jumlah favorit & bookmark dari komunitas — update
-                  tiap hari.
-                </p>
-              </div>
-              <div className="shrink-0 flex flex-col sm:flex-row items-end sm:items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-br from-[#FBBF24] via-[#F97316] to-[#EA580C] text-white text-xs font-extrabold shadow-md shadow-orange-500/20">
-                  <Flame size={14} strokeWidth={2.5} fill="currentColor" />
-                  <span className="tabular-nums">{total.toLocaleString()}</span>
-                  <span className="text-[10px] opacity-80 font-bold tracking-wider">
-                    CAFES
+          <div className="relative px-5 sm:px-8 lg:px-10 py-7 sm:py-9 lg:py-10">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#D48B3A]/15 ring-1 ring-[#D48B3A]/45 text-[10px] font-extrabold tracking-[0.18em] uppercase text-[#D48B3A] mb-3">
+              <Flame size={11} strokeWidth={0} fill="currentColor" />
+              Trending Minggu Ini
+            </div>
+            <h1 className="text-white text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-[1.05] max-w-2xl">
+              Cafe paling{" "}
+              <span className="italic text-[#D48B3A]">hits</span> minggu ini
+            </h1>
+            <p className="text-sm sm:text-base text-white/65 mt-3 max-w-xl leading-relaxed">
+              Diranking dari favorit & bookmark komunitas. Update tiap hari.
+            </p>
+
+            <div className="mt-5 flex items-center gap-2 bg-white rounded-full pl-4 pr-1 py-1 max-w-xl shadow-lg">
+              <Search size={18} strokeWidth={2.2} className="text-[#8A8880] shrink-0" />
+              <input
+                type="text"
+                placeholder="Cari cafe, area, suasana…"
+                className="flex-1 outline-none bg-transparent text-[14px] text-[#1C1C1A] placeholder:text-[#8A8880] py-2"
+              />
+              <button
+                type="button"
+                className="bg-[#D48B3A] hover:bg-[#b87528] text-white font-extrabold text-[13px] px-5 py-2 rounded-full transition-colors"
+              >
+                Cari
+              </button>
+            </div>
+
+            <div className="mt-4 flex items-center gap-3 flex-wrap">
+              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 ring-1 ring-white/15 text-white text-[12px] font-extrabold tabular-nums">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#D48B3A]" />
+                {total.toLocaleString()} cafe
+              </span>
+              <button
+                type="button"
+                onClick={() => setFilterModalOpen(true)}
+                className="lg:hidden inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 text-white ring-1 ring-white/15 text-[12px] font-bold hover:bg-white/15 transition-colors"
+              >
+                <Settings size={12} strokeWidth={2.5} /> Filter
+                {(facilities.length > 0 ||
+                  priceRange ||
+                  activePurposeId != null) && (
+                  <span className="bg-[#D48B3A] text-white rounded-full px-1.5 text-[10px] font-extrabold">
+                    {facilities.length +
+                      (priceRange ? 1 : 0) +
+                      (activePurposeId != null ? 1 : 0)}
                   </span>
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setFilterModalOpen(true)}
-                  className="lg:hidden inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white text-[#1C1C1A] ring-1 ring-[#E8E4DD] text-xs font-bold hover:ring-[#D48B3A] transition-colors shadow-sm"
-                >
-                  <Settings size={12} strokeWidth={2.5} /> Filter
-                  {(facilities.length > 0 ||
-                    priceRange ||
-                    activePurposeId != null) && (
-                    <span className="bg-[#D48B3A] text-white rounded-full px-1.5 text-[10px] font-extrabold">
-                      {facilities.length +
-                        (priceRange ? 1 : 0) +
-                        (activePurposeId != null ? 1 : 0)}
-                    </span>
-                  )}
-                </button>
-              </div>
+                )}
+              </button>
             </div>
           </div>
         </header>
@@ -451,16 +457,16 @@ function WinnerCard({ cafe, onClick }: { cafe: Cafe; onClick: () => void }) {
           {/* Top-left: champion badge */}
           <div className="absolute top-4 left-4 flex items-center gap-2 flex-wrap">
             <div className="inline-flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-full bg-white shadow-lg">
-              <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-br from-[#FBBF24] to-[#F59E0B] text-white shadow-inner">
-                <Crown size={14} strokeWidth={2.5} />
+              <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-[#D48B3A] text-white">
+                <Crown size={12} strokeWidth={0} fill="currentColor" />
               </span>
               <span className="text-[11px] font-extrabold tracking-[0.18em] text-[#1C1C1A]">
-                #1 TRENDING
+                JUARA
               </span>
             </div>
             {isHot && (
-              <div className="hot-pulse inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-gradient-to-r from-[#EF4444] to-[#EA580C] text-white text-[10px] font-extrabold tracking-wider shadow-md">
-                <Flame size={11} strokeWidth={2.5} fill="currentColor" /> HOT
+              <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#EA580C] text-white text-[10px] font-extrabold tracking-wider shadow-md">
+                <Flame size={11} strokeWidth={0} fill="currentColor" /> HOT
               </div>
             )}
           </div>

@@ -17,7 +17,8 @@ import { getOpenStatus } from '../utils/openingHours';
 import { formatDistance } from '../utils/facilities';
 import { formatRating } from '../utils/rating';
 import { cleanAddress } from '../utils/address';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { setStatusBarStyle } from 'expo-status-bar';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -28,10 +29,11 @@ import { hitsToCafesCached } from '../queries/cafes/api';
 import { usePurposes } from '../queries/purposes/use-purposes';
 import { Cafe } from '../types';
 import { colors, spacing, radius } from '../theme';
+import { LinearGradient } from 'expo-linear-gradient';
 import {
   Flame, Crown, Star, MapPin, Heart, Bookmark, SlidersHorizontal,
   User, Users, BookOpen, Laptop, Briefcase, Lightbulb, Coffee, Book, Zap,
-  PartyPopper, Camera,
+  PartyPopper, Camera, Search,
 } from 'lucide-react-native';
 import type { LucideIcon as LucideIconType } from 'lucide-react-native';
 import { LucideIcon } from '../utils/lucideIcon';
@@ -69,6 +71,15 @@ export default function TrendingScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { latitude, longitude } = useLocation();
+
+  // Trending hero has dark bg — flip system status bar to light icons when
+  // this tab is focused, restore dark on blur for the other screens.
+  useFocusEffect(
+    useCallback(() => {
+      setStatusBarStyle('light');
+      return () => setStatusBarStyle('dark');
+    }, []),
+  );
 
   // Trending cafes state
   const purposesQuery = usePurposes();
@@ -204,24 +215,45 @@ export default function TrendingScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Branded hero header — mirrors web TrendingPage */}
+      {/* Branded hero header */}
       <View style={styles.heroHeader}>
         <View style={styles.heroBlobAmber} />
         <View style={styles.heroBlobOrange} />
         <View style={[styles.heroBody, { paddingTop: insets.top + spacing.sm }]}>
-          <View style={styles.heroTopRow}>
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <View style={styles.heroPill}>
-                <Flame size={11} color="#B45309" fill="#B45309" strokeWidth={0} />
-                <Text style={styles.heroPillText}>{t(trendingText.heroPill)}</Text>
-              </View>
-              <Text style={styles.heroTitle}>
-                {t(trendingText.heroTitleBefore)}
-                <Text style={styles.heroTitleAccent}>{t(trendingText.heroTitleAccent)}</Text>
-                {t(trendingText.heroTitleAfter)}
+          <View style={styles.heroPill}>
+            <Flame size={11} color={colors.accent} fill={colors.accent} strokeWidth={0} />
+            <Text style={styles.heroPillText}>{t(trendingText.heroPill)}</Text>
+          </View>
+          <Text style={styles.heroTitle}>
+            {t(trendingText.heroTitleBefore)}
+            <Text style={styles.heroTitleAccent}>{t(trendingText.heroTitleAccent)}</Text>
+            {t(trendingText.heroTitleAfter)}
+          </Text>
+          <Text style={styles.heroSub}>
+            {t(trendingText.heroSubtitle)}
+          </Text>
+
+          <TouchableOpacity
+            style={styles.heroSearchRow}
+            activeOpacity={0.9}
+            onPress={() => navigation.navigate('Search')}
+          >
+            <View style={styles.heroSearchInputWrap}>
+              <Search size={16} color="#8A8880" strokeWidth={2.2} />
+              <Text style={styles.heroSearchPlaceholder} numberOfLines={1}>
+                Cari cafe, area, suasana…
               </Text>
-              <Text style={styles.heroSub}>
-                {t(trendingText.heroSubtitle)}
+            </View>
+            <View style={styles.heroSearchBtn}>
+              <Text style={styles.heroSearchBtnText}>Cari</Text>
+            </View>
+          </TouchableOpacity>
+
+          <View style={styles.heroMetaRow}>
+            <View style={styles.heroDotPill}>
+              <View style={styles.heroDot} />
+              <Text style={styles.heroMetaStrong}>
+                {(totalCount ?? 0).toLocaleString('id-ID')} cafe
               </Text>
             </View>
           </View>
@@ -360,7 +392,8 @@ function WinnerCardContent({ cafe, onPress }: { cafe: Cafe; onPress: () => void 
   const km = distMeters != null ? formatDistance(distMeters) : null;
   const isHot = (cafe.favoritesCount ?? 0) >= 300;
   const allChips = cafe.chips ?? [];
-  const visibleChips = allChips.slice(0, 3);
+  const FACILITY_VISIBLE_MAX = 3;
+  const visibleChips = allChips.slice(0, FACILITY_VISIBLE_MAX);
   const overflow = allChips.length - visibleChips.length;
 
   return (
@@ -370,7 +403,6 @@ function WinnerCardContent({ cafe, onPress }: { cafe: Cafe; onPress: () => void 
       onPress={onPress}
     >
       <View style={cardStyles.winnerCard}>
-        {/* Photo with stacked gradient overlays for stronger bottom readability */}
         <View style={cardStyles.winnerPhotoBox}>
           <CafePhoto
             photos={cafe.photos}
@@ -378,9 +410,20 @@ function WinnerCardContent({ cafe, onPress }: { cafe: Cafe; onPress: () => void 
             cafeId={cafe.id}
             style={cardStyles.winnerPhoto}
           />
-          <View style={cardStyles.winnerOverlayTop} />
+          <LinearGradient
+            colors={['rgba(0,0,0,0.55)', 'transparent']}
+            locations={[0, 0.4]}
+            style={cardStyles.winnerOverlayTopGrad}
+            pointerEvents="none"
+          />
+          <LinearGradient
+            colors={['transparent', 'rgba(0,0,0,0.85)']}
+            locations={[0.35, 1]}
+            style={cardStyles.winnerOverlayBottomGrad}
+            pointerEvents="none"
+          />
 
-          {/* Top-left: champion + HOT */}
+          {/* Top-left: champion crown + HOT badge */}
           <View style={cardStyles.winnerTopLeft}>
             <View style={cardStyles.winnerCrown}>
               <View style={cardStyles.winnerCrownIconWrap}>
@@ -396,7 +439,7 @@ function WinnerCardContent({ cafe, onPress }: { cafe: Cafe; onPress: () => void 
             )}
           </View>
 
-          {/* Top-right: rating pill */}
+          {/* Top-right: rating only */}
           {rating && (
             <View style={cardStyles.winnerRating}>
               <Star size={12} color="#F59E0B" fill="#F59E0B" strokeWidth={0} />
@@ -447,10 +490,6 @@ function WinnerCardContent({ cafe, onPress }: { cafe: Cafe; onPress: () => void 
                     open.isOpen ? cardStyles.openOn : cardStyles.openOff,
                   ]}
                 >
-                  <View style={[
-                    cardStyles.openDot,
-                    { backgroundColor: open.isOpen ? '#A7F3D0' : '#FCA5A5' },
-                  ]} />
                   <Text style={cardStyles.winnerOpenText} numberOfLines={1}>
                     {open.isOpen
                       ? open.closesAt
@@ -463,34 +502,36 @@ function WinnerCardContent({ cafe, onPress }: { cafe: Cafe; onPress: () => void 
                 </View>
               )}
             </View>
+          </View>
+        </View>
 
-            {/* Facility chips on photo — semi-transparent over overlay */}
-            {visibleChips.length > 0 && (
-              <View style={cardStyles.winnerFacilityRow}>
-                {visibleChips.map((c) => (
-                  <View key={c.key} style={cardStyles.winnerFacilityChip}>
-                    {c.lucideName && (
-                      <LucideIcon
-                        name={c.lucideName}
-                        size={11}
-                        color="#FFFFFF"
-                        strokeWidth={2}
-                      />
-                    )}
-                    <Text style={cardStyles.winnerFacilityText} numberOfLines={1}>
-                      {c.label}
-                    </Text>
-                  </View>
-                ))}
-                {overflow > 0 && (
-                  <View style={cardStyles.winnerFacilityOverflow}>
-                    <Text style={cardStyles.winnerFacilityOverflowText}>+{overflow}</Text>
-                  </View>
+        {/* Facility chips — white section below photo */}
+        {visibleChips.length > 0 && (
+          <View style={cardStyles.winnerFacilityBar}>
+            {visibleChips.map((c) => (
+              <View key={c.key} style={cardStyles.winnerFacilityChipLight}>
+                {c.lucideName && (
+                  <LucideIcon
+                    name={c.lucideName}
+                    size={11}
+                    color={colors.primary}
+                    strokeWidth={2}
+                  />
                 )}
+                <Text style={cardStyles.winnerFacilityTextLight} numberOfLines={1}>
+                  {c.label}
+                </Text>
+              </View>
+            ))}
+            {overflow > 0 && (
+              <View style={cardStyles.winnerFacilityOverflowAccent}>
+                <Text style={cardStyles.winnerFacilityOverflowAccentText}>
+                  +{overflow} fasil
+                </Text>
               </View>
             )}
           </View>
-        </View>
+        )}
       </View>
     </TouchableOpacity>
   );
@@ -703,6 +744,119 @@ const cardStyles = StyleSheet.create({
     height: '18%',
     backgroundColor: 'rgba(0,0,0,0.18)',
   },
+  winnerOverlayTopGrad: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0,
+    height: '35%',
+  },
+  winnerOverlayBottomGrad: {
+    position: 'absolute',
+    left: 0, right: 0, bottom: 0,
+    height: '70%',
+  },
+  winnerRankPill: {
+    position: 'absolute',
+    top: 12, left: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.accent,
+    borderRadius: 999,
+    paddingLeft: 4,
+    paddingRight: 12,
+    gap: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  winnerRankNum: {
+    width: 22, height: 22,
+    borderRadius: 11,
+    backgroundColor: colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  winnerRankNumText: {
+    color: colors.accent,
+    fontSize: 12,
+    fontWeight: '900',
+  },
+  winnerRankLabel: {
+    color: colors.white,
+    fontSize: 11,
+    fontWeight: '900',
+    letterSpacing: 1.2,
+  },
+  winnerTopRight: {
+    position: 'absolute',
+    top: 12, right: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  winnerRatingDark: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.65)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    gap: 4,
+  },
+  winnerFavBtn: {
+    width: 32, height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  winnerFacilityBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    backgroundColor: colors.white,
+    overflow: 'hidden',
+  },
+  winnerFacilityChipLight: {
+    flexShrink: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: colors.white,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#E8E4DD',
+  },
+  winnerFacilityTextLight: {
+    flexShrink: 1,
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.primary,
+  },
+  winnerFacilityOverflowAccent: {
+    flexShrink: 0,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: 'rgba(212, 139, 58, 0.12)',
+    borderWidth: 1,
+    borderColor: colors.accent,
+  },
+  winnerFacilityOverflowAccentText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: colors.accent,
+  },
   winnerTopLeft: {
     position: 'absolute',
     top: 12, left: 12,
@@ -765,7 +919,6 @@ const cardStyles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 14,
     paddingBottom: 16,
-    backgroundColor: 'rgba(0,0,0,0.5)',
   },
   winnerName: {
     color: '#FFFFFF', fontSize: 26, fontWeight: '900',
@@ -1042,53 +1195,117 @@ const styles = StyleSheet.create({
 
   // ── Hero header (mirrors web TrendingPage) ─────────────────
   heroHeader: {
-    backgroundColor: '#FFFBF3',
-    borderBottomWidth: 1,
-    borderBottomColor: '#FDE3B8',
+    backgroundColor: colors.primary,
     overflow: 'hidden',
   },
   heroBlobAmber: {
     position: 'absolute',
-    top: -80, left: -48,
-    width: 240, height: 240, borderRadius: 120,
-    backgroundColor: 'rgba(252, 211, 77, 0.45)',
-    opacity: 0.6,
+    top: -120, right: -80,
+    width: 280, height: 280, borderRadius: 140,
+    backgroundColor: 'rgba(212, 139, 58, 0.18)',
   },
   heroBlobOrange: {
     position: 'absolute',
-    bottom: -80, right: 0,
-    width: 280, height: 280, borderRadius: 140,
-    backgroundColor: 'rgba(254, 215, 170, 0.4)',
-    opacity: 0.6,
+    bottom: -100, left: -60,
+    width: 240, height: 240, borderRadius: 120,
+    backgroundColor: 'rgba(212, 139, 58, 0.08)',
   },
   heroBody: {
     paddingHorizontal: spacing.md + 4,
-    paddingVertical: spacing.lg,
+    paddingBottom: spacing.lg,
   },
-  heroTopRow: { flexDirection: 'row', alignItems: 'flex-end' },
   heroPill: {
     alignSelf: 'flex-start',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 10, paddingVertical: 4,
-    backgroundColor: 'rgba(255,255,255,0.78)',
+    gap: 6,
+    paddingHorizontal: 12, paddingVertical: 5,
+    backgroundColor: 'rgba(212, 139, 58, 0.15)',
     borderRadius: 999,
-    borderWidth: 1, borderColor: '#FDE3B8',
-    marginBottom: 8,
+    borderWidth: 1, borderColor: 'rgba(212, 139, 58, 0.45)',
+    marginBottom: spacing.sm + 2,
   },
   heroPillText: {
     fontSize: 10, fontWeight: '900',
-    color: '#B45309', letterSpacing: 1.5,
+    color: colors.accent, letterSpacing: 1.5,
   },
   heroTitle: {
-    fontSize: 24, fontWeight: '900',
-    color: '#1C1C1A', lineHeight: 28,
+    fontSize: 28, fontWeight: '900',
+    color: colors.white, lineHeight: 32,
+    letterSpacing: -0.5,
   },
-  heroTitleAccent: { color: '#EA580C' },
+  heroTitleAccent: {
+    color: colors.accent,
+    fontStyle: 'italic',
+  },
   heroSub: {
-    fontSize: 13, color: '#5C5A52',
-    marginTop: 6, lineHeight: 18,
+    fontSize: 13, color: 'rgba(255,255,255,0.65)',
+    marginTop: 8, lineHeight: 18,
+  },
+  heroSearchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: colors.white,
+    borderRadius: 999,
+    paddingLeft: spacing.md,
+    paddingRight: 4,
+    paddingVertical: 4,
+    marginTop: spacing.md + 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  heroSearchInputWrap: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 8,
+  },
+  heroSearchPlaceholder: {
+    flex: 1,
+    fontSize: 13,
+    color: '#8A8880',
+  },
+  heroSearchBtn: {
+    backgroundColor: colors.accent,
+    borderRadius: 999,
+    paddingHorizontal: spacing.md + 2,
+    paddingVertical: 8,
+  },
+  heroSearchBtnText: {
+    color: colors.white,
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  heroMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginTop: spacing.md,
+  },
+  heroDotPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  heroDot: {
+    width: 7, height: 7, borderRadius: 4,
+    backgroundColor: colors.accent,
+  },
+  heroMetaStrong: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: colors.white,
   },
 
   header: {

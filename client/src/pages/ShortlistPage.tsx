@@ -84,46 +84,41 @@ export default function ShortlistPage() {
         description="Cafe yang kamu simpan untuk dikunjungi nanti"
       />
 
-      {/* Hero — full-width on mobile, card on desktop (consistent with TrendingPage) */}
+      {/* Hero — dark theme (mirrors mobile app + TrendingPage) */}
       <div className="lg:max-w-7xl lg:mx-auto lg:px-8 lg:pt-5">
-        <header className="relative overflow-hidden bg-gradient-to-br from-[#FFF1E0] via-[#FFFBF3] to-[#FFF8EC] border-b border-amber-100 lg:border-0 lg:rounded-2xl lg:ring-1 lg:ring-amber-200/60 lg:shadow-sm">
+        <header className="relative overflow-hidden bg-[#1C1C1A] lg:rounded-3xl shadow-xl">
           <div
             aria-hidden
-            className="pointer-events-none absolute -top-20 -left-12 w-60 h-60 rounded-full bg-amber-200/50 blur-3xl"
+            className="pointer-events-none absolute -top-32 -right-24 w-[28rem] h-[28rem] rounded-full bg-[#D48B3A]/20 blur-3xl"
           />
           <div
             aria-hidden
-            className="pointer-events-none absolute -bottom-20 right-0 w-72 h-72 rounded-full bg-orange-200/40 blur-3xl"
+            className="pointer-events-none absolute -bottom-28 -left-20 w-72 h-72 rounded-full bg-[#D48B3A]/10 blur-3xl"
           />
 
-          <div className="relative px-5 sm:px-7 lg:px-8 py-6 sm:py-8">
-            <div className="flex items-end justify-between gap-4">
-              <div className="min-w-0">
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/70 backdrop-blur-sm ring-1 ring-amber-200 text-[10px] font-extrabold tracking-[0.15em] uppercase text-[#B45309] mb-2.5 shadow-sm">
-                  <Star size={11} strokeWidth={2.5} fill="currentColor" /> Shortlist
-                </div>
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#1C1C1A] tracking-tight leading-tight">
-                  Cafe yang{" "}
-                  <span className="bg-gradient-to-r from-[#F97316] to-[#EA580C] bg-clip-text text-transparent">
-                    kamu suka
-                  </span>
-                </h1>
-                <p className="text-sm sm:text-[15px] text-[#5C5A52] mt-2 max-w-xl">
-                  {shortlist.length > 0
-                    ? `${shortlist.length} cafe disimpan untuk dikunjungi nanti.`
-                    : "Geser kanan saat Discover untuk menyimpan cafe yang menarik."}
-                </p>
-              </div>
-              {shortlist.length > 0 && (
-                <span className="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-br from-[#FBBF24] via-[#F97316] to-[#EA580C] text-white text-xs font-extrabold shadow-md shadow-orange-500/20">
-                  <Star size={12} strokeWidth={2.5} fill="currentColor" />
-                  <span className="tabular-nums">{shortlist.length}</span>
-                  <span className="text-[10px] opacity-80 font-bold tracking-wider">
-                    CAFES
-                  </span>
-                </span>
-              )}
+          <div className="relative px-5 sm:px-8 lg:px-10 py-7 sm:py-9 lg:py-10">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#D48B3A]/15 ring-1 ring-[#D48B3A]/45 text-[10px] font-extrabold tracking-[0.18em] uppercase text-[#D48B3A] mb-3">
+              <Star size={11} strokeWidth={0} fill="currentColor" />
+              Shortlist
             </div>
+            <h1 className="text-white text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-[1.05] max-w-2xl">
+              Cafe yang{" "}
+              <span className="italic text-[#D48B3A]">kamu suka</span>
+            </h1>
+            <p className="text-sm sm:text-base text-white/65 mt-3 max-w-xl leading-relaxed">
+              {shortlist.length > 0
+                ? `${shortlist.length} cafe disimpan untuk dikunjungi nanti.`
+                : "Geser kanan saat Discover untuk menyimpan cafe yang menarik."}
+            </p>
+
+            {shortlist.length > 0 && (
+              <div className="mt-4 flex items-center gap-3 flex-wrap">
+                <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 ring-1 ring-white/15 text-white text-[12px] font-extrabold tabular-nums">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#D48B3A]" />
+                  {shortlist.length} cafe
+                </span>
+              </div>
+            )}
           </div>
         </header>
       </div>

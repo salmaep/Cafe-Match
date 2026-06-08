@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { cafesApi } from "../api/cafes.api";
+import { cafesApi, type AutocompleteHit } from "../api/cafes.api";
 import { purposesApi } from "../api/purposes.api";
 import type { Cafe, Purpose } from "../types";
+import { useAutocomplete } from "../hooks/useAutocomplete";
+import { useSearchHistory } from "../hooks/useSearchHistory";
+import SearchAutocomplete from "../components/search/SearchAutocomplete";
 import {
   useGeolocation,
   FALLBACK_LAT,
@@ -59,8 +62,33 @@ export default function TrendingPage() {
   const [loading, setLoading] = useState(true);
   // Search input — `qInput` mirrors the field as user types; `q` is the
   // committed value that actually triggers the search refetch on submit.
+  // Same flow as HomePage (Explore): autocomplete dropdown + recent history.
   const [qInput, setQInput] = useState("");
   const [q, setQ] = useState("");
+  const [searchFocused, setSearchFocused] = useState(false);
+  const autocomplete = useAutocomplete(qInput, {
+    lat: latitude ?? FALLBACK_LAT,
+    lng: longitude ?? FALLBACK_LNG,
+  });
+  const {
+    history,
+    push: pushHistory,
+    remove: removeHistory,
+    clear: clearHistory,
+  } = useSearchHistory();
+
+  const commitSearch = (term: string) => {
+    const trimmed = term.trim();
+    setQ(trimmed);
+    setQInput(trimmed);
+    if (trimmed) pushHistory(trimmed);
+    setSearchFocused(false);
+  };
+
+  const handlePickSuggestion = (hit: AutocompleteHit) => {
+    setSearchFocused(false);
+    navigate(cafeUrl(hit));
+  };
 
   useEffect(() => {
     purposesApi
@@ -159,41 +187,56 @@ export default function TrendingPage() {
               Diperbarui tiap hari, supaya kamu selalu satu langkah di depan.
             </p>
 
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                setQ(qInput);
-              }}
-              className="mt-4 flex items-center gap-2 bg-white rounded-full pl-4 pr-1 py-1 max-w-xl shadow-lg"
-            >
-              <Search size={16} strokeWidth={2.2} className="text-[#8A8880] shrink-0" />
-              <input
-                type="text"
-                value={qInput}
-                onChange={(e) => setQInput(e.target.value)}
-                placeholder="Cari cafe, area, suasana…"
-                className="flex-1 outline-none bg-transparent text-[14px] text-[#1C1C1A] placeholder:text-[#8A8880] py-1.5"
-              />
-              {qInput && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setQInput("");
-                    setQ("");
-                  }}
-                  className="w-7 h-7 rounded-full hover:bg-[#F0EDE8] text-[#8A8880] flex items-center justify-center"
-                  aria-label="Clear"
-                >
-                  <X size={14} strokeWidth={2.5} />
-                </button>
-              )}
-              <button
-                type="submit"
-                className="bg-[#D48B3A] hover:bg-[#b87528] text-white font-extrabold text-[13px] px-5 py-1.5 rounded-full transition-colors"
+            <div className="relative max-w-xl mt-4">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  commitSearch(qInput);
+                }}
+                className="flex items-center gap-2 bg-white rounded-full pl-4 pr-1 py-1 shadow-lg"
               >
-                Cari
-              </button>
-            </form>
+                <Search size={16} strokeWidth={2.2} className="text-[#8A8880] shrink-0" />
+                <input
+                  type="text"
+                  value={qInput}
+                  onChange={(e) => setQInput(e.target.value)}
+                  onFocus={() => setSearchFocused(true)}
+                  onBlur={() => setTimeout(() => setSearchFocused(false), 150)}
+                  placeholder="Cari cafe, area, suasana…"
+                  className="flex-1 outline-none bg-transparent text-[14px] text-[#1C1C1A] placeholder:text-[#8A8880] py-1.5"
+                />
+                {qInput && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setQInput("");
+                      setQ("");
+                    }}
+                    className="w-7 h-7 rounded-full hover:bg-[#F0EDE8] text-[#8A8880] flex items-center justify-center"
+                    aria-label="Clear"
+                  >
+                    <X size={14} strokeWidth={2.5} />
+                  </button>
+                )}
+                <button
+                  type="submit"
+                  className="bg-[#D48B3A] hover:bg-[#b87528] text-white font-extrabold text-[13px] px-5 py-1.5 rounded-full transition-colors"
+                >
+                  Cari
+                </button>
+              </form>
+              <SearchAutocomplete
+                q={qInput}
+                open={searchFocused}
+                suggestions={autocomplete.suggestions}
+                loading={autocomplete.loading}
+                history={history}
+                onPickRecent={(term) => commitSearch(term)}
+                onRemoveRecent={removeHistory}
+                onClearRecent={clearHistory}
+                onPickSuggestion={handlePickSuggestion}
+              />
+            </div>
 
             <div className="mt-3 flex items-center gap-3 flex-wrap">
               <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 ring-1 ring-white/15 text-white text-[12px] font-extrabold tabular-nums">

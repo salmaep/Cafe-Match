@@ -57,6 +57,10 @@ export default function TrendingPage() {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  // Search input — `qInput` mirrors the field as user types; `q` is the
+  // committed value that actually triggers the search refetch on submit.
+  const [qInput, setQInput] = useState("");
+  const [q, setQ] = useState("");
 
   useEffect(() => {
     purposesApi
@@ -72,6 +76,7 @@ export default function TrendingPage() {
         lat: latitude ?? FALLBACK_LAT,
         lng: longitude ?? FALLBACK_LNG,
         radius: 50000,
+        q: q.trim() || undefined,
         purposeId: activePurposeId ?? undefined,
         facilities: facilities.length > 0 ? facilities : undefined,
         priceRange: priceRange || undefined,
@@ -106,6 +111,7 @@ export default function TrendingPage() {
     facilities,
     priceRange,
     geoLoading,
+    q,
   ]);
 
   const hasMore = cafes.length < total;
@@ -139,38 +145,69 @@ export default function TrendingPage() {
             className="pointer-events-none absolute -bottom-28 -left-20 w-72 h-72 rounded-full bg-[#D48B3A]/10 blur-3xl"
           />
 
-          <div className="relative px-5 sm:px-8 lg:px-10 py-7 sm:py-9 lg:py-10">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#D48B3A]/15 ring-1 ring-[#D48B3A]/45 text-[10px] font-extrabold tracking-[0.18em] uppercase text-[#D48B3A] mb-3">
+          <div className="relative px-5 sm:px-6 lg:px-7 py-5 sm:py-6">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#D48B3A]/15 ring-1 ring-[#D48B3A]/45 text-[10px] font-extrabold tracking-[0.18em] uppercase text-[#D48B3A] mb-2.5">
               <Flame size={11} strokeWidth={0} fill="currentColor" />
               Trending Minggu Ini
             </div>
-            <h1 className="text-white text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-[1.05] max-w-2xl">
+            <h1 className="text-white text-2xl sm:text-3xl lg:text-[34px] font-extrabold tracking-tight leading-[1.05] max-w-2xl">
               Cafe paling{" "}
               <span className="italic text-[#D48B3A]">hits</span> minggu ini
             </h1>
-            <p className="text-sm sm:text-base text-white/65 mt-3 max-w-xl leading-relaxed">
-              Diranking dari favorit & bookmark komunitas. Update tiap hari.
+            <p className="text-[13px] sm:text-sm text-white/65 mt-2 max-w-xl leading-relaxed">
+              Diranking dari jumlah favorit & bookmark komunitas CafeMatch.
+              Diperbarui tiap hari, supaya kamu selalu satu langkah di depan.
             </p>
 
-            <div className="mt-5 flex items-center gap-2 bg-white rounded-full pl-4 pr-1 py-1 max-w-xl shadow-lg">
-              <Search size={18} strokeWidth={2.2} className="text-[#8A8880] shrink-0" />
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                setQ(qInput);
+              }}
+              className="mt-4 flex items-center gap-2 bg-white rounded-full pl-4 pr-1 py-1 max-w-xl shadow-lg"
+            >
+              <Search size={16} strokeWidth={2.2} className="text-[#8A8880] shrink-0" />
               <input
                 type="text"
+                value={qInput}
+                onChange={(e) => setQInput(e.target.value)}
                 placeholder="Cari cafe, area, suasana…"
-                className="flex-1 outline-none bg-transparent text-[14px] text-[#1C1C1A] placeholder:text-[#8A8880] py-2"
+                className="flex-1 outline-none bg-transparent text-[14px] text-[#1C1C1A] placeholder:text-[#8A8880] py-1.5"
               />
+              {qInput && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setQInput("");
+                    setQ("");
+                  }}
+                  className="w-7 h-7 rounded-full hover:bg-[#F0EDE8] text-[#8A8880] flex items-center justify-center"
+                  aria-label="Clear"
+                >
+                  <X size={14} strokeWidth={2.5} />
+                </button>
+              )}
               <button
-                type="button"
-                className="bg-[#D48B3A] hover:bg-[#b87528] text-white font-extrabold text-[13px] px-5 py-2 rounded-full transition-colors"
+                type="submit"
+                className="bg-[#D48B3A] hover:bg-[#b87528] text-white font-extrabold text-[13px] px-5 py-1.5 rounded-full transition-colors"
               >
                 Cari
               </button>
-            </div>
+            </form>
 
-            <div className="mt-4 flex items-center gap-3 flex-wrap">
-              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 ring-1 ring-white/15 text-white text-[12px] font-extrabold tabular-nums">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#D48B3A]" />
-                {total.toLocaleString()} cafe
+            <div className="mt-3 flex items-center gap-3 flex-wrap">
+              <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 ring-1 ring-white/15 text-white text-[12px] font-extrabold tabular-nums">
+                <Flame
+                  size={11}
+                  strokeWidth={0}
+                  fill="currentColor"
+                  className="text-[#D48B3A]"
+                />
+                {total.toLocaleString()}
+                <span className="font-medium text-white/70">cafe diranking</span>
+              </span>
+              <span className="text-[12px] text-white/55">
+                Diperbarui <span className="font-bold text-white/80">hari ini, 09.00</span>
               </span>
               <button
                 type="button"
@@ -434,11 +471,11 @@ function WinnerCard({ cafe, onClick }: { cafe: Cafe; onClick: () => void }) {
   const overflow = allChips.length - visibleChips.length;
 
   return (
-    <div className="relative h-full overflow-hidden p-[2px] rounded-3xl bg-gradient-to-br from-[#FBBF24] via-[#F97316] to-[#EA580C] shadow-xl shadow-orange-500/15">
+    <div className="relative h-full overflow-hidden rounded-3xl bg-white ring-1 ring-[#F0EDE8] shadow-md">
       <button
         type="button"
         onClick={onClick}
-        className="group relative flex flex-col h-full w-full overflow-hidden rounded-[calc(1.5rem-2px)] bg-white hover:shadow-2xl transition-all text-left"
+        className="group relative flex flex-col h-full w-full overflow-hidden rounded-3xl bg-white hover:shadow-xl transition-all text-left"
       >
         <div className="relative aspect-[4/3] sm:aspect-[16/9] lg:aspect-[21/9] flex-1 overflow-hidden">
           <img
@@ -531,22 +568,22 @@ function WinnerCard({ cafe, onClick }: { cafe: Cafe; onClick: () => void }) {
           </div>
         </div>
 
-        {/* Bottom strip — facilities only, single cohesive section */}
+        {/* Bottom strip — facilities only, plain white */}
         {visibleChips.length > 0 && (
-          <div className="px-5 py-3 bg-gradient-to-b from-[#FFF1E0] to-[#FDF6EC] border-t border-amber-200/40">
+          <div className="px-5 py-3 bg-white border-t border-[#F0EDE8]">
             <div className="flex flex-wrap gap-1.5">
               {visibleChips.map((c) => (
                 <span
                   key={c.key}
-                  className="inline-flex items-center gap-1 bg-white text-[#5C5A52] text-[11px] font-semibold rounded-full px-2.5 py-1 ring-1 ring-amber-200/60 shadow-sm"
+                  className="inline-flex items-center gap-1.5 bg-white text-[#1C1C1A] text-[11px] font-semibold rounded-full px-3 py-1.5 ring-1 ring-[#E8E4DD]"
                 >
                   <LucideIcon name={lucideForFacility(c.key)} size={11} strokeWidth={2} />
                   {c.label}
                 </span>
               ))}
               {overflow > 0 && (
-                <span className="inline-flex items-center bg-amber-100 text-amber-800 text-[11px] font-bold rounded-full px-2.5 py-1 ring-1 ring-amber-300">
-                  +{overflow}
+                <span className="inline-flex items-center bg-[#D48B3A]/10 text-[#D48B3A] text-[11px] font-bold rounded-full px-3 py-1.5 ring-1 ring-[#D48B3A]/45">
+                  +{overflow} fasilitas
                 </span>
               )}
             </div>
@@ -576,24 +613,17 @@ function RunnerUpCard({
   const visibleChips = allChips.slice(0, 3);
   const overflow = allChips.length - visibleChips.length;
 
-  // Border gradient — silver for #2, bronze for #3
-  const borderGradient =
-    rank === 2
-      ? "from-[#E5E7EB] via-[#9CA3AF] to-[#6B7280]"
-      : "from-[#FCD34D] via-[#D97706] to-[#B45309]";
   const rankBg =
     rank === 2
       ? "bg-gradient-to-br from-[#E5E7EB] to-[#9CA3AF]"
       : "bg-gradient-to-br from-[#FCD34D] to-[#B45309]";
 
   return (
-    <div
-      className={`relative h-full overflow-hidden p-[1.5px] rounded-2xl bg-gradient-to-br ${borderGradient} shadow-md`}
-    >
+    <div className="relative h-full overflow-hidden rounded-2xl bg-white ring-1 ring-[#F0EDE8] shadow-md">
       <button
         type="button"
         onClick={onClick}
-        className="group relative flex h-full w-full flex-col overflow-hidden rounded-[calc(1rem-1.5px)] bg-gradient-to-br from-[#FFF8EC] to-white hover:shadow-lg transition-shadow text-left"
+        className="group relative flex h-full w-full flex-col overflow-hidden rounded-2xl bg-white hover:shadow-lg transition-shadow text-left"
       >
         {/* Photo — full-width tile on top */}
         <div className="relative aspect-[4/3] overflow-hidden">
@@ -641,8 +671,8 @@ function RunnerUpCard({
           </div>
         </div>
 
-        {/* Body — amber info section */}
-        <div className="px-3.5 py-3 bg-gradient-to-b from-[#FFF1E0] to-[#FDF6EC] flex-1 flex flex-col justify-between">
+        {/* Body — plain white info section */}
+        <div className="px-3.5 py-3 bg-white border-t border-[#F0EDE8] flex-1 flex flex-col justify-between">
           {/* Stats row */}
           <div className="flex items-center gap-3 text-[12px]">
             <span className="inline-flex items-center gap-1 font-extrabold text-[#EA580C] tabular-nums">
@@ -688,7 +718,7 @@ function RunnerUpCard({
               {visibleChips.map((c) => (
                 <span
                   key={c.key}
-                  className="inline-flex items-center gap-1 bg-white/80 text-[#5C5A52] text-[10px] font-semibold rounded-full px-2 py-0.5 ring-1 ring-amber-200/60"
+                  className="inline-flex items-center gap-1 bg-white text-[#1C1C1A] text-[10px] font-semibold rounded-full px-2 py-0.5 ring-1 ring-[#E8E4DD]"
                 >
                   <LucideIcon
                     name={lucideForFacility(c.key)}
@@ -699,7 +729,7 @@ function RunnerUpCard({
                 </span>
               ))}
               {overflow > 0 && (
-                <span className="bg-amber-100 text-amber-700 text-[10px] font-bold rounded-full px-2 py-0.5 ring-1 ring-amber-300">
+                <span className="bg-[#D48B3A]/10 text-[#D48B3A] text-[10px] font-bold rounded-full px-2 py-0.5 ring-1 ring-[#D48B3A]/45">
                   +{overflow}
                 </span>
               )}

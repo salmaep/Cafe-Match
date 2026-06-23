@@ -503,7 +503,7 @@ export class MeiliCafesService {
          FROM cafe_menus WHERE cafe_id IN (${placeholders}) AND deleted_at IS NULL`,
         cafeIds,
       ),
-      // Latest non-empty review per cafe. CafeMatch user reviews take priority;
+      // Latest non-empty review per cafe. Geser user reviews take priority;
       // falls back to the highest-rated Google review when no user review exists.
       this.q<TopReviewRow>(
         `SELECT cafeId, text, createdAt, authorName, overallScore

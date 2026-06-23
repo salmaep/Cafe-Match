@@ -147,7 +147,7 @@ export default function NotificationsPage() {
     <div className="min-h-screen bg-[#FAF9F6] pb-16">
       <Seo
         title="Notifikasi"
-        description="Lihat update terbaru dari CafeMatch"
+        description="Lihat update terbaru dari Geser"
       />
 
       {/* Hero — full-width on mobile, card on desktop (consistent with other pages) */}

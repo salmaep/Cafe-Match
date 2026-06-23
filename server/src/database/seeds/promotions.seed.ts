@@ -118,7 +118,7 @@ const TYPE_B_TEMPLATES = [
   },
 ];
 
-const OWNER_EMAIL = 'owner@cafematch.id';
+const OWNER_EMAIL = 'owner@geser.id';
 
 async function ensureOwner(dataSource: DataSource): Promise<number> {
   let [row] = await dataSource.query(

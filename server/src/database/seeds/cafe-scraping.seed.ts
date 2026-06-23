@@ -408,7 +408,7 @@ async function assignPromotions(dataSource: DataSource): Promise<void> {
   const typeBCafes = shuffled.slice(3, 6);
 
   // 4. Create a fresh demo owner user (or reuse if already exists)
-  const OWNER_EMAIL = 'owner@cafematch.id';
+  const OWNER_EMAIL = 'owner@geser.id';
   let [ownerRow] = await dataSource.query(
     `SELECT id FROM users WHERE email = ? LIMIT 1`,
     [OWNER_EMAIL],

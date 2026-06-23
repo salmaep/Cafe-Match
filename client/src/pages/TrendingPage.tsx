@@ -185,7 +185,7 @@ export default function TrendingPage() {
               minggu ini
             </h1>
             <p className="text-[13px] sm:text-sm text-white/65 mt-2 max-w-xl leading-relaxed">
-              Diranking dari jumlah favorit & bookmark komunitas CafeMatch.
+              Diranking dari jumlah favorit & bookmark komunitas Geser.
               Diperbarui tiap hari, supaya kamu selalu satu langkah di depan.
             </p>
 

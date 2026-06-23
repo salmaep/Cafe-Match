@@ -8,19 +8,19 @@
 services:
   mysql:
     image: mysql:8.4
-    container_name: cafematch-mysql
+    container_name: geser-mysql
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-cafematch_root}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-geser_root}
       MYSQL_DATABASE: ${DB_DATABASE}
       MYSQL_USER: ${DB_USERNAME}
       MYSQL_PASSWORD: ${DB_PASSWORD}
     ports:
-      - "3306:3306"
+      - "127.0.0.1:3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     networks:
-      - cafematch-net
+      - geser-net
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$$MYSQL_ROOT_PASSWORD"]
       interval: 10s
@@ -30,7 +30,7 @@ services:
 
   meilisearch:
     image: getmeili/meilisearch:v1.42
-    container_name: cafematch-meili
+    container_name: geser-meili
     restart: unless-stopped
     environment:
       MEILI_MASTER_KEY: ${MEILI_MASTER_KEY}
@@ -41,7 +41,7 @@ services:
     volumes:
       - meili_data:/meili_data
     networks:
-      - cafematch-net
+      - geser-net
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:7700/health"]
       interval: 10s
@@ -56,7 +56,7 @@ services:
       # (hangs ~141s on IPv6 attempts). Build on the host network stack, which
       # has working IPv4+IPv6. ipv4first ENV in Dockerfile guards runtime too.
       network: host
-    container_name: cafematch-app
+    container_name: geser-app
     restart: unless-stopped
     dns:
       - 8.8.8.8
@@ -74,7 +74,7 @@ services:
     volumes:
       - app_storage:/app/storage
     networks:
-      - cafematch-net
+      - geser-net
     depends_on:
       mysql:
         condition: service_healthy
@@ -92,17 +92,17 @@ services:
       network: host
       # Vite reads VITE_API_URL from client/.env during the build (inside container).
       # No build args needed here.
-    container_name: cafematch-client
+    container_name: geser-client
     restart: unless-stopped
     ports:
       - "3083:3083"
     networks:
-      - cafematch-net
+      - geser-net
     depends_on:
       - app
 
 networks:
-  cafematch-net:
+  geser-net:
     driver: bridge
 
 volumes:

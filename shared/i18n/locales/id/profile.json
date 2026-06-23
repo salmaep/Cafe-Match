@@ -23,16 +23,16 @@
   "logoutTitle": "Logout",
   "logoutBody": "Yakin mau logout? Semua data lokal bakal kehapus.",
   "logoutAction": "Logout",
-  "guestWelcome": "Selamat datang di CafeMatch",
+  "guestWelcome": "Selamat datang di Geser",
   "guestSubtitle": "Login dulu buat akses profil sama cafe yang udah kamu simpen",
   "guestLoginBtn": "Masuk / Daftar",
-  "inviteTitle": "Ajak teman ke CafeMatch",
+  "inviteTitle": "Ajak teman ke Geser",
   "inviteSubtitle": "Share friend code biar bisa saling check-in",
   "friendCodeLabel": "FRIEND CODE",
   "copy": "📋 Salin",
   "shareWhatsApp": "💬 WhatsApp",
   "shareNative": "📤 Bagikan",
-  "shareMessage": "Yuk gabung CafeMatch! Pakai friend code ku: {{code}}\n\nDownload di geser.id",
+  "shareMessage": "Yuk gabung Geser! Pakai friend code ku: {{code}}\n\nDownload di geser.id",
   "quickFriends": "Teman",
   "quickLeaderboard": "Leaderboard",
   "quickAchievement": "Achievement",
@@ -66,5 +66,5 @@
   "deleteAccountConfirm": "Hapus Akun Saya",
   "deleteAccountProcessing": "Memproses...",
   "deleteAccountGenericError": "Terjadi kesalahan. Coba lagi.",
-  "appVersion": "CafeMatch v{{version}}"
+  "appVersion": "Geser v{{version}}"
 }

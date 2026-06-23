@@ -42,7 +42,7 @@ export class SeedDummyPromotions1712600000000 implements MigrationInterface {
     if (!ownerId) {
       await queryRunner.query(`
         INSERT INTO users (email, password_hash, name, role)
-        VALUES ('owner@cafematch.id', '$2b$10$dummyhashnotreal000000000000000000000000000000', 'Demo Owner', 'owner')
+        VALUES ('owner@geser.id', '$2b$10$dummyhashnotreal000000000000000000000000000000', 'Demo Owner', 'owner')
       `);
       const [ownerRow] = await queryRunner.query(
         `SELECT id FROM users WHERE role = 'owner' LIMIT 1`,

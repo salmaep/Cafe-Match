@@ -5,7 +5,7 @@ const ACHIEVEMENTS = [
   {
     slug: 'first-checkin',
     name: 'Selamat Datang, Cafeholic!',
-    description: 'Check-in pertama kamu di CafeMatch',
+    description: 'Check-in pertama kamu di Geser',
     category: 'visit_general',
     tier: 'bronze_1',
     threshold: 1,
@@ -216,7 +216,7 @@ const ACHIEVEMENTS = [
   {
     slug: 'first-friend',
     name: 'Teman Pertama',
-    description: 'Tambah teman pertama di CafeMatch',
+    description: 'Tambah teman pertama di Geser',
     category: 'social',
     tier: 'bronze_1',
     threshold: 1,
@@ -224,7 +224,7 @@ const ACHIEVEMENTS = [
   {
     slug: 'friends-5',
     name: 'Gaul Abis',
-    description: 'Punya 5 teman di CafeMatch',
+    description: 'Punya 5 teman di Geser',
     category: 'social',
     tier: 'bronze_2',
     threshold: 5,
@@ -232,7 +232,7 @@ const ACHIEVEMENTS = [
   {
     slug: 'friends-10',
     name: 'Influencer Kafe',
-    description: 'Punya 10 teman di CafeMatch',
+    description: 'Punya 10 teman di Geser',
     category: 'social',
     tier: 'silver_1',
     threshold: 10,

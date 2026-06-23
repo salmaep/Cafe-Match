@@ -1,5 +1,5 @@
 # Name
-### cafe-match
+### geser
 
 # Synopsis
 
@@ -9,10 +9,9 @@
 # Example
 
 # Install:
-`npm install cafe-match`
+`npm install geser`
 
 # Test:
 `npm test`
 
 #License:
-

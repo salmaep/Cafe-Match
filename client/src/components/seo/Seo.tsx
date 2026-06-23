@@ -9,8 +9,8 @@ interface Props {
   jsonLd?: Record<string, unknown> | Record<string, unknown>[];
 }
 
-const SITE_NAME = "CafeMatch";
-const DEFAULT_TITLE = "CafeMatch — Find your next favourite cafe";
+const SITE_NAME = "Geser";
+const DEFAULT_TITLE = "Geser — Find your next favourite cafe";
 const DEFAULT_DESCRIPTION =
   "Discover cafes that match how you want to spend your time — work-from-cafe, dates, family time, group study, or me-time.";
 

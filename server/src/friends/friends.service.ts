@@ -81,7 +81,7 @@ export class FriendsService {
       receiver.id,
       'friend_request',
       'Permintaan Pertemanan',
-      `${sender?.name || 'Seseorang'} mau jadi temen kamu di CafeMatch!`,
+      `${sender?.name || 'Seseorang'} mau jadi temen kamu di Geser!`,
       { requestId: saved.id, senderId },
     );
 

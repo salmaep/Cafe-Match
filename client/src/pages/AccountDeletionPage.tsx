@@ -5,7 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import { usersApi } from "../api/users.api";
 import { CheckCircle2, X, Zap } from "../utils/lucideIcon";
 
-const CONTACT_EMAIL = "support@cafematch.id";
+const CONTACT_EMAIL = "support@geser.id";
 
 export default function AccountDeletionPage() {
   const { user } = useAuth();
@@ -47,7 +47,7 @@ export default function AccountDeletionPage() {
     <div className="min-h-screen bg-[#FAF9F6] pb-20">
       <Seo
         title="Hapus Akun"
-        description="Ajukan permintaan penghapusan akun CafeMatch Anda."
+        description="Ajukan permintaan penghapusan akun Geser Anda."
       />
 
       <div className="max-w-2xl mx-auto px-4 pt-8 pb-4">
@@ -56,7 +56,7 @@ export default function AccountDeletionPage() {
           Hapus Akun
         </h1>
         <p className="text-sm text-[#8A8880] mb-8">
-          Halaman ini untuk mengajukan permintaan penghapusan akun CafeMatch
+          Halaman ini untuk mengajukan permintaan penghapusan akun Geser
           Anda.
         </p>
 

@@ -1,5 +1,5 @@
 {
-  "name": "@cafematch/shared",
+  "name": "@geser/shared",
   "version": "0.0.0",
   "private": true,
   "description": "Constants and pure helpers shared between client/ and client-mobile/. Source-only TS, no build step.",

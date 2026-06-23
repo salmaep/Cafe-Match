@@ -126,10 +126,10 @@ docker compose ps
 Semua harus `healthy` / `running`:
 ```
 NAME                   STATUS
-cafematch-mysql        Up X min (healthy)
-cafematch-meili        Up X min (healthy)
-cafematch-app          Up X min
-cafematch-client       Up X min
+geser-mysql        Up X min (healthy)
+geser-meili        Up X min (healthy)
+geser-app          Up X min
+geser-client       Up X min
 ```
 
 Kalau ada error:

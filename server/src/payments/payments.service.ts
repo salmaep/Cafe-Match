@@ -87,7 +87,7 @@ export class PaymentsService {
         ],
         customer_details: {
           first_name: promotion.cafe?.name || 'Cafe Owner',
-          email: `owner-${userId}@cafematch.id`,
+          email: `owner-${userId}@geser.id`,
         },
       }),
     });

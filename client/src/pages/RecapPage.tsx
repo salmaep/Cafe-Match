@@ -65,13 +65,13 @@ export default function RecapPage() {
 
   const share = async () => {
     if (!recap) return;
-    const text = `🎉 CafeMatch Recap ${year}: aku ${recap.yearTitle}!\n\n☕ ${recap.totalCheckins} check-in di ${recap.totalCafesVisited} cafe\n⏱️ ${recap.totalDurationHours} jam total nongkrong\n🏆 ${recap.achievementsUnlocked} achievement unlocked\n\nIkut ngafe juga di salma.imola.ai`;
+    const text = `🎉 CafeMatch Recap ${year}: aku ${recap.yearTitle}!\n\n☕ ${recap.totalCheckins} check-in di ${recap.totalCafesVisited} cafe\n⏱️ ${recap.totalDurationHours} jam total nongkrong\n🏆 ${recap.achievementsUnlocked} achievement unlocked\n\nIkut ngafe juga di geser.id`;
     if (navigator.share) {
       try {
         await navigator.share({
           title: `CafeMatch Recap ${year}`,
           text,
-          url: "https://salma.imola.ai",
+          url: "https://geser.id",
         });
       } catch {}
     } else {

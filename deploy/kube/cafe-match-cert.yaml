@@ -2,7 +2,7 @@
 # Apply AFTER cafe-match.yaml (Services + Endpoints must exist first).
 
 # ──────────────────────────────────────────────────────────────────────────────
-# WEB — https://salma.imola.ai → service cafe-match-web (port 3083)
+# WEB — https://geser.id → service cafe-match-web (port 3083)
 # ──────────────────────────────────────────────────────────────────────────────
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -15,10 +15,10 @@ spec:
   ingressClassName: traefik
   tls:
     - hosts:
-        - salma.imola.ai
+        - geser.id
       secretName: cafe-match-web-tls
   rules:
-    - host: salma.imola.ai
+    - host: geser.id
       http:
         paths:
           # /sitemap.xml is generated dynamically by NestJS (SeoController) — proxied
@@ -40,7 +40,7 @@ spec:
                   number: 3083
 
 # ──────────────────────────────────────────────────────────────────────────────
-# API — https://api.salma.imola.ai → service cafe-match-api (port 3084)
+# API — https://api.geser.id → service cafe-match-api (port 3084)
 # ──────────────────────────────────────────────────────────────────────────────
 ---
 apiVersion: networking.k8s.io/v1
@@ -54,10 +54,10 @@ spec:
   ingressClassName: traefik
   tls:
     - hosts:
-        - api.salma.imola.ai
+        - api.geser.id
       secretName: cafe-match-api-tls
   rules:
-    - host: api.salma.imola.ai
+    - host: api.geser.id
       http:
         paths:
           - path: /

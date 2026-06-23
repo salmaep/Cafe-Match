@@ -1,14 +1,13 @@
 # Step-by-Step Server Setup
 
 Panduan deploy dari fresh server sampai aplikasi live di:
-- https://salma.imola.ai (web)
-- https://api.salma.imola.ai (API)
+- https://geser.id (web)
+- https://api.geser.id (API)
 
 Asumsi:
 - OS: Ubuntu / Debian
-- Sudah terinstall: `git`, `docker`, `docker compose`, `kubectl`
-- Cluster K8s sudah punya Traefik + cert-manager + ClusterIssuer `letsencrypt-prod`
-- DNS `salma.imola.ai` & `api.salma.imola.ai` sudah point ke Traefik public IP
+- Sudah terinstall: `git`, `docker`, `docker compose`, `caddy`
+- DNS `geser.id` & `api.geser.id` sudah point ke IP server (port 80/443 reachable dari internet)
 
 ---
 
@@ -28,16 +27,16 @@ Tidak ada root `.env`. Tiga env file terpisah:
 
 Pertama kali:
 ```bash
-sudo mkdir -p /opt && sudo chown $USER:$USER /opt
-cd /opt
+sudo mkdir -p /var/www && sudo chown $USER:$USER /var/www
+cd /var/www
 git clone https://github.com/salmaep/Cafe-Match.git
 cd Cafe-Match
-git checkout dev
+git checkout prod
 ```
 
 Update kemudian:
 ```bash
-cd /opt/Cafe-Match
+cd /var/www/Cafe-Match
 git pull
 ```
 
@@ -46,7 +45,7 @@ git pull
 ## Step 2 — Setup `server/.env`
 
 ```bash
-cd /opt/Cafe-Match
+cd /var/www/Cafe-Match
 cp server/.env.example server/.env
 ```
 
@@ -54,7 +53,7 @@ cp server/.env.example server/.env
 ```bash
 echo "JWT_SECRET=$(openssl rand -hex 32)"
 echo "MEILI_MASTER_KEY=$(openssl rand -hex 32)"
-echo "SCRAPER_API_KEY=$(openssl rand -hex 32)"
+echo "ADMIN_API_KEY=$(openssl rand -hex 32)"
 ```
 
 Buka editor:
@@ -66,7 +65,8 @@ nano server/.env
 - `DB_PASSWORD` — password MySQL (akan dipakai di compose interpolation juga)
 - `JWT_SECRET` — paste dari output di atas
 - `MEILI_MASTER_KEY` — paste dari output di atas
-- `SCRAPER_API_KEY` — paste dari output di atas
+- `ADMIN_API_KEY` — paste dari output di atas
+- `PUBLIC_WEB_URL=https://geser.id`
 
 **Optional:**
 - `JINA_API_KEY` — kosongkan kalau belum mau pakai semantic search
@@ -83,10 +83,10 @@ nano client/.env
 
 Isi:
 ```env
-VITE_API_URL=https://api.salma.imola.ai/api/v1
+VITE_API_URL=https://api.geser.id/api/v1
 ```
 
-⚠️ Value ini di-bake ke JS bundle saat build container. Kalau nanti diubah, **rebuild client container**:
+Value ini di-bake ke JS bundle saat build container. Kalau nanti diubah, **rebuild client container**:
 ```bash
 docker compose --env-file server/.env build --no-cache client
 docker compose --env-file server/.env up -d client
@@ -103,24 +103,20 @@ nano client-mobile/.env
 
 Isi:
 ```env
-EXPO_PUBLIC_API_URL=https://api.salma.imola.ai/api/v1
+EXPO_PUBLIC_API_URL=https://api.geser.id/api/v1
 ```
 
-(Kalau mobile build dilakukan di mesin developer, skip step ini di server.)
+(Kalau mobile build dilakukan di mesin developer/EAS, skip step ini di server.)
 
 ---
 
 ## Step 5 — Build & start containers
 
 ```bash
-cd /opt/Cafe-Match
+cd /var/www/Cafe-Match
+ln -sf server/.env .env
 docker compose --env-file server/.env up -d --build
 ```
-
-Penjelasan flag `--env-file server/.env`:
-- Compose file pakai `${DB_PASSWORD}`, `${MEILI_MASTER_KEY}`, dll
-- Variabel ini di-resolve dari `server/.env`
-- MySQL & Meili containers dapat credentials yang sinkron dengan NestJS
 
 Cek status:
 ```bash
@@ -148,12 +144,12 @@ docker compose logs -f mysql    # MySQL
 ## Step 6 — Run database migrations
 
 ```bash
-docker compose --env-file server/.env exec app npm run migration:run
+docker compose --env-file server/.env exec app npm run migration:run:prod
 ```
 
 ---
 
-## Step 7 — Test dari host (sebelum K8s)
+## Step 7 — Test dari host (sebelum Caddy)
 
 ```bash
 # API
@@ -166,31 +162,45 @@ curl -I http://localhost:3083
 
 ---
 
-## Step 8 — Apply K8s manifests (Service + Ingress)
+## Step 8 — Setup Caddy (reverse proxy + auto HTTPS)
 
+Install Caddy (sekali):
 ```bash
-mkdir -p /home/dios/kube-config
-cp /opt/Cafe-Match/deploy/kube/cafe-match.yaml      /home/dios/kube-config/
-cp /opt/Cafe-Match/deploy/kube/cafe-match-cert.yaml /home/dios/kube-config/
-
-# Ganti <HOST_IP> dengan IP server (private/internal yang K8s nodes bisa reach)
-sed -i 's/<HOST_IP>/192.168.88.184/g' /home/dios/kube-config/cafe-match.yaml
-
-# Apply Service + Endpoints
-kubectl apply -f /home/dios/kube-config/cafe-match.yaml
-
-# Apply Ingress + cert-manager (auto-issue Let's Encrypt cert)
-kubectl apply -f /home/dios/kube-config/cafe-match-cert.yaml
-
-# Verify
-kubectl get svc,endpoints,ingress | grep cafe-match
-kubectl get certificate -w   # tunggu READY=True (~1-2 menit)
+sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https curl
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo tee /etc/apt/sources.list.d/caddy-stable.list
+sudo apt update && sudo apt install -y caddy
 ```
 
-Kalau cert stuck:
+Caddyfile (`/etc/caddy/Caddyfile`):
 ```bash
-kubectl describe certificate cafe-match-web-tls
-kubectl describe certificate cafe-match-api-tls
+sudo tee /etc/caddy/Caddyfile > /dev/null <<'EOF'
+geser.id {
+    # Sitemap dynamic dari NestJS — proxy ke API biar cafe URLs fresh tanpa rebuild SPA
+    handle /sitemap.xml {
+        reverse_proxy localhost:3084
+    }
+    # Sisanya ke client Vite preview
+    handle {
+        reverse_proxy localhost:3083
+    }
+}
+
+api.geser.id {
+    reverse_proxy localhost:3084
+}
+EOF
+```
+
+Reload & verify:
+```bash
+sudo systemctl reload caddy
+sudo systemctl status caddy
+```
+
+Caddy auto-issue Let's Encrypt cert pertama kali request masuk (~30 detik). Cek log kalau gagal:
+```bash
+sudo journalctl -u caddy -f
 ```
 
 ---
@@ -198,24 +208,24 @@ kubectl describe certificate cafe-match-api-tls
 ## Step 9 — Test public
 
 ```bash
-curl -I https://salma.imola.ai
-curl 'https://api.salma.imola.ai/api/v1/cafes?lat=-6.9175&lng=107.6191&radius=5000&limit=1'
+curl -I https://geser.id
+curl 'https://api.geser.id/api/v1/cafes?lat=-6.9175&lng=107.6191&radius=5000&limit=1'
 ```
 
 Browser:
-- https://salma.imola.ai
-- https://api.salma.imola.ai/api/v1/cafes?lat=-6.9175&lng=107.6191&radius=25000&limit=5
+- https://geser.id
+- https://api.geser.id/api/v1/cafes?lat=-6.9175&lng=107.6191&radius=25000&limit=5
 
 ---
 
 ## Update / redeploy
 
 ### Otomatis (rekomendasi) — GitHub Actions
-Push ke `main` → workflow `.github/workflows/deploy.yml` otomatis SSH ke VPS, pull, rebuild, backup DB, run migration, smoke test. Lihat section "GitHub Actions Setup" di bawah.
+Push ke `prod` → workflow `.github/workflows/deploy.yml` otomatis SSH ke VPS, sync source, rebuild, run migration, smoke test. Lihat section "GitHub Actions Setup" di bawah.
 
 ### Manual
 ```bash
-cd /opt/Cafe-Match
+cd /var/www/Cafe-Match
 git pull
 
 # Kalau ada perubahan di client/, rebuild client container
@@ -226,19 +236,18 @@ docker compose up -d
 docker compose exec app npm run migration:run:prod
 ```
 
-K8s manifests TIDAK perlu re-apply kecuali isinya berubah.
+Caddyfile TIDAK perlu di-reload kecuali isinya berubah.
 
 ---
 
 ## GitHub Actions Setup (one-time)
 
 ### 1. VPS prerequisites
-- `/opt/Cafe-Match` adalah git clone repo, di branch `main`.
-- Symlink `.env -> server/.env` di root project: `ln -s server/.env /opt/Cafe-Match/.env`
+- `/var/www/Cafe-Match` adalah git clone repo, di branch `prod`.
+- Symlink `.env -> server/.env` di root project: `ln -sf server/.env /var/www/Cafe-Match/.env`
 - `server/.env` sudah lengkap (lihat Step 2).
-- Folder `/home/dios/kube-config` ada.
-- User SSH (mis. `dios`) bisa jalankan `docker compose` & `kubectl` tanpa sudo.
-- Public key dari `VPS_SSH_KEY` ada di `~/.ssh/authorized_keys`.
+- User SSH (mis. `patokin`) bisa jalankan `docker compose` tanpa sudo (member group `docker`).
+- Public key dari `VPS_SSH_KEY` ada di `~/.ssh/authorized_keys` user di VPS.
 
 ### 2. Daftarkan GitHub Secrets
 Repo → Settings → Secrets and variables → Actions → New repository secret.
@@ -246,15 +255,15 @@ Repo → Settings → Secrets and variables → Actions → New repository secre
 **SSH ke VPS:**
 | Secret | Nilai |
 |---|---|
-| `VPS_HOST` | IP/hostname VPS |
-| `VPS_USER` | user SSH (mis. `dios`) |
+| `VPS_HOST` | IP/hostname VPS (mis. `182.23.12.142`) |
+| `VPS_USER` | user SSH (mis. `patokin`) |
 | `VPS_SSH_KEY` | isi private key (`~/.ssh/id_ed25519`) |
-| `VPS_SSH_PORT` | (opsional) default 22 |
+| `VPS_SSH_PORT` | port SSH (mis. `29`) — wajib di-set kalau bukan 22 |
 
 **Client env (Vite build-time):**
 | Secret | Nilai |
 |---|---|
-| `VITE_API_URL` | `https://api.salma.imola.ai/api/v1` |
+| `VITE_API_URL` | `https://api.geser.id/api/v1` |
 | `VITE_GOOGLE_MAPS_API_KEY` | API key Maps |
 | `VITE_GOOGLE_MAPS_MAP_ID` | cloud map style ID (boleh kosong) |
 | `VITE_GA_MEASUREMENT_ID` | GA4 ID (boleh kosong) |
@@ -262,14 +271,11 @@ Repo → Settings → Secrets and variables → Actions → New repository secre
 | `VITE_ADSENSE_INFEED_SLOT` | (boleh kosong) |
 
 ### 3. Trigger pertama
-- GitHub repo → tab **Actions** → pilih workflow **Deploy to VPS** → **Run workflow** → branch `main`.
+- GitHub repo → tab **Actions** → pilih workflow **Deploy to VPS** → **Run workflow** → branch `prod`.
 - Monitor output. Step terakhir harus muncul `Deploy successful`.
 
 ### 4. Trigger berikutnya
-Otomatis setiap push ke `main`. Atau manual lewat **Run workflow** button.
-
-### Backup
-Workflow simpan dump DB di `/opt/Cafe-Match/backups/db-YYYYMMDD-HHMMSS.sql.gz`, retensi 10 file terakhir.
+Otomatis setiap push ke `prod`. Atau manual lewat **Run workflow** button.
 
 ---
 
@@ -277,12 +283,12 @@ Workflow simpan dump DB di `/opt/Cafe-Match/backups/db-YYYYMMDD-HHMMSS.sql.gz`, 
 
 | Gejala | Solusi |
 |---|---|
-| `502 Bad Gateway` di Traefik | Container tidak running. `docker compose ps` |
+| `502 Bad Gateway` di Caddy | Container tidak running. `docker compose ps` |
 | `connection refused` ke `mysql` | `DB_PASSWORD` di `server/.env` belum diisi → compose tidak bisa interpolasi |
-| Cert stuck >5 menit | DNS belum propagate, atau Traefik tidak listen di port 80 untuk ACME challenge |
-| Browser CORS error | `salma.imola.ai` belum di CORS allowlist (`server/src/main.ts`) |
+| Cert Caddy stuck / gagal | DNS belum propagate, atau port 80 belum reachable dari internet (ACME HTTP-01). Cek `sudo journalctl -u caddy -f` |
+| Browser CORS error | `geser.id` belum di CORS allowlist (`server/src/main.ts`) |
 | Web bundle hit `localhost:3084` | `client/.env` `VITE_API_URL` salah saat build. Rebuild dengan `--no-cache` |
-| K8s endpoints empty | `<HOST_IP>` belum diganti, atau host firewall blokir K8s nodes |
+| Port 80/443 conflict | Cek `sudo ss -tlnp \| grep -E ':80\|:443'` — kalau ada k3s/traefik, stop dulu (`sudo systemctl stop k3s`) |
 
 ---
 

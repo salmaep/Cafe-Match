@@ -3,7 +3,7 @@ name: Deploy to VPS
 on:
   push:
     branches:
-      - main
+      - prod
   workflow_dispatch:
 
 jobs:
@@ -36,23 +36,11 @@ jobs:
             --exclude='server/.env'
             --exclude='.env'
           path: ./
-          remote_path: /opt/Cafe-Match/
+          remote_path: /var/www/Cafe-Match/
           remote_host: ${{ secrets.VPS_HOST }}
           remote_port: ${{ secrets.VPS_SSH_PORT || 22 }}
           remote_user: ${{ secrets.VPS_USER }}
           remote_key: ${{ secrets.VPS_SSH_KEY }}
-
-      - name: Copy k8s manifests to VPS
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_SSH_PORT || 22 }}
-          source: "deploy/kube/cafe-match.yaml,deploy/kube/cafe-match-cert.yaml"
-          target: /home/dios/kube-config
-          strip_components: 2
-          overwrite: true
 
       - name: Run deploy script on VPS
         uses: appleboy/ssh-action@v1.0.3
@@ -63,7 +51,7 @@ jobs:
           port: ${{ secrets.VPS_SSH_PORT || 22 }}
           script: |
             set -e
-            cd /opt/Cafe-Match
+            cd /var/www/Cafe-Match
 
             echo "==> 1. Build client + app (no-cache so VITE_* env are baked fresh)"
             docker compose build --no-cache client app

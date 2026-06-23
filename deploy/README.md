@@ -9,15 +9,14 @@ Internet
   │
   ▼ (443)
 ┌────────────────────────────┐
-│ Traefik (K8s)              │  TLS via cert-manager + Let's Encrypt
-│  Ingress → Service         │
-│  Service → Endpoints       │
-│  Endpoints → host IP       │
+│ Caddy                      │  TLS auto via Let's Encrypt
+│  geser.id      → :3083     │
+│  api.geser.id  → :3084     │
 └──────────────┬─────────────┘
-               │ HTTP
+               │ HTTP (localhost)
                ▼
 ┌────────────────────────────────────┐
-│ Docker host (e.g. 192.168.88.184)  │
+│ Docker host (e.g. 182.23.12.142)   │
 │  ┌─────────────────────────────┐   │
 │  │ docker compose              │   │
 │  │  ├─ client (3083)           │   │  ← web bundle (vite preview)
@@ -40,29 +39,28 @@ Internet
 
 ```bash
 # Pertama kali / setelah pull
-cd /opt/Cafe-Match
+cd /var/www/Cafe-Match
 docker compose --env-file server/.env up -d --build
-docker compose --env-file server/.env exec app npm run migration:run
+docker compose --env-file server/.env exec app npm run migration:run:prod
 
-# Apply / update K8s routing
-kubectl apply -f /home/dios/kube-config/cafe-match.yaml
-kubectl apply -f /home/dios/kube-config/cafe-match-cert.yaml
-kubectl get certificate -w
+# Reload Caddy kalau Caddyfile berubah
+sudo systemctl reload caddy
+sudo journalctl -u caddy -f
 ```
 
-## Files in `deploy/kube/`
+## Files in `deploy/kube/` (deprecated)
 
-| File | Berisi |
-|---|---|
-| `cafe-match.yaml` | Service + Endpoints (web:3083, api:3084) → host IP |
-| `cafe-match-cert.yaml` | Ingress + cert-manager annotation untuk auto Let's Encrypt |
+K8s manifests legacy dari setup lama (Traefik + cert-manager). Tidak dipakai lagi
+karena routing & TLS sekarang ditangani Caddy native di host. Disimpan untuk
+referensi kalau nanti mau migrasi ke cluster.
 
 ## Domains
 
-- `https://salma.imola.ai` → web client
-- `https://api.salma.imola.ai` → NestJS API
+- `https://geser.id` → web client
+- `https://api.geser.id` → NestJS API
 
-DNS A record kedua domain harus point ke Traefik public IP **sebelum** apply `cafe-match-cert.yaml` (cert-manager butuh resolve domain untuk ACME HTTP-01 challenge).
+DNS A record kedua domain harus point ke IP server **sebelum** Caddy bisa
+issue cert Let's Encrypt (ACME HTTP-01 challenge butuh port 80 reachable).
 
 ## Detail lengkap
 

@@ -540,7 +540,7 @@ function WinnerCard({ cafe, onClick }: { cafe: Cafe; onClick: () => void }) {
                 <Crown size={12} strokeWidth={0} fill="currentColor" />
               </span>
               <span className="text-[11px] font-extrabold tracking-[0.18em] text-[#1C1C1A]">
-                JUARA
+                TRENDING 1
               </span>
             </div>
             {isHot && (

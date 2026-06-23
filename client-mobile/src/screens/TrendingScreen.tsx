@@ -40,7 +40,7 @@ import { LucideIcon } from '../utils/lucideIcon';
 
 const SCREEN_W = Dimensions.get('window').width;
 // FlashList content padding + winnerWrap 2px border padding (each side)
-const WINNER_PHOTO_SIZE = SCREEN_W - spacing.md * 2 - 4;
+const WINNER_PHOTO_SIZE = SCREEN_W - spacing.md * 2;
 // Two runners side-by-side with sm gap, inside the same listContent padding
 const RUNNER_PHOTO_W = Math.floor((SCREEN_W - spacing.md * 2 - spacing.sm) / 2);
 const RUNNER_PHOTO_H = Math.round((RUNNER_PHOTO_W * 3) / 4);
@@ -526,7 +526,7 @@ function WinnerCardContent({ cafe, onPress }: { cafe: Cafe; onPress: () => void 
             {overflow > 0 && (
               <View style={cardStyles.winnerFacilityOverflowAccent}>
                 <Text style={cardStyles.winnerFacilityOverflowAccentText}>
-                  +{overflow} fasil
+                  +{overflow}
                 </Text>
               </View>
             )}
@@ -577,11 +577,10 @@ function RunnerUpCardContent({
   const visibleChips = allChips.slice(0, 2);
   const overflow = allChips.length - visibleChips.length;
   const rankBg = rank === 2 ? '#9CA3AF' : '#B45309';
-  const borderColor = rank === 2 ? '#D1D5DB' : '#FDE3B8';
 
   return (
     <TouchableOpacity
-      style={[cardStyles.runnerWrap, { borderColor }]}
+      style={cardStyles.runnerWrap}
       activeOpacity={0.9}
       onPress={onPress}
     >
@@ -717,14 +716,13 @@ function RunnerUpCardSkeleton() {
 const cardStyles = StyleSheet.create({
   // Winner
   winnerWrap: {
-    borderRadius: 24,
-    padding: 2,
-    backgroundColor: '#F59E0B',
-    shadowColor: '#EA580C',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.22,
-    shadowRadius: 18,
-    elevation: 8,
+    borderRadius: 22,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
   winnerCard: {
     backgroundColor: '#FFFFFF',
@@ -1012,6 +1010,7 @@ const cardStyles = StyleSheet.create({
     flex: 1,
     borderRadius: 16,
     borderWidth: 1,
+    borderColor: '#F0EDE8',
     backgroundColor: '#FFFFFF',
     overflow: 'hidden',
     shadowColor: '#1C1C1A',

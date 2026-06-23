@@ -119,7 +119,18 @@
       "Bash(node -e \"require\\('dotenv'\\).config\\(\\); console.log\\('KEY len:', \\(process.env.MERIDIAN_API_KEY||''\\).length, 'URL:', process.env.MERIDIAN_BASE_URL\\); fetch\\(process.env.MERIDIAN_BASE_URL + '/v1/messages', { method: 'POST', headers: { 'x-api-key': process.env.MERIDIAN_API_KEY, 'content-type': 'application/json' }, body: JSON.stringify\\({ model: 'claude-haiku-4-5-20251001', max_tokens: 50, messages: [{role:'user',content:'ping'}] }\\) }\\).then\\(r => r.text\\(\\)\\).then\\(t => console.log\\('status body:', t.slice\\(0,500\\)\\)\\).catch\\(e => console.log\\('err:', e.message\\)\\);\")",
       "Bash(npx eslint *)",
       "Bash(npx prettier *)",
-      "Bash(echo \"EXIT:$?\")"
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(mysql -h localhost -P 3307 -u root -padmin123 cafematch -se \"SELECT url FROM cafe_photos WHERE cafe_id = \\(SELECT id FROM cafes WHERE name LIKE '%Amateur%' LIMIT 1\\) LIMIT 3;\")",
+      "Bash(curl -s \"http://localhost:3085/api/v1/cafes?q=Amateur&limit=1\")",
+      "Bash(curl -s -m 5 \"http://localhost:3085/api/v1/cafes?limit=1\")",
+      "Bash(curl -sv -m 5 \"http://localhost:3085/api/v1/cafes?limit=1\")",
+      "Bash(curl -s -m 10 \"https://api.salma.imola.ai/api/v1/cafes?q=Amateur&limit=1\")",
+      "Bash(curl -sI -m 10 \"https://lh3.googleusercontent.com/gps-cs-s/APNQkAHAMPCY7LUiMXyEdD1seCceMxdjKNMCq80q9bILSYQbSwyt3CoNgVCT-rx-g4vQdbZHuA3W0ECVlHk1vY790523g6-SpZ0qedMjdLKUtX8lEuIBnyowq-TjViC4D-xs_U0_P7Galw=w800-h600-k-no\")",
+      "Bash(curl -sI -m 10 -H \"Referer: https://www.google.com/\" -H \"User-Agent: Mozilla/5.0 \\(Linux; Android 12\\)\" \"https://lh3.googleusercontent.com/gps-cs-s/APNQkAHAMPCY7LUiMXyEdD1seCceMxdjKNMCq80q9bILSYQbSwyt3CoNgVCT-rx-g4vQdbZHuA3W0ECVlHk1vY790523g6-SpZ0qedMjdLKUtX8lEuIBnyowq-TjViC4D-xs_U0_P7Galw=w800-h600-k-no\")",
+      "Bash(curl -sI -m 10 \"https://lh3.googleusercontent.com/gps-cs-s/APNQkAHAMPCY7LUiMXyEdD1seCceMxdjKNMCq80q9bILSYQbSwyt3CoNgVCT-rx-g4vQdbZHuA3W0ECVlHk1vY790523g6-SpZ0qedMjdLKUtX8lEuIBnyowq-TjViC4D-xs_U0_P7Galw=s400-k-no\")",
+      "Bash(curl -sI -m 10 \"https://lh3.googleusercontent.com/gps-cs-s/APNQkAHAMPCY7LUiMXyEdD1seCceMxdjKNMCq80q9bILSYQbSwyt3CoNgVCT-rx-g4vQdbZHuA3W0ECVlHk1vY790523g6-SpZ0qedMjdLKUtX8lEuIBnyowq-TjViC4D-xs_U0_P7Galw\")",
+      "Bash(npx --no-install tsc --noEmit -p tsconfig.json)",
+      "Bash(grep -n \"search:\\\\|search = \\\\|q?:\\\\|q\\\\\\\\?:\" client/src/api/cafes.api.ts)"
     ],
     "additionalDirectories": [
       "c:\\Users\\Hype G12\\Desktop\\Cafe Match\\Cafe-Match"

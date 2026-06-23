@@ -11,16 +11,14 @@ services:
     container_name: cafematch-mysql-dev
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: cafematch_root
+      MYSQL_ROOT_PASSWORD: admin123
       MYSQL_DATABASE: cafematch
-      MYSQL_USER: cafematch
-      MYSQL_PASSWORD: cafematch_pass
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       - mysql_dev_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -pcafematch_root"]
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -padmin123"]
       interval: 10s
       timeout: 5s
       retries: 10

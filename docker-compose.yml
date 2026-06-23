@@ -37,7 +37,7 @@ services:
       MEILI_ENV: ${MEILI_ENV:-development}
       MEILI_NO_ANALYTICS: "true"
     ports:
-      - "7700:7700"
+      - "127.0.0.1:7700:7700"
     volumes:
       - meili_data:/meili_data
     networks:
@@ -70,7 +70,7 @@ services:
       NODE_ENV: production
       PORT: "3084"
     ports:
-      - "3084:3084"
+      - "127.0.0.1:3084:3084"
     volumes:
       - app_storage:/app/storage
     networks:
@@ -95,7 +95,7 @@ services:
     container_name: geser-client
     restart: unless-stopped
     ports:
-      - "3083:3083"
+      - "127.0.0.1:3083:3083"
     networks:
       - geser-net
     depends_on:

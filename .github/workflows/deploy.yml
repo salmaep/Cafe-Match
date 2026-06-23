@@ -1,4 +1,4 @@
-name: Deploy to VPS
+name: Deploy to VPS (prod / geser)
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   deploy:
-    name: Deploy to VPS
+    name: Deploy to geser VPS
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -16,7 +16,7 @@ jobs:
       - name: Generate client/.env from secrets
         run: |
           cat > client/.env <<'EOF'
-          VITE_API_URL=${{ secrets.VITE_API_URL }}
+          VITE_API_URL=${{ secrets.VITE_PROD_API_URL }}
           VITE_GOOGLE_MAPS_API_KEY=${{ secrets.VITE_GOOGLE_MAPS_API_KEY }}
           VITE_GOOGLE_MAPS_MAP_ID=${{ secrets.VITE_GOOGLE_MAPS_MAP_ID }}
           VITE_GA_MEASUREMENT_ID=${{ secrets.VITE_GA_MEASUREMENT_ID }}
@@ -37,18 +37,18 @@ jobs:
             --exclude='.env'
           path: ./
           remote_path: /var/www/Cafe-Match/
-          remote_host: ${{ secrets.VPS_HOST }}
-          remote_port: ${{ secrets.VPS_SSH_PORT || 22 }}
-          remote_user: ${{ secrets.VPS_USER }}
-          remote_key: ${{ secrets.VPS_SSH_KEY }}
+          remote_host: ${{ secrets.VPS_PROD_HOST }}
+          remote_port: ${{ secrets.VPS_PROD_SSH_PORT || 22 }}
+          remote_user: ${{ secrets.VPS_PROD_USER }}
+          remote_key: ${{ secrets.VPS_PROD_SSH_KEY }}
 
       - name: Run deploy script on VPS
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_SSH_PORT || 22 }}
+          host: ${{ secrets.VPS_PROD_HOST }}
+          username: ${{ secrets.VPS_PROD_USER }}
+          key: ${{ secrets.VPS_PROD_SSH_KEY }}
+          port: ${{ secrets.VPS_PROD_SSH_PORT || 22 }}
           script: |
             set -e
             cd /var/www/Cafe-Match

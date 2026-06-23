@@ -36,7 +36,7 @@ jobs:
             --exclude='server/.env'
             --exclude='.env'
           path: ./
-          remote_path: /var/www/Cafe-Match/
+          remote_path: /var/www/geser/
           remote_host: ${{ secrets.VPS_PROD_HOST }}
           remote_port: ${{ secrets.VPS_PROD_SSH_PORT || 22 }}
           remote_user: ${{ secrets.VPS_PROD_USER }}
@@ -51,7 +51,7 @@ jobs:
           port: ${{ secrets.VPS_PROD_SSH_PORT || 22 }}
           script: |
             set -e
-            cd /var/www/Cafe-Match
+            cd /var/www/geser
 
             echo "==> 1. Build client + app (no-cache so VITE_* env are baked fresh)"
             docker compose build --no-cache client app

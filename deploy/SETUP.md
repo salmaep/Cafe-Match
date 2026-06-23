@@ -29,14 +29,14 @@ Pertama kali:
 ```bash
 sudo mkdir -p /var/www && sudo chown $USER:$USER /var/www
 cd /var/www
-git clone https://github.com/salmaep/Cafe-Match.git
-cd Cafe-Match
+git clone https://github.com/salmaep/Cafe-Match.git geser
+cd geser
 git checkout prod
 ```
 
 Update kemudian:
 ```bash
-cd /var/www/Cafe-Match
+cd /var/www/geser
 git pull
 ```
 
@@ -45,7 +45,7 @@ git pull
 ## Step 2 — Setup `server/.env`
 
 ```bash
-cd /var/www/Cafe-Match
+cd /var/www/geser
 cp server/.env.example server/.env
 ```
 
@@ -113,7 +113,7 @@ EXPO_PUBLIC_API_URL=https://api.geser.id/api/v1
 ## Step 5 — Build & start containers
 
 ```bash
-cd /var/www/Cafe-Match
+cd /var/www/geser
 ln -sf server/.env .env
 docker compose --env-file server/.env up -d --build
 ```
@@ -225,7 +225,7 @@ Push ke `prod` → workflow `.github/workflows/deploy.yml` otomatis SSH ke VPS, 
 
 ### Manual
 ```bash
-cd /var/www/Cafe-Match
+cd /var/www/geser
 git pull
 
 # Kalau ada perubahan di client/, rebuild client container
@@ -243,8 +243,8 @@ Caddyfile TIDAK perlu di-reload kecuali isinya berubah.
 ## GitHub Actions Setup (one-time)
 
 ### 1. VPS prerequisites
-- `/var/www/Cafe-Match` adalah git clone repo, di branch `prod`.
-- Symlink `.env -> server/.env` di root project: `ln -sf server/.env /var/www/Cafe-Match/.env`
+- `/var/www/geser` adalah git clone repo, di branch `prod`.
+- Symlink `.env -> server/.env` di root project: `ln -sf server/.env /var/www/geser/.env`
 - `server/.env` sudah lengkap (lihat Step 2).
 - User SSH (mis. `patokin`) bisa jalankan `docker compose` tanpa sudo (member group `docker`).
 - Public key dari `VPS_SSH_KEY` ada di `~/.ssh/authorized_keys` user di VPS.

@@ -39,7 +39,7 @@ Internet
 
 ```bash
 # Pertama kali / setelah pull
-cd /var/www/Cafe-Match
+cd /var/www/geser
 docker compose --env-file server/.env up -d --build
 docker compose --env-file server/.env exec app npm run migration:run:prod
 

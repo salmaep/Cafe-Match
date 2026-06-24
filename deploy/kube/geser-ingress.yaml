@@ -1,17 +1,21 @@
-# geser-ingress.yaml — Single Ingress dgn multi-host (1 TLS cert covers both).
-# Pattern mirip patokin-tls-certs (1 cert untuk semua subdomain).
+# geser-ingress.yaml — Ingress + TLS untuk geser.id & api.geser.id.
+# cert-manager auto-issue Let's Encrypt cert (sama mechanism kayak project lain).
 #
-# Apply:
+# Apply SETELAH geser-svc.yaml:
 #   kubectl apply -f deploy/kube/geser-ingress.yaml
 #
 # Verify:
-#   kubectl get certificate geser-tls
-#   kubectl describe ingress geser-ingress
+#   kubectl get certificate -w
+#   kubectl describe ingress geser-web-ingress
 
+# ──────────────────────────────────────────────────────────────────────────────
+# WEB — https://geser.id → service geser-web (port 5083)
+# /sitemap.xml routed ke API biar dynamic dari NestJS
+# ──────────────────────────────────────────────────────────────────────────────
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: geser-ingress
+  name: geser-web-ingress
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
     cert-manager.io/cluster-issuer: letsencrypt-prod
@@ -20,8 +24,7 @@ spec:
   tls:
     - hosts:
         - geser.id
-        - api.geser.id
-      secretName: geser-tls
+      secretName: geser-web-tls
   rules:
     - host: geser.id
       http:
@@ -40,6 +43,25 @@ spec:
                 name: geser-web
                 port:
                   number: 5083
+
+# ──────────────────────────────────────────────────────────────────────────────
+# API — https://api.geser.id → service geser-api (port 5084)
+# ──────────────────────────────────────────────────────────────────────────────
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: geser-api-ingress
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - api.geser.id
+      secretName: geser-api-tls
+  rules:
     - host: api.geser.id
       http:
         paths:

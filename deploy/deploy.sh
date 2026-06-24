@@ -5,32 +5,35 @@
 #   cd /var/www/geser
 #   bash deploy/deploy.sh
 #
-# Skip steps yg udah pernah jalan dgn flag:
-#   bash deploy/deploy.sh --skip-build      # skip docker compose build
-#   bash deploy/deploy.sh --no-nginx        # skip nginx config
-#   bash deploy/deploy.sh --with-certbot    # run certbot juga (butuh port 80 publik + DNS ready)
+# Default flow (K8s mode): build container only. Public routing/TLS handled by
+# K8s cluster di dios (kubectl apply manifests dari deploy/kube/).
+#
+# Flag opsional buat path lama (self-hosted nginx + certbot di server geser):
+#   bash deploy/deploy.sh --with-nginx       # setup nginx config & start
+#   bash deploy/deploy.sh --with-certbot --email=lo@email.com  # run certbot juga
+#   bash deploy/deploy.sh --skip-build       # skip docker compose build
 
 set -euo pipefail
 
 # ─── Flags ────────────────────────────────────────────────────────────────────
 SKIP_BUILD=0
-NO_NGINX=0
+WITH_NGINX=0
 WITH_CERTBOT=0
 CERTBOT_EMAIL=""
 
 for arg in "$@"; do
   case "$arg" in
     --skip-build) SKIP_BUILD=1 ;;
-    --no-nginx) NO_NGINX=1 ;;
-    --with-certbot) WITH_CERTBOT=1 ;;
+    --with-nginx) WITH_NGINX=1 ;;
+    --with-certbot) WITH_CERTBOT=1; WITH_NGINX=1 ;;
     --email=*) CERTBOT_EMAIL="${arg#*=}" ;;
     *) echo "Unknown flag: $arg"; exit 1 ;;
   esac
 done
 
 PROJECT_DIR="/var/www/geser"
-APP_PORT=3084
-WEB_PORT=3083
+APP_PORT=5084
+WEB_PORT=5083
 WEB_DOMAIN="geser.id"
 API_DOMAIN="api.geser.id"
 
@@ -104,9 +107,9 @@ curl -fsS "http://localhost:$APP_PORT/api/v1/health" > /dev/null \
   && ok "API ($APP_PORT/api/v1/health) OK" \
   || err "API ($APP_PORT) gagal respond"
 
-# ─── Step 6: Nginx config (kalo ga --no-nginx) ──────────────────────────────
-if [ "$NO_NGINX" -eq 0 ]; then
-  log "Step 6/7 — Setup nginx config"
+# ─── Step 6: Nginx config (cuma kalo --with-nginx) ──────────────────────────
+if [ "$WITH_NGINX" -eq 1 ]; then
+  log "Step 6/7 — Setup nginx config (self-hosted reverse proxy)"
 
   command -v nginx >/dev/null 2>&1 || err "nginx ga keinstall."
 
@@ -176,7 +179,7 @@ EOF
     ok "nginx started + enabled"
   fi
 else
-  log "Step 6/7 — Skipped (--no-nginx)"
+  log "Step 6/7 — Skipped (K8s mode: kubectl apply manifests di dios)"
 fi
 
 # ─── Step 7: Certbot (kalo --with-certbot) ───────────────────────────────────

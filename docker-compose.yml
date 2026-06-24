@@ -68,9 +68,9 @@ services:
       DB_HOST: mysql
       MEILI_HOST: http://meilisearch:7700
       NODE_ENV: production
-      PORT: "3084"
+      PORT: "5084"
     ports:
-      - "127.0.0.1:3084:3084"
+      - "5084:5084"
     volumes:
       - app_storage:/app/storage
     networks:
@@ -95,7 +95,7 @@ services:
     container_name: geser-client
     restart: unless-stopped
     ports:
-      - "127.0.0.1:3083:3083"
+      - "5083:5083"
     networks:
       - geser-net
     depends_on:

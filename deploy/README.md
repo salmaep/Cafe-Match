@@ -10,8 +10,8 @@ Internet
   ▼ (443)
 ┌────────────────────────────┐
 │ Caddy                      │  TLS auto via Let's Encrypt
-│  geser.id      → :3083     │
-│  api.geser.id  → :3084     │
+│  geser.id      → :5083     │
+│  api.geser.id  → :5084     │
 └──────────────┬─────────────┘
                │ HTTP (localhost)
                ▼
@@ -19,8 +19,8 @@ Internet
 │ Docker host (e.g. 182.23.12.142)   │
 │  ┌─────────────────────────────┐   │
 │  │ docker compose              │   │
-│  │  ├─ client (3083)           │   │  ← web bundle (vite preview)
-│  │  ├─ app    (3084)           │   │  ← NestJS
+│  │  ├─ client (5083)           │   │  ← web bundle (vite preview)
+│  │  ├─ app    (5084)           │   │  ← NestJS
 │  │  ├─ mysql  (3306, internal) │   │
 │  │  └─ meili  (7700, internal) │   │
 │  └─────────────────────────────┘   │

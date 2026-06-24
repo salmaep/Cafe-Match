@@ -41,7 +41,7 @@ COPY --from=build /app/package.json ./
 # controller's mkdirSync (at module load) doesn't crash under USER node.
 RUN mkdir -p storage/review-media storage/avatars && chown -R node:node storage
 
-EXPOSE 3084
+EXPOSE 5084
 USER node
 
 CMD ["node", "dist/main"]

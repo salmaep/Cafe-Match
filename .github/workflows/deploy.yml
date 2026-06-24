@@ -61,7 +61,7 @@ jobs:
 
             echo "==> 3. Wait for app to be ready"
             for i in $(seq 1 30); do
-              if curl -fsS http://localhost:3084/api/v1/health > /dev/null; then
+              if curl -fsS http://localhost:5084/api/v1/health > /dev/null; then
                 echo "App is ready"
                 break
               fi
@@ -73,9 +73,9 @@ jobs:
             docker compose exec -T app npm run migration:run:prod
 
             echo "==> 5. Smoke test"
-            curl -fsS http://localhost:3083 > /dev/null
-            echo "  client (3083) OK"
-            curl -fsS http://localhost:3084/api/v1/health > /dev/null
-            echo "  app (3084/api/v1/health) OK"
+            curl -fsS http://localhost:5083 > /dev/null
+            echo "  client (5083) OK"
+            curl -fsS http://localhost:5084/api/v1/health > /dev/null
+            echo "  app (5084/api/v1/health) OK"
 
             echo "Deploy successful"

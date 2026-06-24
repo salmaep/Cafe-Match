@@ -5,7 +5,7 @@
 #   kubectl apply -f deploy/kube/geser-svc.yaml
 
 # ──────────────────────────────────────────────────────────────────────────────
-# WEB — geser:3083 (container client / Vite preview)
+# WEB — geser:5083 (container client / Vite preview)
 # ──────────────────────────────────────────────────────────────────────────────
 apiVersion: v1
 kind: Service
@@ -14,8 +14,8 @@ metadata:
 spec:
   ports:
     - protocol: TCP
-      port: 3083
-      targetPort: 3083
+      port: 5083
+      targetPort: 5083
 ---
 apiVersion: v1
 kind: Endpoints
@@ -25,10 +25,10 @@ subsets:
   - addresses:
       - ip: 192.168.88.196   # mesin geser internal IP
     ports:
-      - port: 3083
+      - port: 5083
 
 # ──────────────────────────────────────────────────────────────────────────────
-# API — geser:3084 (container app / NestJS)
+# API — geser:5084 (container app / NestJS)
 # ──────────────────────────────────────────────────────────────────────────────
 ---
 apiVersion: v1
@@ -38,8 +38,8 @@ metadata:
 spec:
   ports:
     - protocol: TCP
-      port: 3084
-      targetPort: 3084
+      port: 5084
+      targetPort: 5084
 ---
 apiVersion: v1
 kind: Endpoints
@@ -49,4 +49,4 @@ subsets:
   - addresses:
       - ip: 192.168.88.196
     ports:
-      - port: 3084
+      - port: 5084

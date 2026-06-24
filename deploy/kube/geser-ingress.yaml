@@ -9,7 +9,7 @@
 #   kubectl describe ingress geser-web-ingress
 
 # ──────────────────────────────────────────────────────────────────────────────
-# WEB — https://geser.id → service geser-web (port 3083)
+# WEB — https://geser.id → service geser-web (port 5083)
 # /sitemap.xml routed ke API biar dynamic dari NestJS
 # ──────────────────────────────────────────────────────────────────────────────
 apiVersion: networking.k8s.io/v1
@@ -35,17 +35,17 @@ spec:
               service:
                 name: geser-api
                 port:
-                  number: 3084
+                  number: 5084
           - path: /
             pathType: Prefix
             backend:
               service:
                 name: geser-web
                 port:
-                  number: 3083
+                  number: 5083
 
 # ──────────────────────────────────────────────────────────────────────────────
-# API — https://api.geser.id → service geser-api (port 3084)
+# API — https://api.geser.id → service geser-api (port 5084)
 # ──────────────────────────────────────────────────────────────────────────────
 ---
 apiVersion: networking.k8s.io/v1
@@ -71,4 +71,4 @@ spec:
               service:
                 name: geser-api
                 port:
-                  number: 3084
+                  number: 5084

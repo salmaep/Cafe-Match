@@ -153,10 +153,10 @@ docker compose --env-file server/.env exec app npm run migration:run:prod
 
 ```bash
 # API
-curl 'http://localhost:3084/api/v1/cafes?lat=-6.9175&lng=107.6191&radius=5000&limit=1'
+curl 'http://localhost:5084/api/v1/cafes?lat=-6.9175&lng=107.6191&radius=5000&limit=1'
 
 # Web
-curl -I http://localhost:3083
+curl -I http://localhost:5083
 # expect: HTTP/1.1 200 OK
 ```
 
@@ -178,16 +178,16 @@ sudo tee /etc/caddy/Caddyfile > /dev/null <<'EOF'
 geser.id {
     # Sitemap dynamic dari NestJS — proxy ke API biar cafe URLs fresh tanpa rebuild SPA
     handle /sitemap.xml {
-        reverse_proxy localhost:3084
+        reverse_proxy localhost:5084
     }
     # Sisanya ke client Vite preview
     handle {
-        reverse_proxy localhost:3083
+        reverse_proxy localhost:5083
     }
 }
 
 api.geser.id {
-    reverse_proxy localhost:3084
+    reverse_proxy localhost:5084
 }
 EOF
 ```
@@ -287,7 +287,7 @@ Otomatis setiap push ke `prod`. Atau manual lewat **Run workflow** button.
 | `connection refused` ke `mysql` | `DB_PASSWORD` di `server/.env` belum diisi → compose tidak bisa interpolasi |
 | Cert Caddy stuck / gagal | DNS belum propagate, atau port 80 belum reachable dari internet (ACME HTTP-01). Cek `sudo journalctl -u caddy -f` |
 | Browser CORS error | `geser.id` belum di CORS allowlist (`server/src/main.ts`) |
-| Web bundle hit `localhost:3084` | `client/.env` `VITE_API_URL` salah saat build. Rebuild dengan `--no-cache` |
+| Web bundle hit `localhost:5084` | `client/.env` `VITE_API_URL` salah saat build. Rebuild dengan `--no-cache` |
 | Port 80/443 conflict | Cek `sudo ss -tlnp \| grep -E ':80\|:443'` — kalau ada k3s/traefik, stop dulu (`sudo systemctl stop k3s`) |
 
 ---

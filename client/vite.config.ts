@@ -18,20 +18,20 @@ export default defineConfig({
     __APP_VERSION__: JSON.stringify(pkg.version),
   },
   server: {
-    port: 3083,
+    port: 5083,
     proxy: {
       '/api': {
-        target: 'http://localhost:3084',
+        target: 'http://localhost:5084',
         changeOrigin: true,
       },
       '/sitemap.xml': {
-        target: 'http://localhost:3084',
+        target: 'http://localhost:5084',
         changeOrigin: true,
       },
     },
   },
   preview: {
-    port: 3083,
+    port: 5083,
     allowedHosts: ['geser.id'],
   },
 })

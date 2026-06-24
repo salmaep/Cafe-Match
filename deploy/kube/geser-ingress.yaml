@@ -17,7 +17,7 @@ kind: Ingress
 metadata:
   name: geser-web-ingress
   annotations:
-    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
     cert-manager.io/cluster-issuer: letsencrypt-prod
 spec:
   ingressClassName: traefik
@@ -53,7 +53,7 @@ kind: Ingress
 metadata:
   name: geser-api-ingress
   annotations:
-    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
     cert-manager.io/cluster-issuer: letsencrypt-prod
 spec:
   ingressClassName: traefik

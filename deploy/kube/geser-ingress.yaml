@@ -1,0 +1,74 @@
+# geser-ingress.yaml — Ingress + TLS untuk geser.id & api.geser.id.
+# cert-manager auto-issue Let's Encrypt cert (sama mechanism kayak project lain).
+#
+# Apply SETELAH geser-svc.yaml:
+#   kubectl apply -f deploy/kube/geser-ingress.yaml
+#
+# Verify:
+#   kubectl get certificate -w
+#   kubectl describe ingress geser-web-ingress
+
+# ──────────────────────────────────────────────────────────────────────────────
+# WEB — https://geser.id → service geser-web (port 3083)
+# /sitemap.xml routed ke API biar dynamic dari NestJS
+# ──────────────────────────────────────────────────────────────────────────────
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: geser-web-ingress
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - geser.id
+      secretName: geser-web-tls
+  rules:
+    - host: geser.id
+      http:
+        paths:
+          - path: /sitemap.xml
+            pathType: Exact
+            backend:
+              service:
+                name: geser-api
+                port:
+                  number: 3084
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: geser-web
+                port:
+                  number: 3083
+
+# ──────────────────────────────────────────────────────────────────────────────
+# API — https://api.geser.id → service geser-api (port 3084)
+# ──────────────────────────────────────────────────────────────────────────────
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: geser-api-ingress
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - api.geser.id
+      secretName: geser-api-tls
+  rules:
+    - host: api.geser.id
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: geser-api
+                port:
+                  number: 3084

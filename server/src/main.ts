@@ -37,7 +37,9 @@ async function bootstrap() {
     origin: [
       'http://localhost:3083',
       'http://localhost:5173',
+      'https://salma.imola.ai',
       'https://geser.id',
+      'https://api.geser.id',
       /.*\.expo\.dev$/,
       /^http:\/\/192\.168\./,
     ],

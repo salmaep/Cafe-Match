@@ -10,7 +10,7 @@ export default function PrivacyPolicyPage() {
     <div className="min-h-screen bg-[#FAF9F6] pb-20">
       <Seo
         title="Kebijakan Privasi"
-        description="Pelajari bagaimana CafeMatch mengumpulkan, menggunakan, dan melindungi data pribadi Anda."
+        description="Pelajari bagaimana Geser mengumpulkan, menggunakan, dan melindungi data pribadi Anda."
       />
 
       <div className="max-w-3xl mx-auto px-4 pt-8 pb-4">
@@ -29,14 +29,14 @@ export default function PrivacyPolicyPage() {
           {/* 1 */}
           <Section title="1. Pendahuluan">
             <p>
-              CafeMatch ("<strong>kami</strong>", "<strong>aplikasi</strong>")
+              Geser ("<strong>kami</strong>", "<strong>aplikasi</strong>")
               menghargai privasi Anda. Kebijakan Privasi ini menjelaskan jenis
               data yang kami kumpulkan, cara kami menggunakannya, dan hak-hak
-              Anda atas data tersebut ketika Anda menggunakan layanan CafeMatch
+              Anda atas data tersebut ketika Anda menggunakan layanan Geser
               melalui web maupun aplikasi mobile.
             </p>
             <p className="mt-2">
-              Dengan mendaftar atau menggunakan CafeMatch, Anda menyetujui
+              Dengan mendaftar atau menggunakan Geser, Anda menyetujui
               praktik yang dijelaskan dalam kebijakan ini.
             </p>
           </Section>
@@ -85,7 +85,7 @@ export default function PrivacyPolicyPage() {
                 promosi (dapat dimatikan di pengaturan notifikasi).
               </li>
               <li>
-                Menghasilkan laporan rekap tahunan pribadi ("CafeMatch Recap").
+                Menghasilkan laporan rekap tahunan pribadi ("Geser Recap").
               </li>
               <li>
                 Analitik agregat dan anonim untuk meningkatkan kualitas layanan.
@@ -198,7 +198,7 @@ export default function PrivacyPolicyPage() {
           {/* 7 */}
           <Section title="7. Cookie & Pelacakan">
             <p>
-              CafeMatch menggunakan localStorage untuk menyimpan token
+              Geser menggunakan localStorage untuk menyimpan token
               otentikasi secara lokal di perangkat Anda. Kami tidak menggunakan
               cookie pihak ketiga untuk iklan bertarget. Analitik dasar
               (tampilan halaman, fitur yang digunakan) dikumpulkan secara anonim
@@ -209,7 +209,7 @@ export default function PrivacyPolicyPage() {
           {/* 8 */}
           <Section title="8. Anak di Bawah Umur">
             <p>
-              Layanan CafeMatch ditujukan untuk pengguna berusia minimal{" "}
+              Layanan Geser ditujukan untuk pengguna berusia minimal{" "}
               <strong>13 tahun</strong> sesuai dengan Peraturan Pemerintah No.
               71 Tahun 2019 tentang Penyelenggaraan Sistem dan Transaksi
               Elektronik. Kami tidak secara sengaja mengumpulkan data pribadi
@@ -249,7 +249,7 @@ export default function PrivacyPolicyPage() {
 
         {/* Footer */}
         <div className="mt-12 pt-6 border-t border-[#F0EDE8] text-center text-xs text-[#A8A59C]">
-          © {new Date().getFullYear()} CafeMatch. Seluruh hak dilindungi.
+          © {new Date().getFullYear()} Geser. Seluruh hak dilindungi.
         </div>
       </div>
     </div>

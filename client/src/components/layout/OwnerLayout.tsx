@@ -18,7 +18,7 @@ export default function OwnerLayout() {
       <header className="lg:hidden sticky top-0 z-30 flex items-center justify-between px-4 py-3 bg-white border-b border-[#F0EDE8]">
         <div>
           <h1 className="text-lg font-bold text-[#D48B3A] leading-none">
-            CafeMatch
+            Geser
           </h1>
           <p className="text-[10px] text-[#8A8880] mt-0.5 uppercase tracking-wider">
             Owner Portal
@@ -43,7 +43,7 @@ export default function OwnerLayout() {
       {/* ── Desktop sidebar ──────────────────────────────────────── */}
       <aside className="hidden lg:flex w-64 bg-white border-r border-[#F0EDE8] flex-col shrink-0">
         <div className="p-6 border-b border-[#F0EDE8]">
-          <h1 className="text-xl font-bold text-[#D48B3A]">CafeMatch</h1>
+          <h1 className="text-xl font-bold text-[#D48B3A]">Geser</h1>
           <p className="text-xs text-[#8A8880] mt-1 uppercase tracking-wider">
             Owner Portal
           </p>

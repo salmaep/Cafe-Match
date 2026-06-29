@@ -7,4 +7,4 @@ Disallow: /bookmarks
 Disallow: /favorites
 Disallow: /shortlist
 
-Sitemap: https://salma.imola.ai/sitemap.xml
+Sitemap: https://geser.id/sitemap.xml

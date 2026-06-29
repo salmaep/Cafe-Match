@@ -95,7 +95,7 @@ export class SeoController {
 
   private resolveBaseUrl(): string {
     const raw =
-      this.config.get<string>('PUBLIC_WEB_URL') ?? 'https://salma.imola.ai';
+      this.config.get<string>('PUBLIC_WEB_URL') ?? 'https://geser.id';
     return raw.replace(/\/+$/, '');
   }
 }

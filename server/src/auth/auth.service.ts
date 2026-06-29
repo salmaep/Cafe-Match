@@ -516,7 +516,7 @@ export class AuthService {
     }
 
     const webUrl =
-      this.config.get<string>('PUBLIC_WEB_URL') || 'https://salma.imola.ai';
+      this.config.get<string>('PUBLIC_WEB_URL') || 'https://geser.id';
     return {
       url: `${webUrl}/account-deletion?confirmation=${confirmationCode}`,
       confirmation_code: confirmationCode,

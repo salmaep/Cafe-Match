@@ -41,7 +41,7 @@ export default function ProfilePage() {
             className="mx-auto mb-4 text-[#D48B3A]"
           />
           <h1 className="text-2xl font-extrabold text-[#1C1C1A]">
-            Welcome to CafeMatch
+            Welcome to Geser
           </h1>
           <p className="text-sm text-[#8A8880] mt-2 mb-6">
             Login to access your profile and saved cafes
@@ -197,7 +197,7 @@ export default function ProfilePage() {
             Hapus Akun
           </Link>
           <span>·</span>
-          <span>CafeMatch v{APP_VERSION}</span>
+          <span>Geser v{APP_VERSION}</span>
         </div>
       </div>
 

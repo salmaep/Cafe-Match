@@ -65,13 +65,13 @@ export default function RecapPage() {
 
   const share = async () => {
     if (!recap) return;
-    const text = `🎉 CafeMatch Recap ${year}: aku ${recap.yearTitle}!\n\n☕ ${recap.totalCheckins} check-in di ${recap.totalCafesVisited} cafe\n⏱️ ${recap.totalDurationHours} jam total nongkrong\n🏆 ${recap.achievementsUnlocked} achievement unlocked\n\nIkut ngafe juga di salma.imola.ai`;
+    const text = `🎉 Geser Recap ${year}: aku ${recap.yearTitle}!\n\n☕ ${recap.totalCheckins} check-in di ${recap.totalCafesVisited} cafe\n⏱️ ${recap.totalDurationHours} jam total nongkrong\n🏆 ${recap.achievementsUnlocked} achievement unlocked\n\nIkut ngafe juga di geser.id`;
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `CafeMatch Recap ${year}`,
+          title: `Geser Recap ${year}`,
           text,
-          url: "https://salma.imola.ai",
+          url: "https://geser.id",
         });
       } catch {}
     } else {
@@ -145,7 +145,7 @@ export default function RecapPage() {
 
   return (
     <div className="min-h-screen bg-[#FAF9F6] pb-12">
-      <Seo title={`Recap ${year}`} description={`CafeMatch Recap ${year}`} />
+      <Seo title={`Recap ${year}`} description={`Geser Recap ${year}`} />
 
       {/* Top bar */}
       <div className="sticky top-0 z-10 bg-white border-b border-[#F0EDE8]">

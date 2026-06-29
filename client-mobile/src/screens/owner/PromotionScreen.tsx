@@ -173,7 +173,7 @@ export default function PromotionScreen() {
             <Megaphone size={40} color={colors.textSecondary} strokeWidth={1.5} style={styles.emptyIconLead} />
             <Text style={styles.emptyTitle}>Belum ada promosi</Text>
             <Text style={styles.emptyHint}>
-              Bikin promosi biar cafe kamu makin keliatan di CafeMatch
+              Bikin promosi biar cafe kamu makin keliatan di Geser
             </Text>
             <TouchableOpacity
               style={styles.createBtn}

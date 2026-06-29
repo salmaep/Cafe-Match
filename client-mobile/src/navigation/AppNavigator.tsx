@@ -64,7 +64,7 @@ function MainTabs() {
       const onBackPress = () => {
         Alert.alert(
           'Keluar Aplikasi?',
-          'Yakin mau keluar dari CafeMatch?',
+          'Yakin mau keluar dari Geser?',
           [
             { text: 'Batal', style: 'cancel' },
             { text: 'Keluar', style: 'destructive', onPress: () => BackHandler.exitApp() },

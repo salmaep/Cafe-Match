@@ -17,7 +17,7 @@ function resolveIfExists(envVar: string | undefined, fallback: string): string |
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
-  name: 'CafeMatch',
+  name: 'Geser',
   slug: 'cafematch',
   scheme: 'cafematch',
   version: '0.4.0',
@@ -70,7 +70,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         appID: process.env.EXPO_PUBLIC_FB_APP_ID ?? '805065779071148',
         clientToken:
           process.env.EXPO_PUBLIC_FB_CLIENT_TOKEN ?? 'cf15a6aeb63968ce1bae60a2e2bfbbbb',
-        displayName: 'CafeMatch',
+        displayName: 'Geser',
         scheme: `fb${process.env.EXPO_PUBLIC_FB_APP_ID ?? '805065779071148'}`,
         advertiserIDCollectionEnabled: false,
         autoLogAppEventsEnabled: false,

@@ -382,7 +382,7 @@ export default function CreatePromotionScreen({ visible, onClose, ownerCafe }: P
                 <Text style={styles.newCafeBadgeText}>NEW</Text>
               </View>
               <Text style={styles.newCafeName}>{ownerCafe?.name || 'Cafe Kamu'}</Text>
-              <Text style={styles.newCafeTagline}>Baru terdaftar di CafeMatch</Text>
+              <Text style={styles.newCafeTagline}>Baru terdaftar di Geser</Text>
             </View>
           </View>
           <Text style={styles.previewCaption}>

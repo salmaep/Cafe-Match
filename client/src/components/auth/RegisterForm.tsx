@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../context/AuthContext";
 import { authText } from "@shared/i18n";
+import SocialAuthButtons from "./SocialAuthButtons";
 
 export default function RegisterForm() {
   const { t } = useTranslation();
@@ -126,6 +127,8 @@ export default function RegisterForm() {
             {loading ? t(authText.registerLoading) : t(authText.registerBtn)}
           </button>
         </form>
+
+        <SocialAuthButtons />
 
         <div className="text-center text-sm text-[#8A8880] mt-4">
           {t(authText.hasAccount)}

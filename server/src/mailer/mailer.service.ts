@@ -66,13 +66,21 @@ export class MailerService {
       );
     }
     try {
-      await this.transporter.sendMail({
+      const info = await this.transporter.sendMail({
         from: this.from,
         to: opts.to,
         subject: opts.subject,
         text: opts.text,
         html: opts.html,
       });
+      // Log the SMTP outcome (no recipient address) — a `250 ...` response
+      // confirms the provider accepted it. If mail still doesn't arrive after
+      // an accepted send, it's a delivery/spam issue, not a code issue.
+      this.logger.log(
+        `Mail accepted: id=${info.messageId} accepted=${
+          info.accepted?.length ?? 0
+        } rejected=${info.rejected?.length ?? 0} response=${info.response ?? ''}`,
+      );
     } catch (err) {
       // Never log the message body/code — only the failure + recipient domain.
       const domain = opts.to.split('@')[1] ?? '?';

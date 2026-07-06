@@ -13,16 +13,8 @@ export default function RegisterForm() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const { register, login } = useAuth();
+  const { register } = useAuth();
   const navigate = useNavigate();
-
-  const goBackAfterAuth = () => {
-    if (window.history.length > 1) {
-      navigate(-1);
-    } else {
-      navigate("/");
-    }
-  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -38,12 +30,9 @@ export default function RegisterForm() {
     setLoading(true);
     try {
       await register(email, password, name);
-      try {
-        await login(email, password);
-        goBackAfterAuth();
-      } catch {
-        navigate("/login");
-      }
+      // Login now requires an email OTP, so we can't silently auto-login.
+      // Send the user to /login with a success banner instead.
+      navigate("/login", { state: { justRegistered: true } });
     } catch (err: any) {
       setError(err.response?.data?.message || t(authText.registrationFailed));
     } finally {

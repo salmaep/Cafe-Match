@@ -23,6 +23,7 @@ export const authText = {
   codeExpired: 'auth:codeExpired',
   expiresIn: 'auth:expiresIn',
   resendCooldown: 'auth:resendCooldown',
+  retryIn: 'auth:retryIn',
   resending: 'auth:resending',
   resend: 'auth:resend',
   verify: 'auth:verify',

@@ -77,9 +77,11 @@ export default function OtpStep({
       lastSentAt.current = Date.now();
       setCode("");
     } catch (err: any) {
-      setError(
-        err.response?.data?.message || t(authText.resendFailed),
-      );
+      // If the server enforces a cooldown, sync our countdown to its remaining
+      // seconds so the resend button shows the right time.
+      const sec = err.response?.data?.retryAfterSeconds;
+      if (sec) lastSentAt.current = Date.now() - (RESEND_COOLDOWN_MS - sec * 1000);
+      setError(err.response?.data?.message || t(authText.resendFailed));
     } finally {
       setResending(false);
     }

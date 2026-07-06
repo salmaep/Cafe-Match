@@ -58,7 +58,10 @@ export class AuthService {
   private maskEmail(email: string): string {
     const [name, domain] = email.split('@');
     if (!domain) return '***';
-    return `${name.slice(0, 2)}***@${domain}`;
+    // Mask the local part but keep its length visible so the hint matches the
+    // user's real email (e.g. dios.dev.one@gmail.com → di**********@gmail.com).
+    if (name.length <= 2) return `${name[0] ?? '*'}*@${domain}`;
+    return `${name.slice(0, 2)}${'*'.repeat(name.length - 2)}@${domain}`;
   }
 
   /** Whether password logins must pass an email OTP. Emergency off-switch. */

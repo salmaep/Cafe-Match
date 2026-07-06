@@ -98,11 +98,13 @@ describe('OtpService', () => {
     expect(res).toMatchObject({ verified: false, status: 'expired', code: 'EXPIRED' });
   });
 
-  it('enforces the resend cooldown per email', async () => {
+  it('enforces the resend cooldown per email with a retryAfterSeconds hint', async () => {
     await issue('cool@example.com');
-    await expect(service.requestOtp('cool@example.com')).rejects.toBeInstanceOf(
-      BadRequestException,
-    );
+    const err = await service.requestOtp('cool@example.com').catch((e) => e);
+    expect(err).toBeInstanceOf(BadRequestException);
+    const body = err.getResponse() as { retryAfterSeconds: number };
+    expect(body.retryAfterSeconds).toBeGreaterThan(0);
+    expect(body.retryAfterSeconds).toBeLessThanOrEqual(60);
   });
 
   it('allows a new code once the cooldown window has passed', async () => {

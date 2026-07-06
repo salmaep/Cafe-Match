@@ -31,8 +31,8 @@ interface OtpEntry {
 function maskEmail(email: string): string {
   const [name, domain] = email.split('@');
   if (!domain) return '***';
-  const head = name.slice(0, 2);
-  return `${head}***@${domain}`;
+  if (name.length <= 2) return `${name[0] ?? '*'}*@${domain}`;
+  return `${name.slice(0, 2)}${'*'.repeat(name.length - 2)}@${domain}`;
 }
 
 function sha256(value: string): string {
@@ -112,9 +112,20 @@ export class OtpService implements OnModuleDestroy {
         // A still-fresh code for this email that was issued within the cooldown
         // window means we should ask the user to wait.
         if (entry.email === email && entry.expiresAt > cutoff) {
-          throw new BadRequestException(
-            `Tunggu sebentar sebelum meminta kode lagi (${this.cooldownSeconds} detik).`,
+          // Actual remaining seconds so the client can show a live countdown.
+          const retryAfterSeconds = Math.max(
+            1,
+            Math.ceil(
+              (entry.expiresAt -
+                (this.ttlSeconds - this.cooldownSeconds) * 1000 -
+                now) /
+                1000,
+            ),
           );
+          throw new BadRequestException({
+            message: 'Tunggu sebentar sebelum meminta kode lagi.',
+            retryAfterSeconds,
+          });
         }
       }
     }

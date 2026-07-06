@@ -8,7 +8,6 @@ import { CafeGoogleReview } from '../scraper-sync/entities/cafe-google-review.en
 import { CafesController } from './cafes.controller';
 import { CafesService } from './cafes.service';
 import { MeiliModule } from '../meili/meili.module';
-import { SemanticSearchModule } from '../semantic-search/semantic-search.module';
 
 @Module({
   imports: [
@@ -20,7 +19,6 @@ import { SemanticSearchModule } from '../semantic-search/semantic-search.module'
       CafeGoogleReview,
     ]),
     MeiliModule,
-    SemanticSearchModule,
   ],
   controllers: [CafesController],
   providers: [CafesService],

@@ -53,7 +53,7 @@ export default function CafeMatchLogo({ size = 48, color = colors.primary }: Pro
         />
       </Svg>
       <Text style={[styles.wordmark, { fontSize: size * 0.5, color }]}>
-        Cafe<Text style={{ color: colors.accent }}>Match</Text>
+        Ge<Text style={{ color: colors.accent }}>ser</Text>
       </Text>
     </View>
   );

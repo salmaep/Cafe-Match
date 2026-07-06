@@ -21,30 +21,18 @@ import {
 } from '@react-native-google-signin/google-signin';
 import Svg, { Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ChevronLeft, Smartphone, MessageSquare, Eye, EyeOff } from 'lucide-react-native';
+import { ChevronLeft, Mail, Eye, EyeOff } from 'lucide-react-native';
 import { useAuth } from '../context/AuthContext';
 import { colors, spacing, radius } from '../theme';
 import {
-  socialEnrollPhoneApi,
-  socialVerifyPhoneApi,
   googleIdTokenLoginApi,
   facebookTokenLoginApi,
-  isTwoFaChallenge,
-  isPhoneEnrollChallenge,
 } from '../services/api';
 
 
 interface OtpChallenge {
   otpId: string;
-  phoneHint?: string;
-  expiresAt?: string;
-  mode?: 'login' | 'social-enroll';
-  enrollmentId?: string;
-  phone?: string;
-}
-
-interface EnrollChallenge {
-  enrollmentId: string;
+  emailHint?: string;
   expiresAt?: string;
 }
 
@@ -86,12 +74,6 @@ export default function AuthModal() {
   const [otpNow, setOtpNow] = useState(Date.now());
   const lastSentAt = useRef(Date.now());
   const [resending, setResending] = useState(false);
-
-  // ─── Social phone enrollment (OAuth users without phone) ────────────────
-  const [enrollChallenge, setEnrollChallenge] = useState<EnrollChallenge | null>(null);
-  const [enrollPhone, setEnrollPhone] = useState('');
-  const [enrollLoading, setEnrollLoading] = useState(false);
-  const [enrollError, setEnrollError] = useState('');
 
   // Live clock for OTP countdown / resend cooldown
   useEffect(() => {
@@ -141,7 +123,7 @@ export default function AuthModal() {
       if (result.twoFaChallenge) {
         setOtpChallenge({
           otpId: result.twoFaChallenge.otpId,
-          phoneHint: result.twoFaChallenge.phoneHint,
+          emailHint: result.twoFaChallenge.emailHint,
           expiresAt: result.twoFaChallenge.expiresAt,
         });
         setOtpCode('');
@@ -190,64 +172,17 @@ export default function AuthModal() {
     }
     setOtpLoading(true);
     try {
-      if (otpChallenge.mode === 'social-enroll' && otpChallenge.enrollmentId && otpChallenge.phone) {
-        const auth = await socialVerifyPhoneApi(
-          otpChallenge.enrollmentId,
-          otpChallenge.otpId,
-          otpCode.trim(),
-          otpChallenge.phone,
-        );
-        const r = await loginWithToken(auth.accessToken);
-        if (r.success) {
-          setOtpChallenge(null);
-          setEnrollChallenge(null);
-          navigation.goBack();
-        } else {
-          setOtpError(r.error || 'Verifikasi gagal');
-        }
+      const result = await verify2fa(otpChallenge.otpId, otpCode.trim());
+      if (result.success) {
+        setOtpChallenge(null);
+        navigation.goBack();
       } else {
-        const result = await verify2fa(otpChallenge.otpId, otpCode.trim());
-        if (result.success) {
-          setOtpChallenge(null);
-          navigation.goBack();
-        } else {
-          setOtpError(result.error || 'Verifikasi gagal');
-        }
+        setOtpError(result.error || 'Verifikasi gagal');
       }
     } catch (err: any) {
       setOtpError(err?.response?.data?.message || err?.message || 'Verifikasi gagal');
     } finally {
       setOtpLoading(false);
-    }
-  };
-
-  // ─── Submit phone for social enrollment → request OTP ───────────────────
-  const handleSubmitEnrollPhone = async () => {
-    if (!enrollChallenge) return;
-    setEnrollError('');
-    const phone = enrollPhone.trim();
-    if (!/^[0-9+\-\s]{8,20}$/.test(phone)) {
-      setEnrollError('Nomor telepon gak valid.');
-      return;
-    }
-    setEnrollLoading(true);
-    try {
-      const { otpId, expiresAt } = await socialEnrollPhoneApi(enrollChallenge.enrollmentId, phone);
-      setOtpChallenge({
-        otpId,
-        expiresAt,
-        phoneHint: phone,
-        mode: 'social-enroll',
-        enrollmentId: enrollChallenge.enrollmentId,
-        phone,
-      });
-      setOtpCode('');
-      lastSentAt.current = Date.now();
-      setOtpNow(Date.now());
-    } catch (err: any) {
-      setEnrollError(err?.response?.data?.message || err?.message || 'Gagal kirim OTP.');
-    } finally {
-      setEnrollLoading(false);
     }
   };
 
@@ -257,29 +192,18 @@ export default function AuthModal() {
     setOtpError('');
     setResending(true);
     try {
-      if (otpChallenge.mode === 'social-enroll' && otpChallenge.enrollmentId && otpChallenge.phone) {
-        const { otpId, expiresAt } = await socialEnrollPhoneApi(
-          otpChallenge.enrollmentId,
-          otpChallenge.phone,
-        );
-        setOtpChallenge({ ...otpChallenge, otpId, expiresAt });
+      const result = await resend2fa(otpChallenge.otpId);
+      if (result.success && result.otpId) {
+        setOtpChallenge({
+          ...otpChallenge,
+          otpId: result.otpId,
+          expiresAt: result.expiresAt ?? otpChallenge.expiresAt,
+        });
         setOtpCode('');
         lastSentAt.current = Date.now();
         setOtpNow(Date.now());
       } else {
-        const result = await resend2fa(otpChallenge.otpId);
-        if (result.success && result.otpId) {
-          setOtpChallenge({
-            ...otpChallenge,
-            otpId: result.otpId,
-            expiresAt: result.expiresAt ?? otpChallenge.expiresAt,
-          });
-          setOtpCode('');
-          lastSentAt.current = Date.now();
-          setOtpNow(Date.now());
-        } else {
-          setOtpError(result.error || 'Gagal kirim ulang kode.');
-        }
+        setOtpError(result.error || 'Gagal kirim ulang kode.');
       }
     } catch (err: any) {
       setOtpError(err?.response?.data?.message || err?.message || 'Gagal kirim ulang kode.');
@@ -313,32 +237,11 @@ export default function AuthModal() {
   }, []);
 
 
-  // Common server-response handler — same shapes (twoFa / phoneEnroll /
-  // success) the legacy redirect flow returned, just received via JSON now.
+  // Social logins always come back with a JWT (email is provider-verified), so
+  // there's no 2FA / phone-enroll branch to handle here.
   const consumeSocialResult = async (
     result: Awaited<ReturnType<typeof googleIdTokenLoginApi>>,
   ) => {
-    if (isPhoneEnrollChallenge(result)) {
-      setEnrollChallenge({
-        enrollmentId: result.enrollmentId,
-        expiresAt: result.expiresAt,
-      });
-      setEnrollPhone('');
-      setEnrollError('');
-      return;
-    }
-    if (isTwoFaChallenge(result)) {
-      setOtpChallenge({
-        otpId: result.otpId,
-        phoneHint: result.phoneHint,
-        expiresAt: result.expiresAt,
-        mode: 'login',
-      });
-      setOtpCode('');
-      lastSentAt.current = Date.now();
-      setOtpNow(Date.now());
-      return;
-    }
     const r = await loginWithToken(result.accessToken);
     if (r.success) navigation.goBack();
     else setErrorMsg(r.error || 'Login gagal, coba lagi yuk.');
@@ -420,73 +323,6 @@ export default function AuthModal() {
     }
   };
 
-  // ─── Phone Enrollment Screen (social users without phone) ────────────────
-  // Rendered as a full-page screen (not bottom-sheet) — feels more substantial
-  // for what is effectively account-setup, and gives the keyboard more room.
-  if (enrollChallenge && !otpChallenge) {
-    return (
-      <KeyboardAvoidingView
-        style={styles.fullPage}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <View style={[styles.fullPageHeader, { paddingTop: insets.top + spacing.sm }]}>
-          <TouchableOpacity
-            style={styles.fullPageBackBtn}
-            onPress={() => {
-              setEnrollChallenge(null);
-              setEnrollPhone('');
-              setEnrollError('');
-            }}
-          >
-            <ChevronLeft size={24} color={colors.primary} strokeWidth={2.2} />
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.fullPageBody}>
-          <View style={styles.otpIcon}>
-            <Smartphone size={40} color={colors.accent} strokeWidth={1.8} />
-          </View>
-          <Text style={styles.title}>{t(authText.phoneEnrollTitle)}</Text>
-          <Text style={styles.subtitle}>
-            {t(authText.phoneEnrollSubtitle)}
-          </Text>
-
-          {!!enrollError && (
-            <View style={styles.errorBanner}>
-              <Text style={styles.errorBannerText}>{enrollError}</Text>
-            </View>
-          )}
-
-          <TextInput
-            style={styles.input}
-            placeholder={t(authText.phonePlaceholder)}
-            placeholderTextColor={colors.textSecondary}
-            value={enrollPhone}
-            onChangeText={(t) => { setEnrollPhone(t); setEnrollError(''); }}
-            keyboardType="phone-pad"
-            autoFocus
-            maxLength={20}
-          />
-
-          <TouchableOpacity
-            style={[
-              styles.submitBtn,
-              (enrollLoading || enrollPhone.trim().length < 8) && styles.submitBtnDisabled,
-            ]}
-            onPress={handleSubmitEnrollPhone}
-            disabled={enrollLoading || enrollPhone.trim().length < 8}
-          >
-            {enrollLoading ? (
-              <ActivityIndicator color={colors.white} />
-            ) : (
-              <Text style={styles.submitText}>{t(authText.sendWhatsAppCode)}</Text>
-            )}
-          </TouchableOpacity>
-        </View>
-      </KeyboardAvoidingView>
-    );
-  }
-
   // ─── OTP Screen ───────────────────────────────────────────────────────────
   // Full-page (not bottom-sheet) so the 6-digit input + countdown have space
   // and keyboard doesn't crowd the layout.
@@ -511,13 +347,13 @@ export default function AuthModal() {
 
         <View style={styles.fullPageBody}>
           <View style={styles.otpIcon}>
-            <MessageSquare size={40} color={colors.accent} strokeWidth={1.8} />
+            <Mail size={40} color={colors.accent} strokeWidth={1.8} />
           </View>
           <Text style={styles.title}>{t(authText.otpTitle)}</Text>
           <Text style={styles.subtitle}>
             {t(authText.otpSubtitleBefore)}
             <Text style={styles.phoneHint}>
-              {otpChallenge.phoneHint || t(authText.yourWhatsApp)}
+              {otpChallenge.emailHint || t(authText.yourWhatsApp)}
             </Text>
           </Text>
 
@@ -738,21 +574,7 @@ export default function AuthModal() {
                 </>
               )}
             </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.socialBtn, styles.fbBtn]}
-              onPress={() => handleSocialLogin('facebook')}
-              disabled={socialLoading !== null || loading}
-            >
-              {socialLoading === 'facebook' ? (
-                <ActivityIndicator color={colors.white} />
-              ) : (
-                <>
-                  <FacebookIcon />
-                  <Text style={styles.fbText}>{t(authText.facebook)}</Text>
-                </>
-              )}
-            </TouchableOpacity>
+            {/* Facebook login intentionally hidden (server routes still exist). */}
           </>
         )}
 
@@ -791,17 +613,6 @@ function GoogleIcon() {
       <Path
         d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.67 2.83C6.72 7.31 9.14 5.38 12 5.38z"
         fill="#EA4335"
-      />
-    </Svg>
-  );
-}
-
-function FacebookIcon() {
-  return (
-    <Svg width={18} height={18} viewBox="0 0 24 24">
-      <Path
-        d="M24 12c0-6.63-5.37-12-12-12S0 5.37 0 12c0 5.99 4.39 10.95 10.13 11.85V15.47H7.08V12h3.05V9.36c0-3 1.79-4.66 4.53-4.66 1.31 0 2.69.23 2.69.23v2.96h-1.51c-1.49 0-1.96.93-1.96 1.87V12h3.33l-.53 3.47h-2.8v8.38C19.61 22.95 24 17.99 24 12z"
-        fill="#FFFFFF"
       />
     </Svg>
   );

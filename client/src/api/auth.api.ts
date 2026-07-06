@@ -5,7 +5,7 @@ export interface TwoFaPending {
   twoFaRequired: true;
   otpId: string;
   expiresAt: string;
-  phoneHint?: string;
+  emailHint?: string;
 }
 
 export type LoginResult = AuthResponse | TwoFaPending;
@@ -25,28 +25,6 @@ export const authApi = {
       "/auth/2fa/resend",
       data,
     ),
-
-  enrollPhone: (data: { phone: string }) =>
-    apiClient.post<{ otpId: string; expiresAt: string }>(
-      "/auth/phone/enroll",
-      data,
-    ),
-
-  verifyPhone: (data: { otpId: string; code: string; phone: string }) =>
-    apiClient.post<{ ok: true }>("/auth/phone/verify", data),
-
-  socialEnrollPhone: (data: { enrollmentId: string; phone: string }) =>
-    apiClient.post<{ otpId: string; expiresAt: string }>(
-      "/auth/social/phone/enroll",
-      data,
-    ),
-
-  socialVerifyPhone: (data: {
-    enrollmentId: string;
-    otpId: string;
-    code: string;
-    phone: string;
-  }) => apiClient.post<AuthResponse>("/auth/social/phone/verify", data),
 
   getMe: () => apiClient.get<User>("/auth/me"),
 };

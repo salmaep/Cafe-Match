@@ -1,6 +1,6 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { type Embedder, Index, Meilisearch } from 'meilisearch';
+import { Index, Meilisearch } from 'meilisearch';
 
 @Injectable()
 export class MeiliService implements OnModuleInit {
@@ -118,43 +118,6 @@ export class MeiliService implements OnModuleInit {
       // the long tail of the `facilities` facet. Bump to keep counts exact.
       faceting: { maxValuesPerFacet: 1000 },
     });
-  }
-
-  // Call this separately after verifying JINA_API_KEY works.
-  async applyJinaEmbedder(): Promise<void> {
-    const jinaApiKey = this.config.get<string>('JINA_API_KEY', '');
-    if (!jinaApiKey) return;
-
-    const jinaModel = this.config.get<string>(
-      'JINA_MODEL',
-      'jina-embeddings-v3',
-    );
-    const jinaDimensions = parseInt(
-      this.config.get<string>('JINA_DIMENSIONS', '1024'),
-      10,
-    );
-
-    const embedder: Embedder = {
-      source: 'rest',
-      url: 'https://api.jina.ai/v1/embeddings',
-      apiKey: jinaApiKey,
-      dimensions: jinaDimensions,
-      documentTemplate:
-        'Cafe {{doc.name}} di {{doc.city}}. {{doc.description}}. Fasilitas: {{doc.facilities}}. Cocok untuk: {{doc.purposes}}.',
-      request: {
-        model: jinaModel,
-        task: 'retrieval.passage',
-        normalized: true,
-        embedding_type: 'float',
-        input: [{ text: '{{text}}' }],
-      },
-      response: {
-        data: [{ embedding: '{{embedding}}' }],
-      },
-    };
-
-    await this.cafesIndex.updateSettings({ embedders: { jina: embedder } });
-    this.logger.log('Jina embedder configured on cafes index');
   }
 
   getIndex(): Index {

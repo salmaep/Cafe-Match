@@ -34,7 +34,6 @@ import { MeiliModule } from './meili/meili.module';
 import { SeoModule } from './seo/seo.module';
 import { HealthModule } from './health/health.module';
 import { DestinationsModule } from './destinations/destinations.module';
-import { SemanticSearchModule } from './semantic-search/semantic-search.module';
 import { UploadsModule } from './uploads/uploads.module';
 
 @Module({
@@ -164,7 +163,6 @@ import { UploadsModule } from './uploads/uploads.module';
     SeoModule,
     HealthModule,
     DestinationsModule,
-    SemanticSearchModule,
     UploadsModule,
   ],
   providers: [

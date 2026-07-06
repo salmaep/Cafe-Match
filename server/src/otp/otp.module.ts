@@ -1,8 +1,10 @@
 import { Module } from '@nestjs/common';
-import { OtpClient } from './otp.client';
+import { MailerModule } from '../mailer/mailer.module';
+import { OtpService } from './otp.service';
 
 @Module({
-  providers: [OtpClient],
-  exports: [OtpClient],
+  imports: [MailerModule],
+  providers: [OtpService],
+  exports: [OtpService],
 })
 export class OtpModule {}

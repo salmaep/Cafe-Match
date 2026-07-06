@@ -69,7 +69,7 @@ nano server/.env
 - `SCRAPER_API_KEY` — paste dari output di atas
 
 **Optional:**
-- `JINA_API_KEY` — kosongkan kalau belum mau pakai semantic search
+- `GMAIL_*` / `MAIL_FROM` — kredensial Gmail OAuth2 untuk kirim OTP email (login). Kalau belum siap, set `LOGIN_OTP_ENABLED=false` sementara.
 - `GOOGLE_PLACES_API_KEY`, `MIDTRANS_*` — sesuai kebutuhan
 
 ---

@@ -17,21 +17,14 @@ import { RegisterDto } from './dto/register.dto';
 import { RegisterOwnerDto } from './dto/register-owner.dto';
 import { LoginDto } from './dto/login.dto';
 import { Cafe } from '../cafes/entities/cafe.entity';
-import { OtpClient } from '../otp/otp.client';
+import { OtpService } from '../otp/otp.service';
 import { User } from '../users/entities/user.entity';
 
 @Injectable()
 export class AuthService {
-  // In-memory map: otpId -> userId. OTP itself is verified by Engine OTP service;
-  // we just bind it to a pending user so we can issue JWT after success.
+  // In-memory map: otpId -> userId. The OtpService verifies the code itself;
+  // we just bind the otpId to a pending user so we can issue a JWT on success.
   private readonly pendingTwoFa = new Map<
-    string,
-    { userId: number; expiresAt: number }
-  >();
-  // Pending social-login phone enrollment: enrollmentId -> userId. Used when
-  // a Google/FB user has no phone yet — they must enroll a phone + verify OTP
-  // before a JWT is issued.
-  private readonly pendingSocialEnroll = new Map<
     string,
     { userId: number; expiresAt: number }
   >();
@@ -42,7 +35,7 @@ export class AuthService {
     private readonly config: ConfigService,
     @InjectRepository(Cafe)
     private readonly cafesRepo: Repository<Cafe>,
-    private readonly otpClient: OtpClient,
+    private readonly otpService: OtpService,
   ) {}
 
   private signJwt(user: User) {
@@ -62,14 +55,15 @@ export class AuthService {
     };
   }
 
-  private validatePhone(phone: string): string {
-    const digits = phone.replace(/\D/g, '');
-    if (digits.length < 8 || digits.length > 15) {
-      throw new BadRequestException(
-        'Format nomor WA tidak valid (8–15 digit).',
-      );
-    }
-    return digits;
+  private maskEmail(email: string): string {
+    const [name, domain] = email.split('@');
+    if (!domain) return '***';
+    return `${name.slice(0, 2)}***@${domain}`;
+  }
+
+  /** Whether password logins must pass an email OTP. Emergency off-switch. */
+  private get loginOtpEnabled(): boolean {
+    return this.config.get<string>('LOGIN_OTP_ENABLED') !== 'false';
   }
 
   async register(dto: RegisterDto) {
@@ -173,10 +167,9 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    if (user.twoFaEnabled && user.phone && user.phoneVerified) {
-      const otp = await this.otpClient.requestOtp(
-        this.validatePhone(user.phone),
-      );
+    // Every password login requires an email OTP (unless disabled for ops).
+    if (this.loginOtpEnabled) {
+      const otp = await this.otpService.requestOtp(user.email);
       this.pendingTwoFa.set(otp.otpId, {
         userId: user.id,
         expiresAt: new Date(otp.expiresAt).getTime(),
@@ -185,7 +178,7 @@ export class AuthService {
         twoFaRequired: true,
         otpId: otp.otpId,
         expiresAt: otp.expiresAt,
-        phoneHint: user.phone.slice(0, 4) + '***' + user.phone.slice(-2),
+        emailHint: this.maskEmail(user.email),
       };
     }
 
@@ -203,7 +196,7 @@ export class AuthService {
       );
     }
 
-    const result = await this.otpClient.verifyOtp(otpId, code);
+    const result = this.otpService.verifyOtp(otpId, code);
     if (!result.verified) {
       if (result.status === 'failed' || result.status === 'expired') {
         this.pendingTwoFa.delete(otpId);
@@ -221,54 +214,14 @@ export class AuthService {
     const pending = this.pendingTwoFa.get(otpId);
     if (!pending) throw new UnauthorizedException('Sesi tidak ditemukan.');
     const user = await this.usersService.findById(pending.userId);
-    if (!user || !user.phone)
-      throw new NotFoundException('User tidak ditemukan.');
-    const otp = await this.otpClient.requestOtp(this.validatePhone(user.phone));
+    if (!user) throw new NotFoundException('User tidak ditemukan.');
+    const otp = await this.otpService.requestOtp(user.email);
     this.pendingTwoFa.delete(otpId);
     this.pendingTwoFa.set(otp.otpId, {
       userId: user.id,
       expiresAt: new Date(otp.expiresAt).getTime(),
     });
     return { otpId: otp.otpId, expiresAt: otp.expiresAt };
-  }
-
-  // ── Phone enrollment (turn on 2FA) ────────────────────────────────────────
-  async enrollPhoneStart(userId: number, phoneRaw: string) {
-    const phone = this.validatePhone(phoneRaw);
-    const user = await this.usersService.findById(userId);
-    if (!user) throw new NotFoundException('User tidak ditemukan.');
-    const otp = await this.otpClient.requestOtp(phone);
-    this.pendingTwoFa.set(otp.otpId, {
-      userId,
-      expiresAt: new Date(otp.expiresAt).getTime(),
-    });
-    return { otpId: otp.otpId, expiresAt: otp.expiresAt };
-  }
-
-  async enrollPhoneVerify(
-    userId: number,
-    otpId: string,
-    code: string,
-    phoneRaw: string,
-  ) {
-    const pending = this.pendingTwoFa.get(otpId);
-    if (!pending || pending.userId !== userId) {
-      throw new BadRequestException('Sesi verifikasi tidak valid.');
-    }
-    const result = await this.otpClient.verifyOtp(otpId, code);
-    if (!result.verified) {
-      if (result.status === 'failed' || result.status === 'expired') {
-        this.pendingTwoFa.delete(otpId);
-      }
-      throw new BadRequestException(result.message || 'Kode OTP salah.');
-    }
-    this.pendingTwoFa.delete(otpId);
-    await this.usersService.update(userId, {
-      phone: this.validatePhone(phoneRaw),
-      phoneVerified: true,
-      twoFaEnabled: true,
-    });
-    return { ok: true };
   }
 
   // ── Native social-login token verification ─────────────────────────────
@@ -373,6 +326,8 @@ export class AuthService {
   }
 
   // ── Social login ──────────────────────────────────────────────────────────
+  // Google/Facebook already verified the user's email, so social logins skip
+  // the email OTP and get a JWT straight away.
   async socialLogin(args: {
     provider: 'google' | 'facebook';
     providerId: string;
@@ -381,87 +336,6 @@ export class AuthService {
     avatarUrl?: string;
   }) {
     const user = await this.usersService.findOrCreateSocial(args);
-
-    // User already has a verified phone → send OTP to existing number.
-    if (user.phone && user.phoneVerified) {
-      const otp = await this.otpClient.requestOtp(
-        this.validatePhone(user.phone),
-      );
-      this.pendingTwoFa.set(otp.otpId, {
-        userId: user.id,
-        expiresAt: new Date(otp.expiresAt).getTime(),
-      });
-      return {
-        twoFaRequired: true,
-        otpId: otp.otpId,
-        expiresAt: otp.expiresAt,
-        phoneHint: user.phone.slice(0, 4) + '***' + user.phone.slice(-2),
-      };
-    }
-
-    // No phone yet → require enrollment. Issue a short-lived enrollmentId
-    // (15 min) that lets the client call /auth/social/phone/enroll without
-    // a JWT.
-    const enrollmentId = randomUUID();
-    const expiresAt = Date.now() + 15 * 60_000;
-    this.pendingSocialEnroll.set(enrollmentId, { userId: user.id, expiresAt });
-    return {
-      phoneEnrollRequired: true,
-      enrollmentId,
-      expiresAt: new Date(expiresAt).toISOString(),
-    };
-  }
-
-  async socialEnrollPhone(enrollmentId: string, phoneRaw: string) {
-    const pending = this.pendingSocialEnroll.get(enrollmentId);
-    if (!pending || pending.expiresAt < Date.now()) {
-      this.pendingSocialEnroll.delete(enrollmentId);
-      throw new BadRequestException(
-        'Sesi enrollment habis. Silakan login ulang.',
-      );
-    }
-    const phone = this.validatePhone(phoneRaw);
-    const otp = await this.otpClient.requestOtp(phone);
-    this.pendingTwoFa.set(otp.otpId, {
-      userId: pending.userId,
-      expiresAt: new Date(otp.expiresAt).getTime(),
-    });
-    return { otpId: otp.otpId, expiresAt: otp.expiresAt };
-  }
-
-  async socialVerifyPhone(
-    enrollmentId: string,
-    otpId: string,
-    code: string,
-    phoneRaw: string,
-  ) {
-    const enroll = this.pendingSocialEnroll.get(enrollmentId);
-    if (!enroll || enroll.expiresAt < Date.now()) {
-      this.pendingSocialEnroll.delete(enrollmentId);
-      throw new BadRequestException(
-        'Sesi enrollment habis. Silakan login ulang.',
-      );
-    }
-    const pending = this.pendingTwoFa.get(otpId);
-    if (!pending || pending.userId !== enroll.userId) {
-      throw new BadRequestException('Sesi verifikasi tidak valid.');
-    }
-    const result = await this.otpClient.verifyOtp(otpId, code);
-    if (!result.verified) {
-      if (result.status === 'failed' || result.status === 'expired') {
-        this.pendingTwoFa.delete(otpId);
-      }
-      throw new BadRequestException(result.message || 'Kode OTP salah.');
-    }
-    this.pendingTwoFa.delete(otpId);
-    this.pendingSocialEnroll.delete(enrollmentId);
-    await this.usersService.update(enroll.userId, {
-      phone: this.validatePhone(phoneRaw),
-      phoneVerified: true,
-      twoFaEnabled: true,
-    });
-    const user = await this.usersService.findById(enroll.userId);
-    if (!user) throw new NotFoundException('User tidak ditemukan.');
     return this.signJwt(user);
   }
 

@@ -103,7 +103,7 @@ export interface TwoFaChallenge {
   twoFaRequired: true;
   otpId: string;
   expiresAt: string;
-  phoneHint?: string;
+  emailHint?: string;
 }
 
 export type LoginResult = AuthResponse | TwoFaChallenge;
@@ -137,7 +137,7 @@ export async function loginApi(
       twoFaRequired: true,
       otpId: data.otpId,
       expiresAt: data.expiresAt,
-      phoneHint: data.phoneHint,
+      emailHint: data.emailHint,
     };
   }
   return mapAuthResponse(data);
@@ -156,72 +156,18 @@ export async function resend2faApi(otpId: string): Promise<{ otpId: string; expi
   return { otpId: data.otpId, expiresAt: data.expiresAt };
 }
 
-// ─── Social phone enrollment (Google/FB users without phone) ───
-// Mirrors the web flow: server returns `phoneEnrollRequired` when an OAuth
-// user has no phone yet. Mobile collects the phone, requests OTP, and verifies
-// — all without a JWT (the enrollmentId acts as a short-lived session token).
-
-export interface PhoneEnrollChallenge {
-  phoneEnrollRequired: true;
-  enrollmentId: string;
-  expiresAt: string;
-}
-
-export function isPhoneEnrollChallenge(r: any): r is PhoneEnrollChallenge {
-  return r?.phoneEnrollRequired === true;
-}
-
-export async function socialEnrollPhoneApi(
-  enrollmentId: string,
-  phone: string,
-): Promise<{ otpId: string; expiresAt: string }> {
-  const { data } = await api.post("/auth/social/phone/enroll", {
-    enrollmentId,
-    phone,
-  });
-  return { otpId: data.otpId, expiresAt: data.expiresAt };
-}
-
-export async function socialVerifyPhoneApi(
-  enrollmentId: string,
-  otpId: string,
-  code: string,
-  phone: string,
-): Promise<AuthResponse> {
-  const { data } = await api.post("/auth/social/phone/verify", {
-    enrollmentId,
-    otpId,
-    code,
-    phone,
-  });
-  return mapAuthResponse(data);
-}
-
 // ─── Native social auth (mobile-only — token verified server-side) ───
-// Mobile gets the token directly from Google/FB via expo-auth-session, then
-// hands it to the server for verification + JWT issuance. The server may
-// still respond with twoFaRequired / phoneEnrollRequired (same shape as
-// the legacy redirect flow).
+// Mobile gets the token directly from Google/FB, then hands it to the server
+// for verification + JWT issuance. Social logins always return a JWT directly
+// (the email is already provider-verified — no email OTP for social).
 
-export async function googleIdTokenLoginApi(idToken: string): Promise<LoginResult | PhoneEnrollChallenge> {
+export async function googleIdTokenLoginApi(idToken: string): Promise<AuthResponse> {
   const { data } = await api.post("/auth/google/idtoken", { idToken });
-  if (data?.twoFaRequired) {
-    return { twoFaRequired: true, otpId: data.otpId, expiresAt: data.expiresAt, phoneHint: data.phoneHint };
-  }
-  if (data?.phoneEnrollRequired) {
-    return { phoneEnrollRequired: true, enrollmentId: data.enrollmentId, expiresAt: data.expiresAt };
-  }
   return mapAuthResponse(data);
 }
 
-export async function facebookTokenLoginApi(accessToken: string): Promise<LoginResult | PhoneEnrollChallenge> {
+export async function facebookTokenLoginApi(accessToken: string): Promise<AuthResponse> {
   const { data } = await api.post("/auth/facebook/token", { accessToken });
-  if (data?.twoFaRequired) {
-    return { twoFaRequired: true, otpId: data.otpId, expiresAt: data.expiresAt, phoneHint: data.phoneHint };
-  }
-  if (data?.phoneEnrollRequired) {
-    return { phoneEnrollRequired: true, enrollmentId: data.enrollmentId, expiresAt: data.expiresAt };
-  }
   return mapAuthResponse(data);
 }
 

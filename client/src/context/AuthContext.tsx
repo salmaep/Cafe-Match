@@ -11,7 +11,7 @@ import { authApi } from "../api/auth.api";
 export interface PendingTwoFa {
   otpId: string;
   expiresAt: string;
-  phoneHint?: string;
+  emailHint?: string;
 }
 
 interface AuthContextType {
@@ -59,7 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return {
         otpId: res.data.otpId,
         expiresAt: res.data.expiresAt,
-        phoneHint: res.data.phoneHint,
+        emailHint: res.data.emailHint,
       };
     }
     localStorage.setItem("token", res.data.accessToken);

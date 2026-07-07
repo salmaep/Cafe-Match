@@ -18,7 +18,7 @@ import { commonText, profileText } from '@shared/i18n/keys';
 import { useAuth } from '../context/AuthContext';
 import { useShortlist } from '../context/ShortlistContext';
 import { usePreferences } from '../context/PreferencesContext';
-import CafeMatchLogo from '../components/CafeMatchLogo';
+import GeserLogo from '../components/GeserLogo';
 import DeleteAccountModal from '../components/DeleteAccountModal';
 import StatusBarScrim from '../components/StatusBarScrim';
 import { fetchUnreadCount } from '../services/api';
@@ -113,7 +113,7 @@ export default function ProfileScreen() {
     return (
       <View style={styles.container}>
         <View style={styles.centered}>
-          <CafeMatchLogo size={40} />
+          <GeserLogo size={40} />
           <Text style={styles.guestTitle}>{t(profileText.guestWelcome)}</Text>
           <Text style={styles.guestSubtitle}>
             {t(profileText.guestSubtitle)}

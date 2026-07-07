@@ -17,9 +17,9 @@ function resolveIfExists(envVar: string | undefined, fallback: string): string |
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
-  name: 'CafeMatch',
-  slug: 'cafematch',
-  scheme: 'cafematch',
+  name: 'Geser',
+  slug: 'geser',
+  scheme: 'geser',
   version: '0.4.0',
   orientation: 'portrait',
   icon: './assets/icon.png',
@@ -70,7 +70,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         appID: process.env.EXPO_PUBLIC_FB_APP_ID ?? '805065779071148',
         clientToken:
           process.env.EXPO_PUBLIC_FB_CLIENT_TOKEN ?? 'cf15a6aeb63968ce1bae60a2e2bfbbbb',
-        displayName: 'CafeMatch',
+        displayName: 'Geser',
         scheme: `fb${process.env.EXPO_PUBLIC_FB_APP_ID ?? '805065779071148'}`,
         advertiserIDCollectionEnabled: false,
         autoLogAppEventsEnabled: false,
@@ -87,12 +87,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     [
       'react-native-google-mobile-ads',
       {
-        // TEMPORARY: Google's official test App IDs while the real AdMob app
-        // ID (`ca-app-pub-1232702196287166~3064497244`) propagates — Google
-        // notes new ad units can take up to ~1 hour to start serving. Test
-        // App IDs always work instantly, so this lets us verify the SDK is
-        // wired correctly. Swap back to the real App ID once it's live.
-        androidAppId: 'ca-app-pub-3940256099942544~3347511713',
+        androidAppId: 'ca-app-pub-1232702196287166~3064497244',
         iosAppId: 'ca-app-pub-3940256099942544~1458002511',
         userTrackingUsageDescription:
           'This identifier will be used to deliver more relevant ads to you.',

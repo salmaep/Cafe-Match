@@ -3,7 +3,7 @@ import { View, Animated, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import CafeMatchLogo from '../components/CafeMatchLogo';
+import GeserLogo from '../components/GeserLogo';
 import { usePreferences } from '../context/PreferencesContext';
 import { colors } from '../theme';
 import { APP_VERSION } from '../constant/version';
@@ -41,7 +41,7 @@ export default function SplashScreen() {
   return (
     <View style={styles.container}>
       <Animated.View style={{ opacity: fadeAnim, alignItems: 'center' }}>
-        <CafeMatchLogo size={64} />
+        <GeserLogo size={64} />
       </Animated.View>
       <Animated.Text
         style={[styles.version, { opacity: fadeAnim, bottom: 40 + insets.bottom }]}

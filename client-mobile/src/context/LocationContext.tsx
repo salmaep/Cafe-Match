@@ -43,7 +43,7 @@ export function LocationProvider({ children }: { children: ReactNode }) {
         setIsLoading(false);
         Alert.alert(
           'Location Permission Needed',
-          'CafeMatch needs your location to find nearby cafes and show accurate distances. Please enable location access in your device settings.',
+          'Geser needs your location to find nearby cafes and show accurate distances. Please enable location access in your device settings.',
           [
             { text: 'Open Settings', onPress: () => Linking.openSettings() },
             { text: 'Use Default', style: 'cancel' },

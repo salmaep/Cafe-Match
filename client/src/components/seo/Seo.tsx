@@ -10,6 +10,10 @@ interface Props {
 }
 
 const SITE_NAME = "Geser";
+// Primary/canonical domain. We serve on both geser.id and salma.imola.ai
+// (dual-domain), so canonical + og:url always point here to avoid duplicate
+// content being indexed under the old domain.
+const SITE_URL = "https://geser.id";
 const DEFAULT_TITLE = "Geser — Find your next favourite cafe";
 const DEFAULT_DESCRIPTION =
   "Discover cafes that match how you want to spend your time — work-from-cafe, dates, family time, group study, or me-time.";
@@ -31,7 +35,9 @@ export default function Seo({
   const desc = description ?? DEFAULT_DESCRIPTION;
   const url =
     canonical ??
-    (typeof window !== "undefined" ? window.location.href : undefined);
+    (typeof window !== "undefined"
+      ? SITE_URL + window.location.pathname + window.location.search
+      : undefined);
 
   return (
     <Helmet>

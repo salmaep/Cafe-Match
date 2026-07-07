@@ -67,7 +67,7 @@ export default function Navbar() {
               <Coffee size={18} strokeWidth={2} />
             </span>
             <span className="text-[19px] font-extrabold tracking-tight text-[#1C1C1A]">
-              Cafe<span className="text-[#D48B3A]">Match</span>
+              Ge<span className="text-[#D48B3A]">ser</span>
             </span>
           </Link>
 

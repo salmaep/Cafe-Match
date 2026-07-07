@@ -11,7 +11,6 @@ import {
   HttpCode,
   HttpStatus,
   Request,
-  Logger,
 } from '@nestjs/common';
 import { CafesService } from './cafes.service';
 import { SearchCafesDto } from './dto/search-cafes.dto';
@@ -23,17 +22,10 @@ import { Roles } from '../common/decorators/roles.decorator';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../common/guards/optional-jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
-import { SemanticSearchService } from '../semantic-search/semantic-search.service';
-import { SemanticSearchDto } from '../semantic-search/dto/semantic-search.dto';
 
 @Controller('cafes')
 export class CafesController {
-  private readonly logger = new Logger(CafesController.name);
-
-  constructor(
-    private readonly cafesService: CafesService,
-    private readonly semanticSearch: SemanticSearchService,
-  ) {}
+  constructor(private readonly cafesService: CafesService) {}
 
   @Public()
   @Get()
@@ -53,21 +45,6 @@ export class CafesController {
   discover(@Request() req: any, @Query() dto: DiscoverCafesDto) {
     const userId = req.user?.id ?? null;
     return this.cafesService.findDiscoverDeck(userId, dto);
-  }
-
-  // Natural-language semantic search powered by Claude Haiku + Meilisearch.
-  // Must be declared BEFORE @Get(':id') — otherwise 'semantic-search' is parsed as id.
-  @Public()
-  @Get('semantic-search')
-  async searchSemantic(@Query() dto: SemanticSearchDto) {
-    try {
-      return await this.semanticSearch.search(dto);
-    } catch (err) {
-      this.logger.error(
-        `Semantic search failed, using fallback: ${String(err)}`,
-      );
-      return this.semanticSearch.fallbackSearch(dto);
-    }
   }
 
   // Lightweight autocomplete for the SearchBar dropdown — projects only

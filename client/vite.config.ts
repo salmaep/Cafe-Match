@@ -32,6 +32,6 @@ export default defineConfig({
   },
   preview: {
     port: 5083,
-    allowedHosts: ['geser.id'],
+    allowedHosts: ['salma.imola.ai', 'geser.id'],
   },
 })

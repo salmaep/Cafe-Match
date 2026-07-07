@@ -85,6 +85,7 @@ export default function EditProfileModal() {
         <ScrollView
           contentContainerStyle={styles.tabBody}
           keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
           {tab === 'profile' ? <ProfileTab /> : <PasswordTab />}
         </ScrollView>

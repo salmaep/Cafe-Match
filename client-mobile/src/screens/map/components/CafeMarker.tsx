@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Marker } from "react-native-maps";
 import Svg, { Path } from "react-native-svg";
-import { User } from "lucide-react-native";
+import { User, Users } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { mapText } from "@shared/i18n/keys";
 import { Cafe } from "../../../types";
@@ -14,6 +14,7 @@ type Props = {
   coordinate: { latitude: number; longitude: number };
   friendCount: number;
   isPromoted: boolean;
+  openTableCount?: number;
   onPress: (cafe: Cafe) => void;
 };
 
@@ -22,6 +23,7 @@ const CafeMarker = React.memo(function CafeMarker({
   coordinate,
   friendCount,
   isPromoted,
+  openTableCount = 0,
   onPress,
 }: Props) {
   const { t } = useTranslation();
@@ -31,7 +33,7 @@ const CafeMarker = React.memo(function CafeMarker({
     setTracks(true);
     const id = setTimeout(() => setTracks(false), 400);
     return () => clearTimeout(id);
-  }, [isPromoted, friendCount]);
+  }, [isPromoted, friendCount, openTableCount]);
 
   const handlePress = useCallback(() => onPress(cafe), [onPress, cafe]);
   const w = isPromoted ? 32 : 28;
@@ -59,6 +61,11 @@ const CafeMarker = React.memo(function CafeMarker({
           <View style={styles.friendBadge}>
             <Text style={styles.friendBadgeText}>{friendCount}</Text>
             <User size={9} color="#FFFFFF" strokeWidth={2.5} />
+          </View>
+        )}
+        {openTableCount > 0 && (
+          <View style={styles.tableBadge}>
+            <Users size={10} color="#FFFFFF" strokeWidth={2.5} />
           </View>
         )}
         <View
@@ -151,6 +158,16 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 9,
     fontWeight: "900",
+  },
+  tableBadge: {
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#7C3AED",
+    borderRadius: radius.full,
+    padding: 3,
+    marginBottom: 3,
+    borderWidth: 1.5,
+    borderColor: "#FFFFFF",
   },
 });
 

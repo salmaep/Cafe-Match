@@ -23,6 +23,7 @@ import { mapText } from "@shared/i18n/keys";
 
 import { usePreferences } from "../../context/PreferencesContext";
 import { useLocation } from "../../context/LocationContext";
+import { useOpenTables } from "../../context/OpenTablesContext";
 import { usePurposes } from "../../queries/purposes/use-purposes";
 import { useSearchCafes } from "../../queries/cafes/use-search-cafes";
 import { usePromotedCafes } from "../../queries/cafes/use-promoted-cafes";
@@ -159,6 +160,8 @@ export default function MapScreen() {
     }
     return map;
   }, [friendsOnMap]);
+
+  const { activeCafeIds } = useOpenTables();
 
   const useLiveGps = preferences?.location?.type !== 'custom';
   const prefLat = preferences?.location?.latitude;
@@ -310,18 +313,20 @@ export default function MapScreen() {
     if (!pinsReady || !showCafePins) return null;
     return displayCafes.map((cafe) => {
       const friendCount = friendsByCafe.get(Number(cafe.id))?.length || 0;
+      const hasOpenTable = activeCafeIds.has(Number(cafe.id));
       return (
         <CafeMarker
           key={cafe.id}
           coordinate={{ latitude: cafe.latitude, longitude: cafe.longitude }}
           cafe={cafe}
           friendCount={friendCount}
+          openTableCount={hasOpenTable ? 1 : 0}
           isPromoted={isNewCafePromo(cafe)}
           onPress={onMarkerPress}
         />
       );
     });
-  }, [pinsReady, showCafePins, displayCafes, friendsByCafe, onMarkerPress]);
+  }, [pinsReady, showCafePins, displayCafes, friendsByCafe, activeCafeIds, onMarkerPress]);
 
   const friendMarkers = useMemo(() => {
     if (!showFriendPins) return null;

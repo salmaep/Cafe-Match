@@ -576,4 +576,105 @@ export async function generateRecap(year: number) {
   return data;
 }
 
+// ─── Tables (open table / join table) ───
+
+export type TableGenderRule = 'any' | 'female_only' | 'male_only';
+export type JoinRequestStatus =
+  | 'pending'
+  | 'accepted'
+  | 'declined'
+  | 'canceled'
+  | 'expired';
+
+export interface TablePublicUser {
+  id: number;
+  name: string;
+  username: string | null;
+  avatarUrl: string | null;
+}
+
+export interface CafeTableRow {
+  id: number;
+  title: string | null;
+  maxGuests: number;
+  acceptedCount: number;
+  genderRule: TableGenderRule;
+  openedAt: string;
+  expiresAt: string;
+  host: TablePublicUser;
+  myRequestStatus: JoinRequestStatus | null;
+  isMine: boolean;
+}
+
+export interface MyActiveTable {
+  id: number;
+  status: 'open' | 'closed' | 'expired';
+  title: string | null;
+  maxGuests: number;
+  genderRule: TableGenderRule;
+  openedAt: string;
+  expiresAt: string;
+  cafe: { id: number; name: string; slug: string | null } | null;
+  acceptedCount: number;
+  members: (TablePublicUser | null)[];
+  pendingRequests: Array<{
+    id: number;
+    message: string | null;
+    createdAt: string;
+    user: TablePublicUser | null;
+  }>;
+}
+
+export interface OpenTablePayload {
+  cafeId: number;
+  title?: string;
+  maxGuests?: number;
+  genderRule?: TableGenderRule;
+}
+
+export async function openTableApi(payload: OpenTablePayload) {
+  const { data } = await api.post('/tables', payload);
+  return data as { id: number; cafeName: string };
+}
+
+export async function closeTableApi(tableId: number) {
+  const { data } = await api.put(`/tables/${tableId}/close`);
+  return data as { message: string };
+}
+
+export async function listTablesByCafeApi(cafeId: string | number) {
+  const { data } = await api.get(`/tables/cafe/${cafeId}`);
+  return data as CafeTableRow[];
+}
+
+export async function fetchMyActiveTableApi(): Promise<MyActiveTable | null> {
+  const { data } = await api.get('/tables/me/active');
+  return data as MyActiveTable | null;
+}
+
+export async function fetchActiveCafeIdsApi(): Promise<number[]> {
+  const { data } = await api.get('/tables/active-cafes');
+  return (data?.cafeIds ?? []) as number[];
+}
+
+export async function requestJoinTableApi(tableId: number, message?: string) {
+  const { data } = await api.post(`/tables/${tableId}/requests`, { message });
+  return data;
+}
+
+export async function acceptJoinRequestApi(requestId: number) {
+  const { data } = await api.put(`/tables/requests/${requestId}/accept`);
+  return data;
+}
+
+export async function declineJoinRequestApi(requestId: number) {
+  const { data } = await api.put(`/tables/requests/${requestId}/decline`);
+  return data;
+}
+
+export async function cancelJoinRequestApi(requestId: number) {
+  const { data } = await api.put(`/tables/requests/${requestId}/cancel`);
+  return data;
+}
+
 export default api;

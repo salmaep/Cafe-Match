@@ -41,7 +41,7 @@ export class CheckinsService {
     const cafe = await this.cafeRepo.findOne({
       where: { id: dto.cafeId, isActive: true },
     });
-    if (!cafe) throw new NotFoundException('Cafe not found');
+    if (!cafe) throw new NotFoundException('Cafe tidak ditemukan');
 
     // 2. GPS distance check — radius via CHECKIN_RADIUS_METERS (default 500m).
     // DEV TOGGLE: set CHECKIN_SKIP_GPS=true in .env to bypass this check for testing.
@@ -58,7 +58,7 @@ export class CheckinsService {
     const skipGps = process.env.CHECKIN_SKIP_GPS === 'true';
     if (!skipGps && distance > radiusMeters) {
       throw new BadRequestException(
-        `You're too far from this cafe (${Math.round(distance)}m). You must be within ${radiusMeters}m to check in.`,
+        `Kamu terlalu jauh dari cafe ini (${Math.round(distance)}m). Maksimal ${radiusMeters}m untuk check in.`,
       );
     }
 
@@ -188,7 +188,7 @@ export class CheckinsService {
         where: { userId, checkOutAt: IsNull() },
       });
     }
-    if (!checkin) throw new NotFoundException('No active check-in');
+    if (!checkin) throw new NotFoundException('Tidak ada check in aktif');
     return this.performCheckout(checkin);
   }
 

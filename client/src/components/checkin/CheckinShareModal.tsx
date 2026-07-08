@@ -70,7 +70,7 @@ export default function CheckinShareModal({ cafe, checkin, onClose }: Props) {
       const res = await fetch(dataUrl);
       return await res.blob();
     } catch {
-      toast.error("Failed to create the image, please try again.");
+      toast.error("Gagal membuat gambar, coba lagi ya.");
       return null;
     }
   };
@@ -100,8 +100,8 @@ export default function CheckinShareModal({ cafe, checkin, onClose }: Props) {
       try {
         await navigator.share({
           files: [file],
-          title: `Check-in at ${cafe.name}`,
-          text: `Hanging out at ${cafe.name} — find me on Geser! geser.id`,
+          title: `Check in di ${cafe.name}`,
+          text: `Lagi nongkrong di ${cafe.name} — ketemu di Geser! geser.id`,
         });
         return;
       } catch {
@@ -116,7 +116,7 @@ export default function CheckinShareModal({ cafe, checkin, onClose }: Props) {
     a.download = "geser-checkin.png";
     a.click();
     URL.revokeObjectURL(url);
-    toast.info("Image saved — share it to your socials!");
+    toast.info("Gambar tersimpan — share ke sosmed ya!");
   };
 
   return (
@@ -190,7 +190,7 @@ export default function CheckinShareModal({ cafe, checkin, onClose }: Props) {
             disabled={exporting || !photoReady}
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#D48B3A] text-white font-bold text-sm hover:bg-[#B97726] transition-colors disabled:opacity-60"
           >
-            <Share2 size={15} strokeWidth={2} /> Share
+            <Share2 size={15} strokeWidth={2} /> Bagikan
           </button>
           <button
             type="button"
@@ -198,12 +198,12 @@ export default function CheckinShareModal({ cafe, checkin, onClose }: Props) {
             disabled={exporting || !photoReady}
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white text-[#1C1C1A] font-bold text-sm hover:bg-[#F0EDE8] transition-colors disabled:opacity-60"
           >
-            <Download size={15} strokeWidth={2} /> Save Image
+            <Download size={15} strokeWidth={2} /> Simpan Gambar
           </button>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close"
+            aria-label="Tutup"
             className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-white/20 text-white hover:bg-white/30 transition-colors"
           >
             <X size={18} strokeWidth={2} />

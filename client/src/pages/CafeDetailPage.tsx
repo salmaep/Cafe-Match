@@ -1060,7 +1060,7 @@ export default function CafeDetailPage() {
                     to="/tables"
                     className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-emerald-600 text-white font-semibold text-sm hover:bg-emerald-700 transition-colors"
                   >
-                    🪑 Your table is open — Manage
+                    🪑 Open table kamu aktif — Kelola
                     {myTable.pendingRequests.length > 0 && (
                       <span className="inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full bg-white text-emerald-700 text-[11px] font-extrabold">
                         {myTable.pendingRequests.length}
@@ -1072,8 +1072,8 @@ export default function CafeDetailPage() {
                     to="/tables"
                     className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-emerald-200 bg-white text-emerald-700 font-semibold text-sm hover:bg-emerald-50 transition-colors text-center"
                   >
-                    🪑 You have a table at {myTable.cafe?.name ?? "another cafe"}{" "}
-                    — Manage
+                    🪑 Kamu punya open table di {myTable.cafe?.name ?? "cafe lain"}{" "}
+                    — Kelola
                   </Link>
                 ) : (
                   <button
@@ -1081,7 +1081,7 @@ export default function CafeDetailPage() {
                     onClick={() => setOpenTableModal(true)}
                     className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 font-semibold text-sm hover:bg-emerald-100 transition-colors"
                   >
-                    🪑 Open a Table Here
+                    🪑 Open Table di Sini
                   </button>
                 )}
               </div>

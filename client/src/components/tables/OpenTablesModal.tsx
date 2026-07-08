@@ -17,20 +17,20 @@ interface Props {
 }
 
 const STATUS_LABEL: Record<JoinRequestStatus, string> = {
-  pending: "Waiting for host…",
-  accepted: "You're in ✓",
-  declined: "Declined by host",
-  canceled: "Canceled",
-  expired: "Expired",
+  pending: "Menunggu host…",
+  accepted: "Kamu sudah join ✓",
+  declined: "Ditolak host",
+  canceled: "Dibatalkan",
+  expired: "Kedaluwarsa",
 };
 
 function timeLeft(expiresAt: string): string {
   const ms = new Date(expiresAt).getTime() - Date.now();
-  if (ms <= 0) return "ended";
+  if (ms <= 0) return "berakhir";
   const totalMin = Math.floor(ms / 60_000);
   const h = Math.floor(totalMin / 60);
   const m = totalMin % 60;
-  return h > 0 ? `${h}h ${m}m left` : `${m}m left`;
+  return h > 0 ? `${h}j ${m}m lagi` : `${m}m lagi`;
 }
 
 function Avatar({ name, url }: { name: string; url?: string | null }) {
@@ -53,13 +53,13 @@ function Avatar({ name, url }: { name: string; url?: string | null }) {
   );
 }
 
-/** List of open tables at a cafe (opened from the map pin) + request-to-join. */
+/** List open table di sebuah cafe (dibuka dari pin map) + request join. */
 export default function OpenTablesModal({ cafe, onClose }: Props) {
   const { user } = useAuth();
   const { refresh } = useActiveTables();
   const [tables, setTables] = useState<OpenTable[]>([]);
   const [loading, setLoading] = useState(true);
-  const [requestingId, setRequestingId] = useState<number | null>(null);
+  const [busyId, setBusyId] = useState<number | null>(null);
   const [openForm, setOpenForm] = useState(false);
 
   const load = useCallback(async () => {
@@ -79,17 +79,32 @@ export default function OpenTablesModal({ cafe, onClose }: Props) {
   }, [load]);
 
   const requestJoin = async (table: OpenTable) => {
-    if (requestingId) return;
-    setRequestingId(table.id);
+    if (busyId) return;
+    setBusyId(table.id);
     try {
       await tablesApi.requestJoin(table.id);
-      toast.success("Request sent — wait for the host to accept!");
+      toast.success("Request terkirim — tunggu host menerima ya!");
       await load();
       await refresh();
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Failed to send the request");
+      toast.error(err?.response?.data?.message || "Gagal mengirim request");
     } finally {
-      setRequestingId(null);
+      setBusyId(null);
+    }
+  };
+
+  const closeTable = async (table: OpenTable) => {
+    if (busyId) return;
+    setBusyId(table.id);
+    try {
+      await tablesApi.close(table.id);
+      toast.success("Meja ditutup");
+      await load();
+      await refresh(); // pin map kembali oranye
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Gagal close table");
+    } finally {
+      setBusyId(null);
     }
   };
 
@@ -107,7 +122,7 @@ export default function OpenTablesModal({ cafe, onClose }: Props) {
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close"
+            aria-label="Tutup"
             className="w-8 h-8 rounded-full flex items-center justify-center text-[#8A8880] hover:bg-[#F0EDE8]"
           >
             <X size={18} strokeWidth={2} />
@@ -117,19 +132,19 @@ export default function OpenTablesModal({ cafe, onClose }: Props) {
         <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3 scrollbar-themed [--sb-track:#FFFFFF]">
           {loading ? (
             <div className="py-10 text-center text-sm text-[#8A8880]">
-              Loading tables…
+              Memuat meja…
             </div>
           ) : tables.length === 0 ? (
             <div className="py-10 text-center">
               <p className="text-sm text-[#8A8880]">
-                No open tables here yet.
+                Belum ada open table di sini.
               </p>
             </div>
           ) : (
             tables.map((t) => {
               const full = t.acceptedCount >= t.maxGuests;
               const disabled =
-                t.isMine || full || !!t.myRequestStatus || requestingId === t.id;
+                full || !!t.myRequestStatus || busyId === t.id;
               return (
                 <div
                   key={t.id}
@@ -142,7 +157,7 @@ export default function OpenTablesModal({ cafe, onClose }: Props) {
                         {t.host.name}
                         {t.isMine && (
                           <span className="ml-1 text-[10px] font-semibold text-[#8A8880]">
-                            (you)
+                            (kamu)
                           </span>
                         )}
                       </p>
@@ -163,12 +178,12 @@ export default function OpenTablesModal({ cafe, onClose }: Props) {
                   <div className="flex flex-wrap items-center gap-1.5 mt-2.5">
                     {t.genderRule === "female_only" && (
                       <span className="px-2 py-0.5 rounded-full bg-pink-50 border border-pink-200 text-[10px] font-semibold text-pink-600">
-                        Women only
+                        Perempuan saja
                       </span>
                     )}
                     {t.genderRule === "male_only" && (
                       <span className="px-2 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-[10px] font-semibold text-blue-600">
-                        Men only
+                        Laki-laki saja
                       </span>
                     )}
                     <span className="ml-auto text-[10px] text-[#8A8880] font-semibold">
@@ -181,8 +196,17 @@ export default function OpenTablesModal({ cafe, onClose }: Props) {
                       to={`/login?redirect=${encodeURIComponent(window.location.pathname)}`}
                       className="mt-3 block w-full py-2 rounded-lg bg-[#1C1C1A] text-white text-xs font-bold text-center hover:bg-black transition-colors"
                     >
-                      Log in to Request
+                      Login untuk Request Join
                     </Link>
+                  ) : t.isMine ? (
+                    <button
+                      type="button"
+                      onClick={() => closeTable(t)}
+                      disabled={busyId === t.id}
+                      className="mt-3 w-full py-2 rounded-lg border border-red-200 bg-red-50 text-red-600 text-xs font-bold hover:bg-red-100 transition-colors disabled:opacity-60"
+                    >
+                      {busyId === t.id ? "Menutup…" : "Close Table"}
+                    </button>
                   ) : (
                     <button
                       type="button"
@@ -190,15 +214,13 @@ export default function OpenTablesModal({ cafe, onClose }: Props) {
                       disabled={disabled}
                       className="mt-3 w-full py-2 rounded-lg bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:bg-[#E8E4DD] disabled:text-[#8A8880]"
                     >
-                      {t.isMine
-                        ? "Your table"
-                        : t.myRequestStatus
-                          ? STATUS_LABEL[t.myRequestStatus]
-                          : full
-                            ? "Table full"
-                            : requestingId === t.id
-                              ? "Sending…"
-                              : "Request to Join"}
+                      {t.myRequestStatus
+                        ? STATUS_LABEL[t.myRequestStatus]
+                        : full
+                          ? "Meja penuh"
+                          : busyId === t.id
+                            ? "Mengirim…"
+                            : "Request Join"}
                     </button>
                   )}
                 </div>
@@ -213,7 +235,7 @@ export default function OpenTablesModal({ cafe, onClose }: Props) {
             onClick={() => setOpenForm(true)}
             className="w-full py-2.5 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 font-bold text-sm hover:bg-emerald-100 transition-colors"
           >
-            🪑 Open a Table Here
+            🪑 Open Table di Sini
           </button>
         </div>
       </div>

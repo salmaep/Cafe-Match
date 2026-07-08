@@ -270,7 +270,7 @@ export default function MapView({ center, cafes, radius, onMapClick }: Props) {
                     src={getCafeImage(activeCafe)}
                     alt={activeCafe.name}
                     referrerPolicy="no-referrer"
-                    className="w-full h-32 object-cover rounded-t-md bg-[#F0EDE8]"
+                    className="w-full h-28 object-cover rounded-t-md bg-[#F0EDE8]"
                     onError={(e) => {
                       (e.currentTarget as HTMLImageElement).src =
                         placeholderImage(activeCafe.id);
@@ -305,40 +305,31 @@ export default function MapView({ center, cafes, radius, onMapClick }: Props) {
                         </span>
                       )}
                     </div>
-                    <div className="text-[12px] text-[#5C5A52] mt-1 line-clamp-2">
+                    <div className="text-[12px] text-[#5C5A52] mt-1 line-clamp-1">
                       {activeCafe.address}
-                    </div>
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      {(Array.isArray(activeCafe.facilities)
-                        ? activeCafe.facilities
-                            .slice(0, 3)
-                            .map((f: any) =>
-                              typeof f === "string" ? f : f?.name,
-                            )
-                            .filter(Boolean)
-                        : []
-                      ).map((name: string) => (
-                        <span
-                          key={name}
-                          className="bg-[#F0EDE8] text-[#8A8880] text-[10px] font-medium rounded-full px-1.5 py-0.5"
-                        >
-                          {name}
-                        </span>
-                      ))}
-                    </div>
-                    <div className="mt-2 text-[12px] font-bold text-[#D48B3A]">
-                      Cek detail →
                     </div>
                   </div>
                 </a>
 
-                <div className="px-1 pb-1.5 mt-1">
+                {/* Footer compact — Cek detail (kiri) + Open Table (kanan) sebaris,
+                    supaya card pendek & InfoWindow tak memunculkan scrollbar. */}
+                <div className="flex items-center justify-between gap-2 px-1 pb-1.5 mt-1">
+                  <a
+                    href={cafeUrl(activeCafe)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      navigate(cafeUrl(activeCafe));
+                    }}
+                    className="text-[12px] font-bold text-[#D48B3A] no-underline shrink-0"
+                  >
+                    Cek detail →
+                  </a>
                   <button
                     type="button"
                     onClick={() => setOpenTableFormCafe(activeCafe)}
-                    className="w-full inline-flex items-center justify-center gap-1.5 py-2 rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-700 text-[12px] font-bold hover:bg-emerald-100 transition-colors"
+                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-600 text-white text-[11px] font-bold hover:bg-emerald-700 transition-colors shrink-0"
                   >
-                    🪑 Open Table di Sini
+                    🪑 Open Table
                   </button>
                 </div>
               </div>

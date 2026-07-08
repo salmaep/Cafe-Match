@@ -1,27 +1,47 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { toast } from "sonner";
 import { useActiveCheckin } from "../../context/ActiveCheckinContext";
 import { useAuth } from "../../context/AuthContext";
 import type { Cafe } from "../../types";
+import type { Checkin } from "../../api/checkins.api";
 import { AlertTriangle, Check, MapPin } from "../../utils/lucideIcon";
 
 interface Props {
   cafe: Cafe;
   className?: string;
+  /** Tight layout for the mobile bottom bar; errors go to toasts (no room inline). */
+  compact?: boolean;
+  /** Fired after a successful check-in (opens the share-card popup). */
+  onCheckedIn?: (checkin: Checkin) => void;
 }
 
+// UI copy only — actual validation lives on the server (CHECKIN_RADIUS_METERS).
+const CHECKIN_RADIUS_M =
+  Number(import.meta.env.VITE_CHECKIN_RADIUS_METERS) || 500;
+
 /**
- * Per-cafe Check-In CTA. Three states:
- *   - Not logged in       → "Login untuk Check In" (link to /login)
- *   - Active elsewhere    → "Sedang check-in di [other cafe]" (disabled-ish, info)
- *   - Active here         → "✓ Sudah Check-In" (disabled, shows duration)
- *   - Idle, can check in  → "Check In Sekarang" (primary CTA)
+ * Per-cafe Check-In CTA. States:
+ *   - Not logged in       → "Log in to Check In" (link to /login)
+ *   - Active elsewhere    → info that another check-in is active
+ *   - Active here         → "✓ Checked In Here"
+ *   - Idle, can check in  → "Check In" (primary CTA)
  */
-export default function CheckInButton({ cafe, className = "" }: Props) {
+export default function CheckInButton({
+  cafe,
+  className = "",
+  compact = false,
+  onCheckedIn,
+}: Props) {
   const { user } = useAuth();
   const { active, checkIn } = useActiveCheckin();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const showError = (msg: string) => {
+    if (compact) toast.error(msg);
+    else setError(msg);
+  };
 
   if (!user) {
     return (
@@ -29,7 +49,7 @@ export default function CheckInButton({ cafe, className = "" }: Props) {
         to={`/login?redirect=${encodeURIComponent(window.location.pathname)}`}
         className={`inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#1C1C1A] text-white font-bold text-sm hover:bg-black transition-colors ${className}`}
       >
-        <MapPin size={16} strokeWidth={2} /> Login untuk Check In
+        <MapPin size={16} strokeWidth={2} /> Log in to Check In
       </Link>
     );
   }
@@ -40,18 +60,19 @@ export default function CheckInButton({ cafe, className = "" }: Props) {
       <div
         className={`inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-emerald-50 text-emerald-700 font-bold text-sm ring-1 ring-emerald-200 ${className}`}
       >
-        <Check size={16} strokeWidth={2.5} /> Sedang Check-In Di Sini
+        <Check size={16} strokeWidth={2.5} /> Checked In Here
       </div>
     );
   }
 
   // Active at a different cafe
   if (active && active.cafeId !== cafe.id) {
-    const otherName = active.cafeName || active.cafe?.name || "cafe lain";
+    const otherName = active.cafeName || active.cafe?.name || "another cafe";
     return (
       <div className={`flex flex-col items-stretch gap-1 ${className}`}>
         <div className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-amber-50 text-amber-800 font-bold text-sm ring-1 ring-amber-200">
-          <AlertTriangle size={14} strokeWidth={2} /> Check out dulu dari {otherName}
+          <AlertTriangle size={14} strokeWidth={2} /> You're checked in at{" "}
+          {otherName}
         </div>
       </div>
     );
@@ -64,7 +85,7 @@ export default function CheckInButton({ cafe, className = "" }: Props) {
 
     // Get current location
     if (!navigator.geolocation) {
-      setError("Browser tidak support GPS");
+      showError("Your browser doesn't support GPS");
       setSubmitting(false);
       return;
     }
@@ -72,13 +93,15 @@ export default function CheckInButton({ cafe, className = "" }: Props) {
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         try {
-          await checkIn({
+          const checkin = await checkIn({
             cafeId: cafe.id,
             latitude: pos.coords.latitude,
             longitude: pos.coords.longitude,
           });
+          toast.success("Checked in!");
+          onCheckedIn?.(checkin);
         } catch (err: any) {
-          setError(err?.response?.data?.message || "Gagal check-in");
+          showError(err?.response?.data?.message || "Check-in failed");
         } finally {
           setSubmitting(false);
         }
@@ -86,11 +109,11 @@ export default function CheckInButton({ cafe, className = "" }: Props) {
       (geoErr) => {
         setSubmitting(false);
         if (geoErr.code === geoErr.PERMISSION_DENIED) {
-          setError("Izin lokasi ditolak, aktifin GPS dulu ya buat check-in.");
+          showError("Location permission denied — enable GPS to check in.");
         } else if (geoErr.code === geoErr.POSITION_UNAVAILABLE) {
-          setError("Lokasi belum kebaca, coba di luar ruangan ya.");
+          showError("Couldn't read your location, try moving outdoors.");
         } else {
-          setError("Gagal dapet lokasi, coba lagi yuk.");
+          showError("Couldn't get your location, please try again.");
         }
       },
       { enableHighAccuracy: true, timeout: 10_000 },
@@ -108,22 +131,24 @@ export default function CheckInButton({ cafe, className = "" }: Props) {
         {submitting ? (
           <>
             <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-            Check In…
+            Checking in…
           </>
         ) : (
           <>
-            <MapPin size={16} strokeWidth={2} /> Check In Sekarang
+            <MapPin size={16} strokeWidth={2} /> Check In
           </>
         )}
       </button>
-      {error && (
+      {!compact && error && (
         <div className="text-[12px] text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
           {error}
         </div>
       )}
-      <p className="text-[11px] text-[#8A8880] text-center">
-        Harus berada dalam radius 100m dari cafe
-      </p>
+      {!compact && (
+        <p className="text-[11px] text-[#8A8880] text-center">
+          You must be within {CHECKIN_RADIUS_M}m of the cafe
+        </p>
+      )}
     </div>
   );
 }

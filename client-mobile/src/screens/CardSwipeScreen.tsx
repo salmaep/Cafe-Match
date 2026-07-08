@@ -31,9 +31,46 @@ import { buildFacilityChips } from '../utils/facilities';
 import { getOpenStatus } from '../utils/openingHours';
 import { formatRating } from '../utils/rating';
 import { cleanAddress } from '../utils/address';
+import { placeholderImage } from '../utils/cafeImage';
 
 const VISIBLE_TAGS = 4;
 const MAX_CARD_W = 480;
+
+function CardHero({
+  primaryUri,
+  fallbackUri,
+  cafeId,
+  style,
+}: {
+  primaryUri: string;
+  fallbackUri: string;
+  cafeId: string;
+  style: any;
+}) {
+  const [uri, setUri] = useState(primaryUri);
+  useEffect(() => {
+    setUri(primaryUri);
+  }, [primaryUri]);
+  return (
+    <Image
+      source={{ uri }}
+      style={style}
+      cachePolicy="memory-disk"
+      recyclingKey={`${cafeId}:${uri}`}
+      transition={0}
+      contentFit="cover"
+      onError={(e) => {
+        console.log(
+          `[swipe-img] FAILED cafe=${cafeId} url=${uri} err=${
+            (e as any)?.error ?? JSON.stringify(e)
+          }`,
+        );
+        if (uri !== fallbackUri) setUri(fallbackUri);
+      }}
+    />
+  );
+}
+
 const clamp = (val: number, min: number, max: number) =>
   Math.max(min, Math.min(max, val));
 
@@ -332,13 +369,11 @@ export default function CardSwipeScreen() {
 
       return (
         <View style={[styles.card, { width: CARD_W, height: CARD_H }]}>
-          <Image
-            source={{ uri: bgPhoto }}
+          <CardHero
+            primaryUri={bgPhoto}
+            fallbackUri={placeholderImage(cafe.id)}
+            cafeId={String(cafe.id)}
             style={styles.cardImage}
-            cachePolicy="memory-disk"
-            recyclingKey={String(cafe.id)}
-            transition={0}
-            contentFit="cover"
           />
 
           <LinearGradient
@@ -635,7 +670,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    resizeMode: 'cover',
   },
   gradTop: {
     position: 'absolute',

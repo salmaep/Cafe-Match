@@ -3,6 +3,7 @@ import {
   NotFoundException,
   UnauthorizedException,
   BadRequestException,
+  ConflictException,
   ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -12,6 +13,7 @@ import { User } from './entities/user.entity';
 import { DeleteAccountDto } from './dto/delete-account.dto';
 import { DeletionRequest } from './entities/deletion-request.entity';
 import { CreateDeletionRequestDto } from './dto/create-deletion-request.dto';
+import { AchievementsService } from '../achievements/achievements.service';
 
 @Injectable()
 export class UsersService {
@@ -20,12 +22,20 @@ export class UsersService {
     private readonly usersRepository: Repository<User>,
     @InjectRepository(DeletionRequest)
     private readonly deletionRequestRepo: Repository<DeletionRequest>,
+    private readonly achievementsService: AchievementsService,
   ) {}
 
-  /** Update profile fields (name, avatar). Returns sanitized user. */
+  /** Update profile fields (all optional). Returns sanitized user. */
   async updateProfile(
     id: number,
-    patch: { name?: string; avatarUrl?: string },
+    patch: {
+      name?: string;
+      avatarUrl?: string;
+      username?: string;
+      gender?: 'male' | 'female' | '';
+      bio?: string;
+      phone?: string;
+    },
   ): Promise<User> {
     const user = await this.findById(id);
     if (!user) throw new NotFoundException('User tidak ditemukan');
@@ -47,7 +57,36 @@ export class UsersService {
     }
     if (patch.name !== undefined) user.name = patch.name;
 
-    return this.usersRepository.save(user);
+    if (patch.username !== undefined) {
+      const username = patch.username.trim().toLowerCase() || null;
+      if (username && username !== user.username) {
+        const taken = await this.usersRepository.findOne({
+          where: { username },
+        });
+        if (taken && taken.id !== id) {
+          throw new ConflictException('Username sudah dipakai orang lain.');
+        }
+      }
+      user.username = username;
+    }
+    if (patch.gender !== undefined) user.gender = patch.gender || null;
+    if (patch.bio !== undefined) user.bio = patch.bio.trim() || null;
+    if (patch.phone !== undefined) user.phone = patch.phone.trim() || null;
+
+    const saved = await this.usersRepository.save(user);
+
+    // Hook-driven special achievement: full profile (never fail the update).
+    try {
+      if (saved.username && saved.gender && saved.bio && saved.avatarUrl) {
+        await this.achievementsService.awardBySlug(
+          id,
+          'special-profile-complete',
+        );
+      }
+    } catch (err: any) {
+      console.warn('[users] profile achievement failed:', err?.message);
+    }
+    return saved;
   }
 
   async changePassword(
@@ -86,7 +125,19 @@ export class UsersService {
   }): Promise<User> {
     const friendCode = await this.generateUniqueFriendCode();
     const user = this.usersRepository.create({ ...data, friendCode });
-    return this.usersRepository.save(user);
+    const saved = await this.usersRepository.save(user);
+
+    // Auto-generate a unique @username (slugified name + id → collision-free);
+    // the user can change it later in Edit Profile.
+    if (!saved.username) {
+      const slug = (saved.name || 'user')
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '')
+        .slice(0, 20);
+      saved.username = `${slug || 'user'}${saved.id}`.slice(0, 30);
+      await this.usersRepository.save(saved);
+    }
+    return saved;
   }
 
   async findByProvider(

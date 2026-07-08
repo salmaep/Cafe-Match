@@ -109,6 +109,12 @@ function ProfileTab({
   const [avatarUrl, setAvatarUrl] = useState<string>(
     (user as any)?.avatarUrl || "",
   );
+  const [username, setUsername] = useState(user?.username || "");
+  const [gender, setGender] = useState<"male" | "female" | "">(
+    user?.gender || "",
+  );
+  const [bio, setBio] = useState(user?.bio || "");
+  const [phone, setPhone] = useState(user?.phone || "");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
@@ -146,11 +152,22 @@ function ProfileTab({
       setError("Nama tidak boleh kosong.");
       return;
     }
+    const cleanUsername = username.trim().toLowerCase();
+    if (cleanUsername && !/^[a-z0-9._]{3,30}$/.test(cleanUsername)) {
+      setError(
+        "Username 3-30 karakter: huruf kecil, angka, titik, atau underscore.",
+      );
+      return;
+    }
     setSubmitting(true);
     try {
       await usersApi.updateProfile({
         name: name.trim(),
         avatarUrl: avatarUrl,
+        username: cleanUsername,
+        gender,
+        bio: bio.trim(),
+        phone: phone.trim(),
       });
       onSaved();
       onClose();
@@ -237,6 +254,79 @@ function ProfileTab({
           onChange={(e) => setName(e.target.value)}
           maxLength={100}
           required
+          className="w-full px-4 py-3 bg-[#F0EDE8] rounded-xl text-base text-[#1C1C1A] focus:bg-white focus:ring-2 focus:ring-[#D48B3A]/30 outline-none border-none transition-all"
+        />
+      </div>
+
+      {/* Username (optional) */}
+      <div>
+        <label className="text-xs font-bold text-[#8A8880] uppercase tracking-wider mb-1.5 block">
+          Username <span className="normal-case font-normal">(opsional)</span>
+        </label>
+        <div className="relative">
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8A8880] text-base">
+            @
+          </span>
+          <input
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            maxLength={30}
+            placeholder="username"
+            className="w-full pl-9 pr-4 py-3 bg-[#F0EDE8] rounded-xl text-base text-[#1C1C1A] focus:bg-white focus:ring-2 focus:ring-[#D48B3A]/30 outline-none border-none transition-all lowercase"
+          />
+        </div>
+        <p className="text-[11px] text-[#A8A59C] mt-1">
+          Tampil di meja nongkrong & kartu check-in.
+        </p>
+      </div>
+
+      {/* Bio (optional) */}
+      <div>
+        <label className="text-xs font-bold text-[#8A8880] uppercase tracking-wider mb-1.5 block">
+          Bio <span className="normal-case font-normal">(opsional)</span>
+        </label>
+        <textarea
+          value={bio}
+          onChange={(e) => setBio(e.target.value)}
+          maxLength={255}
+          rows={2}
+          placeholder="Ceritain dikit tentang kamu…"
+          className="w-full px-4 py-3 bg-[#F0EDE8] rounded-xl text-sm text-[#1C1C1A] focus:bg-white focus:ring-2 focus:ring-[#D48B3A]/30 outline-none border-none transition-all resize-none"
+        />
+      </div>
+
+      {/* Gender (optional) */}
+      <div>
+        <label className="text-xs font-bold text-[#8A8880] uppercase tracking-wider mb-1.5 block">
+          Gender <span className="normal-case font-normal">(opsional)</span>
+        </label>
+        <select
+          value={gender}
+          onChange={(e) => setGender(e.target.value as "male" | "female" | "")}
+          className="w-full px-4 py-3 bg-[#F0EDE8] rounded-xl text-base text-[#1C1C1A] outline-none border-none"
+        >
+          <option value="">Rahasia</option>
+          <option value="female">Perempuan</option>
+          <option value="male">Laki-laki</option>
+        </select>
+        <p className="text-[11px] text-[#A8A59C] mt-1">
+          Dipakai untuk aturan join meja (mis. "perempuan saja").
+        </p>
+      </div>
+
+      {/* Phone (optional) */}
+      <div>
+        <label className="text-xs font-bold text-[#8A8880] uppercase tracking-wider mb-1.5 block">
+          No. Handphone{" "}
+          <span className="normal-case font-normal">(opsional)</span>
+        </label>
+        <input
+          type="tel"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          maxLength={20}
+          placeholder="08xxxxxxxxxx"
           className="w-full px-4 py-3 bg-[#F0EDE8] rounded-xl text-base text-[#1C1C1A] focus:bg-white focus:ring-2 focus:ring-[#D48B3A]/30 outline-none border-none transition-all"
         />
       </div>

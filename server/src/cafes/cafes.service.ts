@@ -37,8 +37,8 @@ export class CafesService {
 
   // ── Search (Meilisearch) ────────────────────────────────────────────────────
 
-  async search(dto: SearchCafesDto) {
-    return this.meiliCafes.searchCafes({
+  async search(dto: SearchCafesDto, userId?: number) {
+    const result = await this.meiliCafes.searchCafes({
       q: dto.q,
       lat: dto.lat,
       lng: dto.lng,
@@ -50,6 +50,58 @@ export class CafesService {
       limit: dto.limit,
       sort: dto.sort,
     });
+
+    // Dataset evaluation: record searches with intent (query or filters) that
+    // matched nothing. Fire-and-forget — logging must never affect search.
+    if (result.meta.total === 0 && this.isMeaningfulSearch(dto)) {
+      void this.logZeroResult(dto, userId);
+    }
+    return result;
+  }
+
+  /** A search counts as "meaningful" when the user expressed intent — pure
+   *  geo-only map browsing with zero hits is noise, not a dataset gap. */
+  private isMeaningfulSearch(dto: SearchCafesDto): boolean {
+    return Boolean(
+      dto.q?.trim() ||
+        (dto.facilities && dto.facilities.length > 0) ||
+        dto.priceRange ||
+        dto.purposeId,
+    );
+  }
+
+  private async logZeroResult(dto: SearchCafesDto, userId?: number) {
+    try {
+      const q = (dto.q ?? '').slice(0, 255);
+      const qNorm = q.trim().toLowerCase();
+      // Single-statement 10-minute dedupe per normalized query — safe across
+      // instances, avoids flooding the table while a user types/retries.
+      await this.dataSource.query(
+        `INSERT INTO search_zero_results
+           (q, q_norm, lat, lng, radius, facilities_json, price_range, purpose_id, sort, user_id)
+         SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+         FROM DUAL
+         WHERE NOT EXISTS (
+           SELECT 1 FROM search_zero_results
+           WHERE q_norm = ? AND created_at > DATE_SUB(NOW(), INTERVAL 10 MINUTE)
+         )`,
+        [
+          q,
+          qNorm,
+          dto.lat ?? null,
+          dto.lng ?? null,
+          dto.radius ?? null,
+          dto.facilities?.length ? JSON.stringify(dto.facilities) : null,
+          dto.priceRange ?? null,
+          dto.purposeId ?? null,
+          dto.sort ?? null,
+          userId ?? null,
+          qNorm,
+        ],
+      );
+    } catch (err: any) {
+      console.warn('[cafes] zero-result logging failed:', err?.message);
+    }
   }
 
   // ── Autocomplete (typeahead for SearchBar dropdown) ────────────────────────

@@ -50,16 +50,23 @@ export interface PaginatedReviews {
 export type ReviewSort = "helpful" | "recent";
 
 export const reviewsApi = {
-  getSummary: (cafeId: number) =>
-    apiClient.get<ReviewSummary[]>(`/reviews/cafe/${cafeId}/summary`),
+  getSummary: (cafeId: number, signal?: AbortSignal) =>
+    apiClient.get<ReviewSummary[]>(`/reviews/cafe/${cafeId}/summary`, {
+      signal,
+    }),
   create: (cafeId: number, dto: CreateReviewDto) =>
     apiClient.post(`/reviews/${cafeId}`, dto),
   listByCafe: (
     cafeId: number,
     params: { page?: number; limit?: number; sort?: ReviewSort } = {},
-  ) => apiClient.get<PaginatedReviews>(`/reviews/cafe/${cafeId}`, { params }),
-  myVoteIds: (cafeId: number) =>
-    apiClient.get<number[]>(`/reviews/cafe/${cafeId}/my-votes`),
+    signal?: AbortSignal,
+  ) =>
+    apiClient.get<PaginatedReviews>(`/reviews/cafe/${cafeId}`, {
+      params,
+      signal,
+    }),
+  myVoteIds: (cafeId: number, signal?: AbortSignal) =>
+    apiClient.get<number[]>(`/reviews/cafe/${cafeId}/my-votes`, { signal }),
   toggleVote: (reviewId: number) =>
     apiClient.post<{ helpful: boolean; helpfulCount: number }>(
       `/reviews/${reviewId}/vote`,

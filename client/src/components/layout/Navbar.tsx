@@ -58,9 +58,12 @@ export default function Navbar() {
     .toUpperCase();
 
   return (
-    <nav className="hidden md:block bg-white/90 backdrop-blur-md border-b border-[#F0EDE8] sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-6 lg:px-8">
-        <div className="grid grid-cols-[auto_1fr_auto] items-center h-16 gap-6">
+    // h-16 on the nav itself (border-box) so the bottom border is INCLUDED in
+    // the 4rem — full-height pages use calc(100dvh-4rem) and must not overflow
+    // by the border pixel (that 1px was what produced a window scrollbar).
+    <nav className="hidden md:block h-16 bg-white/90 backdrop-blur-md border-b border-[#F0EDE8] sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto px-6 lg:px-8 h-full">
+        <div className="grid grid-cols-[auto_1fr_auto] items-center h-full gap-6">
           {/* Brand */}
           <Link to="/" className="flex items-center gap-2.5 shrink-0 group">
             <span className="w-9 h-9 rounded-xl bg-[#1C1C1A] flex items-center justify-center text-[#D48B3A] shadow-sm group-hover:shadow-md transition-shadow">

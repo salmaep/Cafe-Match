@@ -16,7 +16,17 @@ export class Achievement {
 
   @Column({
     type: 'enum',
-    enum: ['visit_purpose', 'visit_general', 'social', 'streak', 'special'],
+    enum: [
+      'visit_purpose',
+      'visit_general',
+      'social',
+      'streak',
+      'special',
+      'points',
+      'table',
+      'explorer',
+      'time',
+    ],
   })
   category: string;
 

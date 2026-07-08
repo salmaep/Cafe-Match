@@ -44,6 +44,14 @@ import {
 } from 'lucide-react-native';
 import type { LucideIcon } from 'lucide-react-native';
 
+function maskEmail(email: string | undefined): string {
+  if (!email) return '';
+  const [local, domain] = email.split('@');
+  if (!local || !domain) return email;
+  if (local.length <= 2) return `${local[0]}***@${domain}`;
+  return `${local.slice(0, 2)}${'*'.repeat(Math.min(local.length - 2, 5))}@${domain}`;
+}
+
 export default function ProfileScreen() {
   const navigation = useNavigation<StackNavigationProp<any>>();
   const { t } = useTranslation();
@@ -136,6 +144,8 @@ export default function ProfileScreen() {
     .join('')
     .toUpperCase();
 
+  const maskedEmail = maskEmail(user.email);
+
   const friendCode = user.friendCode;
 
   const shareNative = async () => {
@@ -211,9 +221,19 @@ export default function ProfileScreen() {
               <Pencil size={14} color={colors.textSecondary} strokeWidth={2} />
             </TouchableOpacity>
           </View>
+          {!!user.username && (
+            <Text style={styles.userHandle} numberOfLines={1}>
+              @{user.username}
+            </Text>
+          )}
           <Text style={styles.userEmail} numberOfLines={1}>
-            {user.email}
+            {maskedEmail}
           </Text>
+          {!!user.bio && (
+            <Text style={styles.userBio} numberOfLines={3}>
+              {user.bio}
+            </Text>
+          )}
           {/* Friend code hidden — social/friends feature disabled for now. */}
           {false && !!friendCode && (
             <View style={styles.friendCodeBadge}>
@@ -288,13 +308,11 @@ export default function ProfileScreen() {
             onPress={() => navigation.navigate('GlobalLeaderboard')}
           />
         )}
-        {false && (
-          <QuickAction
-            Icon={Award}
-            label={t(profileText.quickAchievement)}
-            onPress={() => navigation.navigate('Achievements')}
-          />
-        )}
+        <QuickAction
+          Icon={Award}
+          label={t(profileText.quickAchievement)}
+          onPress={() => navigation.navigate('Achievements')}
+        />
         {false && (
           <QuickAction
             Icon={Bell}
@@ -527,6 +545,18 @@ const styles = StyleSheet.create({
   profileNameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   userName: { fontSize: 18, fontWeight: '700', color: colors.primary, flexShrink: 1 },
   userEmail: { fontSize: 13, color: colors.textSecondary, marginTop: 1 },
+  userHandle: {
+    fontSize: 13,
+    color: colors.accent,
+    fontWeight: '700',
+    marginTop: 1,
+  },
+  userBio: {
+    fontSize: 13,
+    color: colors.primary,
+    marginTop: spacing.xs + 2,
+    lineHeight: 18,
+  },
   friendCodeBadge: {
     flexDirection: 'row',
     alignItems: 'center',

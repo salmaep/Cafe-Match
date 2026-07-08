@@ -7,6 +7,8 @@ import { NuqsAdapter } from "nuqs/adapters/react-router/v7";
 import { AuthProvider } from "./context/AuthContext";
 import { PreferencesProvider } from "./context/PreferencesContext";
 import { ShortlistProvider } from "./context/ShortlistContext";
+import { ActiveCheckinProvider } from "./context/ActiveCheckinContext";
+import { ActiveTablesProvider } from "./context/ActiveTablesContext";
 import { initGA } from "./utils/analytics";
 import "./i18n";
 import "./index.css";
@@ -24,9 +26,13 @@ createRoot(document.getElementById("root")!).render(
           <NuqsAdapter>
             <AuthProvider>
               <PreferencesProvider>
-                <ShortlistProvider>
-                  <App />
-                </ShortlistProvider>
+                <ActiveCheckinProvider>
+                  <ActiveTablesProvider>
+                    <ShortlistProvider>
+                      <App />
+                    </ShortlistProvider>
+                  </ActiveTablesProvider>
+                </ActiveCheckinProvider>
               </PreferencesProvider>
             </AuthProvider>
           </NuqsAdapter>

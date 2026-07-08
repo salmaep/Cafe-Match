@@ -20,6 +20,11 @@ import Seo from "../components/seo/Seo";
 import PhotoLightbox from "../components/cafe/PhotoLightbox";
 import PhotoSlider from "../components/cafe/PhotoSlider";
 import WriteReviewModal from "../components/cafe/WriteReviewModal";
+import CheckInButton from "../components/checkin/CheckInButton";
+import CheckinShareModal from "../components/checkin/CheckinShareModal";
+import OpenTableModal from "../components/tables/OpenTableModal";
+import { useActiveTables } from "../context/ActiveTablesContext";
+import type { Checkin } from "../api/checkins.api";
 import { getOpenStatus, formatHoursTable } from "../utils/openingHours";
 import { buildFacilityChips } from "../utils/facilities";
 import { formatRating } from "../utils/rating";
@@ -62,6 +67,7 @@ export default function CafeDetailPage() {
   const { user } = useAuth();
   const geo = useGeolocation();
   const { addToShortlist, removeFromShortlist, isInShortlist } = useShortlist();
+  const { myTable } = useActiveTables();
 
   const cafeId = useMemo(() => extractCafeIdFromSlug(slug), [slug]);
 
@@ -74,48 +80,70 @@ export default function CafeDetailPage() {
   const [reviewTotal, setReviewTotal] = useState(0);
   const [reviewVotedSet, setReviewVotedSet] = useState<Set<number>>(new Set());
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [shareCheckin, setShareCheckin] = useState<Checkin | null>(null);
+  const [openTableModal, setOpenTableModal] = useState(false);
   const [googleReviews, setGoogleReviews] = useState<GoogleReview[]>([]);
   const [googleReviewTotal, setGoogleReviewTotal] = useState(0);
 
+  // All detail fetches share one AbortController per mount: StrictMode's dev
+  // double-mount aborts the first pass instead of completing every request
+  // twice (and double-tracking analytics), and unmounts never setState.
   useEffect(() => {
     if (cafeId == null) {
       setLoading(false);
       setCafe(null);
       return;
     }
-    setLoading(true);
+    const ac = new AbortController();
+    const aborted = (err: unknown) =>
+      ac.signal.aborted || (err as { code?: string })?.code === "ERR_CANCELED";
+
+    // Only show the full-page spinner when we don't already have this cafe —
+    // navigating between cafes keeps the old content until fresh data lands.
+    setLoading((prev) => (cafe?.id === cafeId ? prev : true));
     cafesApi
-      .getById(cafeId)
+      .getById(cafeId, ac.signal)
       .then((res) => {
         setCafe(res.data);
+        setLoading(false);
         analyticsApi.track(cafeId, "view").catch(() => {});
       })
-      .catch(() => setCafe(null))
-      .finally(() => setLoading(false));
+      .catch((err) => {
+        if (aborted(err)) return;
+        setCafe(null);
+        setLoading(false);
+      });
     reviewsApi
-      .getSummary(cafeId)
+      .getSummary(cafeId, ac.signal)
       .then((res) => setReviewSummary(res.data ?? []))
-      .catch(() => setReviewSummary([]));
+      .catch((err) => {
+        if (!aborted(err)) setReviewSummary([]);
+      });
     reviewsApi
-      .listByCafe(cafeId, { page: 1, limit: 3, sort: "helpful" })
+      .listByCafe(cafeId, { page: 1, limit: 3, sort: "helpful" }, ac.signal)
       .then((res) => {
         setReviewPreviews(res.data?.data ?? []);
         setReviewTotal(res.data?.meta?.total ?? 0);
       })
-      .catch(() => {
+      .catch((err) => {
+        if (aborted(err)) return;
         setReviewPreviews([]);
         setReviewTotal(0);
       });
     cafesApi
-      .getGoogleReviews(cafeId, { page: 1, limit: 5 })
+      .getGoogleReviews(cafeId, { page: 1, limit: 5 }, ac.signal)
       .then((res) => {
         setGoogleReviews(res.data?.data ?? []);
         setGoogleReviewTotal(res.data?.meta?.total ?? 0);
       })
-      .catch(() => {
+      .catch((err) => {
+        if (aborted(err)) return;
         setGoogleReviews([]);
         setGoogleReviewTotal(0);
       });
+
+    return () => ac.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cafeId]);
 
   // Fetch user's helpful votes for preview cards. Separate effect so it can
@@ -125,10 +153,16 @@ export default function CafeDetailPage() {
       setReviewVotedSet(new Set());
       return;
     }
+    const ac = new AbortController();
     reviewsApi
-      .myVoteIds(cafeId)
+      .myVoteIds(cafeId, ac.signal)
       .then((res) => setReviewVotedSet(new Set(res.data ?? [])))
-      .catch(() => setReviewVotedSet(new Set()));
+      .catch((err) => {
+        if (!ac.signal.aborted && (err as any)?.code !== "ERR_CANCELED") {
+          setReviewVotedSet(new Set());
+        }
+      });
+    return () => ac.abort();
   }, [cafeId, user]);
 
   // Canonicalize URL: if user landed on /cafe/615 or /cafe/wrong-slug-615,
@@ -209,7 +243,7 @@ export default function CafeDetailPage() {
     else addToShortlist(cafe);
   };
 
-  if (loading) {
+  if (loading && !cafe) {
     return (
       <div className="min-h-[80vh] flex items-center justify-center bg-[#FAF9F6]">
         <div className="w-10 h-10 border-4 border-[#D48B3A] border-t-transparent rounded-full animate-spin" />
@@ -1010,6 +1044,48 @@ export default function CafeDetailPage() {
                 )}
               </button>
 
+              {/* Check-in */}
+              <div className="mt-3">
+                <CheckInButton
+                  cafe={cafe}
+                  className="w-full"
+                  onCheckedIn={(c) => setShareCheckin(c)}
+                />
+              </div>
+
+              {/* Open table — contextual: manage when already hosting */}
+              <div className="mt-3">
+                {myTable && myTable.cafe?.id === cafe.id ? (
+                  <Link
+                    to="/tables"
+                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-emerald-600 text-white font-semibold text-sm hover:bg-emerald-700 transition-colors"
+                  >
+                    🪑 Your table is open — Manage
+                    {myTable.pendingRequests.length > 0 && (
+                      <span className="inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full bg-white text-emerald-700 text-[11px] font-extrabold">
+                        {myTable.pendingRequests.length}
+                      </span>
+                    )}
+                  </Link>
+                ) : myTable ? (
+                  <Link
+                    to="/tables"
+                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-emerald-200 bg-white text-emerald-700 font-semibold text-sm hover:bg-emerald-50 transition-colors text-center"
+                  >
+                    🪑 You have a table at {myTable.cafe?.name ?? "another cafe"}{" "}
+                    — Manage
+                  </Link>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setOpenTableModal(true)}
+                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 font-semibold text-sm hover:bg-emerald-100 transition-colors"
+                  >
+                    🪑 Open a Table Here
+                  </button>
+                )}
+              </div>
+
               {/* Secondary actions */}
               <div className="mt-3">
                 <button
@@ -1067,6 +1143,12 @@ export default function CafeDetailPage() {
             />
             <span className="text-[10px] text-[#8A8880] mt-0.5">Favorite</span>
           </button>
+          <CheckInButton
+            cafe={cafe}
+            compact
+            className="flex-1"
+            onCheckedIn={(c) => setShareCheckin(c)}
+          />
           <button
             type="button"
             onClick={handleShortlist}
@@ -1086,6 +1168,19 @@ export default function CafeDetailPage() {
           </button>
         </div>
       </div>
+
+      {/* Share-card popup — ALWAYS shown after a successful check-in */}
+      {shareCheckin && cafe && (
+        <CheckinShareModal
+          cafe={cafe}
+          checkin={shareCheckin}
+          onClose={() => setShareCheckin(null)}
+        />
+      )}
+
+      {openTableModal && cafe && (
+        <OpenTableModal cafe={cafe} onClose={() => setOpenTableModal(false)} />
+      )}
 
       {reviewModalOpen && (
         <WriteReviewModal

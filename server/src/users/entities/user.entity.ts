@@ -45,6 +45,10 @@ export class User {
   @Column({ length: 100 })
   name: string;
 
+  /** Optional unique public handle (@username). Backfilled from name + id. */
+  @Column({ type: 'varchar', length: 30, unique: true, nullable: true })
+  username: string | null;
+
   @Column({ type: 'enum', enum: ['user', 'admin', 'owner'], default: 'user' })
   role: string;
 
@@ -53,6 +57,17 @@ export class User {
 
   @Column({ name: 'avatar_url', type: 'text', nullable: true })
   avatarUrl: string | null;
+
+  /** Optional; used by table gender rules ("perempuan saja"). */
+  @Column({ type: 'enum', enum: ['male', 'female'], nullable: true })
+  gender: 'male' | 'female' | null;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  bio: string | null;
+
+  /** Cached points total; source of truth is the point_events ledger. */
+  @Column({ type: 'int', unsigned: true, default: 0 })
+  points: number;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

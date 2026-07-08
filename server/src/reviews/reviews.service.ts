@@ -12,6 +12,7 @@ import { ReviewMedia } from './entities/review-media.entity';
 import { ReviewVote } from './entities/review-vote.entity';
 import { CreateReviewDto, UpdateReviewDto } from './dto/create-review.dto';
 import { AchievementsService } from '../achievements/achievements.service';
+import { PointsService } from '../achievements/points.service';
 import { MeiliCafesService } from '../meili/meili-cafes.service';
 
 export type ReviewSort = 'helpful' | 'recent';
@@ -29,6 +30,7 @@ export class ReviewsService {
     private readonly voteRepo: Repository<ReviewVote>,
     private readonly dataSource: DataSource,
     private readonly achievementsService: AchievementsService,
+    private readonly pointsService: PointsService,
     private readonly meiliCafes: MeiliCafesService,
   ) {}
 
@@ -96,8 +98,14 @@ export class ReviewsService {
       await this.mediaRepo.save(mediaRows);
     }
 
-    // Trigger review achievements
+    // Trigger review points + achievements
     try {
+      await this.pointsService.award(
+        userId,
+        'review_created',
+        `review:${savedId}`,
+        { cafeId },
+      );
       const total = await this.reviewRepo.count({ where: { userId } });
       await this.achievementsService.checkSocialAchievements(
         userId,
@@ -105,7 +113,7 @@ export class ReviewsService {
         total,
       );
     } catch (err: any) {
-      console.warn('[reviews] achievement check failed:', err?.message);
+      console.warn('[reviews] points/achievement check failed:', err?.message);
     }
 
     // Aggregate mood + facility signals from all reviews on this cafe into

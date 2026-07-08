@@ -7,7 +7,22 @@ import {
   type AchievementTier,
   type UserAchievement,
 } from "../api/achievements.api";
-import { Check, Lock, Trophy } from "../utils/lucideIcon";
+import { iconForAchievement, metricLabel } from "../utils/achievementIcon";
+import {
+  Armchair,
+  Check,
+  Clock,
+  Coffee,
+  Compass,
+  Crown,
+  Flame,
+  Gem,
+  Lock,
+  Sparkles,
+  Trophy,
+  Users,
+} from "../utils/lucideIcon";
+import type { LucideIcon } from "lucide-react";
 
 // Tier visuals — matches server enum values 1:1.
 const TIER_STYLE: Record<AchievementTier, { grad: string; label: string }> = {
@@ -21,15 +36,26 @@ const TIER_STYLE: Record<AchievementTier, { grad: string; label: string }> = {
 };
 
 // Category groupings — server returns lowercase enum values.
-const CATEGORY_LABELS: Record<AchievementCategory, string> = {
-  visit_general: "Kunjungan Umum",
-  visit_purpose: "Berdasarkan Vibe",
-  social: "Sosial",
-  streak: "Streak",
-  special: "Spesial",
+const CATEGORY_META: Record<
+  AchievementCategory,
+  { label: string; icon: LucideIcon }
+> = {
+  points: { label: "Poin", icon: Gem },
+  visit_general: { label: "Kunjungan Umum", icon: Coffee },
+  table: { label: "Meja Nongkrong", icon: Armchair },
+  explorer: { label: "Penjelajah", icon: Compass },
+  time: { label: "Waktu Nongkrong", icon: Clock },
+  visit_purpose: { label: "Berdasarkan Vibe", icon: Sparkles },
+  streak: { label: "Streak", icon: Flame },
+  social: { label: "Sosial", icon: Users },
+  special: { label: "Spesial", icon: Crown },
 };
 const CATEGORY_ORDER: AchievementCategory[] = [
+  "points",
   "visit_general",
+  "table",
+  "explorer",
+  "time",
   "visit_purpose",
   "streak",
   "social",
@@ -39,6 +65,7 @@ const CATEGORY_ORDER: AchievementCategory[] = [
 export default function AchievementsPage() {
   const { user } = useAuth();
   const [items, setItems] = useState<UserAchievement[]>([]);
+  const [points, setPoints] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -49,6 +76,10 @@ export default function AchievementsPage() {
       .then((res) => setItems(res.data ?? []))
       .catch(() => setItems([]))
       .finally(() => setLoading(false));
+    achievementsApi
+      .points()
+      .then((res) => setPoints(res.data.total ?? 0))
+      .catch(() => setPoints(null));
   }, [user]);
 
   const grouped = useMemo(() => {
@@ -61,6 +92,19 @@ export default function AchievementsPage() {
     return map;
   }, [items]);
 
+  const recentUnlocks = useMemo(
+    () =>
+      items
+        .filter((a) => a.unlocked && a.unlockedAt)
+        .sort(
+          (a, b) =>
+            new Date(b.unlockedAt!).getTime() -
+            new Date(a.unlockedAt!).getTime(),
+        )
+        .slice(0, 6),
+    [items],
+  );
+
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#FAF9F6] px-4">
@@ -69,7 +113,7 @@ export default function AchievementsPage() {
             Login dulu untuk melihat achievements
           </p>
           <Link
-            to="/login"
+            to="/login?redirect=%2Fachievements"
             className="inline-block px-6 py-2.5 bg-[#1C1C1A] text-white rounded-xl font-bold"
           >
             Login
@@ -80,18 +124,55 @@ export default function AchievementsPage() {
   }
 
   const unlockedCount = items.filter((a) => a.unlocked).length;
+  const completionPct =
+    items.length > 0 ? Math.round((unlockedCount / items.length) * 100) : 0;
 
   return (
     <div className="min-h-screen bg-[#FAF9F6] pb-16">
-      {/* Header */}
-      <div className="bg-gradient-to-br from-[#FBBF24] to-[#EA580C] pt-8 pb-12 px-4 text-white">
-        <div className="max-w-3xl mx-auto">
-          <h1 className="text-2xl font-extrabold flex items-center gap-2">
-            <Trophy size={24} strokeWidth={2.25} /> Achievements
-          </h1>
-          <div className="mt-3 grid grid-cols-2 gap-3">
-            <Stat value={unlockedCount} label="Unlocked" />
-            <Stat value={items.length || "—"} label="Total" />
+      {/* Hero */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-[#FBBF24] via-[#F97316] to-[#EA580C] pt-8 pb-10 px-4 text-white">
+        {/* Decorative blobs */}
+        <div aria-hidden className="pointer-events-none absolute inset-0">
+          <div className="absolute -top-24 -right-16 w-72 h-72 rounded-full bg-white/15 blur-3xl" />
+          <div className="absolute -bottom-28 -left-16 w-80 h-80 rounded-full bg-[#7C2D12]/30 blur-3xl" />
+        </div>
+
+        <div className="relative max-w-3xl mx-auto">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 rounded-2xl bg-white/20 ring-2 ring-white/50 backdrop-blur-sm flex items-center justify-center shadow-lg shrink-0">
+              <Trophy size={32} strokeWidth={2} />
+            </div>
+            <div className="min-w-0">
+              <h1 className="text-2xl font-extrabold tracking-tight">
+                Achievements
+              </h1>
+              <p className="text-[13px] text-white/85">
+                Kumpulkan badge dari check-in, meja nongkrong, dan eksplorasi
+                kafe.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-5 grid grid-cols-3 gap-3">
+            <Stat
+              icon={Gem}
+              value={points ?? "—"}
+              label="Poin"
+            />
+            <Stat
+              icon={Trophy}
+              value={`${unlockedCount}/${items.length || "—"}`}
+              label="Unlocked"
+            />
+            <Stat icon={Sparkles} value={`${completionPct}%`} label="Selesai" />
+          </div>
+
+          {/* Overall completion bar */}
+          <div className="mt-3 h-2 bg-white/20 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-white/90 rounded-full transition-all"
+              style={{ width: `${completionPct}%` }}
+            />
           </div>
         </div>
       </div>
@@ -106,15 +187,57 @@ export default function AchievementsPage() {
             Belum ada achievement tersedia
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-7">
+            {/* Recently unlocked showcase */}
+            {recentUnlocks.length > 0 && (
+              <section>
+                <h2 className="text-xs font-extrabold tracking-[0.15em] uppercase text-[#8A8880] mb-3">
+                  Baru Terbuka
+                </h2>
+                <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+                  {recentUnlocks.map((a) => {
+                    const Icon = iconForAchievement(a);
+                    const tier = TIER_STYLE[a.tier] ?? TIER_STYLE.bronze_1;
+                    return (
+                      <div
+                        key={a.id}
+                        className="flex flex-col items-center gap-1.5 w-20 shrink-0"
+                        title={a.description}
+                      >
+                        <div
+                          className={`w-14 h-14 rounded-full bg-gradient-to-br ${tier.grad} text-white flex items-center justify-center shadow-md ring-2 ring-white`}
+                        >
+                          <Icon size={24} strokeWidth={2} />
+                        </div>
+                        <p className="text-[10px] font-bold text-[#1C1C1A] text-center leading-tight line-clamp-2">
+                          {a.name}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
+
             {CATEGORY_ORDER.map((cat) => {
               const list = grouped.get(cat);
               if (!list || list.length === 0) return null;
+              const meta = CATEGORY_META[cat];
+              const CatIcon = meta.icon;
+              const catUnlocked = list.filter((a) => a.unlocked).length;
               return (
                 <section key={cat}>
-                  <h2 className="text-xs font-extrabold tracking-[0.15em] uppercase text-[#8A8880] mb-2">
-                    {CATEGORY_LABELS[cat]}
-                  </h2>
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="w-7 h-7 rounded-lg bg-[#FDF6EC] border border-[#F2DAB6] text-[#B97726] flex items-center justify-center">
+                      <CatIcon size={15} strokeWidth={2.25} />
+                    </span>
+                    <h2 className="text-xs font-extrabold tracking-[0.15em] uppercase text-[#5C5A52]">
+                      {meta.label}
+                    </h2>
+                    <span className="ml-auto text-[11px] font-bold text-[#8A8880] tabular-nums">
+                      {catUnlocked}/{list.length}
+                    </span>
+                  </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {list.map((a) => (
                       <AchievementCard key={a.id} achievement={a} />
@@ -132,37 +255,54 @@ export default function AchievementsPage() {
 
 function AchievementCard({ achievement: a }: { achievement: UserAchievement }) {
   const tier = TIER_STYLE[a.tier] ?? TIER_STYLE.bronze_1;
+  const Icon = iconForAchievement(a);
+  const chip = metricLabel(a.purposeSlug);
   const pct =
     a.threshold > 0
       ? Math.min(100, Math.round((a.progress / a.threshold) * 100))
       : 0;
+  const isPlatinum = a.tier === "platinum";
 
   return (
     <div
       className={`relative overflow-hidden rounded-2xl p-4 border transition-all ${
         a.unlocked
           ? "bg-white border-[#F0EDE8] shadow-sm"
-          : "bg-[#F5F4F0] border-[#E8E4DD] opacity-80"
+          : "bg-[#F5F4F0] border-[#E8E4DD]"
       }`}
     >
+      {/* Subtle sparkle watermark on platinum cards */}
+      {isPlatinum && a.unlocked && (
+        <Sparkles
+          size={64}
+          strokeWidth={1}
+          className="absolute -top-3 -right-3 text-[#A78BFA]/15 pointer-events-none"
+        />
+      )}
+
       <div className="flex items-start gap-3">
-        <div
-          className={`w-14 h-14 rounded-xl flex items-center justify-center shrink-0 ${
-            a.unlocked
-              ? `bg-gradient-to-br ${tier.grad} text-white shadow`
-              : "bg-[#E8E4DD] text-[#8A8880]"
-          }`}
-        >
-          {a.unlocked ? (
-            a.iconUrl ? (
+        {/* Medallion */}
+        <div className="relative shrink-0">
+          <div
+            className={`w-14 h-14 rounded-full flex items-center justify-center ${
+              a.unlocked
+                ? `bg-gradient-to-br ${tier.grad} text-white shadow ring-2 ring-white`
+                : "bg-[#E8E4DD] text-[#B0AB9F]"
+            }`}
+          >
+            {a.iconUrl ? (
               <img src={a.iconUrl} alt="" className="w-8 h-8 object-contain" />
             ) : (
-              <Trophy size={26} strokeWidth={2} />
-            )
-          ) : (
-            <Lock size={22} strokeWidth={2} />
+              <Icon size={24} strokeWidth={2} />
+            )}
+          </div>
+          {!a.unlocked && (
+            <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-[#8A8880] text-white flex items-center justify-center border-2 border-[#F5F4F0]">
+              <Lock size={10} strokeWidth={2.5} />
+            </span>
           )}
         </div>
+
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <h3
@@ -175,9 +315,9 @@ function AchievementCard({ achievement: a }: { achievement: UserAchievement }) {
             <span className="text-[10px] font-bold text-[#5C5A52] bg-[#F0EDE8] px-1.5 py-0.5 rounded-full">
               {tier.label}
             </span>
-            {a.purposeSlug && (
+            {chip && (
               <span className="text-[10px] font-bold text-[#B97726] bg-[#FDF6EC] px-1.5 py-0.5 rounded-full">
-                {a.purposeSlug}
+                {chip}
               </span>
             )}
           </div>
@@ -212,10 +352,21 @@ function AchievementCard({ achievement: a }: { achievement: UserAchievement }) {
   );
 }
 
-function Stat({ value, label }: { value: number | string; label: string }) {
+function Stat({
+  icon: Icon,
+  value,
+  label,
+}: {
+  icon: LucideIcon;
+  value: number | string;
+  label: string;
+}) {
   return (
-    <div className="bg-white/15 backdrop-blur-sm rounded-xl px-3 py-2 text-center">
-      <div className="text-xl font-extrabold tabular-nums">{value}</div>
+    <div className="bg-white/15 backdrop-blur-sm rounded-xl px-3 py-2.5 text-center">
+      <div className="flex items-center justify-center gap-1.5 text-xl font-extrabold tabular-nums">
+        <Icon size={16} strokeWidth={2.25} className="opacity-90" />
+        {value}
+      </div>
       <div className="text-[10px] font-semibold uppercase tracking-wider opacity-90">
         {label}
       </div>

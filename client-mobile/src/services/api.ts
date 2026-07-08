@@ -197,6 +197,8 @@ export async function fetchMe(): Promise<User> {
     friendCode: data.friendCode,
     avatarUrl: data.avatarUrl,
     provider: data.provider,
+    username: data.username,
+    bio: data.bio,
   };
 }
 
@@ -205,6 +207,8 @@ export async function fetchMe(): Promise<User> {
 export async function updateProfileApi(payload: {
   name?: string;
   avatarUrl?: string;
+  username?: string;
+  bio?: string;
 }): Promise<User> {
   const { data } = await api.patch("/users/me", payload);
   return {
@@ -214,6 +218,8 @@ export async function updateProfileApi(payload: {
     role: data.role,
     friendCode: data.friendCode,
     avatarUrl: data.avatarUrl,
+    username: data.username,
+    bio: data.bio,
   };
 }
 
@@ -446,6 +452,7 @@ export async function fetchLeaderboard(cafeId: string) {
     rank: number;
     userId: number;
     name: string;
+    username?: string;
     avatarUrl?: string;
     checkinCount: number;
     totalDuration: string;
@@ -470,6 +477,7 @@ export async function fetchGlobalLeaderboard(period: LeaderboardPeriod = "month"
     rank: number;
     userId: number;
     name: string;
+    username?: string;
     avatarUrl?: string;
     badge?: string | null;
     totalCheckins: number;

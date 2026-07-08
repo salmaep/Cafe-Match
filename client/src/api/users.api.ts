@@ -7,8 +7,14 @@ export const usersApi = {
       "/users/me",
     ),
 
-  updateProfile: (data: { name?: string; avatarUrl?: string }) =>
-    apiClient.patch<User & { avatarUrl?: string | null }>("/users/me", data),
+  updateProfile: (data: {
+    name?: string;
+    avatarUrl?: string;
+    username?: string;
+    gender?: "male" | "female" | "";
+    bio?: string;
+    phone?: string;
+  }) => apiClient.patch<User & { avatarUrl?: string | null }>("/users/me", data),
 
   changePassword: (data: { currentPassword: string; newPassword: string }) =>
     apiClient.post<{ ok: true }>("/users/me/password", data),

@@ -77,10 +77,7 @@ export default function MobileFilterModal({
 }: Props) {
   const { t } = useTranslation();
   const [groups, setGroups] = useState<FilterCatalogGroup[] | null>(catalogCache);
-  // Mirror web mobile modal: groups collapsible, default `amenity` open.
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
-    amenity: true,
-  });
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (catalogCache) return;

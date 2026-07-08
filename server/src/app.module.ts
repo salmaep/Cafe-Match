@@ -25,6 +25,7 @@ import { CheckinsModule } from './checkins/checkins.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { AchievementsModule } from './achievements/achievements.module';
 import { FriendsModule } from './friends/friends.module';
+import { TablesModule } from './tables/tables.module';
 import { RecapsModule } from './recaps/recaps.module';
 import { EventsModule } from './gateway/events.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -156,6 +157,7 @@ import { UploadsModule } from './uploads/uploads.module';
     NotificationsModule,
     AchievementsModule,
     FriendsModule,
+    TablesModule,
     RecapsModule,
     EventsModule,
     ScraperSyncModule,

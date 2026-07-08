@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { usePreferences } from "../context/PreferencesContext";
+import { getPostAuthRedirect } from "../utils/authRedirect";
 
 export default function AuthCallbackPage() {
   const [params] = useSearchParams();
@@ -17,7 +18,11 @@ export default function AuthCallbackPage() {
     if (token) {
       loginWithToken(token)
         .then(() =>
-          navigate(wizardCompleted ? "/" : "/discover", { replace: true }),
+          // Wizard onboarding wins for brand-new users; otherwise return to
+          // the last non-auth page (never /login or /register).
+          navigate(wizardCompleted ? getPostAuthRedirect("") : "/discover", {
+            replace: true,
+          }),
         )
         .catch(() => setError("Sesi login gagal, coba lagi yuk."));
     } else {

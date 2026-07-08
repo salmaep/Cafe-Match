@@ -77,7 +77,7 @@ describe('Login + email OTP (integration)', () => {
     } as any);
     expect(challenge.twoFaRequired).toBe(true);
     expect(challenge.otpId).toHaveLength(36);
-    expect(challenge.emailHint).toBe('di***@example.com');
+    expect(challenge.emailHint).toBe('di*@example.com'); // "dio" → 2 shown + 1 masked
 
     expect(sendMail).toHaveBeenCalledTimes(1);
     const mail = sendMail.mock.calls[0][0];

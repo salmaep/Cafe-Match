@@ -349,9 +349,9 @@ export default function WriteReviewScreen() {
               placeholderTextColor={colors.textSecondary}
               value={text}
               onChangeText={setText}
-              maxLength={2000}
+              maxLength={500}
             />
-            <Text style={styles.charCount}>{text.length} / 2000</Text>
+            <Text style={styles.charCount}>{text.length} / 500</Text>
           </View>
         )}
 

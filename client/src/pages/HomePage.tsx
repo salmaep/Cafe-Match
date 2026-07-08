@@ -27,7 +27,9 @@ import { purposesApi } from "../api/purposes.api";
 import type { Purpose } from "../types";
 import SearchBar from "../components/search/SearchBar";
 import RadiusSlider from "../components/search/RadiusSlider";
-import FilterPanel from "../components/search/FilterPanel";
+import FilterRail from "../components/search/FilterRail";
+import FilterModalMobile from "../components/search/FilterModalMobile";
+import FilterToggleButton from "../components/search/FilterToggleButton";
 import BottomSheet from "../components/layout/BottomSheet";
 import HybridAdSlot from "../components/HybridAdSlot";
 import InfiniteScrollSentinel from "../components/InfiniteScrollSentinel";
@@ -41,11 +43,13 @@ import {
   Sparkles,
   X,
 } from "../utils/lucideIcon";
-import { PurposeIcon } from "../utils/purposeIcons";
 
 const AD_INTERVAL = 5;
 const MAX_ADS = 2;
 const PAGE_SIZE = 7;
+// Hard cap for map pins — pins follow the active search/filters but never
+// exceed 500 markers (the paginated list below is unaffected).
+const MAP_PIN_LIMIT = 500;
 
 interface Filters {
   q: string;
@@ -124,14 +128,9 @@ export default function HomePage() {
     facilities: [],
     priceRange: "",
   });
-  const [filterPanelOpen, setFilterPanelOpen] = useState(false);
-  // Desktop/tablet drawer: overlays the map. Closed by default — user toggles via the floating button.
-  // Default open on large monitors (≥1536px / Tailwind 2xl) — user can still close.
-  // On smaller screens stays closed by default to keep map space.
-  const [filterDrawerOpen, setFilterDrawerOpen] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return window.matchMedia("(min-width: 1536px)").matches;
-  });
+  // Single filter open/close state for both the desktop rail and the mobile
+  // sheet (they're breakpoint-exclusive). ALWAYS closed by default.
+  const [filterOpen, setFilterOpen] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [featuredCafes, setFeaturedCafes] = useState<any[]>([]);
   const [mobileQuery, setMobileQuery] = useState("");
@@ -247,9 +246,8 @@ export default function HomePage() {
     fetchCafes(1);
   }, [center, radius, purposeId, filters, fetchCafes]);
 
-  // Fetch full cafe data with limit=1000 for the map so every matching cafe
-  // shows as a pin AND its InfoWindow can render photos / rating / etc. on
-  // click — same payload the cafe list uses, just un-paginated.
+  // Fetch full cafe data for the map pins with the SAME search/filter params
+  // as the list (so pins follow the active search), capped at MAP_PIN_LIMIT.
   useEffect(() => {
     if (!center) return;
     let cancelled = false;
@@ -258,7 +256,7 @@ export default function HomePage() {
       lng: center[1],
       radius,
       page: 1,
-      limit: 1000,
+      limit: MAP_PIN_LIMIT,
     };
     if (purposeId) params.purposeId = purposeId;
     if (filters.q) params.q = filters.q;
@@ -590,7 +588,7 @@ export default function HomePage() {
             </div>
             <button
               type="button"
-              onClick={() => setFilterPanelOpen(true)}
+              onClick={() => setFilterOpen(true)}
               className={`relative shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-base shadow-sm border transition-colors ${
                 activeFilterCount > 0
                   ? "bg-[#D48B3A] text-white border-[#D48B3A]"
@@ -750,7 +748,7 @@ export default function HomePage() {
       </div>
 
       {/* ─── TABLET/DESKTOP (md+): map (full-left) + results · filter is a left-side overlay drawer ─── */}
-      <div className="hidden md:flex md:flex-row md:h-[calc(100vh-4rem)] md:gap-3 md:p-3 lg:gap-4 lg:p-4 bg-[#FAF9F6]">
+      <div className="hidden md:flex md:flex-row md:h-[calc(100dvh-4rem)] md:overflow-hidden md:gap-3 md:p-3 lg:gap-4 lg:p-4 bg-[#FAF9F6]">
         <div className="md:h-full md:flex-[2] lg:flex-[3] relative">
           {center && (
             <MapErrorBoundary>
@@ -763,70 +761,33 @@ export default function HomePage() {
             </MapErrorBoundary>
           )}
 
-          {/* Filter drawer overlay — slides over the map. Toggleable on md+ via the floating button. */}
-          <aside
-            className={`absolute left-0 top-0 bottom-0 w-72 z-[5] overflow-y-auto overscroll-contain transition-transform duration-300 ease-out ${
-              filterDrawerOpen ? "translate-x-0" : "-translate-x-full"
-            }`}
-            aria-hidden={!filterDrawerOpen}
-          >
-            <div className="relative space-y-3">
-              <PurposeChips
+          {/* Filter rail — one shared card (Tujuan+Harga+Fasilitas) over the map,
+              internal scroll, close button outside its right edge. Default closed. */}
+          {filterOpen && (
+            <aside className="absolute left-0 top-0 bottom-0 w-[20.5rem] z-[5]">
+              <FilterRail
+                open={filterOpen}
+                onClose={() => setFilterOpen(false)}
                 purposes={purposes}
-                activeId={purposeId}
-                onSelect={handlePurposeSelect}
-              />
-              <FilterPanel
-                variant="sidebar"
+                activePurposeId={purposeId}
+                onPurposeSelect={handlePurposeSelect}
                 facilities={filters.facilities}
                 onFacilitiesChange={setFacilities}
                 priceRange={filters.priceRange}
                 onPriceRangeChange={setPriceRange}
                 autoSelectedKeys={autoSelectedFromPurpose}
+                maxHeightClassName="max-h-[calc(100vh-7rem)]"
               />
-              <button
-                type="button"
-                onClick={() => setFilterDrawerOpen(false)}
-                className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/95 shadow border border-[#F0EDE8] flex items-center justify-center text-[#8A8880] hover:text-[#1C1C1A]"
-                aria-label="Tutup filter"
-              >
-                <X size={16} strokeWidth={2} />
-              </button>
-            </div>
-          </aside>
+            </aside>
+          )}
 
-          {/* Floating filter toggle — surfaces the drawer when closed */}
-          {!filterDrawerOpen && (
-            <button
-              type="button"
-              onClick={() => setFilterDrawerOpen(true)}
-              className={`absolute top-3 left-3 z-[5] inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-white shadow-lg border text-sm font-semibold transition-colors ${
-                activeFilterCount > 0
-                  ? "border-[#D48B3A] text-[#D48B3A]"
-                  : "border-[#F0EDE8] text-[#1C1C1A] hover:border-[#D48B3A]"
-              }`}
-              aria-label="Buka filter"
-            >
-              <svg
-                className="h-4 w-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
-                />
-              </svg>
-              Filter
-              {activeFilterCount > 0 && (
-                <span className="bg-[#D48B3A] text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
-                  {activeFilterCount}
-                </span>
-              )}
-            </button>
+          {/* Floating filter toggle — surfaces the rail when closed */}
+          {!filterOpen && (
+            <FilterToggleButton
+              activeCount={activeFilterCount}
+              onClick={() => setFilterOpen(true)}
+              className="absolute top-3 left-3 z-[5]"
+            />
           )}
         </div>
 
@@ -1051,8 +1012,9 @@ export default function HomePage() {
         </div>
       </div>
 
-      {filterPanelOpen && (
-        <MobileFilterModal
+      {filterOpen && (
+        <FilterModalMobile
+          breakpoint="md"
           purposes={purposes}
           activePurposeId={purposeId}
           onPurposeSelect={handlePurposeSelect}
@@ -1061,7 +1023,7 @@ export default function HomePage() {
           priceRange={filters.priceRange}
           onPriceRangeChange={setPriceRange}
           autoSelectedKeys={autoSelectedFromPurpose}
-          onClose={() => setFilterPanelOpen(false)}
+          onClose={() => setFilterOpen(false)}
         />
       )}
 
@@ -1165,162 +1127,5 @@ export default function HomePage() {
         </div>
       )}
     </>
-  );
-}
-
-// ─── Purpose chips block — shown above FilterPanel inside the filter UI ──────
-function PurposeChips({
-  purposes,
-  activeId,
-  onSelect,
-}: {
-  purposes: Purpose[];
-  activeId: number | null;
-  onSelect: (id: number | null) => void;
-}) {
-  return (
-    <div className="bg-white rounded-xl border border-[#F0EDE8] overflow-hidden">
-      <div className="px-4 py-3 border-b border-[#F0EDE8]">
-        <h3 className="text-sm font-bold text-[#1C1C1A]">Tujuan</h3>
-        <p className="text-[11px] text-[#8A8880] mt-0.5">
-          Filter by your reason
-        </p>
-      </div>
-      <div className="px-4 py-3 flex flex-wrap gap-1.5">
-        <button
-          type="button"
-          onClick={() => onSelect(null)}
-          className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
-            activeId === null
-              ? "bg-[#1C1C1A] text-white border-[#1C1C1A]"
-              : "bg-white text-[#1C1C1A] border-[#E8E4DD] hover:border-[#D48B3A] hover:text-[#D48B3A]"
-          }`}
-        >
-          Semua
-        </button>
-        {purposes.map((p) => {
-          const active = activeId === p.id;
-          return (
-            <button
-              key={p.id}
-              type="button"
-              onClick={() => onSelect(active ? null : p.id)}
-              className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
-                active
-                  ? "bg-[#D48B3A] text-white border-[#D48B3A] shadow-sm"
-                  : "bg-white text-[#1C1C1A] border-[#E8E4DD] hover:border-[#D48B3A] hover:text-[#D48B3A]"
-              }`}
-            >
-              <PurposeIcon slug={p.slug} icon={p.icon} size={12} />
-              {p.name}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-// ─── Mobile filter modal — purpose chips + FilterPanel sidebar in one sheet ─
-function MobileFilterModal({
-  purposes,
-  activePurposeId,
-  onPurposeSelect,
-  facilities,
-  onFacilitiesChange,
-  priceRange,
-  onPriceRangeChange,
-  autoSelectedKeys,
-  onClose,
-}: {
-  purposes: Purpose[];
-  activePurposeId: number | null;
-  onPurposeSelect: (id: number | null) => void;
-  facilities: string[];
-  onFacilitiesChange: (next: string[]) => void;
-  priceRange: string;
-  onPriceRangeChange: (next: string) => void;
-  autoSelectedKeys?: string[];
-  onClose: () => void;
-}) {
-  return (
-    <div className="md:hidden fixed inset-0 z-[1100] flex items-end justify-center">
-      <div
-        className="absolute inset-0 bg-black/50"
-        onClick={onClose}
-        aria-hidden
-      />
-      <div className="relative bg-white w-full rounded-t-2xl shadow-2xl h-[88vh] flex flex-col overflow-hidden">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[#F0EDE8]">
-          <h3 className="text-base font-bold text-[#1C1C1A]">Filter</h3>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Tutup"
-            className="w-8 h-8 rounded-full hover:bg-[#F0EDE8] text-[#8A8880] flex items-center justify-center"
-          >
-            <X size={18} strokeWidth={2} />
-          </button>
-        </div>
-
-        <div className="flex-1 min-h-0 overflow-y-auto">
-          <div className="px-4 py-3 border-b border-[#F0EDE8]">
-            <div className="text-[11px] font-bold text-[#8A8880] uppercase tracking-wider mb-2">
-              Tujuan
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              <button
-                type="button"
-                onClick={() => onPurposeSelect(null)}
-                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
-                  activePurposeId === null
-                    ? "bg-[#1C1C1A] text-white border-[#1C1C1A]"
-                    : "bg-white text-[#1C1C1A] border-[#E8E4DD]"
-                }`}
-              >
-                Semua
-              </button>
-              {purposes.map((p) => {
-                const active = activePurposeId === p.id;
-                return (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => onPurposeSelect(active ? null : p.id)}
-                    className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
-                      active
-                        ? "bg-[#D48B3A] text-white border-[#D48B3A]"
-                        : "bg-white text-[#1C1C1A] border-[#E8E4DD]"
-                    }`}
-                  >
-                    <PurposeIcon slug={p.slug} icon={p.icon} size={14} />
-                    {p.name}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <FilterPanel
-            variant="sidebar"
-            facilities={facilities}
-            onFacilitiesChange={onFacilitiesChange}
-            priceRange={priceRange}
-            onPriceRangeChange={onPriceRangeChange}
-            autoSelectedKeys={autoSelectedKeys}
-          />
-        </div>
-
-        <div className="border-t border-[#F0EDE8] bg-white px-4 py-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="w-full bg-[#1C1C1A] hover:bg-black text-white text-sm font-bold py-2.5 rounded-lg"
-          >
-            Terapkan
-          </button>
-        </div>
-      </div>
-    </div>
   );
 }

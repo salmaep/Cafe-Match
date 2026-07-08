@@ -5,7 +5,11 @@ export type AchievementCategory =
   | "visit_general"
   | "social"
   | "streak"
-  | "special";
+  | "special"
+  | "points"
+  | "table"
+  | "explorer"
+  | "time";
 
 export type AchievementTier =
   | "bronze_1"
@@ -35,7 +39,18 @@ export interface UserAchievement extends Achievement {
   unlockedAt: string | null;
 }
 
+export interface PointsSummary {
+  total: number;
+  recent: {
+    eventType: string;
+    points: number;
+    meta: any;
+    createdAt: string;
+  }[];
+}
+
 export const achievementsApi = {
   all: () => apiClient.get<Achievement[]>("/achievements"),
   mine: () => apiClient.get<UserAchievement[]>("/achievements/me"),
+  points: () => apiClient.get<PointsSummary>("/achievements/points"),
 };

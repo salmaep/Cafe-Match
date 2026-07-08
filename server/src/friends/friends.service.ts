@@ -11,6 +11,7 @@ import { Friendship } from './entities/friendship.entity';
 import { User } from '../users/entities/user.entity';
 import { NotificationsService } from '../notifications/notifications.service';
 import { AchievementsService } from '../achievements/achievements.service';
+import { PointsService } from '../achievements/points.service';
 
 @Injectable()
 export class FriendsService {
@@ -24,6 +25,7 @@ export class FriendsService {
     private readonly dataSource: DataSource,
     private readonly notificationsService: NotificationsService,
     private readonly achievementsService: AchievementsService,
+    private readonly pointsService: PointsService,
   ) {}
 
   /** Resolve a friend code to minimal public profile info. Powers the "Add"
@@ -117,8 +119,18 @@ export class FriendsService {
       { friendId: userId },
     );
 
-    // Trigger social achievements for BOTH users (both just gained a friend)
+    // Points + social achievements for BOTH users (both just gained a friend)
     try {
+      await this.pointsService.award(
+        request.senderId,
+        'friend_accepted',
+        `friend:${request.id}:u${request.senderId}`,
+      );
+      await this.pointsService.award(
+        request.receiverId,
+        'friend_accepted',
+        `friend:${request.id}:u${request.receiverId}`,
+      );
       const [senderCount, receiverCount] = await Promise.all([
         this.friendCount(request.senderId),
         this.friendCount(request.receiverId),

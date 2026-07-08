@@ -6,9 +6,13 @@ import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
 import { DeletionRequestsController } from './deletion-requests.controller';
 import { UsersCleanupService } from './users.cleanup';
+import { AchievementsModule } from '../achievements/achievements.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, DeletionRequest])],
+  imports: [
+    TypeOrmModule.forFeature([User, DeletionRequest]),
+    AchievementsModule,
+  ],
   controllers: [UsersController, DeletionRequestsController],
   providers: [UsersService, UsersCleanupService],
   exports: [UsersService],

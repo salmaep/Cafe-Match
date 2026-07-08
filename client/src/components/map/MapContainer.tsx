@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Map,
   AdvancedMarker,
@@ -10,6 +11,10 @@ import { formatDistance } from "../../utils/haversine";
 import { cafeUrl } from "../../utils/cafeUrl";
 import { getCafeImage, placeholderImage } from "../../utils/cafeImage";
 import CafeClusterMarkers from "./CafeClusterMarkers";
+import OpenTablesModal from "../tables/OpenTablesModal";
+import OpenTableModal from "../tables/OpenTableModal";
+import ActiveCheckinBadge from "../checkin/ActiveCheckinBadge";
+import { useActiveTables } from "../../context/ActiveTablesContext";
 import { Star } from "../../utils/lucideIcon";
 
 const MAP_ID = import.meta.env.VITE_GOOGLE_MAPS_MAP_ID || undefined;
@@ -115,6 +120,10 @@ function UserPin() {
 export default function MapView({ center, cafes, radius, onMapClick }: Props) {
   const [activeCafeId, setActiveCafeId] = useState<number | null>(null);
   const [userPopupOpen, setUserPopupOpen] = useState(false);
+  const [tablesModalCafe, setTablesModalCafe] = useState<Cafe | null>(null);
+  const [openTableFormCafe, setOpenTableFormCafe] = useState<Cafe | null>(null);
+  const { activeCafeIds } = useActiveTables();
+  const navigate = useNavigate();
 
   // Stable callbacks — without these, unrelated parent re-renders (typing in
   // SearchBar, focus toggles) hand new function identities to child effects
@@ -157,6 +166,7 @@ export default function MapView({ center, cafes, radius, onMapClick }: Props) {
         streetViewControl={false}
         fullscreenControl={false}
         mapTypeControl={false}
+        cameraControl={false}
         className="h-full w-full rounded-xl"
         style={{ minHeight: "400px" }}
         onClick={handleMapClick}
@@ -180,7 +190,11 @@ export default function MapView({ center, cafes, radius, onMapClick }: Props) {
           </InfoWindow>
         )}
 
-        <CafeClusterMarkers cafes={cafes} onCafeClick={handleCafeClick} />
+        <CafeClusterMarkers
+          cafes={cafes}
+          onCafeClick={handleCafeClick}
+          activeTableCafeIds={activeCafeIds}
+        />
 
         {activeCafe && (
           <InfoWindow
@@ -189,78 +203,128 @@ export default function MapView({ center, cafes, radius, onMapClick }: Props) {
             pixelOffset={[0, -34]}
             headerDisabled
           >
-            <a
-              href={cafeUrl(activeCafe)}
-              className="block w-[240px] no-underline text-inherit"
-            >
-              <img
-                src={getCafeImage(activeCafe)}
-                alt={activeCafe.name}
-                referrerPolicy="no-referrer"
-                className="w-full h-32 object-cover rounded-t-md bg-[#F0EDE8]"
-                onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).src = placeholderImage(
-                    activeCafe.id,
-                  );
+            {/* div wrapper (not <a>) so the open-tables button below doesn't
+                trigger navigation; the image + "Cek detail" stay links.
+                onClick intercepts for SPA navigation — a plain href here means
+                a FULL page reload (white flash + every provider refetching). */}
+            <div className="block w-[240px]">
+              <a
+                href={cafeUrl(activeCafe)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigate(cafeUrl(activeCafe));
                 }}
-              />
-              <div className="px-1 pt-2 pb-1">
-                <div className="font-bold text-[14px] text-[#1C1C1A] line-clamp-1">
-                  {activeCafe.name}
-                </div>
-                <div className="flex items-center gap-1.5 mt-0.5 text-[12px] text-[#8A8880]">
-                  {activeCafe.googleRating != null && (
-                    <>
-                      <span className="text-[#D48B3A] font-semibold inline-flex items-center gap-1">
-                        <Star size={11} strokeWidth={2} fill="currentColor" />
-                        {activeCafe.googleRating}
+                className="block no-underline text-inherit"
+              >
+                <img
+                  src={getCafeImage(activeCafe)}
+                  alt={activeCafe.name}
+                  referrerPolicy="no-referrer"
+                  className="w-full h-32 object-cover rounded-t-md bg-[#F0EDE8]"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src = placeholderImage(
+                      activeCafe.id,
+                    );
+                  }}
+                />
+                <div className="px-1 pt-2 pb-1">
+                  <div className="font-bold text-[14px] text-[#1C1C1A] line-clamp-1">
+                    {activeCafe.name}
+                  </div>
+                  <div className="flex items-center gap-1.5 mt-0.5 text-[12px] text-[#8A8880]">
+                    {activeCafe.googleRating != null && (
+                      <>
+                        <span className="text-[#D48B3A] font-semibold inline-flex items-center gap-1">
+                          <Star size={11} strokeWidth={2} fill="currentColor" />
+                          {activeCafe.googleRating}
+                        </span>
+                        {activeCafe.totalGoogleReviews != null && (
+                          <span>({activeCafe.totalGoogleReviews})</span>
+                        )}
+                        <span>·</span>
+                      </>
+                    )}
+                    {activeCafe.priceRange && (
+                      <>
+                        <span>{activeCafe.priceRange}</span>
+                        <span>·</span>
+                      </>
+                    )}
+                    {activeCafe.distanceMeters != null && (
+                      <span className="text-[#D48B3A]">
+                        {formatDistance(activeCafe.distanceMeters)}
                       </span>
-                      {activeCafe.totalGoogleReviews != null && (
-                        <span>({activeCafe.totalGoogleReviews})</span>
-                      )}
-                      <span>·</span>
-                    </>
-                  )}
-                  {activeCafe.priceRange && (
-                    <>
-                      <span>{activeCafe.priceRange}</span>
-                      <span>·</span>
-                    </>
-                  )}
-                  {activeCafe.distanceMeters != null && (
-                    <span className="text-[#D48B3A]">
-                      {formatDistance(activeCafe.distanceMeters)}
-                    </span>
-                  )}
+                    )}
+                  </div>
+                  <div className="text-[12px] text-[#5C5A52] mt-1 line-clamp-2">
+                    {activeCafe.address}
+                  </div>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {(Array.isArray(activeCafe.facilities)
+                      ? activeCafe.facilities
+                          .slice(0, 3)
+                          .map((f: any) =>
+                            typeof f === "string" ? f : f?.name,
+                          )
+                          .filter(Boolean)
+                      : []
+                    ).map((name: string) => (
+                      <span
+                        key={name}
+                        className="bg-[#F0EDE8] text-[#8A8880] text-[10px] font-medium rounded-full px-1.5 py-0.5"
+                      >
+                        {name}
+                      </span>
+                    ))}
+                  </div>
+                  <div className="mt-2 text-[12px] font-bold text-[#D48B3A]">
+                    Cek detail →
+                  </div>
                 </div>
-                <div className="text-[12px] text-[#5C5A52] mt-1 line-clamp-2">
-                  {activeCafe.address}
-                </div>
-                <div className="flex flex-wrap gap-1 mt-2">
-                  {(Array.isArray(activeCafe.facilities)
-                    ? activeCafe.facilities
-                        .slice(0, 3)
-                        .map((f: any) => (typeof f === "string" ? f : f?.name))
-                        .filter(Boolean)
-                    : []
-                  ).map((name: string) => (
-                    <span
-                      key={name}
-                      className="bg-[#F0EDE8] text-[#8A8880] text-[10px] font-medium rounded-full px-1.5 py-0.5"
-                    >
-                      {name}
-                    </span>
-                  ))}
-                </div>
-                <div className="mt-2 text-[12px] font-bold text-[#D48B3A]">
-                  Cek detail →
-                </div>
+              </a>
+
+              {/* Table action — always available: view the host list when
+                  tables exist, otherwise open one right from the map. */}
+              <div className="px-1 pb-1.5 mt-1">
+                {activeCafeIds.has(activeCafe.id) ? (
+                  <button
+                    type="button"
+                    onClick={() => setTablesModalCafe(activeCafe)}
+                    className="w-full inline-flex items-center justify-center gap-1.5 py-2 rounded-lg bg-emerald-600 text-white text-[12px] font-bold hover:bg-emerald-700 transition-colors"
+                  >
+                    🪑 Open table here — View Tables
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setOpenTableFormCafe(activeCafe)}
+                    className="w-full inline-flex items-center justify-center gap-1.5 py-2 rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-700 text-[12px] font-bold hover:bg-emerald-100 transition-colors"
+                  >
+                    🪑 Open a Table Here
+                  </button>
+                )}
               </div>
-            </a>
+            </div>
           </InfoWindow>
         )}
       </Map>
 
+      {/* Active check-in badge — sits where the removed camera control was */}
+      <ActiveCheckinBadge className="absolute bottom-6 right-3 z-[5]" />
+
+      {tablesModalCafe && (
+        <OpenTablesModal
+          cafe={{ id: tablesModalCafe.id, name: tablesModalCafe.name }}
+          onClose={() => setTablesModalCafe(null)}
+        />
+      )}
+
+      {openTableFormCafe && (
+        <OpenTableModal
+          cafe={{ id: openTableFormCafe.id, name: openTableFormCafe.name }}
+          onClose={() => setOpenTableFormCafe(null)}
+        />
+      )}
     </div>
   );
 }

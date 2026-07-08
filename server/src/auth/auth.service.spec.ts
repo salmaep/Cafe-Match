@@ -81,7 +81,7 @@ describe('AuthService (login + email OTP)', () => {
       expect(res).toMatchObject({
         twoFaRequired: true,
         otpId: 'otp-1',
-        emailHint: 'us***@example.com',
+        emailHint: 'us**@example.com', // "user" → 2 shown + 2 masked
       });
       expect(res.accessToken).toBeUndefined();
     });

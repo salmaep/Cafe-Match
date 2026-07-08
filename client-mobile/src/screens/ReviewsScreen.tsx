@@ -572,6 +572,7 @@ export default function ReviewsScreen() {
           styles.listContainer,
           { paddingBottom: insets.bottom + spacing.lg },
         ]}
+        showsVerticalScrollIndicator={false}
       >
         {starSummary.length > 0 && (
           <HeroSummary

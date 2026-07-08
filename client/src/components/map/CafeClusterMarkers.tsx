@@ -10,6 +10,8 @@ import type { Cafe } from "../../types";
 interface Props {
   cafes: Cafe[];
   onCafeClick: (id: number) => void;
+  /** Cafes with ≥1 open table right now — rendered with the emerald pin. */
+  activeTableCafeIds?: Set<number>;
 }
 
 // Coffee glyph paths sourced from lucide-react Coffee icon (viewBox 0 0 24 24),
@@ -44,9 +46,26 @@ const PROMOTED_PIN_HTML = `
   </svg>
 </div>`;
 
-function buildPinElement(isPromoted: boolean): HTMLElement {
+// Emerald variant — cafe currently has ≥1 open table ("meja terbuka").
+const OPEN_TABLE_PIN_SVG = `
+<svg width="28" height="38" viewBox="0 0 28 38" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 2px 4px rgba(5,150,105,0.45));">
+  <path d="M14 0C6.27 0 0 6.27 0 14c0 10.5 14 24 14 24s14-13.5 14-24C28 6.27 21.73 0 14 0z" fill="#059669"/>
+  <circle cx="14" cy="13" r="7" fill="#fff"/>
+  <circle cx="14" cy="13" r="9" fill="none" stroke="#34d399" stroke-width="1.5" opacity="0.9"/>
+  <g transform="translate(8 7) scale(0.5)" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none">${COFFEE_PATHS}</g>
+</svg>`;
+
+function buildPinElement(isPromoted: boolean, hasOpenTable: boolean): HTMLElement {
   const el = document.createElement("div");
-  el.innerHTML = isPromoted ? PROMOTED_PIN_HTML : CAFE_PIN_SVG;
+  // Precedence: promoted (paid placement) > open-table (emerald) > default amber.
+  el.innerHTML = isPromoted
+    ? PROMOTED_PIN_HTML
+    : hasOpenTable
+      ? OPEN_TABLE_PIN_SVG
+      : CAFE_PIN_SVG;
+  // Flag read by the cluster renderer so clusters that swallow an open-table
+  // pin still show an emerald indicator.
+  if (hasOpenTable) el.dataset.openTable = "1";
   return el;
 }
 
@@ -60,23 +79,41 @@ function ensureKeyframes() {
   document.head.appendChild(style);
 }
 
-function buildClusterPinSVG(count: number, size: number): string {
+function buildClusterPinSVG(
+  count: number,
+  size: number,
+  hasOpenTable: boolean,
+): string {
   const height = Math.round(size * (44 / 32));
   const digits = String(count).length;
   const fontSize = digits >= 3 ? 11 : digits === 2 ? 13 : 15;
+  // Emerald badge in the pin corner when the cluster contains ≥1 cafe with an
+  // open table — keeps tables discoverable even while pins are clustered.
+  const tableBadge = hasOpenTable
+    ? `<circle cx="27" cy="5" r="5" fill="#059669" stroke="#fff" stroke-width="1.5"/>
+       <circle cx="27" cy="5" r="1.8" fill="#fff"/>`
+    : "";
   return `
-<svg width="${size}" height="${height}" viewBox="0 0 32 44" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
-  <path d="M16 0C7.16 0 0 7.16 0 16c0 12 16 28 16 28s16-16 16-28C32 7.16 24.84 0 16 0z" fill="#d97706" stroke="#fff" stroke-width="1.5"/>
+<svg width="${size}" height="${height}" viewBox="0 0 32 44" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));overflow:visible;">
+  <path d="M16 0C7.16 0 0 7.16 0 16c0 12 16 28 16 28s16-16 16-28C32 7.16 24.84 0 16 0z" fill="#d97706" stroke="${hasOpenTable ? "#059669" : "#fff"}" stroke-width="1.5"/>
   <circle cx="16" cy="15" r="11" fill="#fff"/>
   <text x="16" y="15" text-anchor="middle" dominant-baseline="central" font-family="Arial, sans-serif" font-size="${fontSize}" font-weight="800" fill="#d97706">${count}</text>
+  ${tableBadge}
 </svg>`;
 }
 
 const clusterRenderer: Renderer = {
-  render: ({ count, position }: Cluster) => {
+  render: ({ count, position, markers }: Cluster) => {
     const size = count < 10 ? 40 : count < 100 ? 48 : 56;
+    const hasOpenTable = (markers ?? []).some(
+      (m) =>
+        (m as google.maps.marker.AdvancedMarkerElement).content instanceof
+          HTMLElement &&
+        ((m as google.maps.marker.AdvancedMarkerElement)
+          .content as HTMLElement).dataset.openTable === "1",
+    );
     const div = document.createElement("div");
-    div.innerHTML = buildClusterPinSVG(count, size);
+    div.innerHTML = buildClusterPinSVG(count, size, hasOpenTable);
     return new google.maps.marker.AdvancedMarkerElement({
       position,
       content: div,
@@ -85,7 +122,11 @@ const clusterRenderer: Renderer = {
   },
 };
 
-export default function CafeClusterMarkers({ cafes, onCafeClick }: Props) {
+export default function CafeClusterMarkers({
+  cafes,
+  onCafeClick,
+  activeTableCafeIds,
+}: Props) {
   const map = useMap();
   const clustererRef = useRef<MarkerClusterer | null>(null);
   const markersRef = useRef<google.maps.marker.AdvancedMarkerElement[]>([]);
@@ -101,10 +142,11 @@ export default function CafeClusterMarkers({ cafes, onCafeClick }: Props) {
     const markers = cafes.map((cafe) => {
       const isPromoted =
         !!cafe.hasActivePromotion && cafe.activePromotionType === "new_cafe";
+      const hasOpenTable = !!activeTableCafeIds?.has(cafe.id);
       const marker = new google.maps.marker.AdvancedMarkerElement({
         position: { lat: cafe.latitude, lng: cafe.longitude },
-        content: buildPinElement(isPromoted),
-        zIndex: cafe.hasActivePromotion ? 1000 : undefined,
+        content: buildPinElement(isPromoted, hasOpenTable),
+        zIndex: cafe.hasActivePromotion ? 1000 : hasOpenTable ? 900 : undefined,
       });
       const listener = marker.addListener("click", () => onCafeClick(cafe.id));
       listenersRef.current.push(listener);
@@ -129,7 +171,7 @@ export default function CafeClusterMarkers({ cafes, onCafeClick }: Props) {
       });
       markersRef.current = [];
     };
-  }, [map, cafes, onCafeClick]);
+  }, [map, cafes, onCafeClick, activeTableCafeIds]);
 
   return null;
 }

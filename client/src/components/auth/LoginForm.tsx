@@ -1,8 +1,9 @@
-import { useState, type FormEvent } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useEffect, useState, type FormEvent } from "react";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth, type PendingTwoFa } from "../../context/AuthContext";
 import { authText } from "@shared/i18n";
+import { getPostAuthRedirect } from "../../utils/authRedirect";
 import OtpStep from "./OtpStep";
 import SocialAuthButtons from "./SocialAuthButtons";
 
@@ -13,15 +14,32 @@ export default function LoginForm() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [pending, setPending] = useState<PendingTwoFa | null>(null);
+  // Server-driven cooldown ("Tunggu sebentar…"): retryAt is a timestamp we
+  // count down to so the user sees exactly how long is left.
+  const [retryAt, setRetryAt] = useState<number | null>(null);
+  const [now, setNow] = useState(Date.now());
   const { login, verify2fa } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const justRegistered = (location.state as { justRegistered?: boolean } | null)
+    ?.justRegistered;
 
+  useEffect(() => {
+    if (retryAt === null) return;
+    const id = setInterval(() => setNow(Date.now()), 500);
+    return () => clearInterval(id);
+  }, [retryAt]);
+
+  const cooldownLeft = retryAt ? Math.max(0, retryAt - now) : 0;
+  useEffect(() => {
+    if (retryAt !== null && cooldownLeft === 0) setRetryAt(null);
+  }, [retryAt, cooldownLeft]);
+
+  // Never navigate(-1) blindly: after the register → login flow the previous
+  // history entry IS /register. getPostAuthRedirect resolves ?redirect= →
+  // last non-auth path → "/" and never lands on /login or /register.
   const goBackAfterAuth = () => {
-    if (window.history.length > 1) {
-      navigate(-1);
-    } else {
-      navigate("/");
-    }
+    navigate(getPostAuthRedirect(location.search), { replace: true });
   };
 
   const handleSubmit = async (e: FormEvent) => {
@@ -40,7 +58,11 @@ export default function LoginForm() {
         goBackAfterAuth();
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || t(authText.loginFailed));
+      const data = err.response?.data;
+      if (data?.retryAfterSeconds) {
+        setRetryAt(Date.now() + data.retryAfterSeconds * 1000);
+      }
+      setError(data?.message || t(authText.loginFailed));
     } finally {
       setLoading(false);
     }
@@ -69,9 +91,21 @@ export default function LoginForm() {
               {t(authText.loginSubtitle)}
             </p>
 
+            {justRegistered && (
+              <div className="mb-4 p-3 bg-green-50 text-green-700 rounded-xl text-sm border border-green-100">
+                {t(authText.accountCreated)}
+              </div>
+            )}
+
             {error && (
               <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-xl text-sm border border-red-100">
                 {error}
+                {cooldownLeft > 0 && (
+                  <span className="font-semibold">
+                    {" "}
+                    {t(authText.retryIn, { sec: Math.ceil(cooldownLeft / 1000) })}
+                  </span>
+                )}
               </div>
             )}
 
@@ -96,10 +130,14 @@ export default function LoginForm() {
               />
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || cooldownLeft > 0}
                 className="w-full py-3 bg-[#1C1C1A] text-white rounded-xl font-bold text-base hover:bg-black disabled:opacity-60 transition-colors mt-2"
               >
-                {loading ? t(authText.loginLoading) : t(authText.loginBtn)}
+                {cooldownLeft > 0
+                  ? t(authText.retryIn, { sec: Math.ceil(cooldownLeft / 1000) })
+                  : loading
+                    ? t(authText.loginLoading)
+                    : t(authText.loginBtn)}
               </button>
             </form>
 

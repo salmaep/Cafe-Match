@@ -22,9 +22,9 @@ const CHECKIN_RADIUS_M =
 
 /**
  * Per-cafe Check-In CTA. States:
- *   - Not logged in       → "Log in to Check In" (link to /login)
+ *   - Not logged in       → "Login untuk Check In" (link to /login)
  *   - Active elsewhere    → info that another check-in is active
- *   - Active here         → "✓ Checked In Here"
+ *   - Active here         → "✓ Sedang Check In di Sini"
  *   - Idle, can check in  → "Check In" (primary CTA)
  */
 export default function CheckInButton({
@@ -49,7 +49,7 @@ export default function CheckInButton({
         to={`/login?redirect=${encodeURIComponent(window.location.pathname)}`}
         className={`inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#1C1C1A] text-white font-bold text-sm hover:bg-black transition-colors ${className}`}
       >
-        <MapPin size={16} strokeWidth={2} /> Log in to Check In
+        <MapPin size={16} strokeWidth={2} /> Login untuk Check In
       </Link>
     );
   }
@@ -60,18 +60,18 @@ export default function CheckInButton({
       <div
         className={`inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-emerald-50 text-emerald-700 font-bold text-sm ring-1 ring-emerald-200 ${className}`}
       >
-        <Check size={16} strokeWidth={2.5} /> Checked In Here
+        <Check size={16} strokeWidth={2.5} /> Sedang Check In di Sini
       </div>
     );
   }
 
   // Active at a different cafe
   if (active && active.cafeId !== cafe.id) {
-    const otherName = active.cafeName || active.cafe?.name || "another cafe";
+    const otherName = active.cafeName || active.cafe?.name || "cafe lain";
     return (
       <div className={`flex flex-col items-stretch gap-1 ${className}`}>
         <div className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-amber-50 text-amber-800 font-bold text-sm ring-1 ring-amber-200">
-          <AlertTriangle size={14} strokeWidth={2} /> You're checked in at{" "}
+          <AlertTriangle size={14} strokeWidth={2} /> Kamu lagi check in di{" "}
           {otherName}
         </div>
       </div>
@@ -85,7 +85,7 @@ export default function CheckInButton({
 
     // Get current location
     if (!navigator.geolocation) {
-      showError("Your browser doesn't support GPS");
+      showError("Browser tidak support GPS");
       setSubmitting(false);
       return;
     }
@@ -98,10 +98,10 @@ export default function CheckInButton({
             latitude: pos.coords.latitude,
             longitude: pos.coords.longitude,
           });
-          toast.success("Checked in!");
+          toast.success("Berhasil check in!");
           onCheckedIn?.(checkin);
         } catch (err: any) {
-          showError(err?.response?.data?.message || "Check-in failed");
+          showError(err?.response?.data?.message || "Gagal check in");
         } finally {
           setSubmitting(false);
         }
@@ -109,11 +109,11 @@ export default function CheckInButton({
       (geoErr) => {
         setSubmitting(false);
         if (geoErr.code === geoErr.PERMISSION_DENIED) {
-          showError("Location permission denied — enable GPS to check in.");
+          showError("Izin lokasi ditolak, aktifin GPS dulu ya buat check in.");
         } else if (geoErr.code === geoErr.POSITION_UNAVAILABLE) {
-          showError("Couldn't read your location, try moving outdoors.");
+          showError("Lokasi belum kebaca, coba di luar ruangan ya.");
         } else {
-          showError("Couldn't get your location, please try again.");
+          showError("Gagal dapet lokasi, coba lagi yuk.");
         }
       },
       { enableHighAccuracy: true, timeout: 10_000 },
@@ -131,7 +131,7 @@ export default function CheckInButton({
         {submitting ? (
           <>
             <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-            Checking in…
+            Check in…
           </>
         ) : (
           <>
@@ -146,7 +146,7 @@ export default function CheckInButton({
       )}
       {!compact && (
         <p className="text-[11px] text-[#8A8880] text-center">
-          You must be within {CHECKIN_RADIUS_M}m of the cafe
+          Harus berada dalam radius {CHECKIN_RADIUS_M}m dari cafe
         </p>
       )}
     </div>

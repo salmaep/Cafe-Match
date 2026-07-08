@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
 import { cafesApi, type GoogleReview } from "../api/cafes.api";
 import { favoritesApi } from "../api/favorites.api";
@@ -23,6 +23,7 @@ import WriteReviewModal from "../components/cafe/WriteReviewModal";
 import CheckInButton from "../components/checkin/CheckInButton";
 import CheckinShareModal from "../components/checkin/CheckinShareModal";
 import OpenTableModal from "../components/tables/OpenTableModal";
+import { useActiveTables } from "../context/ActiveTablesContext";
 import type { Checkin } from "../api/checkins.api";
 import { getOpenStatus, formatHoursTable } from "../utils/openingHours";
 import { buildFacilityChips } from "../utils/facilities";
@@ -66,6 +67,7 @@ export default function CafeDetailPage() {
   const { user } = useAuth();
   const geo = useGeolocation();
   const { addToShortlist, removeFromShortlist, isInShortlist } = useShortlist();
+  const { myTable } = useActiveTables();
 
   const cafeId = useMemo(() => extractCafeIdFromSlug(slug), [slug]);
 
@@ -83,45 +85,65 @@ export default function CafeDetailPage() {
   const [googleReviews, setGoogleReviews] = useState<GoogleReview[]>([]);
   const [googleReviewTotal, setGoogleReviewTotal] = useState(0);
 
+  // All detail fetches share one AbortController per mount: StrictMode's dev
+  // double-mount aborts the first pass instead of completing every request
+  // twice (and double-tracking analytics), and unmounts never setState.
   useEffect(() => {
     if (cafeId == null) {
       setLoading(false);
       setCafe(null);
       return;
     }
-    setLoading(true);
+    const ac = new AbortController();
+    const aborted = (err: unknown) =>
+      ac.signal.aborted || (err as { code?: string })?.code === "ERR_CANCELED";
+
+    // Only show the full-page spinner when we don't already have this cafe —
+    // navigating between cafes keeps the old content until fresh data lands.
+    setLoading((prev) => (cafe?.id === cafeId ? prev : true));
     cafesApi
-      .getById(cafeId)
+      .getById(cafeId, ac.signal)
       .then((res) => {
         setCafe(res.data);
+        setLoading(false);
         analyticsApi.track(cafeId, "view").catch(() => {});
       })
-      .catch(() => setCafe(null))
-      .finally(() => setLoading(false));
+      .catch((err) => {
+        if (aborted(err)) return;
+        setCafe(null);
+        setLoading(false);
+      });
     reviewsApi
-      .getSummary(cafeId)
+      .getSummary(cafeId, ac.signal)
       .then((res) => setReviewSummary(res.data ?? []))
-      .catch(() => setReviewSummary([]));
+      .catch((err) => {
+        if (!aborted(err)) setReviewSummary([]);
+      });
     reviewsApi
-      .listByCafe(cafeId, { page: 1, limit: 3, sort: "helpful" })
+      .listByCafe(cafeId, { page: 1, limit: 3, sort: "helpful" }, ac.signal)
       .then((res) => {
         setReviewPreviews(res.data?.data ?? []);
         setReviewTotal(res.data?.meta?.total ?? 0);
       })
-      .catch(() => {
+      .catch((err) => {
+        if (aborted(err)) return;
         setReviewPreviews([]);
         setReviewTotal(0);
       });
     cafesApi
-      .getGoogleReviews(cafeId, { page: 1, limit: 5 })
+      .getGoogleReviews(cafeId, { page: 1, limit: 5 }, ac.signal)
       .then((res) => {
         setGoogleReviews(res.data?.data ?? []);
         setGoogleReviewTotal(res.data?.meta?.total ?? 0);
       })
-      .catch(() => {
+      .catch((err) => {
+        if (aborted(err)) return;
         setGoogleReviews([]);
         setGoogleReviewTotal(0);
       });
+
+    return () => ac.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cafeId]);
 
   // Fetch user's helpful votes for preview cards. Separate effect so it can
@@ -131,10 +153,16 @@ export default function CafeDetailPage() {
       setReviewVotedSet(new Set());
       return;
     }
+    const ac = new AbortController();
     reviewsApi
-      .myVoteIds(cafeId)
+      .myVoteIds(cafeId, ac.signal)
       .then((res) => setReviewVotedSet(new Set(res.data ?? [])))
-      .catch(() => setReviewVotedSet(new Set()));
+      .catch((err) => {
+        if (!ac.signal.aborted && (err as any)?.code !== "ERR_CANCELED") {
+          setReviewVotedSet(new Set());
+        }
+      });
+    return () => ac.abort();
   }, [cafeId, user]);
 
   // Canonicalize URL: if user landed on /cafe/615 or /cafe/wrong-slug-615,
@@ -147,37 +175,20 @@ export default function CafeDetailPage() {
     }
   }, [cafe, slug, navigate]);
 
-  // IDs of photos that failed to load — drop them from the mosaic so we only
-  // render images that actually work. Reset whenever the cafe changes so a
-  // navigation to a different cafe starts fresh.
-  const [failedPhotoIds, setFailedPhotoIds] = useState<Set<number>>(new Set());
-  useEffect(() => {
-    setFailedPhotoIds(new Set());
-  }, [cafe?.id]);
-
-  const handlePhotoError = useCallback((id: number) => {
-    setFailedPhotoIds((prev) => {
-      if (prev.has(id)) return prev;
-      const next = new Set(prev);
-      next.add(id);
-      return next;
-    });
-  }, []);
-
+  // Stable list of real photos (drop empty + Unsplash placeholder junk). We do
+  // NOT drop photos that fail to load at runtime: that reshaped the mosaic on
+  // every error and, when a cafe's scraped Google URLs had expired, cascaded
+  // into a flickering banner that collapsed to a single photo. Broken tiles are
+  // now handled per-tile with an in-place placeholder (same as PhotoSlider).
   const validPhotos = useMemo(
     () =>
       (cafe?.photos ?? []).filter((p) => {
         const url = p?.url;
         if (typeof url !== "string" || url.length === 0) return false;
-        // Drop Unsplash stock photos — those are placeholder fallbacks the
-        // scraper sometimes inserted, not real cafe photos.
         if (url.includes("images.unsplash.com")) return false;
-        // Drop photos we already saw fail at runtime — better to reshape the
-        // mosaic with fewer real photos than to fill broken slots with dummy.
-        if (failedPhotoIds.has(p.id)) return false;
         return true;
       }),
-    [cafe?.photos, failedPhotoIds],
+    [cafe?.photos],
   );
 
   const distance =
@@ -215,7 +226,7 @@ export default function CafeDetailPage() {
     else addToShortlist(cafe);
   };
 
-  if (loading) {
+  if (loading && !cafe) {
     return (
       <div className="min-h-[80vh] flex items-center justify-center bg-[#FAF9F6]">
         <div className="w-10 h-10 border-4 border-[#D48B3A] border-t-transparent rounded-full animate-spin" />
@@ -444,10 +455,10 @@ export default function CafeDetailPage() {
       <div className="hidden lg:block max-w-6xl mx-auto px-6 pt-4">
         <HeroMosaic
           photos={heroPhotos}
+          cafeId={cafe.id}
           cafeName={cafe.name}
           onOpen={(i) => validPhotos.length > 0 && setLightboxIndex(i)}
           totalCount={validPhotos.length}
-          onPhotoError={handlePhotoError}
         />
       </div>
 
@@ -1025,15 +1036,37 @@ export default function CafeDetailPage() {
                 />
               </div>
 
-              {/* Open table */}
+              {/* Open table — contextual: manage when already hosting */}
               <div className="mt-3">
-                <button
-                  type="button"
-                  onClick={() => setOpenTableModal(true)}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 font-semibold text-sm hover:bg-emerald-100 transition-colors"
-                >
-                  🪑 Open a Table Here
-                </button>
+                {myTable && myTable.cafe?.id === cafe.id ? (
+                  <Link
+                    to="/tables"
+                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-emerald-600 text-white font-semibold text-sm hover:bg-emerald-700 transition-colors"
+                  >
+                    🪑 Open table kamu aktif — Kelola
+                    {myTable.pendingRequests.length > 0 && (
+                      <span className="inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full bg-white text-emerald-700 text-[11px] font-extrabold">
+                        {myTable.pendingRequests.length}
+                      </span>
+                    )}
+                  </Link>
+                ) : myTable ? (
+                  <Link
+                    to="/tables"
+                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-emerald-200 bg-white text-emerald-700 font-semibold text-sm hover:bg-emerald-50 transition-colors text-center"
+                  >
+                    🪑 Kamu punya open table di {myTable.cafe?.name ?? "cafe lain"}{" "}
+                    — Kelola
+                  </Link>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setOpenTableModal(true)}
+                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 font-semibold text-sm hover:bg-emerald-100 transition-colors"
+                  >
+                    🪑 Open Table di Sini
+                  </button>
+                )}
               </div>
 
               {/* Secondary actions */}
@@ -1303,16 +1336,16 @@ function SidebarStat({
 
 function HeroMosaic({
   photos,
+  cafeId,
   cafeName,
   onOpen,
   totalCount,
-  onPhotoError,
 }: {
   photos: { id: number; url: string; caption?: string | null }[];
+  cafeId: number;
   cafeName: string;
   onOpen: (i: number) => void;
   totalCount: number;
-  onPhotoError?: (id: number) => void;
 }) {
   // Track which tiles have finished loading so we can show a skeleton shimmer
   // on the rest. Avoids the "random photo flicker" that happened when slow /
@@ -1358,12 +1391,17 @@ function HeroMosaic({
           }`}
           loading={index === 0 ? "eager" : "lazy"}
           onLoad={() => markLoaded(index)}
-          onError={() => {
-            // Don't inject a placeholder per slot — let the parent know so it
-            // can drop this photo and reshape the mosaic with only the working
-            // ones. Synthetic placeholder photos (id < 0) can't be reported up
-            // (there's nothing to drop), so just leave it as the bg colour.
-            if (p.id >= 0) onPhotoError?.(p.id);
+          onError={(e) => {
+            // Swap the broken tile to a placeholder in place — keeps the mosaic
+            // layout stable (no reshape cascade). The guard stops a loop if the
+            // placeholder itself fails.
+            const img = e.currentTarget as HTMLImageElement;
+            if (img.dataset.fallback) {
+              markLoaded(index);
+              return;
+            }
+            img.dataset.fallback = "1";
+            img.src = placeholderImage(p.id >= 0 ? p.id + cafeId : cafeId + index);
             markLoaded(index);
           }}
         />

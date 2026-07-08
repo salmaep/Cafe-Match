@@ -192,14 +192,17 @@ export const cafesApi = {
     return { data: res.data?.data ?? [] };
   },
 
-  getById: (id: number) => apiClient.get<Cafe>(`/cafes/${id}`),
+  getById: (id: number, signal?: AbortSignal) =>
+    apiClient.get<Cafe>(`/cafes/${id}`, { signal }),
 
   getGoogleReviews: (
     id: number,
     params: { page?: number; limit?: number } = {},
+    signal?: AbortSignal,
   ) =>
     apiClient.get<PaginatedGoogleReviews>(`/cafes/${id}/google-reviews`, {
       params,
+      signal,
     }),
 
   getFilters: async () => {

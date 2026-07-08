@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Map,
   AdvancedMarker,
@@ -11,6 +12,8 @@ import { cafeUrl } from "../../utils/cafeUrl";
 import { getCafeImage, placeholderImage } from "../../utils/cafeImage";
 import CafeClusterMarkers from "./CafeClusterMarkers";
 import OpenTablesModal from "../tables/OpenTablesModal";
+import OpenTableModal from "../tables/OpenTableModal";
+import ActiveCheckinBadge from "../checkin/ActiveCheckinBadge";
 import { useActiveTables } from "../../context/ActiveTablesContext";
 import { Star } from "../../utils/lucideIcon";
 
@@ -118,7 +121,9 @@ export default function MapView({ center, cafes, radius, onMapClick }: Props) {
   const [activeCafeId, setActiveCafeId] = useState<number | null>(null);
   const [userPopupOpen, setUserPopupOpen] = useState(false);
   const [tablesModalCafe, setTablesModalCafe] = useState<Cafe | null>(null);
+  const [openTableFormCafe, setOpenTableFormCafe] = useState<Cafe | null>(null);
   const { activeCafeIds } = useActiveTables();
+  const navigate = useNavigate();
 
   // Stable callbacks — without these, unrelated parent re-renders (typing in
   // SearchBar, focus toggles) hand new function identities to child effects
@@ -161,6 +166,7 @@ export default function MapView({ center, cafes, radius, onMapClick }: Props) {
         streetViewControl={false}
         fullscreenControl={false}
         mapTypeControl={false}
+        cameraControl={false}
         className="h-full w-full rounded-xl"
         style={{ minHeight: "400px" }}
         onClick={handleMapClick}
@@ -197,97 +203,155 @@ export default function MapView({ center, cafes, radius, onMapClick }: Props) {
             pixelOffset={[0, -34]}
             headerDisabled
           >
-            {/* div wrapper (not <a>) so the open-tables button below doesn't
-                trigger navigation; the image + "Cek detail" stay links. */}
-            <div className="block w-[240px]">
-              <a href={cafeUrl(activeCafe)} className="block no-underline text-inherit">
-                <img
-                  src={getCafeImage(activeCafe)}
-                  alt={activeCafe.name}
-                  referrerPolicy="no-referrer"
-                  className="w-full h-32 object-cover rounded-t-md bg-[#F0EDE8]"
-                  onError={(e) => {
-                    (e.currentTarget as HTMLImageElement).src = placeholderImage(
-                      activeCafe.id,
-                    );
-                  }}
-                />
-                <div className="px-1 pt-2 pb-1">
-                  <div className="font-bold text-[14px] text-[#1C1C1A] line-clamp-1">
-                    {activeCafe.name}
-                  </div>
-                  <div className="flex items-center gap-1.5 mt-0.5 text-[12px] text-[#8A8880]">
-                    {activeCafe.googleRating != null && (
-                      <>
-                        <span className="text-[#D48B3A] font-semibold inline-flex items-center gap-1">
-                          <Star size={11} strokeWidth={2} fill="currentColor" />
-                          {activeCafe.googleRating}
-                        </span>
-                        {activeCafe.totalGoogleReviews != null && (
-                          <span>({activeCafe.totalGoogleReviews})</span>
-                        )}
-                        <span>·</span>
-                      </>
-                    )}
-                    {activeCafe.priceRange && (
-                      <>
-                        <span>{activeCafe.priceRange}</span>
-                        <span>·</span>
-                      </>
-                    )}
-                    {activeCafe.distanceMeters != null && (
-                      <span className="text-[#D48B3A]">
-                        {formatDistance(activeCafe.distanceMeters)}
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-[12px] text-[#5C5A52] mt-1 line-clamp-2">
-                    {activeCafe.address}
-                  </div>
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {(Array.isArray(activeCafe.facilities)
-                      ? activeCafe.facilities
-                          .slice(0, 3)
-                          .map((f: any) =>
-                            typeof f === "string" ? f : f?.name,
-                          )
-                          .filter(Boolean)
-                      : []
-                    ).map((name: string) => (
-                      <span
-                        key={name}
-                        className="bg-[#F0EDE8] text-[#8A8880] text-[10px] font-medium rounded-full px-1.5 py-0.5"
-                      >
-                        {name}
-                      </span>
-                    ))}
-                  </div>
-                  <div className="mt-2 text-[12px] font-bold text-[#D48B3A]">
-                    Cek detail →
-                  </div>
+            {activeCafeIds.has(activeCafe.id) ? (
+              /* Compact variant — fokus ke open table; pendek supaya
+                 InfoWindow tidak memunculkan scrollbar internal. */
+              <div className="w-[240px] px-1 pt-1 pb-1.5">
+                <div className="font-bold text-[14px] text-[#1C1C1A] line-clamp-1">
+                  {activeCafe.name}
                 </div>
-              </a>
+                <div className="flex items-center gap-1.5 mt-0.5 text-[12px] text-[#8A8880]">
+                  {activeCafe.googleRating != null && (
+                    <>
+                      <span className="text-[#D48B3A] font-semibold inline-flex items-center gap-1">
+                        <Star size={11} strokeWidth={2} fill="currentColor" />
+                        {activeCafe.googleRating}
+                      </span>
+                      <span>·</span>
+                    </>
+                  )}
+                  {activeCafe.priceRange && (
+                    <>
+                      <span>{activeCafe.priceRange}</span>
+                      <span>·</span>
+                    </>
+                  )}
+                  {activeCafe.distanceMeters != null && (
+                    <span className="text-[#D48B3A]">
+                      {formatDistance(activeCafe.distanceMeters)}
+                    </span>
+                  )}
+                </div>
+                <div className="mt-2 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-[11px] font-bold">
+                  🪑 Ada open table di sini
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setTablesModalCafe(activeCafe)}
+                  className="mt-2 w-full inline-flex items-center justify-center gap-1.5 py-2 rounded-lg bg-emerald-600 text-white text-[12px] font-bold hover:bg-emerald-700 transition-colors"
+                >
+                  Lihat Meja
+                </button>
+                <a
+                  href={cafeUrl(activeCafe)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    navigate(cafeUrl(activeCafe));
+                  }}
+                  className="block mt-1.5 text-center text-[12px] font-bold text-[#D48B3A] no-underline"
+                >
+                  Cek detail →
+                </a>
+              </div>
+            ) : (
+              /* Rich variant — cafe biasa. div wrapper (bukan <a>) supaya tombol
+                 open table di bawah tidak ikut navigasi; onClick intercept
+                 untuk SPA navigation (href polos = full page reload). */
+              <div className="block w-[240px]">
+                <a
+                  href={cafeUrl(activeCafe)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    navigate(cafeUrl(activeCafe));
+                  }}
+                  className="block no-underline text-inherit"
+                >
+                  <img
+                    src={getCafeImage(activeCafe)}
+                    alt={activeCafe.name}
+                    referrerPolicy="no-referrer"
+                    className="w-full h-28 object-cover rounded-t-md bg-[#F0EDE8]"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src =
+                        placeholderImage(activeCafe.id);
+                    }}
+                  />
+                  <div className="px-1 pt-2 pb-1">
+                    <div className="font-bold text-[14px] text-[#1C1C1A] line-clamp-1">
+                      {activeCafe.name}
+                    </div>
+                    <div className="flex items-center gap-1.5 mt-0.5 text-[12px] text-[#8A8880]">
+                      {activeCafe.googleRating != null && (
+                        <>
+                          <span className="text-[#D48B3A] font-semibold inline-flex items-center gap-1">
+                            <Star size={11} strokeWidth={2} fill="currentColor" />
+                            {activeCafe.googleRating}
+                          </span>
+                          {activeCafe.totalGoogleReviews != null && (
+                            <span>({activeCafe.totalGoogleReviews})</span>
+                          )}
+                          <span>·</span>
+                        </>
+                      )}
+                      {activeCafe.priceRange && (
+                        <>
+                          <span>{activeCafe.priceRange}</span>
+                          <span>·</span>
+                        </>
+                      )}
+                      {activeCafe.distanceMeters != null && (
+                        <span className="text-[#D48B3A]">
+                          {formatDistance(activeCafe.distanceMeters)}
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-[12px] text-[#5C5A52] mt-1 line-clamp-1">
+                      {activeCafe.address}
+                    </div>
+                  </div>
+                </a>
 
-              {activeCafeIds.has(activeCafe.id) && (
-                <div className="px-1 pb-1.5 mt-1">
+                {/* Footer compact — Cek detail (kiri) + Open Table (kanan) sebaris,
+                    supaya card pendek & InfoWindow tak memunculkan scrollbar. */}
+                <div className="flex items-center justify-between gap-2 px-1 pb-1.5 mt-1">
+                  <a
+                    href={cafeUrl(activeCafe)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      navigate(cafeUrl(activeCafe));
+                    }}
+                    className="text-[12px] font-bold text-[#D48B3A] no-underline shrink-0"
+                  >
+                    Cek detail →
+                  </a>
                   <button
                     type="button"
-                    onClick={() => setTablesModalCafe(activeCafe)}
-                    className="w-full inline-flex items-center justify-center gap-1.5 py-2 rounded-lg bg-emerald-600 text-white text-[12px] font-bold hover:bg-emerald-700 transition-colors"
+                    onClick={() => setOpenTableFormCafe(activeCafe)}
+                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-600 text-white text-[11px] font-bold hover:bg-emerald-700 transition-colors shrink-0"
                   >
-                    🪑 Open table here — View Tables
+                    🪑 Open Table
                   </button>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </InfoWindow>
         )}
       </Map>
+
+      {/* Active check-in badge — sits where the removed camera control was */}
+      <ActiveCheckinBadge className="absolute bottom-6 right-3 z-[5]" />
 
       {tablesModalCafe && (
         <OpenTablesModal
           cafe={{ id: tablesModalCafe.id, name: tablesModalCafe.name }}
           onClose={() => setTablesModalCafe(null)}
+        />
+      )}
+
+      {openTableFormCafe && (
+        <OpenTableModal
+          cafe={{ id: openTableFormCafe.id, name: openTableFormCafe.name }}
+          onClose={() => setOpenTableFormCafe(null)}
         />
       )}
     </div>

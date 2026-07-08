@@ -8,6 +8,7 @@ import {
   type AchievementTier,
   type UserAchievement,
 } from "../api/achievements.api";
+import { iconForAchievement } from "../utils/achievementIcon";
 import {
   Camera,
   ChevronRight,
@@ -190,15 +191,18 @@ export default function ProfilePage() {
               </Link>
             </div>
             <div className="flex flex-wrap gap-3">
-              {badges.slice(0, 8).map((b) => (
-                <div
-                  key={b.id}
-                  title={`${b.name} — ${b.description}`}
-                  className={`w-12 h-12 rounded-full bg-gradient-to-br ${TIER_GRAD[b.tier]} flex items-center justify-center text-white shadow-sm`}
-                >
-                  <Trophy size={18} strokeWidth={2} />
-                </div>
-              ))}
+              {badges.slice(0, 8).map((b) => {
+                const Icon = iconForAchievement(b);
+                return (
+                  <div
+                    key={b.id}
+                    title={`${b.name} — ${b.description}`}
+                    className={`w-12 h-12 rounded-full bg-gradient-to-br ${TIER_GRAD[b.tier]} flex items-center justify-center text-white shadow-sm`}
+                  >
+                    <Icon size={18} strokeWidth={2} />
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}

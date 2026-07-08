@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { useAuth } from "../../context/AuthContext";
 import type { Cafe } from "../../types";
 import type { Checkin } from "../../api/checkins.api";
-import { getCafeImage } from "../../utils/cafeImage";
+import { getCafeImage, placeholderImage } from "../../utils/cafeImage";
 import { Download, MapPin, Share2, X } from "../../utils/lucideIcon";
 
 interface Props {
@@ -18,9 +18,11 @@ interface Props {
  * name + user's name/@username + date + Geser branding) exportable as PNG via
  * html-to-image. Sharing is optional — download & close are always available.
  *
- * The cafe photo is pre-fetched to a data URL so the exported canvas is never
- * CORS-tainted; if the fetch fails (expired/blocked Google photo URL) the card
- * falls back to a branded gradient background.
+ * The banner photo is pre-fetched to a data URL so the exported canvas is never
+ * CORS-tainted. It tries the cafe photo first and, if that fails (expired /
+ * blocked Google URL), falls back to an Unsplash cafe placeholder — so the
+ * shared card always has a real photo behind the cafe name; only if BOTH fail
+ * does it fall back to the branded gradient.
  */
 export default function CheckinShareModal({ cafe, checkin, onClose }: Props) {
   const { user } = useAuth();
@@ -31,24 +33,41 @@ export default function CheckinShareModal({ cafe, checkin, onClose }: Props) {
 
   useEffect(() => {
     let cancelled = false;
+
+    const toDataUrl = async (url: string): Promise<string> => {
+      const res = await fetch(url, { mode: "cors" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      return new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    };
+
     (async () => {
-      try {
-        const res = await fetch(getCafeImage(cafe), { mode: "cors" });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const blob = await res.blob();
-        const dataUrl = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result as string);
-          reader.onerror = reject;
-          reader.readAsDataURL(blob);
-        });
-        if (!cancelled) setPhotoDataUrl(dataUrl);
-      } catch {
-        // CORS-blocked or expired photo → gradient fallback
-      } finally {
-        if (!cancelled) setPhotoReady(true);
+      // Try the cafe photo first, then an Unsplash cafe placeholder. Whichever
+      // resolves is embedded as a data URL (taint-free for the PNG export).
+      const candidates = Array.from(
+        new Set([getCafeImage(cafe), placeholderImage(cafe.id)]),
+      );
+      let resolved: string | null = null;
+      for (const url of candidates) {
+        if (cancelled) return;
+        try {
+          resolved = await toDataUrl(url);
+          break;
+        } catch {
+          // try the next candidate
+        }
+      }
+      if (!cancelled) {
+        setPhotoDataUrl(resolved);
+        setPhotoReady(true);
       }
     })();
+
     return () => {
       cancelled = true;
     };
@@ -70,7 +89,7 @@ export default function CheckinShareModal({ cafe, checkin, onClose }: Props) {
       const res = await fetch(dataUrl);
       return await res.blob();
     } catch {
-      toast.error("Failed to create the image, please try again.");
+      toast.error("Gagal membuat gambar, coba lagi ya.");
       return null;
     }
   };
@@ -100,8 +119,8 @@ export default function CheckinShareModal({ cafe, checkin, onClose }: Props) {
       try {
         await navigator.share({
           files: [file],
-          title: `Check-in at ${cafe.name}`,
-          text: `Hanging out at ${cafe.name} — find me on Geser! geser.id`,
+          title: `Check in di ${cafe.name}`,
+          text: `Lagi nongkrong di ${cafe.name} — ketemu di Geser! geser.id`,
         });
         return;
       } catch {
@@ -116,7 +135,7 @@ export default function CheckinShareModal({ cafe, checkin, onClose }: Props) {
     a.download = "geser-checkin.png";
     a.click();
     URL.revokeObjectURL(url);
-    toast.info("Image saved — share it to your socials!");
+    toast.info("Gambar tersimpan — share ke sosmed ya!");
   };
 
   return (
@@ -190,7 +209,7 @@ export default function CheckinShareModal({ cafe, checkin, onClose }: Props) {
             disabled={exporting || !photoReady}
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#D48B3A] text-white font-bold text-sm hover:bg-[#B97726] transition-colors disabled:opacity-60"
           >
-            <Share2 size={15} strokeWidth={2} /> Share
+            <Share2 size={15} strokeWidth={2} /> Bagikan
           </button>
           <button
             type="button"
@@ -198,12 +217,12 @@ export default function CheckinShareModal({ cafe, checkin, onClose }: Props) {
             disabled={exporting || !photoReady}
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white text-[#1C1C1A] font-bold text-sm hover:bg-[#F0EDE8] transition-colors disabled:opacity-60"
           >
-            <Download size={15} strokeWidth={2} /> Save Image
+            <Download size={15} strokeWidth={2} /> Simpan Gambar
           </button>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close"
+            aria-label="Tutup"
             className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-white/20 text-white hover:bg-white/30 transition-colors"
           >
             <X size={18} strokeWidth={2} />

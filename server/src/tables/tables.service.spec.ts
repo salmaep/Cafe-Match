@@ -228,15 +228,18 @@ describe('TablesService', () => {
       ).rejects.toBeInstanceOf(BadRequestException);
     });
 
-    it('maps ER_DUP_ENTRY on host_active to 409 "meja masih aktif" (one active table per user)', async () => {
+    it('maps ER_DUP_ENTRY on host_active to a 409 naming the cafe of the active table', async () => {
       const m = makeMocks();
       usersById(m.userRepo, { [HOST_ID]: HOST });
       m.tableRepo.save.mockRejectedValueOnce(dupEntryError());
+      // The service looks up the existing open table + its cafe for the message.
+      m.tableRepo.findOne.mockResolvedValue(openTableRow() as any);
       const err = await m.service
         .openTable(HOST_ID, { cafeId: CAFE_ID } as any)
         .catch((e) => e);
       expect(err).toBeInstanceOf(ConflictException);
-      expect(err.message).toContain('active table');
+      expect(err.message).toContain('open table di Kopi Uji');
+      expect(err.message).toContain('Close table dulu');
     });
 
     it('awards the night-owl special when opened at 21:00+', async () => {
@@ -304,7 +307,7 @@ describe('TablesService', () => {
         .requestJoin(GUEST_ID, TABLE_ID, {})
         .catch((e) => e);
       expect(err).toBeInstanceOf(BadRequestException);
-      expect(err.message).toContain('closed');
+      expect(err.message).toContain('ditutup');
       // Lazy expiry flipped the row + its pending requests
       expect(m.tableRepo.update).toHaveBeenCalledWith(
         { id: table.id, status: 'open' },
@@ -350,7 +353,7 @@ describe('TablesService', () => {
         .requestJoin(GUEST_ID, TABLE_ID, {})
         .catch((e) => e);
       expect(err).toBeInstanceOf(ConflictException);
-      expect(err.message).toContain('Close your table');
+      expect(err.message).toContain('Close table kamu dulu');
     });
 
     it('requires the requester to set their gender for gender-ruled tables', async () => {
@@ -364,7 +367,7 @@ describe('TablesService', () => {
         .requestJoin(GUEST_ID, TABLE_ID, {})
         .catch((e) => e);
       expect(err).toBeInstanceOf(BadRequestException);
-      expect(err.message).toContain('set your gender');
+      expect(err.message).toContain('atur gender');
     });
 
     it("rejects a requester whose gender doesn't match the rule", async () => {
@@ -387,7 +390,7 @@ describe('TablesService', () => {
         .requestJoin(GUEST_ID, TABLE_ID, {})
         .catch((e) => e);
       expect(err).toBeInstanceOf(BadRequestException);
-      expect(err.message).toContain('full');
+      expect(err.message).toContain('penuh');
     });
 
     it('saves the request and notifies the host on success', async () => {
@@ -414,9 +417,9 @@ describe('TablesService', () => {
     });
 
     it.each([
-      ['pending', 'already sent'],
-      ['accepted', 'already joined'],
-      ['declined', 'declined'],
+      ['pending', 'sudah dikirim'],
+      ['accepted', 'sudah join'],
+      ['declined', 'menolak'],
     ])(
       'maps a duplicate request with status=%s to a specific 409',
       async (status, fragment) => {
@@ -523,7 +526,7 @@ describe('TablesService', () => {
       acceptSetup(m, { acceptedBefore: 4, maxGuests: 4 });
       const err = await m.service.acceptRequest(HOST_ID, 40).catch((e) => e);
       expect(err).toBeInstanceOf(ConflictException);
-      expect(err.message).toContain('full');
+      expect(err.message).toContain('penuh');
     });
 
     it('409s when the table closed/expired between read and lock', async () => {
@@ -539,7 +542,7 @@ describe('TablesService', () => {
       acceptSetup(m, { affectedRows: 0 });
       const err = await m.service.acceptRequest(HOST_ID, 40).catch((e) => e);
       expect(err).toBeInstanceOf(ConflictException);
-      expect(err.message).toContain('already processed');
+      expect(err.message).toContain('sudah diproses');
     });
 
     it('notifies + awards points to joiner and host on success', async () => {

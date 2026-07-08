@@ -20,6 +20,10 @@ import Seo from "../components/seo/Seo";
 import PhotoLightbox from "../components/cafe/PhotoLightbox";
 import PhotoSlider from "../components/cafe/PhotoSlider";
 import WriteReviewModal from "../components/cafe/WriteReviewModal";
+import CheckInButton from "../components/checkin/CheckInButton";
+import CheckinShareModal from "../components/checkin/CheckinShareModal";
+import OpenTableModal from "../components/tables/OpenTableModal";
+import type { Checkin } from "../api/checkins.api";
 import { getOpenStatus, formatHoursTable } from "../utils/openingHours";
 import { buildFacilityChips } from "../utils/facilities";
 import { formatRating } from "../utils/rating";
@@ -74,6 +78,8 @@ export default function CafeDetailPage() {
   const [reviewTotal, setReviewTotal] = useState(0);
   const [reviewVotedSet, setReviewVotedSet] = useState<Set<number>>(new Set());
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [shareCheckin, setShareCheckin] = useState<Checkin | null>(null);
+  const [openTableModal, setOpenTableModal] = useState(false);
   const [googleReviews, setGoogleReviews] = useState<GoogleReview[]>([]);
   const [googleReviewTotal, setGoogleReviewTotal] = useState(0);
 
@@ -1010,6 +1016,26 @@ export default function CafeDetailPage() {
                 )}
               </button>
 
+              {/* Check-in */}
+              <div className="mt-3">
+                <CheckInButton
+                  cafe={cafe}
+                  className="w-full"
+                  onCheckedIn={(c) => setShareCheckin(c)}
+                />
+              </div>
+
+              {/* Open table */}
+              <div className="mt-3">
+                <button
+                  type="button"
+                  onClick={() => setOpenTableModal(true)}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 font-semibold text-sm hover:bg-emerald-100 transition-colors"
+                >
+                  🪑 Buka Meja di Sini
+                </button>
+              </div>
+
               {/* Secondary actions */}
               <div className="mt-3">
                 <button
@@ -1067,6 +1093,12 @@ export default function CafeDetailPage() {
             />
             <span className="text-[10px] text-[#8A8880] mt-0.5">Favorite</span>
           </button>
+          <CheckInButton
+            cafe={cafe}
+            compact
+            className="flex-1"
+            onCheckedIn={(c) => setShareCheckin(c)}
+          />
           <button
             type="button"
             onClick={handleShortlist}
@@ -1086,6 +1118,19 @@ export default function CafeDetailPage() {
           </button>
         </div>
       </div>
+
+      {/* Share-card popup — ALWAYS shown after a successful check-in */}
+      {shareCheckin && cafe && (
+        <CheckinShareModal
+          cafe={cafe}
+          checkin={shareCheckin}
+          onClose={() => setShareCheckin(null)}
+        />
+      )}
+
+      {openTableModal && cafe && (
+        <OpenTableModal cafe={cafe} onClose={() => setOpenTableModal(false)} />
+      )}
 
       {reviewModalOpen && (
         <WriteReviewModal

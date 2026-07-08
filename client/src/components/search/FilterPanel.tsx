@@ -29,6 +29,10 @@ export interface FilterPanelProps {
   // Optional: keys that were auto-selected from a purpose's requirements.
   // Rendered with a star marker so users see why they were preselected.
   autoSelectedKeys?: string[];
+  // Sidebar only: render the body without the card shell (bg/rounded/border)
+  // so the panel can live inside a unified container (FilterRail / mobile
+  // modal) with no visual gap between sections.
+  bare?: boolean;
 }
 
 const INITIAL_VISIBLE = 10;
@@ -137,6 +141,7 @@ export default function FilterPanel({
   hideHeader,
   hidePrice,
   autoSelectedKeys,
+  bare,
 }: FilterPanelProps) {
   const autoSet = useMemo(
     () => new Set(autoSelectedKeys ?? []),
@@ -357,6 +362,7 @@ export default function FilterPanel({
   );
 
   if (isSidebar) {
+    if (bare) return body;
     return (
       <div className="bg-white rounded-xl border border-[#F0EDE8] overflow-hidden">
         {body}

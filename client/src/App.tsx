@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from "react-router-dom";
+import { Toaster } from "sonner";
 import Seo from "./components/seo/Seo";
 import { useTrackPageView } from "./utils/analytics";
 import UserLayout from "./components/layout/UserLayout";
@@ -26,6 +27,8 @@ import TrendingPage from "./pages/TrendingPage";
 import AuthCallbackPage from "./pages/AuthCallbackPage";
 import ProfilePage from "./pages/ProfilePage";
 import FriendsPage from "./pages/FriendsPage";
+import TablesPage from "./pages/TablesPage";
+import AchievementsPage from "./pages/AchievementsPage";
 import LeaderboardPage from "./pages/LeaderboardPage";
 import RecapPage from "./pages/RecapPage";
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
@@ -36,6 +39,17 @@ function App() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Seo />
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          style: {
+            background: "#1C1C1A",
+            color: "#fff",
+            border: "none",
+            fontFamily: "inherit",
+          },
+        }}
+      />
       <Routes>
         {/* Wizard now renders inside /discover — keep alias for backward compat */}
         <Route path="/wizard" element={<Navigate to="/discover" replace />} />
@@ -79,6 +93,8 @@ function App() {
           <Route path="/trending" element={<TrendingPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/friends" element={<FriendsPage />} />
+          <Route path="/tables" element={<TablesPage />} />
+          <Route path="/achievements" element={<AchievementsPage />} />
           <Route path="/leaderboard" element={<LeaderboardPage />} />
           <Route path="/recap/:year" element={<RecapPage />} />
           <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />

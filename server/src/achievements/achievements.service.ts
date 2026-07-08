@@ -112,6 +112,144 @@ export class AchievementsService {
       );
     }
 
+    // 4. Explorer metrics — distinct cafes & districts visited (lifetime)
+    const [[cafesRow], [districtRow]] = await Promise.all([
+      this.dataSource.query(
+        `SELECT COUNT(DISTINCT cafe_id) AS cnt FROM checkins WHERE user_id = ?`,
+        [userId],
+      ),
+      this.dataSource.query(
+        `SELECT COUNT(DISTINCT c.district) AS cnt
+         FROM checkins ck
+         JOIN cafes c ON c.id = ck.cafe_id
+         WHERE ck.user_id = ? AND c.district IS NOT NULL AND c.district <> ''`,
+        [userId],
+      ),
+    ]);
+    await this.checkAndAward(
+      userId,
+      'explorer',
+      'explorer_cafes',
+      parseInt(cafesRow?.cnt ?? '0', 10),
+      newlyUnlocked,
+    );
+    await this.checkAndAward(
+      userId,
+      'explorer',
+      'explorer_district',
+      parseInt(districtRow?.cnt ?? '0', 10),
+      newlyUnlocked,
+    );
+
+    // 5. Time-of-day metrics (morning < 09:00, night >= 21:00, weekend)
+    const [todRow] = await this.dataSource.query(
+      `SELECT
+         COALESCE(SUM(HOUR(check_in_at) < 9), 0) AS morning,
+         COALESCE(SUM(HOUR(check_in_at) >= 21), 0) AS night,
+         COALESCE(SUM(DAYOFWEEK(check_in_at) IN (1, 7)), 0) AS weekend
+       FROM checkins WHERE user_id = ?`,
+      [userId],
+    );
+    if (todRow) {
+      await this.checkAndAward(
+        userId,
+        'time',
+        'time_morning',
+        parseInt(todRow.morning, 10),
+        newlyUnlocked,
+      );
+      await this.checkAndAward(
+        userId,
+        'time',
+        'time_night',
+        parseInt(todRow.night, 10),
+        newlyUnlocked,
+      );
+      await this.checkAndAward(
+        userId,
+        'time',
+        'time_weekend',
+        parseInt(todRow.weekend, 10),
+        newlyUnlocked,
+      );
+    }
+
+    return newlyUnlocked;
+  }
+
+  /** Points-ladder achievements (category 'points'), driven by users.points total. */
+  async checkPointsAchievements(userId: number, total: number) {
+    const newlyUnlocked: string[] = [];
+    await this.checkAndAward(userId, 'points', null, total, newlyUnlocked);
+    return newlyUnlocked;
+  }
+
+  /**
+   * Table achievements (category 'table'; purpose_slug doubles as the metric
+   * key: table_host / table_join / table_squad). Called after open/accept.
+   */
+  async checkTableAchievements(userId: number) {
+    const newlyUnlocked: string[] = [];
+    const [[hostRow], [joinRow], [squadRow]] = await Promise.all([
+      this.dataSource.query(
+        `SELECT COUNT(*) AS cnt FROM cafe_tables WHERE host_user_id = ?`,
+        [userId],
+      ),
+      this.dataSource.query(
+        `SELECT COUNT(*) AS cnt FROM table_join_requests WHERE user_id = ? AND status = 'accepted'`,
+        [userId],
+      ),
+      this.dataSource.query(
+        `SELECT COUNT(*) AS cnt FROM (
+           SELECT r.table_id
+           FROM table_join_requests r
+           JOIN cafe_tables t ON t.id = r.table_id
+           WHERE t.host_user_id = ? AND r.status = 'accepted'
+           GROUP BY r.table_id
+           HAVING COUNT(*) >= 4
+         ) squads`,
+        [userId],
+      ),
+    ]);
+    await this.checkAndAward(
+      userId,
+      'table',
+      'table_host',
+      parseInt(hostRow?.cnt ?? '0', 10),
+      newlyUnlocked,
+    );
+    await this.checkAndAward(
+      userId,
+      'table',
+      'table_join',
+      parseInt(joinRow?.cnt ?? '0', 10),
+      newlyUnlocked,
+    );
+    await this.checkAndAward(
+      userId,
+      'table',
+      'table_squad',
+      parseInt(squadRow?.cnt ?? '0', 10),
+      newlyUnlocked,
+    );
+    return newlyUnlocked;
+  }
+
+  /**
+   * Directly award a hook-driven achievement (category 'special') by slug,
+   * e.g. 'special-full-house'. Idempotent — awardIfNew skips if unlocked.
+   */
+  async awardBySlug(userId: number, slug: string) {
+    const achievement = await this.achievementRepo.findOne({ where: { slug } });
+    if (!achievement) return [];
+    const newlyUnlocked: string[] = [];
+    await this.awardIfNew(
+      userId,
+      achievement.id,
+      achievement.threshold,
+      newlyUnlocked,
+      achievement.name,
+    );
     return newlyUnlocked;
   }
 

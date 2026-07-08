@@ -12,6 +12,7 @@ import { UserStreak } from './entities/user-streak.entity';
 import { Cafe } from '../cafes/entities/cafe.entity';
 import { CheckInDto, CheckOutDto } from './dto/checkin.dto';
 import { AchievementsService } from '../achievements/achievements.service';
+import { PointsService } from '../achievements/points.service';
 import { NotificationsService } from '../notifications/notifications.service';
 
 const RANK_BADGES: Record<number, string> = {
@@ -31,6 +32,7 @@ export class CheckinsService {
     private readonly cafeRepo: Repository<Cafe>,
     private readonly dataSource: DataSource,
     private readonly achievementsService: AchievementsService,
+    private readonly pointsService: PointsService,
     private readonly notificationsService: NotificationsService,
   ) {}
 
@@ -41,19 +43,22 @@ export class CheckinsService {
     });
     if (!cafe) throw new NotFoundException('Cafe tidak ditemukan');
 
-    // 2. GPS distance check (100m)
+    // 2. GPS distance check — radius via CHECKIN_RADIUS_METERS (default 500m).
     // DEV TOGGLE: set CHECKIN_SKIP_GPS=true in .env to bypass this check for testing.
-    // Revert to production: remove the env var or set it to false.
     const distance = this.haversineMeters(
       dto.latitude,
       dto.longitude,
       Number(cafe.latitude),
       Number(cafe.longitude),
     );
+    const radiusMeters =
+      Number(process.env.CHECKIN_RADIUS_METERS) > 0
+        ? Number(process.env.CHECKIN_RADIUS_METERS)
+        : 500;
     const skipGps = process.env.CHECKIN_SKIP_GPS === 'true';
-    if (!skipGps && distance > 100) {
+    if (!skipGps && distance > radiusMeters) {
       throw new BadRequestException(
-        `Kamu terlalu jauh dari cafe ini (${Math.round(distance)}m). Maksimal 100m untuk check-in.`,
+        `Kamu terlalu jauh dari cafe ini (${Math.round(distance)}m). Maksimal ${radiusMeters}m untuk check-in.`,
       );
     }
 
@@ -74,13 +79,25 @@ export class CheckinsService {
     const saved = await this.checkinRepo.save(checkin);
 
     // 5. Update streaks
-    await this.updateStreak(userId, dto.cafeId);
+    const globalStreak = await this.updateStreak(userId, dto.cafeId);
 
-    // 6. Check achievements (general + per-purpose + streak)
+    // 6. Points + achievements (never fail the check-in itself)
     try {
+      await this.pointsService.award(userId, 'checkin', `checkin:${saved.id}`, {
+        cafeId: dto.cafeId,
+      });
+      const current = globalStreak?.currentStreak ?? 0;
+      if (current > 0 && current % 7 === 0) {
+        await this.pointsService.award(
+          userId,
+          'streak_week_bonus',
+          `streak:global:${userId}:${current}`,
+          { streak: current },
+        );
+      }
       await this.achievementsService.checkCheckinAchievements(userId);
     } catch (err: any) {
-      console.warn('[checkin] achievement check failed:', err?.message);
+      console.warn('[checkin] points/achievement check failed:', err?.message);
     }
 
     // 7. Together detection — notify any friends already at this cafe
@@ -316,10 +333,11 @@ export class CheckinsService {
   private async updateStreak(userId: number, cafeId: number) {
     const today = new Date().toISOString().split('T')[0];
 
-    // Global streak
-    await this.upsertStreak(userId, null, 'global', today);
+    // Global streak (returned so the caller can award weekly streak bonuses)
+    const global = await this.upsertStreak(userId, null, 'global', today);
     // Per-cafe streak
     await this.upsertStreak(userId, cafeId, 'cafe', today);
+    return global;
   }
 
   private async upsertStreak(

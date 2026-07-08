@@ -26,6 +26,10 @@ export class Notification {
       'achievement_unlocked',
       'together_bomb',
       'emoji_spam',
+      'table_join_request',
+      'table_request_accepted',
+      'table_request_declined',
+      'table_closed',
     ],
   })
   type: string;

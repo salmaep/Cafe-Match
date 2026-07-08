@@ -10,6 +10,8 @@ import type { Cafe } from "../../types";
 interface Props {
   cafes: Cafe[];
   onCafeClick: (id: number) => void;
+  /** Cafes with ≥1 open table right now — rendered with the emerald pin. */
+  activeTableCafeIds?: Set<number>;
 }
 
 // Coffee glyph paths sourced from lucide-react Coffee icon (viewBox 0 0 24 24),
@@ -44,9 +46,23 @@ const PROMOTED_PIN_HTML = `
   </svg>
 </div>`;
 
-function buildPinElement(isPromoted: boolean): HTMLElement {
+// Emerald variant — cafe currently has ≥1 open table ("meja terbuka").
+const OPEN_TABLE_PIN_SVG = `
+<svg width="28" height="38" viewBox="0 0 28 38" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 2px 4px rgba(5,150,105,0.45));">
+  <path d="M14 0C6.27 0 0 6.27 0 14c0 10.5 14 24 14 24s14-13.5 14-24C28 6.27 21.73 0 14 0z" fill="#059669"/>
+  <circle cx="14" cy="13" r="7" fill="#fff"/>
+  <circle cx="14" cy="13" r="9" fill="none" stroke="#34d399" stroke-width="1.5" opacity="0.9"/>
+  <g transform="translate(8 7) scale(0.5)" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none">${COFFEE_PATHS}</g>
+</svg>`;
+
+function buildPinElement(isPromoted: boolean, hasOpenTable: boolean): HTMLElement {
   const el = document.createElement("div");
-  el.innerHTML = isPromoted ? PROMOTED_PIN_HTML : CAFE_PIN_SVG;
+  // Precedence: promoted (paid placement) > open-table (emerald) > default amber.
+  el.innerHTML = isPromoted
+    ? PROMOTED_PIN_HTML
+    : hasOpenTable
+      ? OPEN_TABLE_PIN_SVG
+      : CAFE_PIN_SVG;
   return el;
 }
 
@@ -85,7 +101,11 @@ const clusterRenderer: Renderer = {
   },
 };
 
-export default function CafeClusterMarkers({ cafes, onCafeClick }: Props) {
+export default function CafeClusterMarkers({
+  cafes,
+  onCafeClick,
+  activeTableCafeIds,
+}: Props) {
   const map = useMap();
   const clustererRef = useRef<MarkerClusterer | null>(null);
   const markersRef = useRef<google.maps.marker.AdvancedMarkerElement[]>([]);
@@ -101,10 +121,11 @@ export default function CafeClusterMarkers({ cafes, onCafeClick }: Props) {
     const markers = cafes.map((cafe) => {
       const isPromoted =
         !!cafe.hasActivePromotion && cafe.activePromotionType === "new_cafe";
+      const hasOpenTable = !!activeTableCafeIds?.has(cafe.id);
       const marker = new google.maps.marker.AdvancedMarkerElement({
         position: { lat: cafe.latitude, lng: cafe.longitude },
-        content: buildPinElement(isPromoted),
-        zIndex: cafe.hasActivePromotion ? 1000 : undefined,
+        content: buildPinElement(isPromoted, hasOpenTable),
+        zIndex: cafe.hasActivePromotion ? 1000 : hasOpenTable ? 900 : undefined,
       });
       const listener = marker.addListener("click", () => onCafeClick(cafe.id));
       listenersRef.current.push(listener);
@@ -129,7 +150,7 @@ export default function CafeClusterMarkers({ cafes, onCafeClick }: Props) {
       });
       markersRef.current = [];
     };
-  }, [map, cafes, onCafeClick]);
+  }, [map, cafes, onCafeClick, activeTableCafeIds]);
 
   return null;
 }

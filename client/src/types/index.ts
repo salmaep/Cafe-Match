@@ -2,9 +2,14 @@ export interface User {
   id: number;
   email: string;
   name: string;
+  username?: string | null;
   role: string;
   friendCode?: string;
   avatarUrl?: string | null;
+  gender?: "male" | "female" | null;
+  bio?: string | null;
+  phone?: string | null;
+  points?: number;
   twoFaEnabled?: boolean;
   phoneVerified?: boolean;
 }

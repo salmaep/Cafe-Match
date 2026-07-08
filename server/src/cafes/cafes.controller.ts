@@ -28,9 +28,11 @@ export class CafesController {
   constructor(private readonly cafesService: CafesService) {}
 
   @Public()
+  @UseGuards(OptionalJwtAuthGuard)
   @Get()
-  search(@Query() dto: SearchCafesDto) {
-    return this.cafesService.search(dto);
+  search(@Request() req: any, @Query() dto: SearchCafesDto) {
+    // userId (when logged in) enriches zero-result search logging.
+    return this.cafesService.search(dto, req.user?.id ?? undefined);
   }
 
   @Public()

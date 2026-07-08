@@ -27,9 +27,17 @@ const CATEGORY_LABELS: Record<AchievementCategory, string> = {
   social: "Sosial",
   streak: "Streak",
   special: "Spesial",
+  points: "Poin",
+  table: "Meja Nongkrong",
+  explorer: "Penjelajah",
+  time: "Waktu Nongkrong",
 };
 const CATEGORY_ORDER: AchievementCategory[] = [
+  "points",
   "visit_general",
+  "table",
+  "explorer",
+  "time",
   "visit_purpose",
   "streak",
   "social",

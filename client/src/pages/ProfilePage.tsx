@@ -1,8 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import type { LucideIcon } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { APP_VERSION } from "../config/version";
+import {
+  achievementsApi,
+  type AchievementTier,
+  type UserAchievement,
+} from "../api/achievements.api";
 import {
   Camera,
   ChevronRight,
@@ -13,15 +18,41 @@ import {
   Settings,
   Star,
   Trash2,
+  Trophy,
 } from "../utils/lucideIcon";
 import EditProfileModal from "../components/profile/EditProfileModal";
 import DeleteAccountModal from "../components/profile/DeleteAccountModal";
+
+// Matches AchievementsPage tier visuals.
+const TIER_GRAD: Record<AchievementTier, string> = {
+  bronze_1: "from-[#B45309] to-[#92400E]",
+  bronze_2: "from-[#B45309] to-[#7C2D12]",
+  silver_1: "from-[#9CA3AF] to-[#6B7280]",
+  silver_2: "from-[#9CA3AF] to-[#4B5563]",
+  gold_1: "from-[#FBBF24] to-[#D97706]",
+  gold_2: "from-[#FBBF24] to-[#B45309]",
+  platinum: "from-[#A78BFA] to-[#7C3AED]",
+};
 
 export default function ProfilePage() {
   const { user, logout, isLoading } = useAuth();
   const navigate = useNavigate();
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [points, setPoints] = useState<number | null>(null);
+  const [badges, setBadges] = useState<UserAchievement[]>([]);
+
+  useEffect(() => {
+    if (!user) return;
+    achievementsApi
+      .points()
+      .then((res) => setPoints(res.data.total ?? 0))
+      .catch(() => setPoints(null));
+    achievementsApi
+      .mine()
+      .then((res) => setBadges((res.data ?? []).filter((a) => a.unlocked)))
+      .catch(() => setBadges([]));
+  }, [user]);
 
   if (isLoading) {
     return (
@@ -109,9 +140,68 @@ export default function ProfilePage() {
                 <Pencil size={14} strokeWidth={2} />
               </button>
             </div>
+            {user.username && (
+              <p className="text-xs font-semibold text-[#D48B3A] truncate">
+                @{user.username}
+              </p>
+            )}
             <p className="text-sm text-[#8A8880] truncate">{user.email}</p>
+            {user.bio && (
+              <p className="text-xs text-[#5C5A52] mt-1 line-clamp-2">
+                {user.bio}
+              </p>
+            )}
           </div>
         </div>
+
+        {/* Points + badges stats */}
+        <div className="bg-white rounded-2xl border border-[#F0EDE8] p-4 flex items-center justify-around">
+          <Link to="/achievements" className="text-center px-3">
+            <p className="text-xl font-extrabold text-[#D48B3A]">
+              {points ?? user.points ?? 0}
+            </p>
+            <p className="text-[11px] font-semibold text-[#8A8880] uppercase tracking-wide">
+              Poin
+            </p>
+          </Link>
+          <div className="w-px h-9 bg-[#F0EDE8]" />
+          <Link to="/achievements" className="text-center px-3">
+            <p className="text-xl font-extrabold text-[#1C1C1A]">
+              {badges.length}
+            </p>
+            <p className="text-[11px] font-semibold text-[#8A8880] uppercase tracking-wide">
+              Badge
+            </p>
+          </Link>
+        </div>
+
+        {/* Badge grid preview */}
+        {badges.length > 0 && (
+          <div className="bg-white rounded-2xl border border-[#F0EDE8] p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-[10px] font-bold text-[#8A8880] uppercase tracking-wider">
+                Badge Terbaru
+              </h3>
+              <Link
+                to="/achievements"
+                className="text-[11px] font-bold text-[#D48B3A] hover:underline"
+              >
+                Lihat semua →
+              </Link>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              {badges.slice(0, 8).map((b) => (
+                <div
+                  key={b.id}
+                  title={`${b.name} — ${b.description}`}
+                  className={`w-12 h-12 rounded-full bg-gradient-to-br ${TIER_GRAD[b.tier]} flex items-center justify-center text-white shadow-sm`}
+                >
+                  <Trophy size={18} strokeWidth={2} />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* My Lists */}
         <Section title="Cafe Saya">
@@ -126,6 +216,22 @@ export default function ProfilePage() {
             icon={Star}
             label="Shortlist"
             subtitle="Hasil swipe Discover"
+          />
+        </Section>
+
+        {/* Social */}
+        <Section title="Nongkrong">
+          <MenuItem
+            to="/tables"
+            icon={Coffee}
+            label="Meja Nongkrong"
+            subtitle="Meja aktif & permintaan gabung"
+          />
+          <MenuItem
+            to="/achievements"
+            icon={Trophy}
+            label="Achievements"
+            subtitle="Poin & badge kamu"
           />
         </Section>
 

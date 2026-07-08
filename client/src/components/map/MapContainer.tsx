@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Map,
   AdvancedMarker,
@@ -11,6 +12,8 @@ import { cafeUrl } from "../../utils/cafeUrl";
 import { getCafeImage, placeholderImage } from "../../utils/cafeImage";
 import CafeClusterMarkers from "./CafeClusterMarkers";
 import OpenTablesModal from "../tables/OpenTablesModal";
+import OpenTableModal from "../tables/OpenTableModal";
+import ActiveCheckinBadge from "../checkin/ActiveCheckinBadge";
 import { useActiveTables } from "../../context/ActiveTablesContext";
 import { Star } from "../../utils/lucideIcon";
 
@@ -118,7 +121,9 @@ export default function MapView({ center, cafes, radius, onMapClick }: Props) {
   const [activeCafeId, setActiveCafeId] = useState<number | null>(null);
   const [userPopupOpen, setUserPopupOpen] = useState(false);
   const [tablesModalCafe, setTablesModalCafe] = useState<Cafe | null>(null);
+  const [openTableFormCafe, setOpenTableFormCafe] = useState<Cafe | null>(null);
   const { activeCafeIds } = useActiveTables();
+  const navigate = useNavigate();
 
   // Stable callbacks — without these, unrelated parent re-renders (typing in
   // SearchBar, focus toggles) hand new function identities to child effects
@@ -161,6 +166,7 @@ export default function MapView({ center, cafes, radius, onMapClick }: Props) {
         streetViewControl={false}
         fullscreenControl={false}
         mapTypeControl={false}
+        cameraControl={false}
         className="h-full w-full rounded-xl"
         style={{ minHeight: "400px" }}
         onClick={handleMapClick}
@@ -198,9 +204,18 @@ export default function MapView({ center, cafes, radius, onMapClick }: Props) {
             headerDisabled
           >
             {/* div wrapper (not <a>) so the open-tables button below doesn't
-                trigger navigation; the image + "Cek detail" stay links. */}
+                trigger navigation; the image + "Cek detail" stay links.
+                onClick intercepts for SPA navigation — a plain href here means
+                a FULL page reload (white flash + every provider refetching). */}
             <div className="block w-[240px]">
-              <a href={cafeUrl(activeCafe)} className="block no-underline text-inherit">
+              <a
+                href={cafeUrl(activeCafe)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigate(cafeUrl(activeCafe));
+                }}
+                className="block no-underline text-inherit"
+              >
                 <img
                   src={getCafeImage(activeCafe)}
                   alt={activeCafe.name}
@@ -268,8 +283,10 @@ export default function MapView({ center, cafes, radius, onMapClick }: Props) {
                 </div>
               </a>
 
-              {activeCafeIds.has(activeCafe.id) && (
-                <div className="px-1 pb-1.5 mt-1">
+              {/* Table action — always available: view the host list when
+                  tables exist, otherwise open one right from the map. */}
+              <div className="px-1 pb-1.5 mt-1">
+                {activeCafeIds.has(activeCafe.id) ? (
                   <button
                     type="button"
                     onClick={() => setTablesModalCafe(activeCafe)}
@@ -277,17 +294,35 @@ export default function MapView({ center, cafes, radius, onMapClick }: Props) {
                   >
                     🪑 Open table here — View Tables
                   </button>
-                </div>
-              )}
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setOpenTableFormCafe(activeCafe)}
+                    className="w-full inline-flex items-center justify-center gap-1.5 py-2 rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-700 text-[12px] font-bold hover:bg-emerald-100 transition-colors"
+                  >
+                    🪑 Open a Table Here
+                  </button>
+                )}
+              </div>
             </div>
           </InfoWindow>
         )}
       </Map>
 
+      {/* Active check-in badge — sits where the removed camera control was */}
+      <ActiveCheckinBadge className="absolute bottom-6 right-3 z-[5]" />
+
       {tablesModalCafe && (
         <OpenTablesModal
           cafe={{ id: tablesModalCafe.id, name: tablesModalCafe.name }}
           onClose={() => setTablesModalCafe(null)}
+        />
+      )}
+
+      {openTableFormCafe && (
+        <OpenTableModal
+          cafe={{ id: openTableFormCafe.id, name: openTableFormCafe.name }}
+          onClose={() => setOpenTableFormCafe(null)}
         />
       )}
     </div>

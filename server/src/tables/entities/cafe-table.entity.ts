@@ -46,6 +46,7 @@ export class CafeTable {
   @Column({ type: 'varchar', length: 100, nullable: true })
   title: string | null;
 
+  /** Host-chosen guest capacity, 1–200 (TINYINT UNSIGNED holds up to 255). */
   @Column({ name: 'max_guests', type: 'tinyint', unsigned: true, default: 4 })
   maxGuests: number;
 

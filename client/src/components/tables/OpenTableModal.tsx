@@ -13,7 +13,8 @@ interface Props {
   onOpened?: () => void;
 }
 
-const GUEST_OPTIONS = [1, 2, 3, 4, 5, 6, 8, 10, 12];
+const GUEST_QUICK_PICKS = [2, 4, 6, 10, 20, 50];
+const GUEST_MAX = 200;
 
 /** Host form: open a table at this cafe (no check-in / GPS required). */
 export default function OpenTableModal({ cafe, onClose, onOpened }: Props) {
@@ -29,6 +30,10 @@ export default function OpenTableModal({ cafe, onClose, onOpened }: Props) {
   const submit = async () => {
     if (submitting) return;
     setError("");
+    if (!Number.isInteger(maxGuests) || maxGuests < 1 || maxGuests > GUEST_MAX) {
+      setError(`Maksimal tamu harus 1–${GUEST_MAX}.`);
+      return;
+    }
     setSubmitting(true);
     try {
       await tablesApi.open({
@@ -93,15 +98,26 @@ export default function OpenTableModal({ cafe, onClose, onOpened }: Props) {
 
             <div>
               <label className="block text-xs font-semibold text-[#5C5A52] mb-1.5">
-                Maksimal tamu
+                Maksimal tamu (1–{GUEST_MAX})
               </label>
-              <div className="flex flex-wrap gap-1.5">
-                {GUEST_OPTIONS.map((n) => (
+              <input
+                type="number"
+                min={1}
+                max={GUEST_MAX}
+                value={maxGuests}
+                onChange={(e) => {
+                  const n = parseInt(e.target.value, 10);
+                  setMaxGuests(Number.isNaN(n) ? 0 : n);
+                }}
+                className="w-full px-3.5 py-2.5 bg-[#F0EDE8] rounded-xl text-sm text-[#1C1C1A] focus:bg-white focus:ring-2 focus:ring-[#D48B3A]/30 outline-none border-none transition-all"
+              />
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {GUEST_QUICK_PICKS.map((n) => (
                   <button
                     key={n}
                     type="button"
                     onClick={() => setMaxGuests(n)}
-                    className={`w-10 h-9 rounded-lg text-sm font-bold transition-colors ${
+                    className={`min-w-10 h-9 px-2 rounded-lg text-sm font-bold transition-colors ${
                       maxGuests === n
                         ? "bg-[#D48B3A] text-white"
                         : "bg-white border border-[#E8E4DD] text-[#5C5A52] hover:border-[#D48B3A]"

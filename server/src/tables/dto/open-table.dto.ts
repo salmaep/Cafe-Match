@@ -24,7 +24,7 @@ export class OpenTableDto {
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  @Max(12)
+  @Max(200)
   maxGuests?: number;
 
   @IsOptional()

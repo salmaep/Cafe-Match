@@ -132,6 +132,8 @@ export interface User {
   friendCode?: string;
   avatarUrl?: string;
   provider?: string;
+  username?: string;
+  bio?: string;
 }
 
 export interface AuthResponse {
@@ -219,6 +221,7 @@ export interface LeaderboardEntry {
   rank: number;
   userId: number;
   name: string;
+  username?: string;
   avatarUrl?: string;
   checkinCount: number;
   totalDuration: string;

@@ -85,6 +85,7 @@ export default function EditProfileModal() {
         <ScrollView
           contentContainerStyle={styles.tabBody}
           keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
           {tab === 'profile' ? <ProfileTab /> : <PasswordTab />}
         </ScrollView>
@@ -120,15 +121,30 @@ function TabBtn({
   );
 }
 
+const USERNAME_PATTERN = /^[a-z0-9_]{3,20}$/;
+
+function validateUsername(v: string): string | null {
+  if (!v) return null;
+  if (v.length < 3) return 'Username minimal 3 karakter';
+  if (v.length > 20) return 'Username maksimal 20 karakter';
+  if (!/^[a-z0-9_]+$/.test(v))
+    return 'Cuma huruf kecil, angka, dan underscore (_)';
+  if (!USERNAME_PATTERN.test(v)) return 'Format username tidak valid';
+  return null;
+}
+
 function ProfileTab() {
   const { t } = useTranslation();
   const navigation = useNavigation<StackNavigationProp<any>>();
   const { user, refresh } = useAuth();
   const [name, setName] = useState(user?.name || '');
+  const [username, setUsername] = useState(user?.username || '');
+  const [bio, setBio] = useState(user?.bio || '');
   const [avatarUrl, setAvatarUrl] = useState<string>(user?.avatarUrl || '');
   const [submitting, setSubmitting] = useState(false);
   const [picking, setPicking] = useState(false);
   const [error, setError] = useState('');
+  const usernameError = validateUsername(username);
 
   const initials = (user?.name || '?')
     .split(/\s+/)
@@ -179,9 +195,18 @@ function ProfileTab() {
       setError(t(profileText.nameRequired));
       return;
     }
+    if (usernameError) {
+      setError(usernameError);
+      return;
+    }
     setSubmitting(true);
     try {
-      await updateProfileApi({ name: name.trim(), avatarUrl });
+      await updateProfileApi({
+        name: name.trim(),
+        avatarUrl,
+        username: username.trim() || undefined,
+        bio: bio.trim() || undefined,
+      });
       await refresh();
       navigation.goBack();
     } catch (err: any) {
@@ -243,6 +268,54 @@ function ProfileTab() {
           placeholder={t(profileText.namePlaceholder)}
           placeholderTextColor={colors.textSecondary}
         />
+      </View>
+
+      <View>
+        <Text style={styles.fieldLabel}>USERNAME</Text>
+        <View
+          style={[
+            styles.usernameWrap,
+            !!username && !!usernameError && styles.inputError,
+          ]}
+        >
+          <Text style={styles.usernamePrefix}>@</Text>
+          <TextInput
+            style={styles.usernameInput}
+            value={username}
+            onChangeText={(v) => {
+              setUsername(v.toLowerCase().replace(/\s/g, ''));
+              setError('');
+            }}
+            maxLength={20}
+            autoCapitalize="none"
+            autoCorrect={false}
+            placeholder="username_lo"
+            placeholderTextColor={colors.textSecondary}
+          />
+        </View>
+        <Text
+          style={
+            username && usernameError ? styles.errorText : styles.helpText
+          }
+        >
+          {username && usernameError
+            ? usernameError
+            : '3–20 karakter, huruf kecil / angka / underscore. Unik.'}
+        </Text>
+      </View>
+
+      <View>
+        <Text style={styles.fieldLabel}>BIO</Text>
+        <TextInput
+          style={[styles.input, styles.bioInput]}
+          value={bio}
+          onChangeText={setBio}
+          maxLength={200}
+          multiline
+          placeholder="Cerita singkat tentang lo…"
+          placeholderTextColor={colors.textSecondary}
+        />
+        <Text style={styles.helpText}>{bio.length} / 200</Text>
       </View>
 
       <View>
@@ -500,6 +573,37 @@ const styles = StyleSheet.create({
     color: colors.primary,
   },
   inputDisabled: { color: colors.textSecondary, opacity: 0.7 },
+  inputError: { borderWidth: 1, borderColor: colors.error },
+  bioInput: {
+    minHeight: 84,
+    textAlignVertical: 'top',
+    paddingTop: spacing.md,
+  },
+  usernameWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+  },
+  usernamePrefix: {
+    fontSize: 15,
+    color: colors.textSecondary,
+    fontWeight: '700',
+    marginRight: 4,
+  },
+  usernameInput: {
+    flex: 1,
+    paddingVertical: spacing.md,
+    fontSize: 15,
+    color: colors.primary,
+  },
+  errorText: {
+    fontSize: 11,
+    color: colors.error,
+    marginTop: 4,
+    fontWeight: '600',
+  },
   helpText: {
     fontSize: 11, color: colors.textSecondary,
     marginTop: 4,

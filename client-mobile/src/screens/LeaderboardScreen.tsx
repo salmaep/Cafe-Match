@@ -62,6 +62,9 @@ export default function LeaderboardScreen() {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.name}>{item.name}</Text>
+                  {!!item.username && (
+                    <Text style={styles.handle}>@{item.username}</Text>
+                  )}
                   {item.badge && <Text style={styles.badge}>{item.badge}</Text>}
                 </View>
                 <View style={styles.countBox}>
@@ -107,6 +110,7 @@ const styles = StyleSheet.create({
   },
   avatarText: { fontSize: 16, fontWeight: '700', color: colors.accent },
   name: { fontSize: 15, fontWeight: '700', color: colors.primary },
+  handle: { fontSize: 12, color: colors.accent, fontWeight: '700', marginTop: 1 },
   badge: { fontSize: 12, color: colors.accent, fontWeight: '600', marginTop: 1 },
   countBox: { alignItems: 'center' },
   count: { fontSize: 20, fontWeight: '800', color: colors.primary },

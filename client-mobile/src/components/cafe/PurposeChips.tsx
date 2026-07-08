@@ -23,7 +23,8 @@ export default function PurposeChips({
   title,
 }: Props) {
   const { t } = useTranslation();
-  const resolvedTitle = title ?? t(filtersText.defaultPurposeTitle);
+  const resolvedTitle =
+    title === undefined ? t(filtersText.defaultPurposeTitle) : title;
   const allLabel = t(trendingText.allFilter);
   const Pill = ({
     label,

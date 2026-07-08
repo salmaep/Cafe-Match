@@ -209,6 +209,11 @@ function PodiumStep({ entry, isWinner }: { entry: Entry; isWinner?: boolean }) {
         <Text style={styles.pedestalName} numberOfLines={1}>
           {entry.name}
         </Text>
+        {!!entry.username && (
+          <Text style={styles.pedestalHandle} numberOfLines={1}>
+            @{entry.username}
+          </Text>
+        )}
         {entry.badge && (
           <View style={styles.pedestalBadge}>
             <Text
@@ -253,6 +258,11 @@ function ListRow({ entry, isLast }: { entry: Entry; isLast: boolean }) {
           <Text style={styles.listName} numberOfLines={1}>
             {entry.name}
           </Text>
+          {!!entry.username && (
+            <Text style={styles.listHandle} numberOfLines={1}>
+              @{entry.username}
+            </Text>
+          )}
           {entry.badge && (
             <View style={styles.listBadge}>
               <Text style={styles.listBadgeText}>{entry.badge}</Text>
@@ -404,6 +414,11 @@ const styles = StyleSheet.create({
     color: colors.white, fontSize: 11, fontWeight: '800',
     textAlign: 'center', marginTop: 4,
   },
+  pedestalHandle: {
+    color: 'rgba(255,255,255,0.9)',
+    fontSize: 9, fontWeight: '700',
+    textAlign: 'center', marginTop: 1,
+  },
   pedestalBadge: {
     marginTop: 4,
     paddingHorizontal: 6, paddingVertical: 2,
@@ -463,6 +478,10 @@ const styles = StyleSheet.create({
   listInfo: { flex: 1, minWidth: 0 },
   listNameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   listName: { fontSize: 13, fontWeight: '800', color: colors.primary, flexShrink: 1 },
+  listHandle: {
+    fontSize: 11, fontWeight: '700',
+    color: colors.accent,
+  },
   listBadge: {
     paddingHorizontal: 6, paddingVertical: 1,
     borderRadius: radius.full,

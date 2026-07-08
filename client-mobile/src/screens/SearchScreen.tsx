@@ -132,7 +132,10 @@ export default function SearchScreen() {
               <Text style={styles.emptyText}>{t(mapText.noSuggestions)}</Text>
             </View>
           ) : (
-            <ScrollView keyboardShouldPersistTaps="handled">
+            <ScrollView
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
               {auto.suggestions.map((hit) => {
                 const meta = suggestionMeta(hit);
                 return (
@@ -172,7 +175,10 @@ export default function SearchScreen() {
               <Text style={styles.clearAll}>{t(mapText.clearAll)}</Text>
             </TouchableOpacity>
           </View>
-          <ScrollView keyboardShouldPersistTaps="handled">
+          <ScrollView
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
             {history.map((term) => (
               <View key={term} style={styles.row}>
                 <TouchableOpacity

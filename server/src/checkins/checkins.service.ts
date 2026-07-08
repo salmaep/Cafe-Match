@@ -20,6 +20,8 @@ const RANK_BADGES: Record<number, string> = {
   3: 'Reguler Sejati',
 };
 
+const CHECKIN_MAX_DISTANCE_M = 500;
+
 @Injectable()
 export class CheckinsService {
   constructor(
@@ -41,9 +43,6 @@ export class CheckinsService {
     });
     if (!cafe) throw new NotFoundException('Cafe tidak ditemukan');
 
-    // 2. GPS distance check (100m)
-    // DEV TOGGLE: set CHECKIN_SKIP_GPS=true in .env to bypass this check for testing.
-    // Revert to production: remove the env var or set it to false.
     const distance = this.haversineMeters(
       dto.latitude,
       dto.longitude,
@@ -51,9 +50,9 @@ export class CheckinsService {
       Number(cafe.longitude),
     );
     const skipGps = process.env.CHECKIN_SKIP_GPS === 'true';
-    if (!skipGps && distance > 100) {
+    if (!skipGps && distance > CHECKIN_MAX_DISTANCE_M) {
       throw new BadRequestException(
-        `Kamu terlalu jauh dari cafe ini (${Math.round(distance)}m). Maksimal 100m untuk check-in.`,
+        `Kamu terlalu jauh dari cafe ini (${Math.round(distance)}m). Maksimal ${CHECKIN_MAX_DISTANCE_M}m untuk check-in.`,
       );
     }
 

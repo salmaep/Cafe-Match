@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { useAuth } from "../../context/AuthContext";
 import type { Cafe } from "../../types";
 import type { Checkin } from "../../api/checkins.api";
-import { getCafeImage } from "../../utils/cafeImage";
+import { getCafeImage, placeholderImage } from "../../utils/cafeImage";
 import { Download, MapPin, Share2, X } from "../../utils/lucideIcon";
 
 interface Props {
@@ -18,9 +18,11 @@ interface Props {
  * name + user's name/@username + date + Geser branding) exportable as PNG via
  * html-to-image. Sharing is optional — download & close are always available.
  *
- * The cafe photo is pre-fetched to a data URL so the exported canvas is never
- * CORS-tainted; if the fetch fails (expired/blocked Google photo URL) the card
- * falls back to a branded gradient background.
+ * The banner photo is pre-fetched to a data URL so the exported canvas is never
+ * CORS-tainted. It tries the cafe photo first and, if that fails (expired /
+ * blocked Google URL), falls back to an Unsplash cafe placeholder — so the
+ * shared card always has a real photo behind the cafe name; only if BOTH fail
+ * does it fall back to the branded gradient.
  */
 export default function CheckinShareModal({ cafe, checkin, onClose }: Props) {
   const { user } = useAuth();
@@ -31,24 +33,41 @@ export default function CheckinShareModal({ cafe, checkin, onClose }: Props) {
 
   useEffect(() => {
     let cancelled = false;
+
+    const toDataUrl = async (url: string): Promise<string> => {
+      const res = await fetch(url, { mode: "cors" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      return new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    };
+
     (async () => {
-      try {
-        const res = await fetch(getCafeImage(cafe), { mode: "cors" });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const blob = await res.blob();
-        const dataUrl = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result as string);
-          reader.onerror = reject;
-          reader.readAsDataURL(blob);
-        });
-        if (!cancelled) setPhotoDataUrl(dataUrl);
-      } catch {
-        // CORS-blocked or expired photo → gradient fallback
-      } finally {
-        if (!cancelled) setPhotoReady(true);
+      // Try the cafe photo first, then an Unsplash cafe placeholder. Whichever
+      // resolves is embedded as a data URL (taint-free for the PNG export).
+      const candidates = Array.from(
+        new Set([getCafeImage(cafe), placeholderImage(cafe.id)]),
+      );
+      let resolved: string | null = null;
+      for (const url of candidates) {
+        if (cancelled) return;
+        try {
+          resolved = await toDataUrl(url);
+          break;
+        } catch {
+          // try the next candidate
+        }
+      }
+      if (!cancelled) {
+        setPhotoDataUrl(resolved);
+        setPhotoReady(true);
       }
     })();
+
     return () => {
       cancelled = true;
     };

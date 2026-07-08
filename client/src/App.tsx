@@ -1,7 +1,9 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { useEffect } from "react";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { Toaster } from "sonner";
 import Seo from "./components/seo/Seo";
 import { useTrackPageView } from "./utils/analytics";
+import { rememberLastPath } from "./utils/authRedirect";
 import UserLayout from "./components/layout/UserLayout";
 import OwnerLayout from "./components/layout/OwnerLayout";
 import OwnerRoute from "./components/auth/OwnerRoute";
@@ -34,11 +36,21 @@ import RecapPage from "./pages/RecapPage";
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
 import AccountDeletionPage from "./pages/AccountDeletionPage";
 
+/** Remembers the last non-auth path so post-login redirects can return to it. */
+function LastPathTracker() {
+  const { pathname, search } = useLocation();
+  useEffect(() => {
+    rememberLastPath(pathname + search);
+  }, [pathname, search]);
+  return null;
+}
+
 function App() {
   useTrackPageView();
   return (
     <div className="min-h-screen bg-gray-50">
       <Seo />
+      <LastPathTracker />
       <Toaster
         position="top-center"
         toastOptions={{

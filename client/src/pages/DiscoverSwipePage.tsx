@@ -324,8 +324,10 @@ export default function DiscoverSwipePage() {
   }
 
   return (
+    // 4rem offset fits BOTH modes exactly (no window scrollbar): desktop
+    // navbar is h-16, and on mobile <main> reserves pb-16 for the tab bar.
     <div
-      className="h-[calc(100dvh-3.5rem)] bg-[#f6efe2] flex flex-col relative overflow-hidden"
+      className="h-[calc(100dvh-4rem)] bg-[#f6efe2] flex flex-col relative overflow-hidden"
       style={{
         backgroundImage:
           "radial-gradient(1200px 600px at 80% -20%, #f9e9c8 0%, transparent 60%), radial-gradient(900px 500px at -10% 110%, #f1d9b2 0%, transparent 55%)",

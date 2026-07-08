@@ -748,7 +748,7 @@ export default function HomePage() {
       </div>
 
       {/* ─── TABLET/DESKTOP (md+): map (full-left) + results · filter is a left-side overlay drawer ─── */}
-      <div className="hidden md:flex md:flex-row md:h-[calc(100vh-4rem)] md:gap-3 md:p-3 lg:gap-4 lg:p-4 bg-[#FAF9F6]">
+      <div className="hidden md:flex md:flex-row md:h-[calc(100dvh-4rem)] md:overflow-hidden md:gap-3 md:p-3 lg:gap-4 lg:p-4 bg-[#FAF9F6]">
         <div className="md:h-full md:flex-[2] lg:flex-[3] relative">
           {center && (
             <MapErrorBoundary>

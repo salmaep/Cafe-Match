@@ -224,8 +224,8 @@ export default function ProfilePage() {
           <MenuItem
             to="/tables"
             icon={Coffee}
-            label="Meja Nongkrong"
-            subtitle="Meja aktif & permintaan gabung"
+            label="Tables"
+            subtitle="Your active table & join requests"
           />
           <MenuItem
             to="/achievements"

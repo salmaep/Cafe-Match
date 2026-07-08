@@ -275,7 +275,7 @@ export default function MapView({ center, cafes, radius, onMapClick }: Props) {
                     onClick={() => setTablesModalCafe(activeCafe)}
                     className="w-full inline-flex items-center justify-center gap-1.5 py-2 rounded-lg bg-emerald-600 text-white text-[12px] font-bold hover:bg-emerald-700 transition-colors"
                   >
-                    🪑 Ada meja terbuka — Lihat Meja
+                    🪑 Open table here — View Tables
                   </button>
                 </div>
               )}

@@ -16,6 +16,8 @@ export interface FilterRailProps {
   autoSelectedKeys?: string[];
   /** Height budget for the internal scroller — page contexts differ. */
   maxHeightClassName?: string;
+  /** Always-open contexts (Trending): render just the card, no close button. */
+  hideClose?: boolean;
 }
 
 /**
@@ -38,31 +40,38 @@ export default function FilterRail({
   onPriceRangeChange,
   autoSelectedKeys,
   maxHeightClassName = "max-h-[calc(100vh-6rem)]",
+  hideClose = false,
 }: FilterRailProps) {
   if (!open) return null;
 
+  const card = (
+    <div
+      className={`w-72 bg-white rounded-xl border border-[#F0EDE8] overflow-hidden flex flex-col ${maxHeightClassName}`}
+    >
+      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain scrollbar-themed [--sb-track:#FFFFFF]">
+        <PurposeSection
+          purposes={purposes}
+          activeId={activePurposeId}
+          onSelect={onPurposeSelect}
+        />
+        <FilterPanel
+          variant="sidebar"
+          bare
+          facilities={facilities}
+          onFacilitiesChange={onFacilitiesChange}
+          priceRange={priceRange}
+          onPriceRangeChange={onPriceRangeChange}
+          autoSelectedKeys={autoSelectedKeys}
+        />
+      </div>
+    </div>
+  );
+
+  if (hideClose) return card;
+
   return (
     <div className="flex items-start gap-2">
-      <div
-        className={`w-72 bg-white rounded-xl border border-[#F0EDE8] overflow-hidden flex flex-col ${maxHeightClassName}`}
-      >
-        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain scrollbar-themed [--sb-track:#FFFFFF]">
-          <PurposeSection
-            purposes={purposes}
-            activeId={activePurposeId}
-            onSelect={onPurposeSelect}
-          />
-          <FilterPanel
-            variant="sidebar"
-            bare
-            facilities={facilities}
-            onFacilitiesChange={onFacilitiesChange}
-            priceRange={priceRange}
-            onPriceRangeChange={onPriceRangeChange}
-            autoSelectedKeys={autoSelectedKeys}
-          />
-        </div>
-      </div>
+      {card}
       <button
         type="button"
         onClick={onClose}

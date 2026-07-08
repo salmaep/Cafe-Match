@@ -254,8 +254,8 @@ export default function TrendingPage() {
               </span>
               <button
                 type="button"
-                onClick={() => setFilterOpen((v) => !v)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 text-white ring-1 ring-white/15 text-[12px] font-bold hover:bg-white/15 transition-colors"
+                onClick={() => setFilterOpen(true)}
+                className="lg:hidden inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 text-white ring-1 ring-white/15 text-[12px] font-bold hover:bg-white/15 transition-colors"
               >
                 <Settings size={12} strokeWidth={2.5} /> Filter
                 {(facilities.length > 0 ||
@@ -274,27 +274,25 @@ export default function TrendingPage() {
       </div>
 
       <div className="max-w-[88rem] mx-auto px-4 sm:px-6 lg:px-8 pt-5 lg:flex lg:gap-6">
-        {/* Desktop filter rail — shared shell, default CLOSED, toggled via the
-            header "Filter" pill. Scroll lives inside the card; close button
-            sits outside its right edge and stays put while scrolling. */}
-        {filterOpen && (
-          <aside className="hidden lg:block lg:w-[20.5rem] lg:shrink-0">
-            <div className="sticky top-4">
-              <FilterRail
-                open={filterOpen}
-                onClose={() => setFilterOpen(false)}
-                purposes={purposes}
-                activePurposeId={activePurposeId}
-                onPurposeSelect={setActivePurposeId}
-                facilities={facilities}
-                onFacilitiesChange={setFacilities}
-                priceRange={priceRange}
-                onPriceRangeChange={setPriceRange}
-                maxHeightClassName="max-h-[calc(100vh-2rem)]"
-              />
-            </div>
-          </aside>
-        )}
+        {/* Desktop filter rail — ALWAYS visible on Trending (no toggle, no
+            close button). Scroll stays inside the card. */}
+        <aside className="hidden lg:block lg:w-72 lg:shrink-0">
+          <div className="sticky top-4">
+            <FilterRail
+              open
+              hideClose
+              onClose={() => {}}
+              purposes={purposes}
+              activePurposeId={activePurposeId}
+              onPurposeSelect={setActivePurposeId}
+              facilities={facilities}
+              onFacilitiesChange={setFacilities}
+              priceRange={priceRange}
+              onPriceRangeChange={setPriceRange}
+              maxHeightClassName="max-h-[calc(100vh-2rem)]"
+            />
+          </div>
+        </aside>
 
         <main className="flex-1 min-w-0">
           {loading && cafes.length === 0 ? (

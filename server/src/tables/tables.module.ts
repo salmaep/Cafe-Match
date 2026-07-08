@@ -7,19 +7,12 @@ import { CafeTable } from './entities/cafe-table.entity';
 import { TableJoinRequest } from './entities/table-join-request.entity';
 import { User } from '../users/entities/user.entity';
 import { Cafe } from '../cafes/entities/cafe.entity';
-import { Friendship } from '../friends/entities/friendship.entity';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { AchievementsModule } from '../achievements/achievements.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      CafeTable,
-      TableJoinRequest,
-      User,
-      Cafe,
-      Friendship,
-    ]),
+    TypeOrmModule.forFeature([CafeTable, TableJoinRequest, User, Cafe]),
     NotificationsModule,
     AchievementsModule,
   ],

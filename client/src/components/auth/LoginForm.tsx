@@ -3,6 +3,7 @@ import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth, type PendingTwoFa } from "../../context/AuthContext";
 import { authText } from "@shared/i18n";
+import { getPostAuthRedirect } from "../../utils/authRedirect";
 import OtpStep from "./OtpStep";
 import SocialAuthButtons from "./SocialAuthButtons";
 
@@ -34,12 +35,11 @@ export default function LoginForm() {
     if (retryAt !== null && cooldownLeft === 0) setRetryAt(null);
   }, [retryAt, cooldownLeft]);
 
+  // Never navigate(-1) blindly: after the register → login flow the previous
+  // history entry IS /register. getPostAuthRedirect resolves ?redirect= →
+  // last non-auth path → "/" and never lands on /login or /register.
   const goBackAfterAuth = () => {
-    if (window.history.length > 1) {
-      navigate(-1);
-    } else {
-      navigate("/");
-    }
+    navigate(getPostAuthRedirect(location.search), { replace: true });
   };
 
   const handleSubmit = async (e: FormEvent) => {

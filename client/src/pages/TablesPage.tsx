@@ -15,34 +15,34 @@ const STATUS_CHIP: Record<
   { label: string; className: string }
 > = {
   pending: {
-    label: "Menunggu",
+    label: "Pending",
     className: "bg-amber-50 text-amber-700 border-amber-200",
   },
   accepted: {
-    label: "Diterima",
+    label: "Accepted",
     className: "bg-emerald-50 text-emerald-700 border-emerald-200",
   },
   declined: {
-    label: "Ditolak",
+    label: "Declined",
     className: "bg-red-50 text-red-600 border-red-200",
   },
   canceled: {
-    label: "Dibatalkan",
+    label: "Canceled",
     className: "bg-[#F0EDE8] text-[#8A8880] border-[#E8E4DD]",
   },
   expired: {
-    label: "Kedaluwarsa",
+    label: "Expired",
     className: "bg-[#F0EDE8] text-[#8A8880] border-[#E8E4DD]",
   },
 };
 
 function timeLeft(expiresAt: string, now: number): string {
   const ms = new Date(expiresAt).getTime() - now;
-  if (ms <= 0) return "berakhir";
+  if (ms <= 0) return "ended";
   const totalMin = Math.floor(ms / 60_000);
   const h = Math.floor(totalMin / 60);
   const m = totalMin % 60;
-  return h > 0 ? `${h}j ${m}m lagi` : `${m}m lagi`;
+  return h > 0 ? `${h}h ${m}m left` : `${m}m left`;
 }
 
 function Avatar({
@@ -75,7 +75,7 @@ function Avatar({
   );
 }
 
-/** "Meja Nongkrong" — host management (accept/decline) + my outgoing requests. */
+/** "My Tables" — host management (accept/decline) + my outgoing requests. */
 export default function TablesPage() {
   const { user } = useAuth();
   const { myTable, myRequests, refresh } = useActiveTables();
@@ -105,7 +105,7 @@ export default function TablesPage() {
       toast.success(successMsg);
       await refresh();
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Gagal memproses");
+      toast.error(err?.response?.data?.message || "Something went wrong");
       await refresh();
     } finally {
       setBusyId(null);
@@ -117,16 +117,16 @@ export default function TablesPage() {
       <div className="max-w-2xl mx-auto px-4 py-16 text-center">
         <p className="text-4xl mb-3">🪑</p>
         <h1 className="text-lg font-bold text-[#1C1C1A] mb-2">
-          Meja Nongkrong
+          Tables
         </h1>
         <p className="text-sm text-[#8A8880] mb-5">
-          Login dulu untuk buka meja atau lihat request kamu.
+          Log in to open a table or see your requests.
         </p>
         <Link
           to="/login?redirect=%2Ftables"
           className="inline-block px-6 py-3 rounded-xl bg-[#1C1C1A] text-white font-bold text-sm hover:bg-black transition-colors"
         >
-          Login
+          Log In
         </Link>
       </div>
     );
@@ -134,17 +134,17 @@ export default function TablesPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 pb-24">
-      <Seo title="Meja Nongkrong" />
+      <Seo title="Tables" />
       <h1 className="text-xl font-bold text-[#1C1C1A] mb-4">
-        🪑 Meja Nongkrong
+        🪑 Tables
       </h1>
 
       {/* Tabs */}
       <div className="flex gap-2 mb-5">
         {(
           [
-            ["mine", "Meja Saya"],
-            ["requests", "Permintaan Saya"],
+            ["mine", "My Table"],
+            ["requests", "My Requests"],
           ] as [Tab, string][]
         ).map(([key, label]) => (
           <button
@@ -172,11 +172,11 @@ export default function TablesPage() {
           <div className="bg-white border border-[#F0EDE8] rounded-2xl p-8 text-center">
             <p className="text-3xl mb-2">☕</p>
             <p className="text-sm font-semibold text-[#1C1C1A] mb-1">
-              Kamu belum buka meja
+              You haven't opened a table
             </p>
             <p className="text-xs text-[#8A8880]">
-              Buka meja dari halaman cafe atau lewat pin hijau di map untuk
-              ngajak orang nongkrong bareng.
+              Open a table from a cafe page or via the green map pin to
+              invite people to hang out.
             </p>
           </div>
         ) : (
@@ -186,7 +186,7 @@ export default function TablesPage() {
               <div className="flex items-start justify-between gap-3 mb-1">
                 <div className="min-w-0">
                   <p className="text-[11px] font-bold text-emerald-600 uppercase tracking-wide mb-0.5">
-                    Meja aktif
+                    Active table
                   </p>
                   {myTable.cafe ? (
                     <Link
@@ -221,7 +221,7 @@ export default function TablesPage() {
               {myTable.members.length > 0 && (
                 <div className="mb-3">
                   <p className="text-[11px] font-bold text-[#5C5A52] uppercase tracking-wide mb-2">
-                    Sudah gabung
+                    Joined
                   </p>
                   <div className="space-y-2">
                     {myTable.members.map(
@@ -256,24 +256,24 @@ export default function TablesPage() {
                   act(
                     () => tablesApi.close(myTable.id),
                     myTable.id,
-                    "Meja ditutup",
+                    "Table closed",
                   )
                 }
                 disabled={busyId === myTable.id}
                 className="w-full py-2.5 rounded-xl border border-red-200 bg-red-50 text-red-600 font-bold text-sm hover:bg-red-100 transition-colors disabled:opacity-60"
               >
-                Tutup Meja
+                Close Table
               </button>
             </div>
 
             {/* Incoming requests */}
             <div className="bg-white border border-[#F0EDE8] rounded-2xl p-5">
               <p className="text-[11px] font-bold text-[#5C5A52] uppercase tracking-wide mb-3">
-                Request masuk
+                Incoming requests
               </p>
               {myTable.pendingRequests.length === 0 ? (
                 <p className="text-sm text-[#8A8880]">
-                  Belum ada yang minta gabung.
+                  No join requests yet.
                 </p>
               ) : (
                 <div className="space-y-3">
@@ -291,12 +291,12 @@ export default function TablesPage() {
                       </div>
                       <button
                         type="button"
-                        aria-label="Terima"
+                        aria-label="Accept"
                         onClick={() =>
                           act(
                             () => tablesApi.accept(r.id),
                             r.id,
-                            "Request diterima!",
+                            "Request accepted!",
                           )
                         }
                         disabled={busyId === r.id}
@@ -306,12 +306,12 @@ export default function TablesPage() {
                       </button>
                       <button
                         type="button"
-                        aria-label="Tolak"
+                        aria-label="Decline"
                         onClick={() =>
                           act(
                             () => tablesApi.decline(r.id),
                             r.id,
-                            "Request ditolak",
+                            "Request declined",
                           )
                         }
                         disabled={busyId === r.id}
@@ -333,10 +333,10 @@ export default function TablesPage() {
             <div className="bg-white border border-[#F0EDE8] rounded-2xl p-8 text-center">
               <p className="text-3xl mb-2">📨</p>
               <p className="text-sm font-semibold text-[#1C1C1A] mb-1">
-                Belum ada permintaan
+                No requests yet
               </p>
               <p className="text-xs text-[#8A8880]">
-                Klik pin hijau di map untuk lihat meja terbuka dan minta gabung.
+                Tap a green pin on the map to see open tables and request to join.
               </p>
             </div>
           ) : (
@@ -376,13 +376,13 @@ export default function TablesPage() {
                         act(
                           () => tablesApi.cancel(r.id),
                           r.id,
-                          "Request dibatalkan",
+                          "Request canceled",
                         )
                       }
                       disabled={busyId === r.id}
                       className="mt-3 w-full py-2 rounded-lg border border-[#E8E4DD] text-[#8A8880] text-xs font-bold hover:border-red-300 hover:text-red-500 transition-colors disabled:opacity-60"
                     >
-                      Batalkan
+                      Cancel
                     </button>
                   )}
                 </div>

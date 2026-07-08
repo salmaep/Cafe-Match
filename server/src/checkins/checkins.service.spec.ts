@@ -107,7 +107,7 @@ describe('CheckinsService', () => {
         .checkIn(USER_ID, { cafeId: CAFE_ID, ...FAR } as any)
         .catch((e) => e);
       expect(err).toBeInstanceOf(BadRequestException);
-      expect(err.message).toContain('Maksimal 500m');
+      expect(err.message).toContain('within 500m');
     });
 
     it('allows ~222m under the default 500m radius', async () => {
@@ -124,7 +124,7 @@ describe('CheckinsService', () => {
         .checkIn(USER_ID, { cafeId: CAFE_ID, ...NEAR } as any) // 222m > 100m
         .catch((e) => e);
       expect(err).toBeInstanceOf(BadRequestException);
-      expect(err.message).toContain('Maksimal 100m');
+      expect(err.message).toContain('within 100m');
     });
 
     it('bypasses the gate entirely with CHECKIN_SKIP_GPS=true', async () => {

@@ -22,7 +22,6 @@ export default function OpenTableModal({ cafe, onClose, onOpened }: Props) {
   const { refresh } = useActiveTables();
   const [title, setTitle] = useState("");
   const [maxGuests, setMaxGuests] = useState(4);
-  const [friendsOnly, setFriendsOnly] = useState(false);
   const [genderRule, setGenderRule] = useState<TableGenderRule>("any");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -31,7 +30,7 @@ export default function OpenTableModal({ cafe, onClose, onOpened }: Props) {
     if (submitting) return;
     setError("");
     if (!Number.isInteger(maxGuests) || maxGuests < 1 || maxGuests > GUEST_MAX) {
-      setError(`Maksimal tamu harus 1–${GUEST_MAX}.`);
+      setError(`Max guests must be 1–${GUEST_MAX}.`);
       return;
     }
     setSubmitting(true);
@@ -41,14 +40,13 @@ export default function OpenTableModal({ cafe, onClose, onOpened }: Props) {
         title: title.trim() || undefined,
         maxGuests,
         genderRule,
-        friendsOnly,
       });
-      toast.success(`Meja dibuka di ${cafe.name}!`);
+      toast.success(`Table opened at ${cafe.name}!`);
       await refresh();
       onOpened?.();
       onClose();
     } catch (err: any) {
-      setError(err?.response?.data?.message || "Gagal membuka meja");
+      setError(err?.response?.data?.message || "Failed to open the table");
     } finally {
       setSubmitting(false);
     }
@@ -59,19 +57,19 @@ export default function OpenTableModal({ cafe, onClose, onOpened }: Props) {
       <div className="absolute inset-0 bg-black/50" onClick={onClose} aria-hidden />
       <div className="relative bg-white w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl shadow-2xl p-5 max-h-[90vh] overflow-y-auto">
         <div className="flex items-start justify-between mb-1">
-          <h2 className="text-lg font-bold text-[#1C1C1A]">🪑 Buka Meja</h2>
+          <h2 className="text-lg font-bold text-[#1C1C1A]">🪑 Open a Table</h2>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Tutup"
+            aria-label="Close"
             className="w-8 h-8 rounded-full flex items-center justify-center text-[#8A8880] hover:bg-[#F0EDE8]"
           >
             <X size={18} strokeWidth={2} />
           </button>
         </div>
         <p className="text-sm text-[#8A8880] mb-4">
-          di <span className="font-semibold text-[#1C1C1A]">{cafe.name}</span> ·
-          otomatis tutup setelah 8 jam
+          at <span className="font-semibold text-[#1C1C1A]">{cafe.name}</span> ·
+          auto-closes after 8 hours
         </p>
 
         {!user ? (
@@ -79,26 +77,26 @@ export default function OpenTableModal({ cafe, onClose, onOpened }: Props) {
             to={`/login?redirect=${encodeURIComponent(window.location.pathname)}`}
             className="block w-full py-3 rounded-xl bg-[#1C1C1A] text-white font-bold text-sm text-center hover:bg-black transition-colors"
           >
-            Login untuk Buka Meja
+            Log in to Open a Table
           </Link>
         ) : (
           <div className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-[#5C5A52] mb-1.5">
-                Judul (opsional)
+                Title (optional)
               </label>
               <input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 maxLength={100}
-                placeholder="Nugas bareng, bawa laptop…"
+                placeholder="Co-working session, bring your laptop…"
                 className="w-full px-3.5 py-2.5 bg-[#F0EDE8] rounded-xl text-sm text-[#1C1C1A] focus:bg-white focus:ring-2 focus:ring-[#D48B3A]/30 outline-none border-none transition-all"
               />
             </div>
 
             <div>
               <label className="block text-xs font-semibold text-[#5C5A52] mb-1.5">
-                Maksimal tamu (1–{GUEST_MAX})
+                Max guests (1–{GUEST_MAX})
               </label>
               <input
                 type="number"
@@ -131,42 +129,27 @@ export default function OpenTableModal({ cafe, onClose, onOpened }: Props) {
 
             <div>
               <label className="block text-xs font-semibold text-[#5C5A52] mb-1.5">
-                Siapa yang boleh join?
+                Who can join?
               </label>
               <select
                 value={genderRule}
                 onChange={(e) => setGenderRule(e.target.value as TableGenderRule)}
                 className="w-full px-3.5 py-2.5 bg-[#F0EDE8] rounded-xl text-sm text-[#1C1C1A] outline-none border-none"
               >
-                <option value="any">Siapa saja</option>
-                <option value="female_only">Perempuan saja</option>
-                <option value="male_only">Laki-laki saja</option>
+                <option value="any">Anyone</option>
+                <option value="female_only">Women only</option>
+                <option value="male_only">Men only</option>
               </select>
               {genderRule !== "any" && !user.gender && (
                 <p className="text-[11px] text-amber-700 mt-1.5">
-                  Atur gender kamu dulu di{" "}
+                  Set your gender in{" "}
                   <Link to="/profile" className="underline font-semibold">
                     Edit Profile
                   </Link>{" "}
-                  untuk pakai aturan ini.
+                  first to use this rule.
                 </p>
               )}
             </div>
-
-            <label className="flex items-center justify-between gap-3 cursor-pointer">
-              <span className="text-sm font-semibold text-[#1C1C1A]">
-                Khusus teman saja
-                <span className="block text-[11px] font-normal text-[#8A8880]">
-                  Hanya teman di Geser yang bisa request join
-                </span>
-              </span>
-              <input
-                type="checkbox"
-                checked={friendsOnly}
-                onChange={(e) => setFriendsOnly(e.target.checked)}
-                className="w-5 h-5 accent-[#D48B3A]"
-              />
-            </label>
 
             {error && (
               <div className="p-3 bg-red-50 text-red-600 rounded-xl text-sm border border-red-100">
@@ -180,7 +163,7 @@ export default function OpenTableModal({ cafe, onClose, onOpened }: Props) {
               disabled={submitting}
               className="w-full py-3 rounded-xl bg-emerald-600 text-white font-bold text-sm hover:bg-emerald-700 transition-colors disabled:opacity-60"
             >
-              {submitting ? "Membuka meja…" : "Buka Meja"}
+              {submitting ? "Opening…" : "Open Table"}
             </button>
           </div>
         )}

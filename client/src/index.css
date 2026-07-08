@@ -28,42 +28,22 @@
   }
 }
 
-@layer utilities {
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
-
-  /* Themed scrollbar — the track color follows the container background via
-     CSS vars so it never clashes (white card → white track, cream page →
-     cream track). Override per context with Tailwind arbitrary properties,
-     e.g. `scrollbar-themed [--sb-track:#FFFFFF]`.
-     NOTE: in Chromium ≥121, setting `scrollbar-color` disables the
-     `::-webkit-scrollbar` styles — both blocks intentionally encode the SAME
-     brown/cream theme so behavior stays consistent across engines. */
-  .scrollbar-themed {
-    scrollbar-width: thin;
-    scrollbar-color: var(--sb-thumb, #d6cfc2) var(--sb-track, #faf9f6);
-  }
-  .scrollbar-themed::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
-  .scrollbar-themed::-webkit-scrollbar-track {
-    background: var(--sb-track, #faf9f6);
-    border-radius: 9999px;
-  }
-  .scrollbar-themed::-webkit-scrollbar-thumb {
-    background: var(--sb-thumb, #d6cfc2);
-    border-radius: 9999px;
-    border: 2px solid var(--sb-track, #faf9f6);
-  }
-  .scrollbar-themed::-webkit-scrollbar-thumb:hover {
-    background: #b9ae9c;
-  }
+  /*
+ * Custom scrollbar — uses theme CSS vars (OKLCH), syncs with light/dark.
+ */
+::-webkit-scrollbar {
+  width: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 5px;
+}
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
 }
 
 /* Skeleton loading shimmer — used by image tiles while photos load */

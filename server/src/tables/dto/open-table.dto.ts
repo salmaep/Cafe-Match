@@ -1,5 +1,4 @@
 import {
-  IsBoolean,
   IsIn,
   IsInt,
   IsOptional,
@@ -30,8 +29,4 @@ export class OpenTableDto {
   @IsOptional()
   @IsIn(['any', 'female_only', 'male_only'])
   genderRule?: 'any' | 'female_only' | 'male_only';
-
-  @IsOptional()
-  @IsBoolean()
-  friendsOnly?: boolean;
 }

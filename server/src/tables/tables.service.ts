@@ -2,7 +2,6 @@ import {
   Injectable,
   BadRequestException,
   ConflictException,
-  ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -12,7 +11,6 @@ import { CafeTable } from './entities/cafe-table.entity';
 import { TableJoinRequest } from './entities/table-join-request.entity';
 import { User } from '../users/entities/user.entity';
 import { Cafe } from '../cafes/entities/cafe.entity';
-import { Friendship } from '../friends/entities/friendship.entity';
 import { OpenTableDto } from './dto/open-table.dto';
 import { JoinTableDto } from './dto/join-table.dto';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -45,8 +43,6 @@ export class TablesService {
     private readonly userRepo: Repository<User>,
     @InjectRepository(Cafe)
     private readonly cafeRepo: Repository<Cafe>,
-    @InjectRepository(Friendship)
-    private readonly friendshipRepo: Repository<Friendship>,
     private readonly dataSource: DataSource,
     private readonly config: ConfigService,
     private readonly notificationsService: NotificationsService,
@@ -58,27 +54,27 @@ export class TablesService {
 
   async openTable(userId: number, dto: OpenTableDto) {
     const host = await this.userRepo.findOne({ where: { id: userId } });
-    if (!host) throw new NotFoundException('User tidak ditemukan');
+    if (!host) throw new NotFoundException('User not found');
 
     const cafe = await this.cafeRepo.findOne({
       where: { id: dto.cafeId, isActive: true },
     });
-    if (!cafe) throw new NotFoundException('Cafe tidak ditemukan');
+    if (!cafe) throw new NotFoundException('Cafe not found');
 
     const genderRule = dto.genderRule ?? 'any';
     if (genderRule !== 'any') {
       if (!this.genderRulesEnabled()) {
-        throw new BadRequestException('Aturan gender belum tersedia');
+        throw new BadRequestException('Gender rules are currently unavailable');
       }
       if (!host.gender) {
         throw new BadRequestException(
-          'Atur gender di profil dulu untuk pakai aturan ini',
+          'Set your gender in your profile to use this rule',
         );
       }
       const wanted = genderRule === 'female_only' ? 'female' : 'male';
       if (host.gender !== wanted) {
         throw new BadRequestException(
-          'Aturan ini nggak cocok sama profil kamu',
+          "This rule doesn't match your own profile",
         );
       }
     }
@@ -94,7 +90,6 @@ export class TablesService {
       title: dto.title?.trim() || null,
       maxGuests: dto.maxGuests ?? 4,
       genderRule,
-      friendsOnly: dto.friendsOnly ?? false,
       expiresAt,
     });
 
@@ -105,7 +100,7 @@ export class TablesService {
       // uq_table_host_active: user already has an open table (atomic guard)
       if (this.isDupEntry(err)) {
         throw new ConflictException(
-          'Kamu masih punya meja aktif. Tutup dulu ya!',
+          'You already have an active table. Close it first!',
         );
       }
       throw err;
@@ -135,9 +130,9 @@ export class TablesService {
     const table = await this.tableRepo.findOne({
       where: { id: tableId, hostUserId: userId },
     });
-    if (!table) throw new NotFoundException('Meja tidak ditemukan');
+    if (!table) throw new NotFoundException('Table not found');
     if (table.status !== 'open') {
-      throw new ConflictException('Meja sudah tidak aktif');
+      throw new ConflictException('This table is no longer active');
     }
 
     await this.tableRepo.update(
@@ -161,8 +156,8 @@ export class TablesService {
         await this.notificationsService.sendToUser(
           r.userId,
           'table_closed',
-          'Meja Ditutup',
-          `Meja di ${cafe?.name ?? 'cafe'} sudah ditutup sama host.`,
+          'Table Closed',
+          `The table at ${cafe?.name ?? 'the cafe'} was closed by the host.`,
           { tableId: table.id, cafeId: table.cafeId },
         );
       }
@@ -170,7 +165,7 @@ export class TablesService {
       console.warn('[tables] close notifications failed:', err?.message);
     }
 
-    return { message: 'Meja ditutup' };
+    return { message: 'Table closed' };
   }
 
   // ── Reads ─────────────────────────────────────────────────────────────────
@@ -210,7 +205,6 @@ export class TablesService {
       title: table.title,
       maxGuests: table.maxGuests,
       genderRule: table.genderRule,
-      friendsOnly: table.friendsOnly,
       openedAt: table.openedAt,
       expiresAt: table.expiresAt,
       cafe: cafe
@@ -273,7 +267,7 @@ export class TablesService {
 
     const rows: any[] = await this.dataSource.query(
       `SELECT t.id, t.title, t.max_guests AS maxGuests, t.gender_rule AS genderRule,
-              t.friends_only AS friendsOnly, t.opened_at AS openedAt, t.expires_at AS expiresAt,
+              t.opened_at AS openedAt, t.expires_at AS expiresAt,
               u.id AS hostId, u.name AS hostName, u.username AS hostUsername,
               u.avatar_url AS hostAvatarUrl,
               (SELECT COUNT(*) FROM table_join_requests r
@@ -293,7 +287,6 @@ export class TablesService {
       maxGuests: Number(r.maxGuests),
       acceptedCount: Number(r.acceptedCount),
       genderRule: r.genderRule,
-      friendsOnly: !!Number(r.friendsOnly),
       openedAt: r.openedAt,
       expiresAt: r.expiresAt,
       host: {
@@ -330,15 +323,15 @@ export class TablesService {
 
   async requestJoin(userId: number, tableId: number, dto: JoinTableDto) {
     const requester = await this.userRepo.findOne({ where: { id: userId } });
-    if (!requester) throw new NotFoundException('User tidak ditemukan');
+    if (!requester) throw new NotFoundException('User not found');
 
     const table = await this.tableRepo.findOne({ where: { id: tableId } });
-    if (!table) throw new NotFoundException('Meja tidak ditemukan');
+    if (!table) throw new NotFoundException('Table not found');
     if ((await this.expireIfStale(table)) || table.status !== 'open') {
-      throw new BadRequestException('Meja sudah tutup');
+      throw new BadRequestException('This table is closed');
     }
     if (table.hostUserId === userId) {
-      throw new BadRequestException('Ini meja kamu sendiri 😄');
+      throw new BadRequestException('This is your own table 😄');
     }
 
     // Host soft-deleted → table is a zombie; close it and 404.
@@ -351,7 +344,7 @@ export class TablesService {
         { status: 'closed', hostActive: null, closedAt: new Date() },
       );
       this.activeCafesCache = null;
-      throw new NotFoundException('Meja tidak ditemukan');
+      throw new NotFoundException('Table not found');
     }
 
     // Requester must not be hosting their own open table.
@@ -360,33 +353,20 @@ export class TablesService {
     });
     if (hosting && !(await this.expireIfStale(hosting))) {
       throw new ConflictException(
-        'Tutup meja kamu dulu sebelum gabung meja lain',
+        'Close your table before joining another one',
       );
-    }
-
-    if (table.friendsOnly) {
-      const [a, b] =
-        userId < table.hostUserId
-          ? [userId, table.hostUserId]
-          : [table.hostUserId, userId];
-      const friendship = await this.friendshipRepo.findOne({
-        where: { userAId: a, userBId: b },
-      });
-      if (!friendship) {
-        throw new ForbiddenException('Meja ini khusus teman si host');
-      }
     }
 
     if (table.genderRule !== 'any' && this.genderRulesEnabled()) {
       const wanted = table.genderRule === 'female_only' ? 'female' : 'male';
-      const label = wanted === 'female' ? 'perempuan' : 'laki-laki';
+      const label = wanted === 'female' ? 'women' : 'men';
       if (!requester.gender) {
         throw new BadRequestException(
-          `Meja ini khusus ${label} — atur gender di profilmu dulu`,
+          `This table is ${label}-only — set your gender in your profile first`,
         );
       }
       if (requester.gender !== wanted) {
-        throw new BadRequestException(`Meja ini khusus ${label}`);
+        throw new BadRequestException(`This table is ${label}-only`);
       }
     }
 
@@ -395,7 +375,7 @@ export class TablesService {
       where: { tableId: table.id, status: 'accepted' },
     });
     if (acceptedCount >= table.maxGuests) {
-      throw new BadRequestException('Meja sudah penuh');
+      throw new BadRequestException('This table is full');
     }
 
     const message = dto.message?.trim() || null;
@@ -413,13 +393,13 @@ export class TablesService {
       });
       if (!existing) throw err;
       if (existing.status === 'pending') {
-        throw new ConflictException('Request sudah dikirim');
+        throw new ConflictException('Request already sent');
       }
       if (existing.status === 'accepted') {
-        throw new ConflictException('Kamu sudah gabung meja ini');
+        throw new ConflictException('You already joined this table');
       }
       if (existing.status === 'declined') {
-        throw new ConflictException('Host sudah menolak request kamu');
+        throw new ConflictException('The host declined your request');
       }
       // canceled/expired → boleh request ulang: reset row ke pending.
       existing.status = 'pending';
@@ -437,10 +417,10 @@ export class TablesService {
       relations: ['table'],
     });
     if (!request || !request.table || request.table.hostUserId !== hostId) {
-      throw new NotFoundException('Request tidak ditemukan');
+      throw new NotFoundException('Request not found');
     }
     if (request.status !== 'pending') {
-      throw new ConflictException('Request sudah diproses');
+      throw new ConflictException('Request already processed');
     }
 
     // Capacity check + status flip under a row lock so two concurrent accepts
@@ -453,9 +433,9 @@ export class TablesService {
          FROM cafe_tables WHERE id = ? AND host_user_id = ? FOR UPDATE`,
         [request.tableId, hostId],
       );
-      if (!t) throw new NotFoundException('Meja tidak ditemukan');
+      if (!t) throw new NotFoundException('Table not found');
       if (t.status !== 'open' || new Date(t.expiresAt).getTime() <= Date.now()) {
-        throw new ConflictException('Meja sudah tutup');
+        throw new ConflictException('This table is closed');
       }
       const [{ cnt }] = await em.query(
         `SELECT COUNT(*) AS cnt FROM table_join_requests
@@ -464,7 +444,7 @@ export class TablesService {
       );
       maxGuests = Number(t.maxGuests);
       if (Number(cnt) >= maxGuests) {
-        throw new ConflictException('Meja sudah penuh');
+        throw new ConflictException('This table is full');
       }
       const res: any = await em.query(
         `UPDATE table_join_requests SET status = 'accepted', responded_at = NOW()
@@ -472,7 +452,7 @@ export class TablesService {
         [requestId],
       );
       if (Number(res?.affectedRows ?? 0) !== 1) {
-        throw new ConflictException('Request sudah diproses');
+        throw new ConflictException('Request already processed');
       }
       acceptedCount = Number(cnt) + 1;
     });
@@ -483,8 +463,8 @@ export class TablesService {
       await this.notificationsService.sendToUser(
         request.userId,
         'table_request_accepted',
-        'Kamu Diterima! 🎉',
-        `Host menerima kamu di meja ${cafe?.name ?? 'cafe'}. Selamat nongkrong!`,
+        "You're In! 🎉",
+        `The host accepted you at ${cafe?.name ?? 'the cafe'}. Have fun!`,
         { tableId: table.id, cafeId: table.cafeId },
       );
 
@@ -539,7 +519,7 @@ export class TablesService {
       console.warn('[tables] accept hooks failed:', err?.message);
     }
 
-    return { message: 'Request diterima', acceptedCount };
+    return { message: 'Request accepted', acceptedCount };
   }
 
   async declineRequest(hostId: number, requestId: number) {
@@ -548,10 +528,10 @@ export class TablesService {
       relations: ['table'],
     });
     if (!request || !request.table || request.table.hostUserId !== hostId) {
-      throw new NotFoundException('Request tidak ditemukan');
+      throw new NotFoundException('Request not found');
     }
     if (request.status !== 'pending') {
-      throw new ConflictException('Request sudah diproses');
+      throw new ConflictException('Request already processed');
     }
     request.status = 'declined';
     request.respondedAt = new Date();
@@ -561,28 +541,28 @@ export class TablesService {
       await this.notificationsService.sendToUser(
         request.userId,
         'table_request_declined',
-        'Belum Bisa Gabung',
-        'Host belum bisa menerima kamu di meja ini. Coba meja lain ya!',
+        'Not This Time',
+        "The host couldn't accept you at this table. Try another one!",
         { tableId: request.tableId },
       );
     } catch (err: any) {
       console.warn('[tables] decline notification failed:', err?.message);
     }
-    return { message: 'Request ditolak' };
+    return { message: 'Request declined' };
   }
 
   async cancelRequest(userId: number, requestId: number) {
     const request = await this.requestRepo.findOne({
       where: { id: requestId, userId },
     });
-    if (!request) throw new NotFoundException('Request tidak ditemukan');
+    if (!request) throw new NotFoundException('Request not found');
     if (request.status !== 'pending') {
-      throw new ConflictException('Request sudah diproses');
+      throw new ConflictException('Request already processed');
     }
     request.status = 'canceled';
     request.respondedAt = new Date();
     await this.requestRepo.save(request);
-    return { message: 'Request dibatalkan' };
+    return { message: 'Request canceled' };
   }
 
   // ── Expiry ────────────────────────────────────────────────────────────────
@@ -639,8 +619,8 @@ export class TablesService {
       await this.notificationsService.sendToUser(
         table.hostUserId,
         'table_join_request',
-        'Ada yang Mau Gabung! 🪑',
-        `${requester.name} mau gabung ke mejamu di ${cafe?.name ?? 'cafe'}`,
+        'Someone Wants to Join! 🪑',
+        `${requester.name} wants to join your table at ${cafe?.name ?? 'the cafe'}`,
         { tableId: table.id, requestId: request.id, userId: requester.id },
       );
     } catch (err: any) {

@@ -1032,7 +1032,7 @@ export default function CafeDetailPage() {
                   onClick={() => setOpenTableModal(true)}
                   className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 font-semibold text-sm hover:bg-emerald-100 transition-colors"
                 >
-                  🪑 Buka Meja di Sini
+                  🪑 Open a Table Here
                 </button>
               </div>
 

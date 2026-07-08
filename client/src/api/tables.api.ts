@@ -21,7 +21,6 @@ export interface OpenTable {
   maxGuests: number;
   acceptedCount: number;
   genderRule: TableGenderRule;
-  friendsOnly: boolean;
   openedAt: string;
   expiresAt: string;
   host: TableUser;
@@ -35,7 +34,6 @@ export interface MyTable {
   title: string | null;
   maxGuests: number;
   genderRule: TableGenderRule;
-  friendsOnly: boolean;
   openedAt: string;
   expiresAt: string;
   cafe: { id: number; name: string; slug: string | null } | null;
@@ -70,7 +68,6 @@ export interface OpenTableInput {
   title?: string;
   maxGuests?: number;
   genderRule?: TableGenderRule;
-  friendsOnly?: boolean;
 }
 
 export const tablesApi = {

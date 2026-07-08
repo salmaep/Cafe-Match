@@ -17,20 +17,20 @@ interface Props {
 }
 
 const STATUS_LABEL: Record<JoinRequestStatus, string> = {
-  pending: "Menunggu host…",
-  accepted: "Kamu sudah gabung ✓",
-  declined: "Ditolak host",
-  canceled: "Dibatalkan",
-  expired: "Kedaluwarsa",
+  pending: "Waiting for host…",
+  accepted: "You're in ✓",
+  declined: "Declined by host",
+  canceled: "Canceled",
+  expired: "Expired",
 };
 
 function timeLeft(expiresAt: string): string {
   const ms = new Date(expiresAt).getTime() - Date.now();
-  if (ms <= 0) return "berakhir";
+  if (ms <= 0) return "ended";
   const totalMin = Math.floor(ms / 60_000);
   const h = Math.floor(totalMin / 60);
   const m = totalMin % 60;
-  return h > 0 ? `${h}j ${m}m lagi` : `${m}m lagi`;
+  return h > 0 ? `${h}h ${m}m left` : `${m}m left`;
 }
 
 function Avatar({ name, url }: { name: string; url?: string | null }) {
@@ -83,11 +83,11 @@ export default function OpenTablesModal({ cafe, onClose }: Props) {
     setRequestingId(table.id);
     try {
       await tablesApi.requestJoin(table.id);
-      toast.success("Request terkirim — tunggu host menerima ya!");
+      toast.success("Request sent — wait for the host to accept!");
       await load();
       await refresh();
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Gagal mengirim request");
+      toast.error(err?.response?.data?.message || "Failed to send the request");
     } finally {
       setRequestingId(null);
     }
@@ -100,14 +100,14 @@ export default function OpenTablesModal({ cafe, onClose }: Props) {
         <div className="flex items-start justify-between p-5 pb-3 border-b border-[#F0EDE8]">
           <div>
             <h2 className="text-lg font-bold text-[#1C1C1A]">
-              🪑 Meja Terbuka
+              🪑 Open Tables
             </h2>
             <p className="text-sm text-[#8A8880]">{cafe.name}</p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Tutup"
+            aria-label="Close"
             className="w-8 h-8 rounded-full flex items-center justify-center text-[#8A8880] hover:bg-[#F0EDE8]"
           >
             <X size={18} strokeWidth={2} />
@@ -117,12 +117,12 @@ export default function OpenTablesModal({ cafe, onClose }: Props) {
         <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3 scrollbar-themed [--sb-track:#FFFFFF]">
           {loading ? (
             <div className="py-10 text-center text-sm text-[#8A8880]">
-              Memuat meja…
+              Loading tables…
             </div>
           ) : tables.length === 0 ? (
             <div className="py-10 text-center">
               <p className="text-sm text-[#8A8880]">
-                Belum ada meja terbuka di sini.
+                No open tables here yet.
               </p>
             </div>
           ) : (
@@ -142,12 +142,12 @@ export default function OpenTablesModal({ cafe, onClose }: Props) {
                         {t.host.name}
                         {t.isMine && (
                           <span className="ml-1 text-[10px] font-semibold text-[#8A8880]">
-                            (kamu)
+                            (you)
                           </span>
                         )}
                       </p>
                       <p className="text-[11px] text-[#8A8880] truncate">
-                        {t.host.username ? `@${t.host.username}` : " "}
+                        {t.host.username ? `@${t.host.username}` : " "}
                       </p>
                     </div>
                     <span className="inline-flex items-center gap-1 text-xs font-bold text-[#1C1C1A]">
@@ -161,19 +161,14 @@ export default function OpenTablesModal({ cafe, onClose }: Props) {
                   )}
 
                   <div className="flex flex-wrap items-center gap-1.5 mt-2.5">
-                    {t.friendsOnly && (
-                      <span className="px-2 py-0.5 rounded-full bg-[#FDF6EC] border border-[#F2DAB6] text-[10px] font-semibold text-[#B97726]">
-                        Khusus teman
-                      </span>
-                    )}
                     {t.genderRule === "female_only" && (
                       <span className="px-2 py-0.5 rounded-full bg-pink-50 border border-pink-200 text-[10px] font-semibold text-pink-600">
-                        Perempuan saja
+                        Women only
                       </span>
                     )}
                     {t.genderRule === "male_only" && (
                       <span className="px-2 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-[10px] font-semibold text-blue-600">
-                        Laki-laki saja
+                        Men only
                       </span>
                     )}
                     <span className="ml-auto text-[10px] text-[#8A8880] font-semibold">
@@ -186,7 +181,7 @@ export default function OpenTablesModal({ cafe, onClose }: Props) {
                       to={`/login?redirect=${encodeURIComponent(window.location.pathname)}`}
                       className="mt-3 block w-full py-2 rounded-lg bg-[#1C1C1A] text-white text-xs font-bold text-center hover:bg-black transition-colors"
                     >
-                      Login untuk Minta Gabung
+                      Log in to Request
                     </Link>
                   ) : (
                     <button
@@ -196,14 +191,14 @@ export default function OpenTablesModal({ cafe, onClose }: Props) {
                       className="mt-3 w-full py-2 rounded-lg bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:bg-[#E8E4DD] disabled:text-[#8A8880]"
                     >
                       {t.isMine
-                        ? "Meja kamu"
+                        ? "Your table"
                         : t.myRequestStatus
                           ? STATUS_LABEL[t.myRequestStatus]
                           : full
-                            ? "Meja penuh"
+                            ? "Table full"
                             : requestingId === t.id
-                              ? "Mengirim…"
-                              : "Minta Gabung"}
+                              ? "Sending…"
+                              : "Request to Join"}
                     </button>
                   )}
                 </div>
@@ -218,7 +213,7 @@ export default function OpenTablesModal({ cafe, onClose }: Props) {
             onClick={() => setOpenForm(true)}
             className="w-full py-2.5 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 font-bold text-sm hover:bg-emerald-100 transition-colors"
           >
-            🪑 Buka Meja di Sini
+            🪑 Open a Table Here
           </button>
         </div>
       </div>

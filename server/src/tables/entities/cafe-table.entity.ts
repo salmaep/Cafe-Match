@@ -58,9 +58,6 @@ export class CafeTable {
   })
   genderRule: TableGenderRule;
 
-  @Column({ name: 'friends_only', default: false })
-  friendsOnly: boolean;
-
   @Column({
     name: 'opened_at',
     type: 'timestamp',

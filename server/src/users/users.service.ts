@@ -107,6 +107,13 @@ export class UsersService {
     await this.usersRepository.save(user);
   }
 
+  async resetPassword(id: number, newPassword: string): Promise<void> {
+    const user = await this.findById(id);
+    if (!user) throw new NotFoundException('User tidak ditemukan');
+    user.passwordHash = await bcrypt.hash(newPassword, 10);
+    await this.usersRepository.save(user);
+  }
+
   async findByEmail(email: string): Promise<User | null> {
     return this.usersRepository.findOne({ where: { email } });
   }

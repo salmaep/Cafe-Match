@@ -8,11 +8,14 @@ import {
   Image,
   Alert,
   ActivityIndicator,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { X, Users, Clock, Check, Loader2, XCircle } from 'lucide-react-native';
+import { X, Users, Clock, Check, Loader2, ChevronLeft } from 'lucide-react-native';
 import {
   listTablesByCafeApi,
   requestJoinTableApi,
@@ -36,11 +39,32 @@ function formatCountdown(iso: string): string {
   return `${m}m`;
 }
 
-function genderRuleLabel(rule: string): string | null {
-  if (rule === 'female_only') return 'Cewe only';
-  if (rule === 'male_only') return 'Cowo only';
-  return null;
-}
+type GenderRule = 'any' | 'female_only' | 'male_only';
+
+const GENDER_STYLE: Partial<
+  Record<GenderRule, { label: string; bg: string; fg: string; border: string }>
+> = {
+  female_only: {
+    label: 'Perempuan saja',
+    bg: '#FCE7F3',
+    fg: '#DB2777',
+    border: '#FBCFE8',
+  },
+  male_only: {
+    label: 'Laki-laki saja',
+    bg: '#DBEAFE',
+    fg: '#2563EB',
+    border: '#BFDBFE',
+  },
+};
+
+const STATUS_LABEL_MAP: Record<string, string> = {
+  pending: 'Menunggu host…',
+  accepted: 'Kamu sudah join ✓',
+  declined: 'Ditolak host',
+  canceled: 'Dibatalkan',
+  expired: 'Kedaluwarsa',
+};
 
 export default function OpenTableJoinSheet() {
   const navigation = useNavigation<StackNavigationProp<any>>();
@@ -52,6 +76,9 @@ export default function OpenTableJoinSheet() {
 
   const [tables, setTables] = useState<CafeTableRow[] | null>(null);
   const [busyRowId, setBusyRowId] = useState<number | null>(null);
+  const [composing, setComposing] = useState<CafeTableRow | null>(null);
+  const [messageDraft, setMessageDraft] = useState('');
+  const [sending, setSending] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -68,65 +95,91 @@ export default function OpenTableJoinSheet() {
     return () => clearInterval(iv);
   }, [load]);
 
-  const handleAction = async (table: CafeTableRow) => {
+  const handleAction = (table: CafeTableRow) => {
     if (!user) {
       navigation.navigate('AuthModal');
       return;
     }
-    setBusyRowId(table.id);
-    try {
-      if (table.isMine) {
-        Alert.alert(
-          'Tutup table?',
-          'Yakin mau tutup open table lo?',
-          [
-            { text: 'Batal', style: 'cancel', onPress: () => setBusyRowId(null) },
-            {
-              text: 'Tutup',
-              style: 'destructive',
-              onPress: async () => {
-                try {
-                  await closeTableApi(table.id);
-                  await refresh();
-                  await load();
-                } catch (err: any) {
-                  Alert.alert(
-                    'Gagal',
-                    err?.response?.data?.message || 'Gagal tutup table',
-                  );
-                } finally {
-                  setBusyRowId(null);
-                }
-              },
+    if (table.isMine) {
+      Alert.alert(
+        'Tutup table?',
+        'Yakin mau tutup open table lo?',
+        [
+          { text: 'Batal', style: 'cancel' },
+          {
+            text: 'Tutup',
+            style: 'destructive',
+            onPress: async () => {
+              setBusyRowId(table.id);
+              try {
+                await closeTableApi(table.id);
+                await refresh();
+                await load();
+              } catch (err: any) {
+                Alert.alert(
+                  'Gagal',
+                  err?.response?.data?.message || 'Gagal tutup table',
+                );
+              } finally {
+                setBusyRowId(null);
+              }
             },
-          ],
-        );
-        return;
-      }
-      if (table.myRequestStatus === 'pending') {
-        Alert.alert('Menunggu', 'Request lo lagi diproses host.');
-        setBusyRowId(null);
-        return;
-      }
-      if (table.acceptedCount >= table.maxGuests) {
-        Alert.alert('Penuh', 'Table ini udah penuh.');
-        setBusyRowId(null);
-        return;
-      }
-      await requestJoinTableApi(table.id);
+          },
+        ],
+      );
+      return;
+    }
+    if (table.myRequestStatus === 'pending') {
+      Alert.alert('Menunggu', 'Request lo lagi diproses host.');
+      return;
+    }
+    if (table.acceptedCount >= table.maxGuests) {
+      Alert.alert('Penuh', 'Table ini udah penuh.');
+      return;
+    }
+    setMessageDraft('');
+    setComposing(table);
+  };
+
+  const sendRequest = async () => {
+    if (!composing || sending) return;
+    setSending(true);
+    try {
+      await requestJoinTableApi(
+        composing.id,
+        messageDraft.trim() || undefined,
+      );
+      setComposing(null);
       Alert.alert('Request terkirim', 'Nunggu host confirm.');
       await load();
+      await refresh();
     } catch (err: any) {
       Alert.alert(
         'Gagal',
         err?.response?.data?.message || err?.message || 'Gagal request join',
       );
     } finally {
-      setBusyRowId(null);
+      setSending(false);
     }
   };
 
   const empty = tables !== null && tables.length === 0;
+
+  if (composing) {
+    return (
+      <ComposeView
+        table={composing}
+        cafeName={cafeName}
+        message={messageDraft}
+        onChangeMessage={setMessageDraft}
+        onCancel={() => setComposing(null)}
+        onSend={sendRequest}
+        onDismiss={() => navigation.goBack()}
+        sending={sending}
+        insetsBottom={insets.bottom}
+      />
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -215,22 +268,22 @@ function TableRow({
     .join('')
     .toUpperCase();
 
-  const genderTag = genderRuleLabel(table.genderRule);
+  const genderStyle = GENDER_STYLE[table.genderRule as GenderRule];
   const full = table.acceptedCount >= table.maxGuests;
 
   let btnStyle = styles.joinBtn;
-  let btnLabel: React.ReactNode = 'Join';
+  let btnLabel: React.ReactNode = 'Request Join';
   let disabled = false;
 
   if (table.isMine) {
     btnStyle = { ...styles.joinBtn, ...styles.joinBtnDanger };
-    btnLabel = 'Tutup';
+    btnLabel = 'Close Table';
   } else if (table.myRequestStatus === 'accepted') {
     btnStyle = { ...styles.joinBtn, ...styles.joinBtnJoined };
     btnLabel = (
       <>
         <Check size={13} color={colors.white} strokeWidth={2.6} />
-        <Text style={styles.joinBtnText}>Joined</Text>
+        <Text style={styles.joinBtnText}>Kamu sudah join</Text>
       </>
     );
     disabled = true;
@@ -239,21 +292,19 @@ function TableRow({
     btnLabel = (
       <>
         <Loader2 size={13} color={colors.white} strokeWidth={2.6} />
-        <Text style={styles.joinBtnText}>Pending</Text>
-      </>
-    );
-  } else if (table.myRequestStatus === 'declined') {
-    btnStyle = { ...styles.joinBtn, ...styles.joinBtnDisabled };
-    btnLabel = (
-      <>
-        <XCircle size={13} color={colors.white} strokeWidth={2.4} />
-        <Text style={styles.joinBtnText}>Declined</Text>
+        <Text style={styles.joinBtnText}>Menunggu host…</Text>
       </>
     );
     disabled = true;
+  } else if (table.myRequestStatus === 'declined') {
+    btnStyle = { ...styles.joinBtn, ...styles.joinBtnDisabled };
+    btnLabel = 'Ditolak host';
+    disabled = true;
+  } else if (table.myRequestStatus === 'canceled') {
+    btnLabel = 'Request Join';
   } else if (full) {
     btnStyle = { ...styles.joinBtn, ...styles.joinBtnDisabled };
-    btnLabel = 'Penuh';
+    btnLabel = 'Meja penuh';
     disabled = true;
   }
 
@@ -284,9 +335,21 @@ function TableRow({
               <Text style={styles.mineBadgeText}>KAMU</Text>
             </View>
           )}
-          {!!genderTag && (
-            <View style={styles.genderBadge}>
-              <Text style={styles.genderBadgeText}>{genderTag}</Text>
+          {!!genderStyle && (
+            <View
+              style={[
+                styles.genderBadge,
+                {
+                  backgroundColor: genderStyle.bg,
+                  borderColor: genderStyle.border,
+                },
+              ]}
+            >
+              <Text
+                style={[styles.genderBadgeText, { color: genderStyle.fg }]}
+              >
+                {genderStyle.label}
+              </Text>
             </View>
           )}
         </View>
@@ -324,6 +387,99 @@ function TableRow({
         )}
       </TouchableOpacity>
     </View>
+  );
+}
+
+function ComposeView({
+  table,
+  cafeName,
+  message,
+  onChangeMessage,
+  onCancel,
+  onSend,
+  onDismiss,
+  sending,
+  insetsBottom,
+}: {
+  table: CafeTableRow;
+  cafeName: string;
+  message: string;
+  onChangeMessage: (v: string) => void;
+  onCancel: () => void;
+  onSend: () => void;
+  onDismiss: () => void;
+  sending: boolean;
+  insetsBottom: number;
+}) {
+  return (
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <TouchableOpacity
+        style={styles.backdrop}
+        activeOpacity={1}
+        onPress={onDismiss}
+      />
+      <View style={[styles.sheet, { paddingBottom: 32 + insetsBottom }]}>
+        <View style={styles.handleBar} />
+
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backLinkBtn}
+            onPress={onCancel}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <ChevronLeft size={20} color={colors.primary} strokeWidth={2.4} />
+          </TouchableOpacity>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.title}>Kirim request</Text>
+            <Text style={styles.subtitle} numberOfLines={1}>
+              buat {table.host.name} · {cafeName}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.composeBody}>
+          <Text style={styles.composeLabel}>PESAN (OPSIONAL)</Text>
+          <TextInput
+            style={styles.composeInput}
+            value={message}
+            onChangeText={onChangeMessage}
+            maxLength={200}
+            multiline
+            placeholder="Halo, boleh gabung? Aku bawa laptop…"
+            placeholderTextColor={colors.textSecondary}
+            autoFocus
+          />
+          <Text style={styles.composeHint}>{message.length} / 200</Text>
+
+          <View style={styles.composeActions}>
+            <TouchableOpacity
+              style={styles.composeSecondary}
+              onPress={onCancel}
+              disabled={sending}
+            >
+              <Text style={styles.composeSecondaryText}>Batal</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.composePrimary,
+                sending && styles.joinBtnDisabled,
+              ]}
+              onPress={onSend}
+              disabled={sending}
+            >
+              {sending ? (
+                <ActivityIndicator size="small" color={colors.white} />
+              ) : (
+                <Text style={styles.composePrimaryText}>Kirim Request</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -457,11 +613,10 @@ const styles = StyleSheet.create({
   genderBadge: {
     paddingHorizontal: 6,
     paddingVertical: 1,
-    backgroundColor: '#7C3AED18',
     borderRadius: radius.full,
+    borderWidth: 1,
   },
   genderBadgeText: {
-    color: '#7C3AED',
     fontSize: 9,
     fontWeight: '800',
     letterSpacing: 0.5,
@@ -506,6 +661,71 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontSize: 12,
     fontWeight: '800',
+    letterSpacing: 0.3,
+  },
+
+  backLinkBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.sm,
+  },
+  composeBody: {
+    padding: spacing.md,
+    paddingTop: spacing.lg,
+  },
+  composeLabel: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: colors.textSecondary,
+    letterSpacing: 1.2,
+    marginBottom: 6,
+  },
+  composeInput: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    fontSize: 14,
+    color: colors.primary,
+    minHeight: 90,
+    textAlignVertical: 'top',
+  },
+  composeHint: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    marginTop: 4,
+  },
+  composeActions: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.lg,
+  },
+  composeSecondary: {
+    flex: 1,
+    paddingVertical: spacing.md,
+    borderRadius: radius.md,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+  },
+  composeSecondaryText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: colors.primary,
+  },
+  composePrimary: {
+    flex: 1.4,
+    paddingVertical: spacing.md,
+    borderRadius: radius.md,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+  },
+  composePrimaryText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: colors.white,
     letterSpacing: 0.3,
   },
 });

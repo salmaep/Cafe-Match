@@ -1,6 +1,6 @@
 # Step-by-Step Server Setup
 
-> ⚠️ **Dokumen ini sebagian usang** — ditulis untuk server lama (dios / salma.imola.ai, K8s Traefik). Prod aktif sekarang = geser (geser.id, branch `prod`, port 5083/5084). Beberapa klaim tidak akurat lagi (CI tidak punya step backup DB; nama env yang benar `ADMIN_API_KEY`, bukan `SCRAPER_API_KEY`). Runbook terkini: `/deploy.md` di root repo (lokal, tidak di-commit).
+> Dokumen ini = setup prod **geser** terkini (geser.id, Caddy, branch `prod`, port 5083/5084). Catatan: selain `ADMIN_API_KEY` (untuk `/admin/meili/*`), sejak fitur photo-sync ada juga `SCRAPER_API_KEY` (untuk `/sync/cafes` + `/sync/cafe-photos`) — lihat `server/.env.example`. Workflow prod pakai secrets `VPS_PROD_*` (tabel di bawah menyebut `VPS_*` — itu nama secrets varian main/dios). Credential & runbook operasional: `/deploy.md` di root repo (lokal, tidak di-commit).
 
 Panduan deploy dari fresh server sampai aplikasi live di:
 - https://geser.id (web)

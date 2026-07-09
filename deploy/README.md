@@ -1,6 +1,6 @@
 # Cafe-Match — Server Deployment
 
-> ⚠️ **Dokumen ini sebagian usang** — menjelaskan server lama (dios / salma.imola.ai). Prod aktif sekarang = geser (geser.id, branch `prod`). Runbook terkini: `/deploy.md` di root repo (lokal, tidak di-commit).
+> Dokumen ini = setup prod **geser** terkini (geser.id, Caddy, port 5083/5084). Credential & runbook operasional: `/deploy.md` di root repo (lokal, tidak di-commit).
 
 Lihat [SETUP.md](./SETUP.md) untuk panduan **step-by-step lengkap**.
 

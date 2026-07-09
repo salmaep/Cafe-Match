@@ -18,6 +18,7 @@ import { commonText, profileText } from '@shared/i18n/keys';
 import { useAuth } from '../context/AuthContext';
 import { useShortlist } from '../context/ShortlistContext';
 import { usePreferences } from '../context/PreferencesContext';
+import { useOpenTables } from '../context/OpenTablesContext';
 import GeserLogo from '../components/GeserLogo';
 import DeleteAccountModal from '../components/DeleteAccountModal';
 import StatusBarScrim from '../components/StatusBarScrim';
@@ -41,6 +42,7 @@ import {
   Ticket,
   ChevronRight,
   RotateCcw,
+  Coffee,
 } from 'lucide-react-native';
 import type { LucideIcon } from 'lucide-react-native';
 
@@ -60,6 +62,7 @@ export default function ProfileScreen() {
   const { clearShortlist } = useShortlist();
   const { setPreferences, setWizardCompleted, clearPreferences, wizardCompleted, preferences } =
     usePreferences();
+  const { pendingRequestCount } = useOpenTables();
   const [unread, setUnread] = useState(0);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
@@ -308,6 +311,12 @@ export default function ProfileScreen() {
             onPress={() => navigation.navigate('GlobalLeaderboard')}
           />
         )}
+        <QuickAction
+          Icon={Coffee}
+          label="Meja Saya"
+          badge={pendingRequestCount > 0 ? pendingRequestCount : undefined}
+          onPress={() => navigation.navigate('MyTables')}
+        />
         <QuickAction
           Icon={Award}
           label={t(profileText.quickAchievement)}

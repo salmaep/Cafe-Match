@@ -37,9 +37,9 @@ COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/package.json ./
 
-# Pre-create writable storage dirs for review media + avatars so the uploads
-# controller's mkdirSync (at module load) doesn't crash under USER node.
-RUN mkdir -p storage/review-media storage/avatars && chown -R node:node storage
+# Pre-create writable storage dirs (review media, avatars, scraper-pushed
+# cafe photos) so module-load mkdirSync doesn't crash under USER node.
+RUN mkdir -p storage/review-media storage/avatars storage/cafe-photos && chown -R node:node storage
 
 EXPOSE 3084
 USER node

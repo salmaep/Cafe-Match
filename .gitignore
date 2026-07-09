@@ -64,3 +64,6 @@ desktop.ini
 .claude/settings.local.json
 
 /deploy/env/
+
+# ── Runbook lokal berisi credential (repo PUBLIC — JANGAN pernah di-commit) ────
+/deploy.md

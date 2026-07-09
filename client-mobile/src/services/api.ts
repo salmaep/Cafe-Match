@@ -157,8 +157,8 @@ export async function resend2faApi(otpId: string): Promise<{ otpId: string; expi
 }
 
 export interface ForgotPasswordResponse {
-  otpId: string | null;
-  expiresAt: string | null;
+  otpId: string;
+  expiresAt: string;
   emailHint: string;
 }
 
@@ -167,8 +167,8 @@ export async function forgotPasswordApi(
 ): Promise<ForgotPasswordResponse> {
   const { data } = await api.post("/auth/forgot-password", { email });
   return {
-    otpId: data.otpId ?? null,
-    expiresAt: data.expiresAt ?? null,
+    otpId: data.otpId,
+    expiresAt: data.expiresAt,
     emailHint: data.emailHint ?? "",
   };
 }

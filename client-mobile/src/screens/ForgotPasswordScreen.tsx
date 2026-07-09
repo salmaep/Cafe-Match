@@ -27,7 +27,7 @@ export default function ForgotPasswordScreen() {
   const [step, setStep] = useState<Step>('email');
   const [email, setEmail] = useState('');
   const [emailHint, setEmailHint] = useState('');
-  const [otpId, setOtpId] = useState<string | null>(null);
+  const [otpId, setOtpId] = useState<string>('');
   const [code, setCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -48,17 +48,9 @@ export default function ForgotPasswordScreen() {
     setLoading(true);
     try {
       const res = await forgotPasswordApi(trimmed);
-      setEmailHint(res.emailHint);
-      if (res.otpId) {
-        setOtpId(res.otpId);
-        setStep('reset');
-      } else {
-        Alert.alert(
-          'Kode dikirim',
-          'Kalau email ini terdaftar, kode reset udah dikirim ke inbox kamu. Cek email dulu ya.',
-          [{ text: 'OK', onPress: () => navigation.goBack() }],
-        );
-      }
+      setEmailHint(res.emailHint || trimmed);
+      setOtpId(res.otpId);
+      setStep('reset');
     } catch (err: any) {
       setError(
         err?.response?.data?.message ||
@@ -196,6 +188,14 @@ export default function ForgotPasswordScreen() {
           </>
         ) : (
           <>
+            <View style={styles.hintCard}>
+              <Text style={styles.hintText}>
+                Belum dapet email dalam 2 menit? Cek folder spam, atau balik ke
+                Step 1 buat cek ejaan email — kalau belum punya akun, daftar
+                dulu ya.
+              </Text>
+            </View>
+
             <Text style={styles.label}>KODE OTP</Text>
             <TextInput
               style={styles.otpInput}
@@ -361,6 +361,18 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#DC2626',
     fontWeight: '600',
+  },
+  hintCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    padding: spacing.sm + 2,
+    marginBottom: spacing.md,
+  },
+  hintText: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    lineHeight: 17,
+    fontWeight: '500',
   },
   label: {
     fontSize: 11,

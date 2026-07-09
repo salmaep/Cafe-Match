@@ -239,23 +239,28 @@ export class AuthService {
     return { otpId: otp.otpId, expiresAt: otp.expiresAt };
   }
 
-  // ── Forgot / reset password ─────────────────────────────────────────────
-  // Silent-fail if the email doesn't exist so an attacker can't enumerate
-  // registered addresses. Social-only accounts (no password) also silent-fail.
   async requestPasswordReset(
     email: string,
-  ): Promise<{ otpId: string | null; expiresAt: string | null; emailHint: string }> {
-    const emailHint = this.maskEmail(email);
+  ): Promise<{ otpId: string; expiresAt: string; emailHint: string }> {
     const user = await this.usersService.findByEmail(email);
     if (!user || !user.passwordHash) {
-      return { otpId: null, expiresAt: null, emailHint };
+      const dummyExpiresAt = new Date(Date.now() + 5 * 60_000).toISOString();
+      return {
+        otpId: randomUUID(),
+        expiresAt: dummyExpiresAt,
+        emailHint: this.maskEmail(email),
+      };
     }
     const otp = await this.otpService.requestOtp(user.email);
     this.pendingPasswordReset.set(otp.otpId, {
       userId: user.id,
       expiresAt: new Date(otp.expiresAt).getTime(),
     });
-    return { otpId: otp.otpId, expiresAt: otp.expiresAt, emailHint };
+    return {
+      otpId: otp.otpId,
+      expiresAt: otp.expiresAt,
+      emailHint: this.maskEmail(user.email),
+    };
   }
 
   async resetPassword(otpId: string, code: string, newPassword: string) {

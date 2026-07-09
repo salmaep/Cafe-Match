@@ -32,6 +32,7 @@ import RecapScreen from '../screens/RecapScreen';
 import EditProfileModal from '../screens/EditProfileModal';
 import OpenTableCreateModal from '../screens/OpenTableCreateModal';
 import OpenTableJoinSheet from '../screens/OpenTableJoinSheet';
+import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -189,6 +190,11 @@ export default function AppNavigator() {
           gestureEnabled: true,
           presentation: 'transparentModal',
         }}
+      />
+      <Stack.Screen
+        name="ForgotPassword"
+        component={ForgotPasswordScreen}
+        options={{ gestureEnabled: true }}
       />
     </Stack.Navigator>
   );

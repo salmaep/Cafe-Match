@@ -537,6 +537,16 @@ export default function AuthModal() {
           </>
         )}
 
+        {isLogin && (
+          <TouchableOpacity
+            style={styles.forgotBtn}
+            onPress={() => navigation.navigate('ForgotPassword')}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Text style={styles.forgotText}>Lupa password?</Text>
+          </TouchableOpacity>
+        )}
+
         <TouchableOpacity
           style={[styles.submitBtn, loading && styles.submitBtnDisabled]}
           onPress={handleSubmit}
@@ -768,6 +778,18 @@ const styles = StyleSheet.create({
   },
   submitBtnDisabled: { opacity: 0.6 },
   submitText: { color: colors.white, fontSize: 16, fontWeight: '700' },
+  forgotBtn: {
+    alignSelf: 'flex-end',
+    paddingVertical: 4,
+    paddingHorizontal: 4,
+    marginTop: -spacing.xs,
+    marginBottom: spacing.xs,
+  },
+  forgotText: {
+    color: colors.accent,
+    fontSize: 13,
+    fontWeight: '700',
+  },
 
   // ─── Social ───────────────────────────────────────────────────────────────
   // Mirrors web LoginForm: divider with "atau lanjutkan dengan", then a white

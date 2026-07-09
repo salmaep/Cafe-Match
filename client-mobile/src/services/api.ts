@@ -156,6 +156,32 @@ export async function resend2faApi(otpId: string): Promise<{ otpId: string; expi
   return { otpId: data.otpId, expiresAt: data.expiresAt };
 }
 
+export interface ForgotPasswordResponse {
+  otpId: string | null;
+  expiresAt: string | null;
+  emailHint: string;
+}
+
+export async function forgotPasswordApi(
+  email: string,
+): Promise<ForgotPasswordResponse> {
+  const { data } = await api.post("/auth/forgot-password", { email });
+  return {
+    otpId: data.otpId ?? null,
+    expiresAt: data.expiresAt ?? null,
+    emailHint: data.emailHint ?? "",
+  };
+}
+
+export async function resetPasswordApi(payload: {
+  otpId: string;
+  code: string;
+  newPassword: string;
+}): Promise<{ success: boolean }> {
+  const { data } = await api.post("/auth/reset-password", payload);
+  return { success: !!data?.success };
+}
+
 // ─── Native social auth (mobile-only — token verified server-side) ───
 // Mobile gets the token directly from Google/FB, then hands it to the server
 // for verification + JWT issuance. Social logins always return a JWT directly

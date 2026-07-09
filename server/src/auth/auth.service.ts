@@ -67,6 +67,23 @@ export class AuthService {
     };
   }
 
+  private decodeJwtAud(token: string): {
+    aud?: string;
+    iss?: string;
+    exp?: number;
+  } {
+    try {
+      const parts = token.split('.');
+      if (parts.length < 2) return {};
+      const payload = JSON.parse(
+        Buffer.from(parts[1], 'base64url').toString('utf8'),
+      );
+      return { aud: payload.aud, iss: payload.iss, exp: payload.exp };
+    } catch {
+      return {};
+    }
+  }
+
   private maskEmail(email: string): string {
     const [name, domain] = email.split('@');
     if (!domain) return '***';
@@ -322,8 +339,18 @@ export class AuthService {
         audience: audiences,
       });
       payload = ticket.getPayload();
-    } catch {
-      throw new UnauthorizedException('Invalid Google ID token');
+    } catch (err: any) {
+      const decoded = this.decodeJwtAud(idToken);
+      console.warn('[google-verify] failed:', {
+        reason: err?.message,
+        tokenAud: decoded.aud,
+        tokenIss: decoded.iss,
+        tokenExp: decoded.exp,
+        expectedAudiences: audiences,
+      });
+      throw new UnauthorizedException(
+        `Invalid Google ID token: ${err?.message ?? 'unknown'} (token aud=${decoded.aud ?? 'n/a'})`,
+      );
     }
     if (!payload?.sub || !payload.email) {
       throw new UnauthorizedException('Google token missing sub/email');

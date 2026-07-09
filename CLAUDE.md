@@ -64,7 +64,7 @@ podman exec cafematch-mysql-dev mysql -ucafematch -pcafematch_pass cafematch -e 
 - **Tables (Open/Join Table)**: meetup sosial di kafe; auto-expire `TABLE_MAX_DURATION_HOURS` (default 8), gender rules (`TABLE_GENDER_RULES_ENABLED`).
 - **Gamification**: achievements + points ledger + leaderboard, friends, recaps.
 - **Search**: Meilisearch index `cafes`, sync dari MySQL (toggle `MEILI_SYNC_ENABLED`; emergency MySQL-only mode = set false). Modul `meili/` + CLI reindex/resync-failed.
-- **Scraper ingestion**: `POST /sync/cafes` + `/admin/meili/*` digate header `x-api-key` = **`ADMIN_API_KEY`** (dok lama SETUP.md menyebut `SCRAPER_API_KEY` — itu usang).
+- **Scraper ingestion**: `POST /sync/cafes` + `POST /sync/cafe-photos` digate header `x-api-key` = **`SCRAPER_API_KEY`** (harus sama dengan `SYNC_API_KEY` di scraper goscrap; guard `common/guards/scraper-api-key.guard.ts`). `ADMIN_API_KEY` terpisah — hanya untuk `/admin/meili/*` + purposes admin. `/sync/cafe-photos` = multipart (field text `payload` JSON + satu file part per foto, max 40 × 5MB), simpan byte ke `storage/cafe-photos`, upsert `cafe_photos`, reindex Meili; URL foto dibangun dari **`PUBLIC_API_URL`** (wajib ber-suffix `/api/v1` — tanpa itu URL jadi localhost dan rusak di prod).
 - **Payments**: Midtrans (server key only; owner promotions).
 - **Real-time**: Socket.io gateway `server/src/gateway/events.gateway.ts` (notifications/tables).
 - **DB**: entities per modul; ~30 migration di `server/src/database/migrations/` (sebagian sekaligus seed data); data-source `server/src/database/data-source.ts`.
@@ -81,6 +81,12 @@ Tidak ada root `.env` di repo (di server prod ada symlink `.env -> server/.env` 
 | `server/.env` | Runtime NestJS + compose interpolation | **Source of truth. JANGAN commit.** Template: `server/.env.example` |
 | `client/.env` | Build-time Vite | Semua `VITE_*` PUBLIC (ke-bake ke bundle). Ubah nilai = wajib rebuild client |
 | `client-mobile/.env` | Build-time Metro | `EXPO_PUBLIC_*` public |
+
+## Dump DB prod
+
+- File `geser-prod-YYYYMMDD.sql.gz` di root = mysqldump full db `geser` dari prod. **Berisi data user (email, hash password) — hanya boleh ter-commit di branch `prod` untuk di-push ke Gitea perusahaan; JANGAN pernah sampai ke GitHub (repo public).** Pre-push hook lokal memblokir push `.sql/.sql.gz` ke github.com.
+- Restore ke dev lokal (podman): `zcat geser-prod-*.sql.gz | podman exec -i cafematch-mysql-dev mysql -uroot -padmin123` — dump pakai `--databases geser`, jadi membuat db `geser` terpisah, TIDAK menimpa db dev `cafematch`.
+- Regenerate dump: lihat `deploy.md` §1 (perintah ssh + mysqldump).
 
 ## Branch & deploy (ringkas — detail + credential di `deploy.md`)
 

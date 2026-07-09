@@ -683,6 +683,27 @@ export async function fetchActiveCafeIdsApi(): Promise<number[]> {
   return (data?.cafeIds ?? []) as number[];
 }
 
+export interface MyOutgoingRequest {
+  id: number;
+  status: JoinRequestStatus;
+  message: string | null;
+  createdAt: string;
+  respondedAt: string | null;
+  table: {
+    id: number;
+    title: string | null;
+    status: string;
+    expiresAt: string;
+    cafe: { id: number; name: string; slug: string | null } | null;
+    host: TablePublicUser | null;
+  } | null;
+}
+
+export async function fetchMyRequestsApi(): Promise<MyOutgoingRequest[]> {
+  const { data } = await api.get('/tables/me/requests');
+  return (data ?? []) as MyOutgoingRequest[];
+}
+
 export async function requestJoinTableApi(tableId: number, message?: string) {
   const { data } = await api.post(`/tables/${tableId}/requests`, { message });
   return data;

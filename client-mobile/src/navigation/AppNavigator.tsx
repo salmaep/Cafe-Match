@@ -33,6 +33,7 @@ import EditProfileModal from '../screens/EditProfileModal';
 import OpenTableCreateModal from '../screens/OpenTableCreateModal';
 import OpenTableJoinSheet from '../screens/OpenTableJoinSheet';
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
+import MyTablesScreen from '../screens/MyTablesScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -194,6 +195,11 @@ export default function AppNavigator() {
       <Stack.Screen
         name="ForgotPassword"
         component={ForgotPasswordScreen}
+        options={{ gestureEnabled: true }}
+      />
+      <Stack.Screen
+        name="MyTables"
+        component={MyTablesScreen}
         options={{ gestureEnabled: true }}
       />
     </Stack.Navigator>

@@ -156,6 +156,32 @@ export async function resend2faApi(otpId: string): Promise<{ otpId: string; expi
   return { otpId: data.otpId, expiresAt: data.expiresAt };
 }
 
+export interface ForgotPasswordResponse {
+  otpId: string | null;
+  expiresAt: string | null;
+  emailHint: string;
+}
+
+export async function forgotPasswordApi(
+  email: string,
+): Promise<ForgotPasswordResponse> {
+  const { data } = await api.post("/auth/forgot-password", { email });
+  return {
+    otpId: data.otpId ?? null,
+    expiresAt: data.expiresAt ?? null,
+    emailHint: data.emailHint ?? "",
+  };
+}
+
+export async function resetPasswordApi(payload: {
+  otpId: string;
+  code: string;
+  newPassword: string;
+}): Promise<{ success: boolean }> {
+  const { data } = await api.post("/auth/reset-password", payload);
+  return { success: !!data?.success };
+}
+
 // ─── Native social auth (mobile-only — token verified server-side) ───
 // Mobile gets the token directly from Google/FB, then hands it to the server
 // for verification + JWT issuance. Social logins always return a JWT directly
@@ -573,6 +599,107 @@ export async function fetchRecap(year: number) {
 
 export async function generateRecap(year: number) {
   const { data } = await api.post("/recaps/generate", { year });
+  return data;
+}
+
+// ─── Tables (open table / join table) ───
+
+export type TableGenderRule = 'any' | 'female_only' | 'male_only';
+export type JoinRequestStatus =
+  | 'pending'
+  | 'accepted'
+  | 'declined'
+  | 'canceled'
+  | 'expired';
+
+export interface TablePublicUser {
+  id: number;
+  name: string;
+  username: string | null;
+  avatarUrl: string | null;
+}
+
+export interface CafeTableRow {
+  id: number;
+  title: string | null;
+  maxGuests: number;
+  acceptedCount: number;
+  genderRule: TableGenderRule;
+  openedAt: string;
+  expiresAt: string;
+  host: TablePublicUser;
+  myRequestStatus: JoinRequestStatus | null;
+  isMine: boolean;
+}
+
+export interface MyActiveTable {
+  id: number;
+  status: 'open' | 'closed' | 'expired';
+  title: string | null;
+  maxGuests: number;
+  genderRule: TableGenderRule;
+  openedAt: string;
+  expiresAt: string;
+  cafe: { id: number; name: string; slug: string | null } | null;
+  acceptedCount: number;
+  members: (TablePublicUser | null)[];
+  pendingRequests: Array<{
+    id: number;
+    message: string | null;
+    createdAt: string;
+    user: TablePublicUser | null;
+  }>;
+}
+
+export interface OpenTablePayload {
+  cafeId: number;
+  title?: string;
+  maxGuests?: number;
+  genderRule?: TableGenderRule;
+}
+
+export async function openTableApi(payload: OpenTablePayload) {
+  const { data } = await api.post('/tables', payload);
+  return data as { id: number; cafeName: string };
+}
+
+export async function closeTableApi(tableId: number) {
+  const { data } = await api.put(`/tables/${tableId}/close`);
+  return data as { message: string };
+}
+
+export async function listTablesByCafeApi(cafeId: string | number) {
+  const { data } = await api.get(`/tables/cafe/${cafeId}`);
+  return data as CafeTableRow[];
+}
+
+export async function fetchMyActiveTableApi(): Promise<MyActiveTable | null> {
+  const { data } = await api.get('/tables/me/active');
+  return data as MyActiveTable | null;
+}
+
+export async function fetchActiveCafeIdsApi(): Promise<number[]> {
+  const { data } = await api.get('/tables/active-cafes');
+  return (data?.cafeIds ?? []) as number[];
+}
+
+export async function requestJoinTableApi(tableId: number, message?: string) {
+  const { data } = await api.post(`/tables/${tableId}/requests`, { message });
+  return data;
+}
+
+export async function acceptJoinRequestApi(requestId: number) {
+  const { data } = await api.put(`/tables/requests/${requestId}/accept`);
+  return data;
+}
+
+export async function declineJoinRequestApi(requestId: number) {
+  const { data } = await api.put(`/tables/requests/${requestId}/decline`);
+  return data;
+}
+
+export async function cancelJoinRequestApi(requestId: number) {
+  const { data } = await api.put(`/tables/requests/${requestId}/cancel`);
   return data;
 }
 

@@ -29,6 +29,13 @@ export class AuthService {
     { userId: number; expiresAt: number }
   >();
 
+  // Same pattern for password-reset OTPs; kept separate so a stale 2FA otpId
+  // can never be replayed to reset a password (or vice versa).
+  private readonly pendingPasswordReset = new Map<
+    string,
+    { userId: number; expiresAt: number }
+  >();
+
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
@@ -230,6 +237,47 @@ export class AuthService {
       expiresAt: new Date(otp.expiresAt).getTime(),
     });
     return { otpId: otp.otpId, expiresAt: otp.expiresAt };
+  }
+
+  // ── Forgot / reset password ─────────────────────────────────────────────
+  // Silent-fail if the email doesn't exist so an attacker can't enumerate
+  // registered addresses. Social-only accounts (no password) also silent-fail.
+  async requestPasswordReset(
+    email: string,
+  ): Promise<{ otpId: string | null; expiresAt: string | null; emailHint: string }> {
+    const emailHint = this.maskEmail(email);
+    const user = await this.usersService.findByEmail(email);
+    if (!user || !user.passwordHash) {
+      return { otpId: null, expiresAt: null, emailHint };
+    }
+    const otp = await this.otpService.requestOtp(user.email);
+    this.pendingPasswordReset.set(otp.otpId, {
+      userId: user.id,
+      expiresAt: new Date(otp.expiresAt).getTime(),
+    });
+    return { otpId: otp.otpId, expiresAt: otp.expiresAt, emailHint };
+  }
+
+  async resetPassword(otpId: string, code: string, newPassword: string) {
+    const pending = this.pendingPasswordReset.get(otpId);
+    if (!pending || pending.expiresAt < Date.now()) {
+      this.pendingPasswordReset.delete(otpId);
+      throw new BadRequestException(
+        'Sesi reset password sudah habis. Silakan minta kode baru.',
+      );
+    }
+
+    const result = this.otpService.verifyOtp(otpId, code);
+    if (!result.verified) {
+      if (result.status === 'failed' || result.status === 'expired') {
+        this.pendingPasswordReset.delete(otpId);
+      }
+      throw new BadRequestException(result.message || 'Kode OTP salah.');
+    }
+
+    this.pendingPasswordReset.delete(otpId);
+    await this.usersService.resetPassword(pending.userId, newPassword);
+    return { success: true };
   }
 
   // ── Native social-login token verification ─────────────────────────────

@@ -36,6 +36,8 @@ import { placeholderImage } from '../utils/cafeImage';
 const VISIBLE_TAGS = 4;
 const MAX_CARD_W = 480;
 
+const failedImageUrls = new Set<string>();
+
 function CardHero({
   primaryUri,
   fallbackUri,
@@ -47,10 +49,12 @@ function CardHero({
   cafeId: string;
   style: any;
 }) {
-  const [uri, setUri] = useState(primaryUri);
+  const [uri, setUri] = useState(() =>
+    failedImageUrls.has(primaryUri) ? fallbackUri : primaryUri,
+  );
   useEffect(() => {
-    setUri(primaryUri);
-  }, [primaryUri]);
+    setUri(failedImageUrls.has(primaryUri) ? fallbackUri : primaryUri);
+  }, [primaryUri, fallbackUri]);
   return (
     <Image
       source={{ uri }}
@@ -59,12 +63,8 @@ function CardHero({
       recyclingKey={`${cafeId}:${uri}`}
       transition={0}
       contentFit="cover"
-      onError={(e) => {
-        console.log(
-          `[swipe-img] FAILED cafe=${cafeId} url=${uri} err=${
-            (e as any)?.error ?? JSON.stringify(e)
-          }`,
-        );
+      onError={() => {
+        failedImageUrls.add(uri);
         if (uri !== fallbackUri) setUri(fallbackUri);
       }}
     />
@@ -293,13 +293,19 @@ export default function CardSwipeScreen() {
     fetchMore,
   ]);
 
-  // Prefetch upcoming card images + fetch more when the deck runs low.
   useEffect(() => {
     if (showWizard) return;
     const upcoming = cafes.slice(index, index + 5);
     upcoming.forEach((cafe) => {
-      const url = cafe.photos?.[0];
-      if (url) Image.prefetch(url, 'memory-disk');
+      const primary = cafe.photos?.[0];
+      if (primary && !failedImageUrls.has(primary)) {
+        Image.prefetch(primary, 'memory-disk')
+          .then((ok) => {
+            if (!ok) failedImageUrls.add(primary);
+          })
+          .catch(() => failedImageUrls.add(primary));
+      }
+      Image.prefetch(placeholderImage(cafe.id), 'memory-disk').catch(() => {});
     });
     if (cafes.length > 0 && cafes.length - index <= PREFETCH_THRESHOLD) {
       fetchMore();

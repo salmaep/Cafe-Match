@@ -18,6 +18,7 @@ import { AuthProvider } from './src/context/AuthContext';
 import { ShortlistProvider } from './src/context/ShortlistContext';
 import { PreferencesProvider } from './src/context/PreferencesContext';
 import { LocationProvider } from './src/context/LocationContext';
+import { OpenTablesProvider } from './src/context/OpenTablesContext';
 import './src/i18n';
 import AppNavigator from './src/navigation/AppNavigator';
 import InAppNotificationBanner from './src/components/InAppNotificationBanner';
@@ -74,15 +75,17 @@ export default function App() {
             <AuthProvider>
               <ShortlistProvider>
                 <PreferencesProvider>
-                  <StatusBar style="dark" />
-                  <AppNavigator />
-                  <InAppNotificationBanner
-                    onTap={() => {
-                      try {
-                        navRef.current?.navigate('Notifications' as never);
-                      } catch {}
-                    }}
-                  />
+                  <OpenTablesProvider>
+                    <StatusBar style="dark" />
+                    <AppNavigator />
+                    <InAppNotificationBanner
+                      onTap={() => {
+                        try {
+                          navRef.current?.navigate('Notifications' as never);
+                        } catch {}
+                      }}
+                    />
+                  </OpenTablesProvider>
                 </PreferencesProvider>
               </ShortlistProvider>
             </AuthProvider>

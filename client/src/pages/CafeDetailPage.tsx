@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
 import { cafesApi, type GoogleReview } from "../api/cafes.api";
 import { favoritesApi } from "../api/favorites.api";
@@ -175,37 +175,20 @@ export default function CafeDetailPage() {
     }
   }, [cafe, slug, navigate]);
 
-  // IDs of photos that failed to load — drop them from the mosaic so we only
-  // render images that actually work. Reset whenever the cafe changes so a
-  // navigation to a different cafe starts fresh.
-  const [failedPhotoIds, setFailedPhotoIds] = useState<Set<number>>(new Set());
-  useEffect(() => {
-    setFailedPhotoIds(new Set());
-  }, [cafe?.id]);
-
-  const handlePhotoError = useCallback((id: number) => {
-    setFailedPhotoIds((prev) => {
-      if (prev.has(id)) return prev;
-      const next = new Set(prev);
-      next.add(id);
-      return next;
-    });
-  }, []);
-
+  // Stable list of real photos (drop empty + Unsplash placeholder junk). We do
+  // NOT drop photos that fail to load at runtime: that reshaped the mosaic on
+  // every error and, when a cafe's scraped Google URLs had expired, cascaded
+  // into a flickering banner that collapsed to a single photo. Broken tiles are
+  // now handled per-tile with an in-place placeholder (same as PhotoSlider).
   const validPhotos = useMemo(
     () =>
       (cafe?.photos ?? []).filter((p) => {
         const url = p?.url;
         if (typeof url !== "string" || url.length === 0) return false;
-        // Drop Unsplash stock photos — those are placeholder fallbacks the
-        // scraper sometimes inserted, not real cafe photos.
         if (url.includes("images.unsplash.com")) return false;
-        // Drop photos we already saw fail at runtime — better to reshape the
-        // mosaic with fewer real photos than to fill broken slots with dummy.
-        if (failedPhotoIds.has(p.id)) return false;
         return true;
       }),
-    [cafe?.photos, failedPhotoIds],
+    [cafe?.photos],
   );
 
   const distance =
@@ -472,10 +455,10 @@ export default function CafeDetailPage() {
       <div className="hidden lg:block max-w-6xl mx-auto px-6 pt-4">
         <HeroMosaic
           photos={heroPhotos}
+          cafeId={cafe.id}
           cafeName={cafe.name}
           onOpen={(i) => validPhotos.length > 0 && setLightboxIndex(i)}
           totalCount={validPhotos.length}
-          onPhotoError={handlePhotoError}
         />
       </div>
 
@@ -1060,7 +1043,7 @@ export default function CafeDetailPage() {
                     to="/tables"
                     className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-emerald-600 text-white font-semibold text-sm hover:bg-emerald-700 transition-colors"
                   >
-                    🪑 Your table is open — Manage
+                    🪑 Open table kamu aktif — Kelola
                     {myTable.pendingRequests.length > 0 && (
                       <span className="inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full bg-white text-emerald-700 text-[11px] font-extrabold">
                         {myTable.pendingRequests.length}
@@ -1072,8 +1055,8 @@ export default function CafeDetailPage() {
                     to="/tables"
                     className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-emerald-200 bg-white text-emerald-700 font-semibold text-sm hover:bg-emerald-50 transition-colors text-center"
                   >
-                    🪑 You have a table at {myTable.cafe?.name ?? "another cafe"}{" "}
-                    — Manage
+                    🪑 Kamu punya open table di {myTable.cafe?.name ?? "cafe lain"}{" "}
+                    — Kelola
                   </Link>
                 ) : (
                   <button
@@ -1081,7 +1064,7 @@ export default function CafeDetailPage() {
                     onClick={() => setOpenTableModal(true)}
                     className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 font-semibold text-sm hover:bg-emerald-100 transition-colors"
                   >
-                    🪑 Open a Table Here
+                    🪑 Open Table di Sini
                   </button>
                 )}
               </div>
@@ -1353,16 +1336,16 @@ function SidebarStat({
 
 function HeroMosaic({
   photos,
+  cafeId,
   cafeName,
   onOpen,
   totalCount,
-  onPhotoError,
 }: {
   photos: { id: number; url: string; caption?: string | null }[];
+  cafeId: number;
   cafeName: string;
   onOpen: (i: number) => void;
   totalCount: number;
-  onPhotoError?: (id: number) => void;
 }) {
   // Track which tiles have finished loading so we can show a skeleton shimmer
   // on the rest. Avoids the "random photo flicker" that happened when slow /
@@ -1408,12 +1391,17 @@ function HeroMosaic({
           }`}
           loading={index === 0 ? "eager" : "lazy"}
           onLoad={() => markLoaded(index)}
-          onError={() => {
-            // Don't inject a placeholder per slot — let the parent know so it
-            // can drop this photo and reshape the mosaic with only the working
-            // ones. Synthetic placeholder photos (id < 0) can't be reported up
-            // (there's nothing to drop), so just leave it as the bg colour.
-            if (p.id >= 0) onPhotoError?.(p.id);
+          onError={(e) => {
+            // Swap the broken tile to a placeholder in place — keeps the mosaic
+            // layout stable (no reshape cascade). The guard stops a loop if the
+            // placeholder itself fails.
+            const img = e.currentTarget as HTMLImageElement;
+            if (img.dataset.fallback) {
+              markLoaded(index);
+              return;
+            }
+            img.dataset.fallback = "1";
+            img.src = placeholderImage(p.id >= 0 ? p.id + cafeId : cafeId + index);
             markLoaded(index);
           }}
         />

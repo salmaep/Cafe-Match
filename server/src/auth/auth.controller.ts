@@ -16,6 +16,10 @@ import { RegisterDto } from './dto/register.dto';
 import { RegisterOwnerDto } from './dto/register-owner.dto';
 import { LoginDto } from './dto/login.dto';
 import { Verify2faDto, Resend2faDto } from './dto/verify-2fa.dto';
+import {
+  ForgotPasswordDto,
+  ResetPasswordDto,
+} from './dto/forgot-password.dto';
 import { Public } from '../common/decorators/public.decorator';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 
@@ -55,6 +59,24 @@ export class AuthController {
   @Post('2fa/resend')
   resend2fa(@Body() dto: Resend2faDto) {
     return this.authService.resend2fa(dto.otpId);
+  }
+
+  // ── Forgot / reset password ─────────────────────────────────────────────
+  @Public()
+  @Post('forgot-password')
+  @HttpCode(200)
+  forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.authService.requestPasswordReset(dto.email);
+  }
+
+  @Public()
+  @Post('reset-password')
+  resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(
+      dto.otpId,
+      dto.code,
+      dto.newPassword,
+    );
   }
 
   // ── Social login ────────────────────────────────────────────────────────

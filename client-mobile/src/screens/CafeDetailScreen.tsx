@@ -11,7 +11,7 @@ import {
   ActivityIndicator,
   Modal,
   StatusBar,
-  // Alert,
+  Alert,
 } from "react-native";
 import { Image } from "expo-image";
 import { useRoute, useNavigation, RouteProp } from "@react-navigation/native";
@@ -22,12 +22,13 @@ import { cafeText } from "@shared/i18n/keys";
 import { useShortlist } from "../context/ShortlistContext";
 import { useAuth } from "../context/AuthContext";
 import { useLocation } from "../context/LocationContext";
+import { useOpenTables } from "../context/OpenTablesContext";
 import {
   toggleBookmark,
   toggleFavorite,
   trackAnalytics,
   haversineKm,
-  // checkInApi,
+  checkInApi,
 } from "../services/api";
 import { logEvent } from "../utils/analytics";
 import { placeholderImage } from "../utils/cafeImage";
@@ -319,10 +320,16 @@ export default function CafeDetailScreen() {
   const leaderboard = (leaderboardQuery.data ?? []).slice(0, 5);
   const leaderboardLoading = leaderboardQuery.isLoading;
 
+  const { activeCafeIds, myActive } = useOpenTables();
+  const hasOpenTablesHere = activeCafeIds.has(Number(initialCafe?.id ?? -1));
+  const isHostingHere =
+    !!myActive && myActive.cafe?.id === Number(initialCafe?.id ?? -1);
+
   const [isFavorited, setIsFavorited] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [currentPhoto, setCurrentPhoto] = useState(0);
   const [gridReady, setGridReady] = useState(false);
+  const [validatedPhotos, setValidatedPhotos] = useState<string[] | null>(null);
   const [failedPhotos, setFailedPhotos] = useState<Set<number>>(new Set());
   const markPhotoFailed = useCallback((index: number) => {
     setFailedPhotos((prev) => {
@@ -332,9 +339,34 @@ export default function CafeDetailScreen() {
       return next;
     });
   }, []);
-  const allPhotosFailed =
-    (cafe?.photos?.length ?? 0) > 0 &&
-    failedPhotos.size >= (cafe?.photos?.length ?? 0);
+
+  const rawPhotos = cafe?.photos ?? [];
+  const rawPhotosKey = rawPhotos.join('|');
+  useEffect(() => {
+    if (rawPhotos.length === 0) {
+      setValidatedPhotos([]);
+      return;
+    }
+    let canceled = false;
+    setValidatedPhotos(null);
+    Promise.all(
+      rawPhotos.map((uri) =>
+        Image.prefetch(uri, 'memory-disk')
+          .then((ok) => (ok ? uri : null))
+          .catch(() => null),
+      ),
+    ).then((results) => {
+      if (canceled) return;
+      const valid = results.filter((v): v is string => typeof v === 'string');
+      setValidatedPhotos(valid);
+    });
+    return () => {
+      canceled = true;
+    };
+  }, [rawPhotosKey]);
+
+  const allPhotosFailed = validatedPhotos !== null && validatedPhotos.length === 0;
+  const photosForDisplay = validatedPhotos ?? [];
   const inShortlist = isInShortlist(cafe.id);
 
   useEffect(() => {
@@ -342,7 +374,8 @@ export default function CafeDetailScreen() {
     return () => clearTimeout(id);
   }, []);
 
-  // const [checkingIn, setCheckingIn] = useState(false);
+  const [checkingIn, setCheckingIn] = useState(false);
+  const [showAllFacilities, setShowAllFacilities] = useState(false);
 
   // Merge mood signals from THREE sources into ONE unified list:
   //  - cafe.purposes (scraped name array, e.g. "Family Time") → each counts as +1
@@ -534,39 +567,43 @@ export default function CafeDetailScreen() {
     }
   };
 
-  // const handleCheckIn = async () => {
-  //   setCheckingIn(true);
-  //   try {
-  //     const loc = await (
-  //       await import("expo-location")
-  //     ).getCurrentPositionAsync({ accuracy: 6 });
-  //     const result: any = await checkInApi(
-  //       Number(cafe.id),
-  //       loc.coords.latitude,
-  //       loc.coords.longitude,
-  //     );
-  //     const togetherWith: { id: number; name: string }[] =
-  //       result?.togetherWith || [];
-  //     if (togetherWith.length > 0) {
-  //       const names = togetherWith.map((f) => f.name).join(", ");
-  //       Alert.alert(
-  //         "💥 BARENGAN!",
-  //         `Kamu lagi di ${cafe.name} bareng ${names}! Seru nih!`,
-  //         [{ text: "Siap!", style: "default" }],
-  //       );
-  //     } else {
-  //       Alert.alert(
-  //         "Check-in berhasil! ☕",
-  //         `Kamu sekarang ada di ${cafe.name}`,
-  //       );
-  //     }
-  //   } catch (err: any) {
-  //     const msg =
-  //       err?.response?.data?.message || err?.message || "Gagal check-in";
-  //     Alert.alert("Oops", typeof msg === "string" ? msg : msg[0]);
-  //   }
-  //   setCheckingIn(false);
-  // };
+  const handleCheckIn = async () => {
+    if (!user) {
+      navigation.navigate('AuthModal');
+      return;
+    }
+    setCheckingIn(true);
+    try {
+      const loc = await (
+        await import("expo-location")
+      ).getCurrentPositionAsync({ accuracy: 6 });
+      const result: any = await checkInApi(
+        Number(cafe.id),
+        loc.coords.latitude,
+        loc.coords.longitude,
+      );
+      const togetherWith: { id: number; name: string }[] =
+        result?.togetherWith || [];
+      if (togetherWith.length > 0) {
+        const names = togetherWith.map((f) => f.name).join(", ");
+        Alert.alert(
+          "💥 BARENGAN!",
+          `Kamu lagi di ${cafe.name} bareng ${names}! Seru nih!`,
+          [{ text: "Siap!", style: "default" }],
+        );
+      } else {
+        Alert.alert(
+          "Check-in berhasil! ☕",
+          `Kamu sekarang ada di ${cafe.name}`,
+        );
+      }
+    } catch (err: any) {
+      const msg =
+        err?.response?.data?.message || err?.message || "Gagal check-in";
+      Alert.alert("Oops", typeof msg === "string" ? msg : msg[0]);
+    }
+    setCheckingIn(false);
+  };
 
   const formatPrice = (price: number) => "Rp " + price.toLocaleString("id-ID");
 
@@ -585,31 +622,22 @@ export default function CafeDetailScreen() {
           (!initialCafe.photos?.[0] ||
             initialCafe.photos[0].includes("images.unsplash.com")) ? (
             <View style={styles.photoSkeleton} />
-          ) : !cafeDetailQuery.data ? (
-            <TouchableOpacity
-              activeOpacity={0.95}
-              onPress={() => openZoom(0)}
-            >
-              <HeroPhoto
-                uri={initialCafe.photos![0]}
-                style={styles.photoSingle}
-                onFail={() => markPhotoFailed(0)}
-              />
-            </TouchableOpacity>
-          ) : allPhotosFailed || (cafe.photos?.length ?? 0) === 0 ? (
+          ) : validatedPhotos === null ? (
+            <View style={styles.photoSkeleton} />
+          ) : allPhotosFailed ? (
             <Image
               source={{ uri: placeholderImage(cafe.id) }}
               style={styles.photoSingle}
               cachePolicy="memory-disk"
               transition={200}
             />
-          ) : (cafe.photos?.length ?? 0) === 1 ? (
+          ) : photosForDisplay.length === 1 ? (
             <TouchableOpacity
               activeOpacity={0.95}
               onPress={() => openZoom(0)}
             >
               <HeroPhoto
-                uri={cafe.photos![0]}
+                uri={photosForDisplay[0]}
                 style={styles.photoSingle}
                 onFail={() => markPhotoFailed(0)}
               />
@@ -617,7 +645,7 @@ export default function CafeDetailScreen() {
           ) : (
             <>
               <FlatList
-                data={cafe.photos}
+                data={photosForDisplay}
                 horizontal
                 snapToInterval={HERO_CARD_W + HERO_GAP}
                 decelerationRate="fast"
@@ -646,7 +674,7 @@ export default function CafeDetailScreen() {
                 )}
               />
               <View style={styles.photoDots}>
-                {(cafe.photos ?? []).map((_, i) => (
+                {photosForDisplay.map((_, i) => (
                   <View
                     key={i}
                     style={[
@@ -658,7 +686,7 @@ export default function CafeDetailScreen() {
               </View>
               <View style={[styles.photoCounter, { top: insets.top + 18 }]}>
                 <Text style={styles.photoCounterText}>
-                  {currentPhoto + 1} / {(cafe.photos ?? []).length}
+                  {currentPhoto + 1} / {photosForDisplay.length}
                 </Text>
               </View>
             </>
@@ -669,7 +697,7 @@ export default function CafeDetailScreen() {
             hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
             activeOpacity={0.8}
           >
-            <ChevronLeft size={24} color="#FFFFFF" strokeWidth={2.5} />
+            <ChevronLeft size={22} color={colors.primary} strokeWidth={2.5} />
           </TouchableOpacity>
         </View>
 
@@ -709,32 +737,106 @@ export default function CafeDetailScreen() {
             <Text style={styles.description}>{cafe.description}</Text>
           ) : null}
 
-          <TouchableOpacity style={styles.addressCard} onPress={openMaps} activeOpacity={0.85}>
-            <View style={styles.addressTop}>
-              <MapPin
-                size={16}
-                color={colors.textSecondary}
-                strokeWidth={2}
-                style={styles.addressIconLead}
-              />
-              <Text style={styles.addressText}>{cleanAddress(cafe.address)}</Text>
-            </View>
-            <View style={styles.addressFooter}>
-              <Text style={styles.openMaps}>{t(cafeText.openInMaps)}</Text>
-            </View>
-          </TouchableOpacity>
-
-          {/* Phone — clickable tel: link */}
-          {!!cafe.phone && (
+          <View style={styles.infoStack}>
             <TouchableOpacity
-              style={styles.phoneRow}
-              onPress={() => Linking.openURL(`tel:${cafe.phone}`)}
+              style={styles.infoRow}
+              onPress={openMaps}
+              activeOpacity={0.7}
             >
-              <Phone size={14} color={colors.textSecondary} strokeWidth={2} style={styles.phoneIconLead} />
-              <Text style={styles.phoneText}>{cafe.phone}</Text>
-              <Text style={styles.phoneCta}>{t(cafeText.call)}</Text>
+              <View style={styles.infoIcon}>
+                <MapPin size={15} color={colors.primary} strokeWidth={2.2} />
+              </View>
+              <View style={styles.infoBody}>
+                <Text style={styles.infoLabel}>ALAMAT</Text>
+                <Text style={styles.infoText} numberOfLines={2}>
+                  {cleanAddress(cafe.address)}
+                </Text>
+              </View>
+              <Text style={styles.infoAction}>{t(cafeText.openInMaps)}</Text>
             </TouchableOpacity>
-          )}
+
+            {!!cafe.phone && (
+              <>
+                <View style={styles.infoDivider} />
+                <TouchableOpacity
+                  style={styles.infoRow}
+                  onPress={() => Linking.openURL(`tel:${cafe.phone}`)}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.infoIcon}>
+                    <Phone size={15} color={colors.primary} strokeWidth={2.2} />
+                  </View>
+                  <View style={styles.infoBody}>
+                    <Text style={styles.infoLabel}>TELEPON</Text>
+                    <Text style={styles.infoText} numberOfLines={1}>
+                      {cafe.phone}
+                    </Text>
+                  </View>
+                  <Text style={styles.infoAction}>{t(cafeText.call)}</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+
+          <View style={styles.openTableCard}>
+            <View style={styles.openTableHead}>
+              <View style={styles.openTableIcon}>
+                <Users size={16} color={colors.accent} strokeWidth={2.4} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.openTableTitle}>Open Table</Text>
+                <Text style={styles.openTableSub}>
+                  {hasOpenTablesHere
+                    ? 'Ada table aktif · tap untuk lihat / join'
+                    : 'Belum ada. Buka table biar orang bisa join lo.'}
+                </Text>
+              </View>
+            </View>
+            <View style={styles.openTableActions}>
+              <TouchableOpacity
+                style={styles.openTableSecondary}
+                onPress={() =>
+                  navigation.navigate('OpenTableJoinSheet', {
+                    cafeId: String(cafe.id),
+                    cafeName: cafe.name,
+                  })
+                }
+                activeOpacity={0.8}
+              >
+                <Text style={styles.openTableSecondaryText}>
+                  Lihat{hasOpenTablesHere ? ' aktif' : ''}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.openTablePrimary,
+                  isHostingHere && styles.openTablePrimaryHosting,
+                ]}
+                onPress={() => {
+                  if (!user) {
+                    navigation.navigate('AuthModal');
+                    return;
+                  }
+                  if (isHostingHere) {
+                    navigation.navigate('OpenTableJoinSheet', {
+                      cafeId: String(cafe.id),
+                      cafeName: cafe.name,
+                    });
+                    return;
+                  }
+                  navigation.navigate('OpenTableCreateModal', {
+                    cafeId: String(cafe.id),
+                    cafeName: cafe.name,
+                  });
+                }}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.openTablePrimaryText}>
+                  {isHostingHere ? 'Kelola Table' : 'Open Table'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
 
           {/* Jam Buka — opening hours table, today highlighted */}
           {cafe.openingHours && Object.keys(cafe.openingHours).length > 0 && (
@@ -789,45 +891,63 @@ export default function CafeDetailScreen() {
 
           <Text style={styles.sectionTitle}>{t(cafeText.facilities)}</Text>
           {facilityChips.length > 0 ? (
-            <View style={styles.facilitiesRow}>
-              {facilityChips.map((f) => (
-                <View key={f.key} style={styles.facilityChip}>
-                  {f.lucideName && (
-                    <LucideIcon
-                      name={f.lucideName}
-                      size={12}
-                      color={colors.primary}
-                      strokeWidth={2}
-                    />
-                  )}
-                  <Text style={styles.facilityLabel}>{f.label}</Text>
-                </View>
-              ))}
-            </View>
+            <>
+              <View style={styles.facilitiesRow}>
+                {(showAllFacilities
+                  ? facilityChips
+                  : facilityChips.slice(0, 8)
+                ).map((f) => (
+                  <View key={f.key} style={styles.facilityChip}>
+                    {f.lucideName && (
+                      <LucideIcon
+                        name={f.lucideName}
+                        size={12}
+                        color={colors.primary}
+                        strokeWidth={2}
+                      />
+                    )}
+                    <Text style={styles.facilityLabel}>{f.label}</Text>
+                  </View>
+                ))}
+              </View>
+              {facilityChips.length > 8 && (
+                <TouchableOpacity
+                  style={styles.showAllFacilitiesBtn}
+                  onPress={() => setShowAllFacilities((v) => !v)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.showAllFacilitiesText}>
+                    {showAllFacilities
+                      ? 'Sembunyikan'
+                      : `Lihat semua (${facilityChips.length})`}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </>
           ) : (
             <Text style={styles.noFacilities}>{t(cafeText.noFacilitiesListed)}</Text>
           )}
 
-          <View style={styles.statsRow}>
-            <View style={styles.stat}>
-              <Text style={styles.statNumber}>{cafe.favoritesCount}</Text>
-              <Text style={styles.statLabel}>{t(cafeText.favorites)}</Text>
+          <View style={styles.statPills}>
+            <View style={styles.statPill}>
+              <Text style={styles.statPillNum}>{cafe.favoritesCount}</Text>
+              <Text style={styles.statPillLabel}>
+                {t(cafeText.favorites)}
+              </Text>
             </View>
-            <View style={styles.statDivider} />
-            <View style={styles.stat}>
-              <Text style={styles.statNumber}>{cafe.bookmarksCount}</Text>
-              <Text style={styles.statLabel}>{t(cafeText.bookmarks)}</Text>
+            <View style={styles.statPill}>
+              <Text style={styles.statPillNum}>{cafe.bookmarksCount}</Text>
+              <Text style={styles.statPillLabel}>
+                {t(cafeText.bookmarks)}
+              </Text>
             </View>
             {cafe.matchScore ? (
-              <>
-                <View style={styles.statDivider} />
-                <View style={styles.stat}>
-                  <Text style={[styles.statNumber, { color: colors.accent }]}>
-                    {cafe.matchScore}%
-                  </Text>
-                  <Text style={styles.statLabel}>{t(cafeText.match)}</Text>
-                </View>
-              </>
+              <View style={[styles.statPill, styles.statPillAccent]}>
+                <Text style={[styles.statPillNum, { color: colors.accent }]}>
+                  {cafe.matchScore}%
+                </Text>
+                <Text style={styles.statPillLabel}>{t(cafeText.match)}</Text>
+              </View>
             ) : null}
           </View>
 
@@ -1186,22 +1306,22 @@ export default function CafeDetailScreen() {
               shadow). Cap visible at 9 with a "+N more" overlay; tap any
               tile to open the fullscreen zoom modal at that index.
               Hidden entirely when all photos fail to load. */}
-          {(cafe.photos?.length ?? 0) > 0 && !allPhotosFailed && (
+          {photosForDisplay.length > 0 && (
             <>
               <View style={styles.sectionRow}>
                 <Text style={styles.sectionTitle}>{t(cafeText.photos)}</Text>
-                {(cafe.photos?.length ?? 0) > 9 && (
+                {photosForDisplay.length > 9 && (
                   <TouchableOpacity onPress={() => openZoom(0)}>
                     <Text style={styles.seeAll}>
-                      {t(cafeText.viewAllPhotos, { count: cafe.photos!.length })}
+                      {t(cafeText.viewAllPhotos, { count: photosForDisplay.length })}
                     </Text>
                   </TouchableOpacity>
                 )}
               </View>
               <View style={styles.photoGrid}>
-                {(cafe.photos ?? []).slice(0, 9).map((photoUri, i) => {
+                {photosForDisplay.slice(0, 9).map((photoUri, i) => {
                   const isLastVisible = i === 8;
-                  const overflow = (cafe.photos?.length ?? 0) - 9;
+                  const overflow = photosForDisplay.length - 9;
                   const showImage = i < 3 || gridReady;
                   return (
                     <TouchableOpacity
@@ -1321,7 +1441,7 @@ export default function CafeDetailScreen() {
         <View style={styles.zoomContainer}>
           <FlatList
             ref={zoomListRef}
-            data={cafe.photos}
+            data={photosForDisplay}
             horizontal
             pagingEnabled
             showsHorizontalScrollIndicator={false}
@@ -1375,7 +1495,7 @@ export default function CafeDetailScreen() {
             <Text style={styles.zoomCounterText}>
               {zoomIndex + 1}{' '}
               <Text style={styles.zoomCounterTotal}>
-                / {cafe.photos.length}
+                / {photosForDisplay.length}
               </Text>
             </Text>
           </View>
@@ -1403,13 +1523,21 @@ export default function CafeDetailScreen() {
             <Text style={styles.actionLabel}>{t(cafeText.bookmarks)}</Text>
           </TouchableOpacity>
         )}
-        {/* <TouchableOpacity
+        <TouchableOpacity
           style={styles.checkinBtn}
           onPress={handleCheckIn}
           disabled={checkingIn}
+          activeOpacity={0.85}
         >
-          <Text style={styles.checkinBtnText}>{checkingIn ? "..." : "📍"}</Text>
-        </TouchableOpacity> */}
+          {checkingIn ? (
+            <ActivityIndicator color={colors.white} size="small" />
+          ) : (
+            <>
+              <MapPin size={16} color={colors.white} strokeWidth={2.4} />
+              <Text style={styles.checkinBtnText}>Check-in</Text>
+            </>
+          )}
+        </TouchableOpacity>
         <TouchableOpacity
           style={[
             styles.shortlistBtn,
@@ -1463,48 +1591,54 @@ const styles = StyleSheet.create({
   // edge stays visible on the right of the current one.
   photo: {
     width: HERO_CARD_W,
-    height: 280,
-    resizeMode: "cover",
-    backgroundColor: "#F0EDE8",
+    height: 260,
+    backgroundColor: colors.surface,
   },
   photoSingle: {
     width: "100%",
-    height: 280,
-    resizeMode: "cover",
-    backgroundColor: "#F0EDE8",
+    height: 260,
+    backgroundColor: colors.surface,
   },
   photoSkeleton: {
     width: "100%",
-    height: 280,
-    backgroundColor: "#F0EDE8",
+    height: 260,
+    backgroundColor: colors.surface,
   },
   photoDots: {
     position: "absolute",
-    bottom: 12,
+    bottom: 14,
     alignSelf: "center",
     flexDirection: "row",
-    gap: 6,
+    gap: 5,
+    backgroundColor: "rgba(0,0,0,0.28)",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
   },
   photoDot: {
-    width: 6,
-    height: 6,
+    width: 5,
+    height: 5,
     borderRadius: 3,
     backgroundColor: "rgba(255,255,255,0.55)",
   },
-  photoDotActive: { backgroundColor: "#FFFFFF", width: 18 },
+  photoDotActive: { backgroundColor: "#FFFFFF", width: 16 },
   photoCounter: {
     position: "absolute",
     right: spacing.md,
-    backgroundColor: "rgba(0,0,0,0.55)",
+    backgroundColor: "rgba(0,0,0,0.5)",
     borderRadius: 999,
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
     paddingVertical: 4,
     zIndex: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
   },
   photoCounterText: {
     color: "#FFFFFF",
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "800",
+    letterSpacing: 0.3,
   },
   // Back button — solid translucent dark + white outline so it's legible on
   // ANY photo (the previous rgba(0,0,0,0.3) was invisible on bright photos).
@@ -1514,16 +1648,19 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "rgba(0,0,0,0.55)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.4)",
+    backgroundColor: "rgba(255,255,255,0.92)",
     justifyContent: "center",
     alignItems: "center",
     zIndex: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.18,
+    shadowRadius: 6,
+    elevation: 4,
   },
   backIcon: {
     fontSize: 28,
-    color: "#FFFFFF",
+    color: colors.primary,
     fontWeight: "600",
     lineHeight: 30,
     marginTop: -2,
@@ -1591,8 +1728,14 @@ const styles = StyleSheet.create({
   },
   zoomCounterText: { color: "#FFFFFF", fontSize: 14, fontWeight: "800" },
   zoomCounterTotal: { color: "rgba(255,255,255,0.65)", fontWeight: "600" },
-  content: { padding: spacing.lg },
-  cafeName: { fontSize: 24, fontWeight: "700", color: colors.primary },
+  content: { paddingHorizontal: spacing.md, paddingVertical: spacing.md },
+  cafeName: {
+    fontSize: 26,
+    fontWeight: "800",
+    color: colors.primary,
+    letterSpacing: -0.4,
+    lineHeight: 32,
+  },
   distance: { fontSize: 14, color: colors.textSecondary, marginTop: 2 },
 
   // Rating row under title — ★ {rating} ({n}) · {price} · {distance}
@@ -1613,10 +1756,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginTop: spacing.sm,
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
+    backgroundColor: colors.white,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.surface,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm + 2,
+    paddingVertical: spacing.sm + 4,
     gap: 8,
   },
   phoneIconLead: { marginRight: 4 },
@@ -1626,9 +1771,9 @@ const styles = StyleSheet.create({
   // Jam Buka (opening hours) table
   hoursCard: {
     backgroundColor: colors.white,
-    borderRadius: 16,
+    borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: "#F0EDE8",
+    borderColor: colors.surface,
     overflow: "hidden",
     marginBottom: spacing.sm,
   },
@@ -1702,16 +1847,132 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   description: {
-    fontSize: 14,
+    fontSize: 13.5,
     color: colors.textSecondary,
-    marginTop: spacing.sm,
+    marginTop: spacing.sm + 2,
     lineHeight: 20,
+    fontWeight: "500",
   },
   addressCard: {
     marginTop: spacing.md,
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
+    backgroundColor: colors.white,
+    borderRadius: radius.lg,
     padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.surface,
+  },
+  infoStack: {
+    marginTop: spacing.md,
+    backgroundColor: colors.white,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.surface,
+    overflow: "hidden",
+  },
+  infoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm + 2,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm + 4,
+  },
+  infoIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  infoBody: { flex: 1, minWidth: 0 },
+  infoLabel: {
+    fontSize: 9.5,
+    fontWeight: "800",
+    color: colors.textSecondary,
+    letterSpacing: 1.2,
+    marginBottom: 2,
+  },
+  infoText: {
+    fontSize: 13,
+    color: colors.primary,
+    fontWeight: "600",
+    lineHeight: 18,
+  },
+  infoAction: {
+    fontSize: 11,
+    color: colors.accent,
+    fontWeight: "800",
+    letterSpacing: 0.4,
+    textTransform: "uppercase",
+  },
+  infoDivider: {
+    height: 1,
+    backgroundColor: colors.surface,
+    marginLeft: spacing.md + 32 + spacing.sm + 2,
+  },
+  openTableCard: {
+    marginTop: spacing.md,
+    backgroundColor: colors.white,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.accent + '35',
+    gap: spacing.sm + 2,
+  },
+  openTableHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  openTableIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.accent + '18',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  openTableTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: colors.primary,
+  },
+  openTableSub: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginTop: 1,
+  },
+  openTableActions: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  openTableSecondary: {
+    flex: 1,
+    paddingVertical: spacing.sm + 2,
+    borderRadius: radius.md,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+  },
+  openTableSecondaryText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.primary,
+  },
+  openTablePrimary: {
+    flex: 1,
+    paddingVertical: spacing.sm + 2,
+    borderRadius: radius.md,
+    backgroundColor: colors.accent,
+    alignItems: 'center',
+  },
+  openTablePrimaryHosting: {
+    backgroundColor: colors.primary,
+  },
+  openTablePrimaryText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: colors.white,
+    letterSpacing: 0.3,
   },
   addressTop: {
     flexDirection: "row",
@@ -1721,19 +1982,21 @@ const styles = StyleSheet.create({
   addressIconLead: { marginTop: 2 },
   addressText: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 13.5,
     color: colors.primary,
     lineHeight: 20,
+    fontWeight: "500",
   },
   addressFooter: {
     flexDirection: "row",
     justifyContent: "flex-end",
-    marginTop: spacing.sm,
+    marginTop: spacing.sm + 2,
   },
   openMaps: {
-    fontSize: 13,
+    fontSize: 12,
     color: colors.accent,
-    fontWeight: "700",
+    fontWeight: "800",
+    letterSpacing: 0.3,
   },
   tagsRow: {
     flexDirection: "row",
@@ -1751,27 +2014,50 @@ const styles = StyleSheet.create({
   },
   purposeTagText: { fontSize: 13, fontWeight: "600", color: colors.accent },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: colors.primary,
-    marginTop: spacing.lg,
-    marginBottom: spacing.sm,
+    fontSize: 11,
+    fontWeight: "800",
+    color: colors.textSecondary,
+    marginTop: spacing.lg + 4,
+    marginBottom: spacing.sm + 4,
+    letterSpacing: 1.4,
+    textTransform: "uppercase",
   },
   facilitiesRow: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: spacing.sm,
   },
+  showAllFacilitiesBtn: {
+    alignSelf: "flex-start",
+    marginTop: spacing.sm,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: 6,
+    borderRadius: radius.full,
+    backgroundColor: colors.surface,
+  },
+  showAllFacilitiesText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: colors.accent,
+    letterSpacing: 0.2,
+  },
   facilityChip: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    backgroundColor: colors.surface,
+    gap: 5,
+    backgroundColor: colors.white,
     borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: colors.surface,
     paddingHorizontal: spacing.sm + 4,
     paddingVertical: spacing.xs + 2,
   },
-  facilityLabel: { fontSize: 13, color: colors.primary, fontWeight: "500" },
+  facilityLabel: {
+    fontSize: 12,
+    color: colors.primary,
+    fontWeight: "600",
+    letterSpacing: 0.1,
+  },
   noFacilities: {
     fontSize: 13,
     color: colors.textSecondary,
@@ -1812,14 +2098,59 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    paddingVertical: spacing.md,
+    backgroundColor: colors.white,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.surface,
+    paddingVertical: spacing.md + 2,
     marginTop: spacing.lg,
   },
+  statPills: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: spacing.md,
+  },
+  statPill: {
+    flex: 1,
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.surface,
+    borderRadius: radius.md,
+    paddingVertical: 10,
+    paddingHorizontal: spacing.sm,
+    alignItems: "flex-start",
+    gap: 2,
+  },
+  statPillAccent: { borderColor: colors.accent + "40" },
+  statPillNum: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: colors.primary,
+    letterSpacing: -0.3,
+    lineHeight: 22,
+  },
+  statPillLabel: {
+    fontSize: 9.5,
+    color: colors.textSecondary,
+    fontWeight: "700",
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
+  },
   stat: { flex: 1, alignItems: "center" },
-  statNumber: { fontSize: 20, fontWeight: "700", color: colors.primary },
-  statLabel: { fontSize: 12, color: colors.textSecondary, marginTop: 2 },
+  statNumber: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: colors.primary,
+    letterSpacing: -0.3,
+  },
+  statLabel: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    marginTop: 3,
+    fontWeight: "600",
+    letterSpacing: 0.3,
+    textTransform: "uppercase",
+  },
   statDivider: {
     width: 1,
     height: 32,
@@ -1876,42 +2207,64 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: colors.white,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    paddingBottom: 28,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.surface,
-    gap: spacing.sm,
+    paddingTop: 10,
+    paddingBottom: 24,
+    gap: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 8,
   },
-  actionBtn: { alignItems: "center", paddingHorizontal: spacing.sm },
+  actionBtn: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 22,
+    backgroundColor: colors.surface,
+  },
   actionIcon: { fontSize: 22 },
   actionLabel: { fontSize: 11, color: colors.textSecondary, marginTop: 2 },
   shortlistBtn: {
     flex: 1,
     flexDirection: "row",
-    gap: spacing.sm,
+    gap: 6,
     backgroundColor: colors.primary,
-    borderRadius: radius.md,
-    paddingVertical: spacing.sm + 4,
+    borderRadius: radius.full,
+    height: 44,
     alignItems: "center",
     justifyContent: "center",
+    paddingHorizontal: spacing.md,
   },
   shortlistBtnActive: {
     backgroundColor: colors.white,
-    borderWidth: 2,
+    borderWidth: 1.5,
     borderColor: colors.accent,
-    paddingVertical: spacing.sm + 2,
   },
-  shortlistBtnText: { color: colors.white, fontWeight: "700", fontSize: 15 },
+  shortlistBtnText: {
+    color: colors.white,
+    fontWeight: "800",
+    fontSize: 13,
+    letterSpacing: 0.2,
+  },
   shortlistBtnTextActive: { color: colors.accent },
-  // checkinBtn: {
-  //   width: 48,
-  //   height: 48,
-  //   borderRadius: 24,
-  //   backgroundColor: colors.success,
-  //   justifyContent: "center",
-  //   alignItems: "center",
-  // },
-  // checkinBtnText: { fontSize: 20 },
+  checkinBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 5,
+    height: 44,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.full,
+    backgroundColor: colors.success,
+  },
+  checkinBtnText: {
+    color: colors.white,
+    fontWeight: "800",
+    fontSize: 12,
+    letterSpacing: 0.3,
+  },
 
   // Reviews + Leaderboard sections
   sectionRow: {
@@ -1921,7 +2274,12 @@ const styles = StyleSheet.create({
     marginTop: spacing.lg,
     marginBottom: spacing.sm,
   },
-  seeAll: { fontSize: 13, color: colors.accent, fontWeight: "600" },
+  seeAll: {
+    fontSize: 13,
+    color: colors.accent,
+    fontWeight: "800",
+    letterSpacing: 0.2,
+  },
   reviewBarRow: {
     flexDirection: "row",
     alignItems: "center",

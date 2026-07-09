@@ -67,6 +67,23 @@ export class AuthService {
     };
   }
 
+  private decodeJwtAud(token: string): {
+    aud?: string;
+    iss?: string;
+    exp?: number;
+  } {
+    try {
+      const parts = token.split('.');
+      if (parts.length < 2) return {};
+      const payload = JSON.parse(
+        Buffer.from(parts[1], 'base64url').toString('utf8'),
+      );
+      return { aud: payload.aud, iss: payload.iss, exp: payload.exp };
+    } catch {
+      return {};
+    }
+  }
+
   private maskEmail(email: string): string {
     const [name, domain] = email.split('@');
     if (!domain) return '***';
@@ -239,23 +256,28 @@ export class AuthService {
     return { otpId: otp.otpId, expiresAt: otp.expiresAt };
   }
 
-  // ── Forgot / reset password ─────────────────────────────────────────────
-  // Silent-fail if the email doesn't exist so an attacker can't enumerate
-  // registered addresses. Social-only accounts (no password) also silent-fail.
   async requestPasswordReset(
     email: string,
-  ): Promise<{ otpId: string | null; expiresAt: string | null; emailHint: string }> {
-    const emailHint = this.maskEmail(email);
+  ): Promise<{ otpId: string; expiresAt: string; emailHint: string }> {
     const user = await this.usersService.findByEmail(email);
     if (!user || !user.passwordHash) {
-      return { otpId: null, expiresAt: null, emailHint };
+      const dummyExpiresAt = new Date(Date.now() + 5 * 60_000).toISOString();
+      return {
+        otpId: randomUUID(),
+        expiresAt: dummyExpiresAt,
+        emailHint: this.maskEmail(email),
+      };
     }
     const otp = await this.otpService.requestOtp(user.email);
     this.pendingPasswordReset.set(otp.otpId, {
       userId: user.id,
       expiresAt: new Date(otp.expiresAt).getTime(),
     });
-    return { otpId: otp.otpId, expiresAt: otp.expiresAt, emailHint };
+    return {
+      otpId: otp.otpId,
+      expiresAt: otp.expiresAt,
+      emailHint: this.maskEmail(user.email),
+    };
   }
 
   async resetPassword(otpId: string, code: string, newPassword: string) {
@@ -317,8 +339,18 @@ export class AuthService {
         audience: audiences,
       });
       payload = ticket.getPayload();
-    } catch {
-      throw new UnauthorizedException('Invalid Google ID token');
+    } catch (err: any) {
+      const decoded = this.decodeJwtAud(idToken);
+      console.warn('[google-verify] failed:', {
+        reason: err?.message,
+        tokenAud: decoded.aud,
+        tokenIss: decoded.iss,
+        tokenExp: decoded.exp,
+        expectedAudiences: audiences,
+      });
+      throw new UnauthorizedException(
+        `Invalid Google ID token: ${err?.message ?? 'unknown'} (token aud=${decoded.aud ?? 'n/a'})`,
+      );
     }
     if (!payload?.sub || !payload.email) {
       throw new UnauthorizedException('Google token missing sub/email');

@@ -157,8 +157,8 @@ export async function resend2faApi(otpId: string): Promise<{ otpId: string; expi
 }
 
 export interface ForgotPasswordResponse {
-  otpId: string | null;
-  expiresAt: string | null;
+  otpId: string;
+  expiresAt: string;
   emailHint: string;
 }
 
@@ -167,8 +167,8 @@ export async function forgotPasswordApi(
 ): Promise<ForgotPasswordResponse> {
   const { data } = await api.post("/auth/forgot-password", { email });
   return {
-    otpId: data.otpId ?? null,
-    expiresAt: data.expiresAt ?? null,
+    otpId: data.otpId,
+    expiresAt: data.expiresAt,
     emailHint: data.emailHint ?? "",
   };
 }
@@ -681,6 +681,27 @@ export async function fetchMyActiveTableApi(): Promise<MyActiveTable | null> {
 export async function fetchActiveCafeIdsApi(): Promise<number[]> {
   const { data } = await api.get('/tables/active-cafes');
   return (data?.cafeIds ?? []) as number[];
+}
+
+export interface MyOutgoingRequest {
+  id: number;
+  status: JoinRequestStatus;
+  message: string | null;
+  createdAt: string;
+  respondedAt: string | null;
+  table: {
+    id: number;
+    title: string | null;
+    status: string;
+    expiresAt: string;
+    cafe: { id: number; name: string; slug: string | null } | null;
+    host: TablePublicUser | null;
+  } | null;
+}
+
+export async function fetchMyRequestsApi(): Promise<MyOutgoingRequest[]> {
+  const { data } = await api.get('/tables/me/requests');
+  return (data ?? []) as MyOutgoingRequest[];
 }
 
 export async function requestJoinTableApi(tableId: number, message?: string) {

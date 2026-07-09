@@ -1,10 +1,26 @@
-import { Injectable, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DataSource } from 'typeorm';
 import * as crypto from 'crypto';
+import { existsSync, mkdirSync } from 'node:fs';
+import { writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { SyncCafeDto } from './dto/sync-cafe.dto';
+import {
+  parseAndValidate,
+  SyncPhotoKind,
+} from './dto/sync-cafe-photos.dto';
 import { MeiliCafesService } from '../meili/meili-cafes.service';
 import { buildCafeSlug } from '../common/utils/slug.util';
+
+const CAFE_PHOTOS_DIR = join(process.cwd(), 'storage', 'cafe-photos');
+// The prod app_storage volume predates this dir — create it at module load
+// (same pattern as uploads.controller.ts).
+if (!existsSync(CAFE_PHOTOS_DIR)) mkdirSync(CAFE_PHOTOS_DIR, { recursive: true });
 
 export interface SyncResult {
   processed: number;
@@ -75,6 +91,117 @@ export class ScraperSyncService {
     }
 
     return result;
+  }
+
+  /**
+   * Receives an authoritative photo snapshot (bytes included) from the
+   * scraper and self-hosts it: files land in storage/cafe-photos (served at
+   * /api/v1/storage/cafe-photos), rows replace the cafe's google-sourced
+   * photos. Idempotent — re-pushing the same snapshot converges.
+   */
+  async syncCafePhotos(
+    payloadRaw: unknown,
+    files: Express.Multer.File[],
+  ): Promise<
+    | { status: 'unknown_cafe' }
+    | { status: 'ok'; cafeId: number; photos: Record<string, string> }
+  > {
+    const payload = parseAndValidate(payloadRaw);
+
+    // Rows imported by the old pipeline hold the 0x..:0x.. data-id format,
+    // the scraper's canonical key is ChIJ... — accept either.
+    const ids = [payload.googlePlaceId, ...payload.altIds];
+    const [cafe] = await this.dataSource.query(
+      `SELECT id FROM cafes WHERE google_place_id IN (${ids.map(() => '?').join(',')}) LIMIT 1`,
+      ids,
+    );
+    if (!cafe) return { status: 'unknown_cafe' };
+    const cafeId: number = cafe.id;
+
+    const fileByField = new Map<string, Express.Multer.File>();
+    for (const f of files) fileByField.set(f.fieldname, f);
+
+    // All-or-nothing: the scraper retries with a complete snapshot, so a
+    // missing part means a malformed push, not a partial update.
+    for (const photo of payload.photos) {
+      if (!fileByField.has(photo.id)) {
+        throw new BadRequestException(`missing file part for photo ${photo.id}`);
+      }
+    }
+
+    const urls: Record<string, string> = {};
+    const rows: {
+      url: string;
+      kind: SyncPhotoKind;
+      ref: string;
+      caption: string | null;
+      order: number;
+    }[] = [];
+    for (const photo of payload.photos) {
+      const file = fileByField.get(photo.id)!;
+      const ext = extForMime(photo.contentType || file.mimetype);
+      const filename = `${photo.id}${ext}`;
+      const path = join(CAFE_PHOTOS_DIR, filename);
+      // Ids are content-stable (derived from the Google photo token), so an
+      // existing file is the same image — skip the write on re-push.
+      if (!existsSync(path)) {
+        await writeFile(path, file.buffer);
+      }
+      const url = this.publicStorageUrl('cafe-photos', filename);
+      urls[photo.id] = url;
+      rows.push({
+        url,
+        kind: photo.kind,
+        ref: photo.id,
+        caption: photo.caption ?? null,
+        order: photo.order,
+      });
+    }
+
+    await this.dataSource.transaction(async (manager) => {
+      await manager.query(
+        `DELETE FROM cafe_photos WHERE cafe_id = ? AND source = 'google'`,
+        [cafeId],
+      );
+      for (const row of rows) {
+        await manager.query(
+          `INSERT INTO cafe_photos
+             (cafe_id, url, source, photo_type, google_photo_ref, caption, display_order, is_primary)
+           VALUES (?, ?, 'google', ?, ?, ?, ?, ?)`,
+          [
+            cafeId,
+            row.url,
+            row.kind,
+            row.ref,
+            row.caption,
+            row.order,
+            row.kind === 'cover' ? 1 : 0,
+          ],
+        );
+      }
+    });
+
+    // Photos flow into search documents — reindex fail-open like syncCafes.
+    if (this.config.get('MEILI_SYNC_ENABLED') !== 'false') {
+      try {
+        await this.meiliCafes.indexCafes([cafeId]);
+      } catch (err) {
+        this.logger.error(
+          `Meili index failed after photo sync for cafe ${cafeId}`,
+          err,
+        );
+        await this.meiliCafes.queueFailure(cafeId, 'index', String(err));
+      }
+    }
+
+    return { status: 'ok', cafeId, photos: urls };
+  }
+
+  private publicStorageUrl(folder: string, filename: string): string {
+    const publicBase =
+      this.config.get<string>('PUBLIC_API_URL') ??
+      'http://localhost:3000/api/v1';
+    return `${publicBase.replace(/\/$/, '')}/storage/${folder}/${filename}`;
   }
 
   private async upsertCafe(
@@ -304,6 +431,18 @@ export class ScraperSyncService {
     cafeId: number,
     dto: SyncCafeDto,
   ): Promise<void> {
+    // Self-hosted photos (google_photo_ref set, pushed by the scraper with
+    // actual bytes) are authoritative — the pre-processor only carries
+    // expiring googleusercontent URLs, which would be a downgrade. The
+    // scraper re-pushes automatically after every rescrape.
+    const [selfHosted] = await this.dataSource.query(
+      `SELECT id FROM cafe_photos
+       WHERE cafe_id = ? AND source = 'google' AND google_photo_ref IS NOT NULL
+       LIMIT 1`,
+      [cafeId],
+    );
+    if (selfHosted) return;
+
     // Remove existing google-sourced photos (preserve source='manual')
     await this.dataSource.query(
       `DELETE FROM cafe_photos WHERE cafe_id = ? AND source = 'google'`,
@@ -376,5 +515,21 @@ export class ScraperSyncService {
         ],
       );
     }
+  }
+}
+
+function extForMime(mime: string): string {
+  switch (mime) {
+    case 'image/jpeg':
+    case 'image/jpg':
+      return '.jpg';
+    case 'image/png':
+      return '.png';
+    case 'image/webp':
+      return '.webp';
+    case 'image/gif':
+      return '.gif';
+    default:
+      return '.jpg';
   }
 }

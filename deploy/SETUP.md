@@ -1,5 +1,7 @@
 # Step-by-Step Server Setup
 
+> ⚠️ **Dokumen ini sebagian usang** — ditulis untuk server lama (dios / salma.imola.ai, K8s Traefik). Prod aktif sekarang = geser (geser.id, branch `prod`, port 5083/5084). Beberapa klaim tidak akurat lagi (CI tidak punya step backup DB; nama env yang benar `ADMIN_API_KEY`, bukan `SCRAPER_API_KEY`). Runbook terkini: `/deploy.md` di root repo (lokal, tidak di-commit).
+
 Panduan deploy dari fresh server sampai aplikasi live di:
 - https://geser.id (web)
 - https://api.geser.id (API)
